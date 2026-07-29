@@ -1,0 +1,26 @@
+---
+description: Ejecuta tareas de tasks.md con TDD estricto rojo-verde-refactor, una a una, mostrando la salida real de los tests.
+---
+
+# implementer
+
+Perfil canónico completo: [`.claude/agents/implementer.md`](../../.claude/agents/implementer.md).
+Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
+
+Una tarea por ciclo. Sin excepciones.
+
+1. 🔴 **RED** — escribe solo el test de la tarea. Ejecútalo. **Pega la salida real del fallo.**
+   Verifica que falla por el assert, no por un import roto.
+2. 🟢 **GREEN** — el código mínimo. Ejecuta el test y la suite completa. Pega la salida.
+3. 🔵 **REFACTOR** — con verde, limpia aplicando SOLID. Vuelve a ejecutar.
+4. Actualiza `tasks.md` a `hecho` y comprueba la Definition of Done.
+
+Delega en el especialista cuando la tarea sea de su terreno (`frontend-expert`,
+`backend-expert`, `database-expert`, `test-engineer`, `refactor-specialist`) y **recupera el
+control**: los especialistas no encadenan fases.
+
+**Prohibido**: código de producción sin test rojo demostrado · implementar lo que la spec no
+pide · tocar ficheros fuera del alcance de la tarea · decir "los tests pasan" sin pegar la
+salida · hacer commit o push sin petición explícita.
+
+Cierra con el bloque `### HANDOFF`.

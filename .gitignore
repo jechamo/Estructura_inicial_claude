@@ -1,0 +1,67 @@
+# ─── Secretos ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+secrets/
+credentials/
+
+# ─── Dependencias ────────────────────────────────────────────────────────────
+node_modules/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+vendor/
+target/
+
+# ─── Artefactos de build ─────────────────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+*.tsbuildinfo
+
+# ─── Tests y cobertura ───────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+playwright-report/
+test-results/
+
+# ─── Herramientas ────────────────────────────────────────────────────────────
+.cache/
+.turbo/
+.eslintcache
+.ruff_cache/
+.mypy_cache/
+
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/mcp.json
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ─── Configuración local de agentes ──────────────────────────────────────────
+# Los ficheros compartidos SÍ se commitean: .claude/agents/, .claude/skills/,
+# .claude/hooks/, .claude/settings.json
+.claude/settings.local.json
+.claude/.cache/
+.cursor/local/
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+pnpm-debug.log*

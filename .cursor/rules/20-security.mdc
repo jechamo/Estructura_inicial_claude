@@ -1,0 +1,22 @@
+---
+description: Reglas de seguridad OWASP para código de aplicación, APIs y acceso a datos.
+globs: ["**/*.{ts,tsx,js,jsx,py,go,java,cs,rb,php,sql}"]
+alwaysApply: false
+---
+
+# Seguridad
+
+- **Nunca** concatenes SQL. Consultas parametrizadas o query builder siempre.
+- Valida todo input externo en la frontera con esquema (zod, pydantic, DTO validado).
+- Autorización comprobada en **servidor**, en cada caso de uso. La UI no protege nada.
+- Cero secretos en el código. Variables de entorno + gestor de secretos.
+- Contraseñas con Argon2id o bcrypt (coste ≥ 12). Nunca MD5/SHA1.
+- Tokens: expiración corta, rotación, `httpOnly` + `Secure` + `SameSite` en cookies.
+- Escapa por contexto en la salida. Sin `innerHTML`/`dangerouslySetInnerHTML` sin sanitizar.
+- CORS explícito por origen. Nada de `*` con credenciales.
+- Rate limiting e idempotencia en endpoints de autenticación y mutantes.
+- Logs sin PII, sin tokens, sin cuerpos completos de petición.
+- Rutas de fichero y URLs de entrada: valida contra path traversal y SSRF (allowlist).
+- Deserialización: nunca de fuente no confiable sin esquema.
+- Dependencias: lockfile commiteado, SCA en CI, revisa paquetes nuevos.
+- Errores al cliente: genéricos. El detalle va al log del servidor.

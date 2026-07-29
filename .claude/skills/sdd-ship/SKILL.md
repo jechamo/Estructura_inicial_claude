@@ -1,0 +1,76 @@
+---
+name: sdd-ship
+description: Prepara la entrega: verificación final de gates, PR con trazabilidad, CHANGELOG, bitácora y plan de reversión. No hace push ni merge sin permiso explícito.
+disable-model-invocation: true
+---
+
+# /sdd-ship — Entregar
+
+Agente responsable: `@release-manager`.
+
+## Regla absoluta
+
+**No ejecutas `git push`, ni abres PR, ni mergeas, ni etiquetas, ni despliegas** sin que el
+usuario lo pida explícitamente en este turno. Preparas todo y muestras los comandos.
+
+## Paso 1 — Gates
+
+Recorre la DoD de `AGENTS.md` §7 y ejecuta lo ejecutable, pegando la salida real.
+Si `/sdd-verify` no se ha pasado, ejecútalo antes. Cualquier gate en rojo → **para**.
+
+## Paso 2 — Commits
+
+Verifica formato y trazabilidad:
+`<tipo>(NNN): <descripción> — task T-NNN-XX`
+
+Tipos: `feat` `fix` `refactor` `perf` `test` `docs` `build` `ci` `chore`.
+Rompedor: `feat(042)!:` + `BREAKING CHANGE:` en el cuerpo.
+
+Si faltan referencias y la rama no está compartida, propón la reescritura (no la hagas sin permiso).
+
+## Paso 3 — CHANGELOG
+
+Keep a Changelog + SemVer. Escrito para **usuarios**, no para desarrolladores.
+Secciones: Added · Changed · Deprecated · Removed · Fixed · Security.
+
+Versión: `MAJOR` si rompe contrato público · `MINOR` si añade compatible · `PATCH` si corrige.
+
+## Paso 4 — Pull request (preparado, no enviado)
+
+Usa la plantilla de `@release-manager`: Qué · Por qué (spec) · Cómo (patrones, ADR) ·
+Tabla de cobertura RF→CA→test · Verificación con salida real · Seguridad · Riesgos y
+reversión · Checklist.
+
+## Paso 5 — Bitácora
+
+Pide a `@bitacora-keeper` la entrada de cierre: qué se entregó, decisiones tomadas,
+alternativas descartadas, deuda aceptada con fecha de revisión.
+
+## Paso 6 — Post-despliegue
+
+Deja escrito:
+- Qué métrica se vigila y durante cuánto tiempo.
+- Umbral que dispara la reversión.
+- Comando exacto de reversión.
+- Cuándo se retira el feature flag.
+
+## Paso 7 — Estado
+
+- `tasks.md`: todas las tareas del alcance en `hecho`.
+- `spec.md`: estado → `entregada`.
+
+## Cierre
+
+```
+### HANDOFF
+- Agente origen: release-manager
+- Spec: NNN-slug → entregada
+- Gates: <todos verdes | bloqueado por X>
+- Versión propuesta: vX.Y.Z
+- PR preparado (NO enviado): <título>
+- Comandos para el humano:
+    git push -u origin feature/NNN-slug
+    gh pr create --title "..." --body-file .github/pr-body.md
+- Reversión: <comando y tiempo estimado>
+- Vigilancia post-despliegue: <métrica · ventana · umbral>
+```

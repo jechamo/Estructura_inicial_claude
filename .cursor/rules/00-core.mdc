@@ -1,0 +1,37 @@
+---
+description: Reglas núcleo del proyecto — circuito SDD, arquitectura, SOLID, TDD y seguridad. Siempre activas.
+alwaysApply: true
+---
+
+# Núcleo del proyecto
+
+La fuente de verdad completa es [AGENTS.md](mdc:AGENTS.md). Léela.
+Arquitectura vigente: [constitution.md](mdc:docs/architecture/constitution.md).
+
+## Reglas duras
+
+1. **Sin spec aprobada no se escribe código.** Specs en `docs/specs/NNN-slug/`.
+   Circuito: specify → clarify → plan → tasks → implement → verify → ship.
+2. **TDD**: test rojo primero, código mínimo, refactor. Sin excepciones.
+3. **Dependencias hacia dentro**: dominio → aplicación → infraestructura. Nunca al revés.
+4. **SOLID + DRY + KISS + YAGNI**. No construyas lo que no está en la spec.
+5. **Patrones solo cuando aparece el problema**, nunca por moda.
+6. **Seguridad**: validación en frontera, consultas parametrizadas, cero secretos,
+   autorización en servidor, sin PII en logs.
+7. **Bitácora**: toda decisión relevante se registra en `docs/bitacora/DECISIONS.md`
+   y, si es estructural, en un ADR.
+8. **Handoff**: al terminar una fase, cierra con el bloque `### HANDOFF` de AGENTS.md §10.
+
+## Agentes
+
+Los perfiles detallados están en `.claude/agents/*.md`. Referéncialos con `@` cuando
+necesites un especialista (`@architect`, `@test-engineer`, `@security-auditor`, …).
+El router por defecto es `@orchestrator`.
+
+## Prohibido
+
+- Código sin test previo.
+- Lógica de negocio en controladores o componentes de UI.
+- Añadir dependencias sin justificarlas en `research.md`.
+- `git push --force`, tocar producción o secretos sin permiso explícito.
+- Declarar algo terminado sin ejecutar los tests y mostrar la salida.

@@ -1,0 +1,89 @@
+# Hooks
+
+Implementados en **Node ≥ 18** (`.mjs`, sin dependencias) para que funcionen igual en
+Windows, macOS y Linux. Se registran en [`../settings.json`](../settings.json).
+
+| Fichero | Evento | Qué hace | Decisión |
+|---|---|---|---|
+| `session-context.mjs` | `SessionStart` | Inyecta arquitectura, spec activa, tareas y últimas decisiones | — |
+| `sdd-router.mjs` | `UserPromptSubmit` | Detecta la intención y recuerda la fase SDD correcta | — |
+| `guard-write.mjs` | `PreToolUse` (Edit\|Write\|MultiEdit\|NotebookEdit) | `.env`, secretos, artefactos generados, lockfiles, bitácora de ejecución → `deny`. Agentes, skills, hooks, constitución y `.mcp.json` → `ask` | `deny` / `ask` / `allow` |
+| `guard-bash.mjs` | `PreToolUse` (Bash) | Destructivo sin retorno → `deny`. Push, commit, IaC, kubectl, publicación → `ask` | `deny` / `ask` / `allow` |
+| `format-and-lint.mjs` | `PostToolUse` (Edit\|Write\|MultiEdit) | Formatea y linta el fichero tocado con la herramienta que detecte | Devuelve el error a Claude |
+| `subagent-log.mjs` | `SubagentStart` · `SubagentStop` | Registra qué subagente arrancó y terminó en `execution-log.jsonl` | — |
+| `session-log.mjs` | `Stop` | Registra la sesión en `docs/bitacora/sessions/YYYY-MM.md` | — |
+
+## Protocolo
+
+Cada hook recibe un JSON por **stdin** (`session_id`, `cwd`, `tool_name`, `tool_input`,
+`prompt`, …) y responde de una de dos formas:
+
+**Por código de salida** — para hooks que solo informan:
+- `0` — permite. En `SessionStart` y `UserPromptSubmit`, lo escrito en **stdout** se añade
+  al contexto de la conversación.
+- `2` — **bloquea**. Lo escrito en **stderr** lo ve Claude para corregirse.
+- Cualquier otro código — error del hook; no bloquea nada.
+
+**Por JSON en stdout** — lo que usan las guardas, porque permite tres decisiones y no dos:
+
+```json
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"..."}}
+```
+
+`deny` bloquea · **`ask` escala al humano** · `allow` deja pasar. La distinción importa:
+bloquear un `terraform apply` legítimo frustra, y dejarlo pasar sin preguntar arruina.
+
+## Portabilidad entre hosts
+
+`toolCall()` en `_lib.mjs` normaliza las dos formas de payload:
+
+| Host | Forma del payload | Forma de la respuesta |
+|---|---|---|
+| Claude Code, Copilot | `{ tool_name, tool_input }` | `hookSpecificOutput.permissionDecision` |
+| Antigravity | `{ toolCall: { name, args } }` | `{ decision, reason }` con `force_ask` |
+
+Las rutas y comandos se extraen recursivamente por nombre de clave (`path`, `file`, `target`,
+`command`, …), así que los hooks no dependen del nombre exacto que cada IDE dé a su herramienta
+de escritura.
+
+## Trazabilidad de subagentes
+
+`subagent-log.mjs` existe porque la narración del chat no demuestra nada: que el modelo escriba
+*"ahora el `backend-expert` implementa…"* no prueba que se creara ese subagente. Los eventos
+`SubagentStart`/`SubagentStop` los emite el **host**, no el modelo, y por eso valen como evidencia.
+
+Escribe en `docs/specs/NNN-slug/execution-log.jsonl`, o en `.sdd/agent-audit.jsonl` si no hay
+spec activa. `guard-write.mjs` **impide que un agente reescriba esos ficheros**: si el propio
+agente pudiera editar su registro, el registro no serviría de nada.
+
+Donde el host no emita esos eventos, la trazabilidad degrada a `declared-direct` y hay que
+documentarlo. Eso es una limitación real, no un fallo de la plantilla.
+
+## Desactivar temporalmente
+
+```bash
+SDD_GATES=off
+```
+
+Desactiva las comprobaciones de secretos, los avisos de TDD y el bloqueo de comandos
+peligrosos. Úsalo con cabeza y vuelve a activarlo.
+
+## Probar un hook a mano
+
+```bash
+echo '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' | node .claude/hooks/guard-bash.mjs
+```
+
+Debe devolver un JSON con `"permissionDecision":"ask"`. Cambia el comando por uno destructivo
+y debe devolver `"deny"`; por `npm test` y debe devolver `"allow"`.
+
+> Ojo al probar desde el propio Claude Code: si el comando de prueba contiene el patrón
+> peligroso, la guarda bloquea **tu propio comando de prueba**. Es señal de que funciona.
+> Para evitarlo, mete los payloads en un fichero `.mjs` y ejecútalo.
+
+## Añadir uno nuevo
+
+1. Crea `.claude/hooks/<nombre>.mjs` importando las utilidades de `_lib.mjs`.
+2. Regístralo en `settings.json` bajo el evento correspondiente.
+3. Un hook **nunca** debe romper la sesión: envuelve en `try/catch` todo lo que toque disco
+   o procesos externos.
