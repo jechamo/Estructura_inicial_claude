@@ -3,15 +3,20 @@
  * PreToolUse (Edit|Write|MultiEdit|NotebookEdit) — controla dónde se puede escribir.
  *
  * Tres niveles de decisión, no dos:
- *   deny  → prohibido (secretos, artefactos generados)
+ *   deny  → prohibido (secretos, artefactos generados, territorio ajeno)
  *   ask   → escala al humano (políticas de agentes, configuración compartida)
  *   allow → adelante
  */
-import { readHookInput, decide, gatesEnabled, toolCall, rutasDe, hostDestino } from './_lib.mjs';
+import {
+  readHookInput, decide, gatesEnabled, toolCall, rutasDe, hostDestino,
+  projectRoot, readIfExists, agenteActivo, globARegExp,
+} from './_lib.mjs';
+import { join } from 'node:path';
 
 const input = await readHookInput();
 const { entrada } = toolCall(input);
 const host = hostDestino();
+const root = projectRoot(input);
 const rutas = rutasDe(entrada);
 const contenido = entrada.content || entrada.new_string || '';
 
@@ -92,6 +97,50 @@ if (gatesEnabled()) {
           'Un cambio aquí afecta a todas las sesiones futuras: requiere revisión humana.',
         host,
       );
+    }
+  }
+}
+
+// ── deny: territorio ajeno ───────────────────────────────────────────────────
+//
+// Un handoff hace que el trabajo avance; NO impide que un agente haga lo que no le
+// toca. Eso lo impide esto: se cruza el agente activo (que registran SubagentStart/
+// SubagentStop) con la ruta que intenta escribir.
+//
+// La regla es "no entres en el territorio de otro", no "quédate en el tuyo": una ruta
+// que no pertenece a nadie se permite. En un repo recién creado nadie sabe todavía
+// dónde vive cada cosa, y una guarda que bloquea lo desconocido se desactiva el primer día.
+if (gatesEnabled()) {
+  const cfg = (() => {
+    try {
+      return JSON.parse(readIfExists(join(root, '.sdd/territories.json')) || 'null');
+    } catch {
+      return null; // un mapa ilegible no debe bloquear el trabajo; check-sdd lo denuncia
+    }
+  })();
+
+  const agente = agenteActivo(root, input.session_id || 'default');
+  const modo = cfg?.modo || 'deny';
+
+  // Sin agente identificado es el hilo principal —el humano y su agente—, no un especialista.
+  if (cfg && agente && modo !== 'off' && !(cfg.coordinadores || []).includes(agente)) {
+    for (const [nombre, t] of Object.entries(cfg.territorios || {})) {
+      const duenos = t.duenos || [];
+      if (duenos.includes(agente)) continue;
+
+      for (const r of rutas) {
+        if (!(t.patrones || []).some((p) => globARegExp(p).test(r))) continue;
+        decide(
+          modo,
+          `\`${r}\` es territorio de **${nombre}** (${duenos.join(', ') || 'sin dueño declarado'}) ` +
+            `y quien escribe es **${agente}**.\n` +
+            `Cada capa tiene su procedimiento —puertas de entrada, ciclo TDD y comprobaciones ` +
+            `propias— y saltárselo es la forma habitual de colar un fallo. Devuelve el control a ` +
+            `quien te invocó y que delegue en el especialista.\n` +
+            `Si el reparto es incorrecto, se corrige en \`.sdd/territories.json\`, no ignorándolo.`,
+          host,
+        );
+      }
     }
   }
 }

@@ -55,10 +55,10 @@ que funcionen igual en Windows, macOS y Linux.
 |---|---|---|
 | `SessionStart` | `session-context.mjs` | Inyecta spec activa, últimas entradas de bitácora y estado de tareas |
 | `UserPromptSubmit` | `sdd-router.mjs` | Recuerda la fase SDD actual y avisa si intentas saltarte una |
-| `PreToolUse` (Edit\|Write) | `guard-write.mjs` | `deny` en `.env`, secretos y artefactos generados; `ask` en agentes, skills y constitución |
+| `PreToolUse` (Edit\|Write) | `guard-write.mjs` | `deny` en `.env`, secretos, artefactos generados y **territorio ajeno** (`.sdd/territories.json`); `ask` en agentes, skills y constitución |
 | `PreToolUse` (Bash) | `guard-bash.mjs` | `deny` en destructivo sin retorno; `ask` en push, commit, IaC, kubectl y publicación |
 | `PostToolUse` (Edit\|Write) | `format-and-lint.mjs` | Formatea y linta lo tocado |
-| `SubagentStart` / `SubagentStop` | `subagent-log.mjs` | Registra qué subagente trabajó realmente, fuera del modelo |
+| `SubagentStart` / `SubagentStop` | `subagent-log.mjs` | Registra qué subagente trabajó realmente, fuera del modelo, y mantiene el agente activo en `.sdd/state/` para que `guard-write` sepa quién escribe |
 | `Stop` | `session-log.mjs` | Registra la sesión en `docs/bitacora/sessions/` |
 
 Para desactivar temporalmente un gate: `SDD_GATES=off` en el entorno.

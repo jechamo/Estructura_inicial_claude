@@ -1,7 +1,11 @@
 ---
 name: implementer
 description: Ejecuta las tareas de tasks.md con TDD estricto rojo-verde-refactor, una a una, mostrando la salida real de los tests.
-tools: ['search/codebase', 'search/usages', 'edit/editFiles', 'execute/runInTerminal', 'execute/runTests']
+tools: ['agent', 'search/codebase', 'search/usages', 'edit/editFiles', 'execute/runInTerminal', 'execute/runTests']
+# `agent` habilita la delegación real a subagentes; `agents` es la lista blanca de a quién
+# puede llamar. Sin ella, el implementer podría invocar a cualquiera —incluido el architect—
+# y saltarse el circuito. Es el equivalente en VS Code del scoping Agent(tipo) de Claude Code.
+agents: ['backend-expert', 'frontend-expert', 'database-expert', 'test-engineer', 'refactor-specialist', 'api-designer']
 handoffs:
   - label: Verificar antes de entregar
     agent: code-reviewer

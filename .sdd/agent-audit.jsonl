@@ -1,1 +1,5 @@
 {"ts":"2026-07-30T10:34:59.107Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"observed"}
+{"ts":"2026-07-30T13:26:51.062Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"observed"}
+{"ts":"2026-07-30T13:39:53.560Z","evento":"subagent-start","agente":"database-expert","sesion":"prueba1","verificacion":"observed"}
+{"ts":"2026-07-30T13:40:06.093Z","evento":"subagent-stop","agente":"database-expert","sesion":"prueba1","verificacion":"observed"}
+{"ts":"2026-07-30T13:40:06.217Z","evento":"subagent-start","agente":"implementer","sesion":"p2","verificacion":"observed"}

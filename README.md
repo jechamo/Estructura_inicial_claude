@@ -222,6 +222,23 @@ flowchart TD
 sucesor y hacen handoff explícito, los especialistas **devuelven el control** sin encadenar.
 Profundidad máxima de delegación: **2 niveles**.
 
+### Que no hagan el trabajo de otro
+
+El handoff hace que el trabajo **avance**. No impide que un agente escriba donde no debe: eso
+son **herramientas y rutas**, no flujo. Tres capas:
+
+1. **Herramientas.** Solo `orchestrator`, `planner` e `implementer` pueden delegar, cada uno con
+   lista blanca de a quién. `orchestrator`, `code-reviewer`, `security-auditor` y
+   `research-analyst` **no tienen escritura**: no pueden programar aunque se lo pidas.
+2. **Territorio.** [`.sdd/territories.json`](.sdd/territories.json) declara qué rutas son de quién,
+   y `guard-write.mjs` bloquea al que se mete en terreno ajeno — con el agente activo registrado
+   por los hooks, fuera del modelo. La regla es *no entres en el territorio de otro*, no *quédate
+   en el tuyo*: lo que no es de nadie se permite.
+3. **CI.** `check-sdd.mjs` verifica que el mapa no nombra agentes que ya no existen.
+
+Las tres capas en Claude Code y Cursor; 1 y 3 en VS Code; solo la 3 en Antigravity y Codex.
+Matriz honesta: [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) §3 bis.
+
 Catálogo completo con handoffs: [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md).
 
 ### Protocolo de handoff
@@ -267,10 +284,10 @@ Escritos en Node sin dependencias, así que funcionan igual en Windows, macOS y 
 |---|---|---|
 | `SessionStart` | `session-context.mjs` | Inyecta arquitectura, spec activa, tareas y últimas decisiones |
 | `UserPromptSubmit` | `sdd-router.mjs` | Detecta la intención y recuerda la fase SDD correcta |
-| `PreToolUse` (Edit\|Write) | `guard-write.mjs` | `deny` en `.env`, secretos y artefactos generados · `ask` en agentes, skills y constitución |
+| `PreToolUse` (Edit\|Write) | `guard-write.mjs` | `deny` en `.env`, secretos, artefactos generados y **territorio ajeno** · `ask` en agentes, skills y constitución |
 | `PreToolUse` (Bash) | `guard-bash.mjs` | `deny` en destructivo · `ask` en push, deploy, IaC y publicación |
 | `PostToolUse` (Edit\|Write) | `format-and-lint.mjs` | Formatea y linta lo tocado |
-| `SubagentStart` / `SubagentStop` | `subagent-log.mjs` | **Registra qué subagente trabajó realmente**, fuera del modelo |
+| `SubagentStart` / `SubagentStop` | `subagent-log.mjs` | **Registra qué subagente trabajó realmente**, fuera del modelo, y mantiene el agente activo para la guarda de territorio |
 | `Stop` | `session-log.mjs` | Registra la sesión en la bitácora |
 
 Tres decisiones, no dos: `deny` bloquea, **`ask` escala al humano**, `allow` deja pasar.

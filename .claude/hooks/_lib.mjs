@@ -3,7 +3,7 @@
  * Node >= 18. Sin dependencias externas a propósito: un hook que necesita `npm install`
  * es un hook que algún día no se ejecuta.
  */
-import { readFileSync, existsSync, readdirSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, mkdirSync, appendFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 /** Lee el JSON que Claude Code envía por stdin. Devuelve {} si no hay nada legible. */
@@ -225,6 +225,84 @@ export function logEjecucion(root, evento) {
   const linea = JSON.stringify({ ts: new Date().toISOString(), ...evento });
   appendLine(destino, linea);
   return { destino, spec: spec?.nombre ?? null };
+}
+
+/**
+ * Convierte un patrón tipo glob en expresión regular anclada.
+ * Soporta `**` (cualquier profundidad), `*` (dentro de un segmento) y `?`.
+ * Sin dependencias: traer un paquete de globs a un hook es traer un fallo futuro.
+ */
+export function globARegExp(patron) {
+  // Se trocea por los comodines en vez de usar marcadores temporales: un carácter
+  // centinela invisible en el fuente es un fallo esperando a que alguien copie y pegue.
+  const partes = String(patron).split(/(\*\*\/|\*\*|\*|\?)/).filter((s) => s !== '');
+
+  let re = '';
+  for (const parte of partes) {
+    if (parte === '**/') re += '(?:[^/]*\\/)*'; // cero o más segmentos
+    else if (parte === '**') re += '.*';
+    else if (parte === '*') re += '[^/]*'; // dentro de un segmento
+    else if (parte === '?') re += '[^/]';
+    else re += parte.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`, 'i');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Agente activo
+//
+// `PreToolUse` no dice qué subagente está escribiendo. Sin ese dato no se puede
+// impedir que el especialista de datos toque el front: la guarda no sabe quién
+// llama. Se resuelve con estado escrito por `SubagentStart`/`SubagentStop`.
+//
+// Es una pila, no un valor: un subagente puede invocar a otro (2 niveles), y al
+// terminar el de dentro manda otra vez el de fuera.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const rutaEstado = (root, sesion) =>
+  join(root, '.sdd', 'state', `agentes-${(sesion || 'default').replace(/[^\w-]/g, '')}.json`);
+
+function leerPila(root, sesion) {
+  const t = readIfExists(rutaEstado(root, sesion));
+  if (!t) return [];
+  try {
+    const v = JSON.parse(t);
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function escribirPila(root, sesion, pila) {
+  try {
+    const p = rutaEstado(root, sesion);
+    mkdirSync(resolve(p, '..'), { recursive: true });
+    writeFileSync(p, JSON.stringify(pila), 'utf8');
+  } catch {
+    /* el estado nunca debe romper la sesión */
+  }
+}
+
+/** Apila el subagente que arranca. */
+export function entraAgente(root, sesion, agente) {
+  if (!agente || agente === 'desconocido') return;
+  const pila = leerPila(root, sesion);
+  pila.push(agente);
+  escribirPila(root, sesion, pila.slice(-8));
+}
+
+/** Desapila el subagente que termina. Quita la última aparición, no el último a secas. */
+export function saleAgente(root, sesion, agente) {
+  const pila = leerPila(root, sesion);
+  const i = agente ? pila.lastIndexOf(agente) : pila.length - 1;
+  if (i >= 0) pila.splice(i, 1);
+  escribirPila(root, sesion, pila);
+}
+
+/** Quién está escribiendo ahora mismo, o null si es el hilo principal. */
+export function agenteActivo(root, sesion) {
+  const pila = leerPila(root, sesion);
+  return pila.length ? pila[pila.length - 1] : null;
 }
 
 /** Últimas N entradas (encabezados `## `) de la bitácora. */

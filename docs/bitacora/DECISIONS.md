@@ -9,6 +9,50 @@
 
 ---
 
+## 2026-07-30 · El handoff no aísla: el aislamiento se impone con herramientas y territorios
+
+- **Tipo**: decisión
+- **Contexto**: el requisito era que los agentes se llamen unos a otros **y** que ninguno haga el
+  trabajo de otro —que el orquestador no programe, que el de datos no toque el front—. Al
+  revisarlo aparecieron dos cosas:
+  1. Son **dos problemas distintos**. El handoff hace que el trabajo avance; no impide nada. Un
+     handoff impecable deja igual de libre al agente que lo recibe para escribir donde no debe.
+  2. La plantilla **documentaba** la delegación real en VS Code y Cursor pero **no la había
+     cableado**: ningún envoltorio de `.github/agents/` declaraba la herramienta `agent`, y
+     `.cursor/agents/` tenía 2 ficheros de 20. Y `guard-write.mjs` no consultaba qué agente
+     estaba escribiendo, así que el reparto por capas era una norma en prosa.
+- **Decisión**: aislamiento en tres capas, con la más fuerte primero.
+  1. **Herramientas**: solo `orchestrator`, `planner` e `implementer` delegan, cada uno con lista
+     blanca (`Agent(tipo)` en Claude Code y Cursor, `agents:` en VS Code). Los auditores no
+     tienen escritura (`readonly: true` en Cursor).
+  2. **Territorio**: `.sdd/territories.json` + `guard-write.mjs`, con el agente activo registrado
+     por los hooks en `.sdd/state/`.
+  3. **Verificación**: `check-sdd.mjs` valida el mapa; `test-hooks.mjs` prueba las guardas en CI.
+- **Alternativas descartadas**:
+  - *Confiar en el prompt y en el bloque `### HANDOFF`*: es texto. Un modelo puede emitirlo
+    perfectamente sin haber delegado nada, y puede ignorar "no toques el front" cuando le viene
+    de camino.
+  - *Regla "cada agente solo escribe en su territorio"*: en un proyecto nuevo nadie sabe todavía
+    dónde vive cada cosa. Bloquear lo desconocido hace que la guarda se desactive el primer día.
+    Por eso la regla es **no entres en el territorio de otro**.
+  - *Deducir el agente activo del payload de `PreToolUse`*: no lo trae. De ahí el estado en
+    `.sdd/state/`, escrito por `SubagentStart`/`SubagentStop`.
+- **Impacto**: en Claude Code y Cursor el aislamiento es real y verificado. En VS Code hay
+  delegación y restricción por herramienta, pero sin hooks verificados no hay guarda de
+  territorio. En Antigravity y Codex el reparto es convención y el CI es el único juez. Está en
+  la matriz, no escondido.
+- **Deuda aceptada**: los patrones de `territories.json` asumen una estructura de proyecto
+  convencional; `/sdd-init` y `/onboard` deberían ajustarlos al fijar la arquitectura. `readonly`
+  de Cursor y el nombre exacto de la herramienta de subagentes de VS Code (`agent` vs
+  `runSubagent`) están documentados pero **no ejecutados** aquí.
+- **Referencias**: [`AGENTS.md`](../../AGENTS.md) §10.2,
+  [`.sdd/territories.json`](../../.sdd/territories.json),
+  [`baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §5,
+  [`IDE-COMPATIBILITY.md`](../integrations/IDE-COMPATIBILITY.md) §3 bis
+- **Quién**: agente `architect` + revisión humana pendiente
+
+---
+
 ## 2026-07-30 · Skills de dominio propias y skills de terceros declaradas, no copiadas
 
 - **Tipo**: decisión

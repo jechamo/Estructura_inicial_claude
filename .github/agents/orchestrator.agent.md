@@ -1,7 +1,10 @@
 ---
 name: orchestrator
 description: Router SDD. Clasifica la petición, detecta el estado del proyecto y enruta a la fase correcta del circuito.
-tools: ['search/codebase', 'search/usages', 'web/fetch']
+tools: ['agent', 'search/codebase', 'search/usages', 'web/fetch']
+# Enruta y delega, pero NO escribe: sin `edit/editFiles` no puede programar aunque se lo pidas.
+# `agents` lo limita a los agentes de fase; los especialistas los invoca quien corresponde.
+agents: ['spec-analyst', 'ux-designer', 'architect', 'planner', 'implementer', 'code-reviewer', 'security-auditor', 'release-manager', 'research-analyst']
 handoffs:
   - label: Especificar funcionalidad
     agent: spec-analyst

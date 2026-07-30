@@ -1,7 +1,10 @@
 ---
 name: planner
 description: Convierte una spec aprobada en plan técnico, modelo de datos, contratos y backlog de tareas atómicas con test asociado.
-tools: ['search/codebase', 'search/usages', 'web/fetch', 'edit/editFiles']
+tools: ['agent', 'search/codebase', 'search/usages', 'web/fetch', 'edit/editFiles']
+# Consulta a los especialistas para decidir el cómo, pero no puede invocar al implementer:
+# planificar y ejecutar son fases distintas y el salto se nota en la trazabilidad.
+agents: ['api-designer', 'database-expert', 'ux-designer', 'research-analyst', 'architect']
 handoffs:
   - label: Implementar con TDD
     agent: implementer

@@ -117,6 +117,29 @@ Todo agente cierra con:
 3. Ante ambigüedad que cambie materialmente el resultado → **pregunta al humano**.
 4. Profundidad máxima de delegación: **2 niveles**.
 5. Los especialistas **devuelven el control** a quien los invocó; no encadenan.
+6. Un agente **no escribe en el territorio de otro**.
+
+### Y lo que impide saltárselas
+
+Las reglas de arriba son texto. Esto es lo que las sostiene:
+
+| Quién puede delegar | En quién |
+|---|---|
+| `orchestrator` | los agentes de fase (no los especialistas) |
+| `planner` | `api-designer` · `database-expert` · `ux-designer` · `research-analyst` · `architect` |
+| `implementer` | `backend-expert` · `frontend-expert` · `database-expert` · `test-engineer` · `refactor-specialist` · `api-designer` |
+| **los otros 17** | **nadie**: no tienen la herramienta |
+
+| Quién no puede escribir | Por qué |
+|---|---|
+| `orchestrator` | enruta y delega; si pudiera programar, programaría |
+| `code-reviewer` · `security-auditor` | quien juzga no arregla: arreglar lo que auditas es auditarte a ti mismo |
+| `research-analyst` | investiga y responde |
+
+Y el reparto de rutas está en [`.sdd/territories.json`](../../.sdd/territories.json), que impone
+`guard-write.mjs` cruzando el agente activo con el fichero que intenta escribir.
+Ver [`AGENTS.md`](../../AGENTS.md) §10.2 y la matriz por IDE en
+[`IDE-COMPATIBILITY.md`](../integrations/IDE-COMPATIBILITY.md) §3 bis.
 
 ---
 

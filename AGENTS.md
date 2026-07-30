@@ -361,8 +361,40 @@ en `.sdd/agent-audit.jsonl`. Ese fichero **no lo edita ningún agente**: los hoo
 Regla: una tarea no pasa a `hecho` sin ejecución registrada, checks ejecutados y evidencia
 concreta en `evidence.md`. **"Pasa" sin ejecución no es un resultado; "no ejecutado" sí lo es.**
 
+### 10.2 Handoff ≠ aislamiento
+
+Son dos problemas distintos y se resuelven con mecanismos distintos. Confundirlos es la causa
+de que un ecosistema de agentes "bien diseñado" acabe con el orquestador programando:
+
+| | Qué consigue | Con qué |
+|---|---|---|
+| **Handoff** | Que el trabajo **avance** por el circuito | El bloque `### HANDOFF`, los botones de VS Code, la delegación a subagente |
+| **Aislamiento** | Que un agente **no pueda** hacer lo que no le toca | `tools` del agente + `.sdd/territories.json` + `guard-write.mjs` |
+
+Un handoff perfecto no impide nada: aunque el trabajo pase correctamente al siguiente agente,
+nada evita que ese agente escriba donde no debe. El aislamiento es cuestión de **herramientas y
+rutas**, no de flujo.
+
+**Cómo se impone aquí, en tres capas:**
+
+1. **Herramientas.** Solo `orchestrator`, `planner` e `implementer` pueden delegar. `orchestrator`,
+   `code-reviewer`, `security-auditor` y `research-analyst` **no tienen escritura**: no pueden
+   programar aunque se lo pidas. Y quien delega tiene lista blanca de a quién puede llamar.
+2. **Territorios.** [`.sdd/territories.json`](.sdd/territories.json) declara qué rutas pertenecen a
+   qué agentes. `guard-write.mjs` cruza el agente activo —que registran `SubagentStart`/
+   `SubagentStop`, fuera del modelo— con la ruta que intenta escribir.
+   La regla es **"no entres en el territorio de otro"**, no "quédate en el tuyo": una ruta que no
+   pertenece a nadie se permite. Una guarda que bloquea lo desconocido se desactiva el primer día.
+3. **Verificación determinista.** `scripts/check-sdd.mjs` comprueba que el mapa no nombra agentes
+   que ya no existen y avisa de quién no está gobernado por nadie.
+
+**Dónde funciona cada capa** — ver [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md):
+las tres en Claude Code; 1 y 2 en Cursor (con `readonly: true` a nivel de plataforma); 1 y 3 en
+VS Code; solo la 3 en Antigravity y Codex, donde el reparto es convención y el CI el único juez.
+
 Reglas duras:
 - Un agente **no** salta fases del circuito SDD.
+- Un agente **no** escribe en el territorio de otro. Devuelve el control y que se delegue.
 - Un agente **no** modifica artefactos de una fase anterior sin avisar y registrar en bitácora.
 - Ante ambigüedad que cambie materialmente el resultado → **pregunta al humano**, no adivines.
 - Profundidad máxima de delegación: **2 niveles**.

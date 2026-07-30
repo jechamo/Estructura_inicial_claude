@@ -12,7 +12,9 @@
  *
  * Uso: node .claude/hooks/subagent-log.mjs start|stop
  */
-import { readHookInput, projectRoot, logEjecucion, allow, valorExacto } from './_lib.mjs';
+import {
+  readHookInput, projectRoot, logEjecucion, allow, valorExacto, entraAgente, saleAgente,
+} from './_lib.mjs';
 
 const evento = process.argv[2] === 'stop' ? 'stop' : 'start';
 const input = await readHookInput();
@@ -30,14 +32,26 @@ const agente =
     'agent',
   ]) || 'desconocido';
 
+const sesion = input.session_id || 'default';
+
+// El agente activo se mantiene en `.sdd/state/` porque PreToolUse no dice quién escribe.
+// Sin este dato, `guard-write` no puede impedir que el especialista de datos toque el front:
+// la guarda vería la ruta pero no sabría de quién es la mano.
+if (evento === 'start') entraAgente(root, sesion, agente);
+else saleAgente(root, sesion, agente === 'desconocido' ? null : agente);
+
 try {
   const { destino, spec } = logEjecucion(root, {
     evento: `subagent-${evento}`,
     agente,
-    sesion: (input.session_id || '').slice(0, 8) || null,
-    // `observed` = un hook del host vio el ciclo real del subagente.
-    // Es el único nivel de verificación que no depende de lo que diga el modelo.
-    verificacion: 'observed',
+    sesion: String(sesion).slice(0, 8) || null,
+    // `observed` = un hook del host vio el ciclo real del subagente, con su nombre.
+    // Si el host no dio el nombre, lo honesto es `unverified`: hubo un subagente, pero no
+    // se puede afirmar cuál. Registrar `observed` sin nombre es fabricar evidencia.
+    verificacion: agente === 'desconocido' ? 'unverified' : 'observed',
+    ...(agente === 'desconocido'
+      ? { motivo: 'el host no expuso el nombre del subagente en el payload del hook' }
+      : {}),
   });
 
   if (evento === 'stop') {

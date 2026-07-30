@@ -8,6 +8,20 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Aislamiento por territorio: `.sdd/territories.json` + guarda en `guard-write.mjs`.** Declara
+  qué rutas pertenecen a qué agentes, y bloquea al que escribe en terreno ajeno. El agente activo
+  lo registran `SubagentStart`/`SubagentStop` en `.sdd/state/`, **fuera del modelo**: `PreToolUse`
+  no dice quién escribe, y sin ese dato la guarda ve la ruta pero no la mano.
+  La regla es *no entres en el territorio de otro*, no *quédate en el tuyo*: lo que no es de nadie
+  se permite, porque una guarda que bloquea lo desconocido se desactiva el primer día.
+- **Delegación real en VS Code y Cursor, que estaba documentada pero sin cablear.** Los tres
+  agentes que delegan declaran la herramienta `agent` y una lista `agents:` que limita a quién
+  pueden llamar; `.cursor/agents/` pasa de 2 a **los 20 agentes**, con `readonly: true` en
+  `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` — que a nivel de
+  plataforma no pueden escribir.
+- **`scripts/test-hooks.mjs`**: 31 comprobaciones de que las guardas deciden lo que documentan.
+  En CI. Una guarda rota falla en silencio devolviendo `allow`; si estos gates son la garantía del
+  proyecto, tienen que demostrarlo en cada PR.
 - **Skills de dominio `/middle`, `/front` y `/bbdd`**: el procedimiento escrito de cada
   especialista, con puerta de entrada, ciclo TDD, patrones aplicables y lista de comprobación
   antes de devolver el control. Un agente al que solo le dices "aplica SOLID" no aplica SOLID.
@@ -61,6 +75,9 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   de clave es exacta.
 
 ### Changed
+- `subagent-log.mjs` ya no registra `observed` cuando el host no expone el nombre del subagente:
+  en ese caso escribe `unverified` con el motivo. Afirmar que se observó a un agente sin saber
+  cuál era es fabricar la evidencia que este registro existe para dar.
 - **El eje de arquitectura se separa en macro y micro.** `vertical slice` estaba junto a layered,
   hexagonal y clean, como si compitieran; responde a otra pregunta. El monolito modular decide
   dónde están las fronteras (macro); el vertical slice, cómo se ordena el código dentro de una

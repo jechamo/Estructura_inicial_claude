@@ -48,8 +48,11 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | 🟡 TOML en `~/.codex/agents/` |
-| Comandos `/` | ✅ 18 skills | ✅ 11 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
-| Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` + `handoffs` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
+| Comandos `/` | ✅ 22 skills | ✅ 15 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
+| Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
+| **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
+| **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ⚠️ |
+| **Territorio por agente** | ✅ hook + `territories.json` | ❌ sin hooks verificados | ❌ | ✅ hook + `territories.json` | ⚠️ hook inferido | ❌ |
 | Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ |
 | Hooks de herramienta | ✅ 7 eventos, probados | ⚠️ sin verificar | ❌ | ✅ `.cursor/hooks.json` | ⚠️ formato inferido | ❌ |
 | Trazabilidad `observed` | ✅ `SubagentStart/Stop` | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -119,6 +122,42 @@ es exactamente la clase de mentira que este sistema existe para evitar.
 
 ---
 
+## 3 bis. Aislamiento: que un agente no haga lo que no le toca
+
+Esto es un problema **distinto** del handoff, y el error habitual es creer que el primero
+resuelve el segundo. No lo hace: un handoff impecable deja igualmente al agente de datos libre
+para escribir un componente de interfaz.
+
+Se impone en tres capas, y cada host soporta unas:
+
+**1 · Herramientas** — la más fuerte, porque no depende de que el modelo obedezca.
+
+| Objetivo | Claude Code | VS Code | Cursor |
+|---|---|---|---|
+| Que no pueda escribir | omitir `Write`/`Edit` de `tools` | omitir `edit/editFiles` | **`readonly: true`** |
+| Que no pueda delegar | omitir `Agent` de `tools` | omitir `agent` de `tools` | omitir de `tools` |
+| Que solo pueda llamar a ciertos agentes | `Agent(tipo)` en `tools` | **`agents: [...]`** en frontmatter | `Agent(tipo)` en `tools` |
+
+En esta plantilla: solo `orchestrator`, `planner` e `implementer` delegan, cada uno con su lista
+blanca; y `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` **no tienen
+escritura en ningún host**.
+
+**2 · Territorio** — [`.sdd/territories.json`](../../.sdd/territories.json) + `guard-write.mjs`.
+El hook cruza el agente activo con la ruta que intenta escribir y bloquea si es territorio ajeno.
+El agente activo lo registran `SubagentStart`/`SubagentStop` en `.sdd/state/`, **fuera del
+modelo**: `PreToolUse` no dice quién escribe, y sin ese dato la guarda vería la ruta pero no la
+mano. Funciona en Claude Code y Cursor, que son los que ejecutan hooks verificados.
+
+**3 · Verificación determinista** — `check-sdd.mjs` comprueba que el mapa no nombra agentes
+inexistentes y avisa de quién no está gobernado por ninguna regla. **Funciona en todas partes**,
+porque es Node y CI.
+
+> **En Antigravity y Codex el reparto es convención.** No hay herramienta que lo imponga: lo
+> sostienen `AGENTS.md`, el prompt y el CI. Si el aislamiento estricto es un requisito duro para
+> ti, trabaja en Claude Code o Cursor y deja que el CI sea la red en el resto.
+
+---
+
 ## 4. El gate que sí funciona en todas partes
 
 ```bash
@@ -162,17 +201,20 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 Los 20 agentes con `@nombre`, 18 skills, 7 hooks y trazabilidad `observed`.
 
 ### VS Code + Copilot — soporte alto
-Picker de agentes (lee `.claude/agents/` y `.github/agents/`), 11 prompts `/`, instrucciones
-por glob y botones de handoff. Sin hooks verificados → **apóyate en el CI**.
+Picker de agentes (lee `.claude/agents/` y `.github/agents/`), 15 prompts `/`, instrucciones
+por glob, botones de handoff **y delegación real a subagentes**: `orchestrator`, `planner` e
+`implementer` declaran la herramienta `agent` y una lista `agents:` que limita a quién pueden
+llamar. Sin hooks verificados no hay guarda de territorio → **apóyate en el CI**.
 
 ### Copilot CLI y agente en la nube
 Usa `.github/agents/*.agent.md`. Si necesitas un especialista que solo tiene perfil canónico,
 créale el envoltorio con el mismo patrón (ver [`.github/agents/README.md`](../../.github/agents/README.md)).
 
 ### Cursor — soporte alto
-Reglas `.mdc` por glob, agentes en `.cursor/agents/`, comandos en `.cursor/commands/` y
-**hooks funcionando** vía `.cursor/hooks.json`. Para un especialista sin fichero propio,
-referencia el perfil: `@.claude/agents/database-expert.md`.
+Reglas `.mdc` por glob, **los 20 agentes** en `.cursor/agents/`, comandos en `.cursor/commands/`
+y **hooks funcionando** vía `.cursor/hooks.json`. Delegación automática según la `description`
+del agente —por eso importa que sean específicas— y `readonly: true` en los auditores, que
+impide escribir a nivel de plataforma. Es, junto a Claude Code, donde el aislamiento es real.
 
 ### Antigravity — soporte medio
 `GEMINI.md` + `.agents/rules/00-core.md` (ojo al límite de ~12 000 caracteres) y los flujos

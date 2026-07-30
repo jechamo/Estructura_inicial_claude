@@ -125,6 +125,51 @@ for (const d of dirs(SKILLS_DIR)) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 1 ter · Mapa de territorios: quién puede escribir dónde
+//
+// Es lo que impide que un agente haga el trabajo de otro. Si nombra agentes que ya no
+// existen, deja de proteger justo donde crees que protege.
+// ─────────────────────────────────────────────────────────────────────────────
+const territoriosRaw = leer(join(ROOT, '.sdd/territories.json'));
+if (territoriosRaw) {
+  let cfg;
+  try {
+    cfg = JSON.parse(territoriosRaw);
+  } catch (e) {
+    err('territorios/json', `.sdd/territories.json no es JSON válido: ${e.message}`);
+  }
+
+  if (cfg) {
+    if (!['deny', 'ask', 'off'].includes(cfg.modo))
+      err('territorios/modo', `modo '${cfg.modo}' no válido (deny | ask | off)`);
+    if (cfg.modo === 'off')
+      warn('territorios/modo', 'el reparto de territorios está desactivado: nadie impide que un agente escriba fuera de su terreno');
+
+    for (const a of cfg.coordinadores || [])
+      if (!nombresAgentes.has(a)) err('territorios/agente', `coordinador '${a}' no existe en .claude/agents/`);
+
+    const conDueño = new Set();
+    for (const [nombre, t] of Object.entries(cfg.territorios || {})) {
+      if (!Array.isArray(t.duenos) || !t.duenos.length)
+        err('territorios/duenos', `territorio '${nombre}' sin dueños: no protege nada`);
+      for (const a of t.duenos || []) {
+        if (!nombresAgentes.has(a)) err('territorios/agente', `'${a}' (dueño de '${nombre}') no existe en .claude/agents/`);
+        conDueño.add(a);
+      }
+      if (!Array.isArray(t.patrones) || !t.patrones.length)
+        err('territorios/patrones', `territorio '${nombre}' sin patrones`);
+    }
+
+    // Un agente que escribe y no aparece en ningún sitio no está gobernado por nadie.
+    const AUDITORES = new Set(['code-reviewer', 'security-auditor', 'research-analyst', 'orchestrator']);
+    for (const a of nombresAgentes) {
+      if (conDueño.has(a) || (cfg.coordinadores || []).includes(a) || AUDITORES.has(a)) continue;
+      warn('territorios/huerfano', `'${a}' no es dueño de ningún territorio ni coordinador: puede escribir en cualquier sitio no reclamado`);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 2 · Hooks referenciados en settings.json que existan de verdad
 // ─────────────────────────────────────────────────────────────────────────────
 const settings = leer(join(ROOT, '.claude/settings.json'));

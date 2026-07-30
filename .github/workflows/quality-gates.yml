@@ -42,6 +42,11 @@ jobs:
       - name: Estructura, agentes y coherencia de specs
         run: node scripts/check-sdd.mjs
 
+      # Una guarda rota falla en silencio: sigue devolviendo `allow`. Si estos gates son la
+      # garantía del proyecto, tienen que demostrar en cada PR que siguen decidiendo igual.
+      - name: Las guardas deciden lo que dicen que deciden
+        run: node scripts/test-hooks.mjs
+
       - name: Trazabilidad y evidencia (estricto)
         if: github.event_name == 'pull_request'
         run: node scripts/check-sdd.mjs --strict

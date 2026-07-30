@@ -61,6 +61,11 @@ Thumbs.db
 .claude/.cache/
 .cursor/local/
 
+# Estado en caliente de la sesión: qué subagente está activo ahora mismo.
+# Es efímero y por sesión. Lo que SÍ se commitea es la bitácora de ejecución
+# (execution-log.jsonl / agent-audit.jsonl), que es la evidencia.
+.sdd/state/
+
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log
 npm-debug.log*
