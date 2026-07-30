@@ -52,14 +52,26 @@ que caducará antes de servir para algo.
 Este repositorio es una plantilla: **no tiene stack todavía**, así que todo está en `candidata` y
 no hay nada instalado. Es el estado correcto, no un pendiente.
 
-### Front
+### Front y diseño visual
 
 | Skill | Publicador | Aporta | Estado |
 |---|---|---|---|
-| `anthropics/skills:frontend-design` | Anthropic (oficial) | Criterio de diseño visual antes de tocar código. Apache-2.0 | candidata |
+| **`anthropics/skills:frontend-design`** | Anthropic (oficial) | **Criterio visual antes de tocar código. La prioritaria si hay interfaz.** Apache-2.0 | candidata |
+| `anthropics/skills:theme-factory` | Anthropic (oficial) | Sistemas de tema: color, tipografía, claro/oscuro. Apache-2.0 | candidata |
+| `anthropics/skills:canvas-design` | Anthropic (oficial) | Composición y maquetación con criterio. Apache-2.0 | candidata |
+| `anthropics/skills:web-artifacts-builder` | Anthropic (oficial) | Prototipo autocontenido para validar dirección visual. Apache-2.0 | candidata |
+| `vercel-labs/agent-skills:web-design-guidelines` | Vercel (oficial) | **Audita la UI terminada** contra las Web Interface Guidelines, en formato `fichero:línea` | candidata |
+| `shadcn-ui/ui:shadcn` | shadcn (oficial) | Componentes y registros; **instruye a evitar la estética genérica de IA** | candidata |
 | `vercel-labs/next-best-practices` | Vercel (oficial) | Patrones de Next.js del equipo que lo mantiene | candidata |
 | `vercel-labs/next-cache-components` | Vercel (oficial) | Caché y componentes cache-aware | candidata |
 | `vercel-labs/next-upgrade` | Vercel (oficial) | Migración de versiones | candidata |
+
+> **Por qué este bloque importa más de lo que parece.** Los seis estados y la accesibilidad que
+> exige `/sdd-design` son un **suelo**: una interfaz puede cumplirlos enteros y ser el MVP de
+> cuatro cajas grises. Y hay un sesgo activo en contra —la UI generada por un modelo converge en
+> un aspecto genérico reconocible—. La defensa propia de la plantilla es
+> [`docs/design/DIRECCION-VISUAL.md`](../design/DIRECCION-VISUAL.md), que es una **puerta**: sin
+> ella aprobada, `/sdd-design` no dibuja. Estas skills son el refuerzo, no el sustituto.
 
 ### Middle
 
@@ -93,15 +105,24 @@ no hay nada instalado. Es el estado correcto, no un pendiente.
 
 ## 5. Un hueco que conviene saber
 
-De las **17 skills** oficiales de [`anthropics/skills`](https://github.com/anthropics/skills), solo
-tres tocan nuestro terreno: `frontend-design`, `webapp-testing` y `skill-creator`.
+De las **17 skills** oficiales de [`anthropics/skills`](https://github.com/anthropics/skills), las
+que tocan nuestro terreno son de **diseño y verificación**: `frontend-design`, `theme-factory`,
+`canvas-design`, `web-artifacts-builder`, `webapp-testing` y `skill-creator`.
 
 **Anthropic no publica skills de backend, capa media, dominio ni base de datos.** Quien las
 publica es el fabricante de cada plataforma (Vercel, Supabase, Cloudflare, Netlify, Stripe, Neon),
 y siempre atadas a *su* producto.
 
+El patrón, una vez visto, se explica solo:
+
+| Terreno | Quién publica | Por qué |
+|---|---|---|
+| Diseño visual | Anthropic, shadcn, Vercel | Es transversal y vende producto o plataforma |
+| Stack concreto | El fabricante | Vende su plataforma |
+| **Método de ingeniería** | **nadie** | No vende plataforma |
+
 De ahí la decisión: el método de middle/front/BBDD lo pone esta plantilla. Nadie va a publicar
-una skill oficial de "cómo aplicar SOLID en tu capa de aplicación" porque no vende plataforma.
+una skill oficial de "cómo aplicar SOLID en tu capa de aplicación" porque no hay negocio en ello.
 
 ## 6. Cómo se audita una candidata
 

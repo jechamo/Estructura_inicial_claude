@@ -33,9 +33,14 @@ Registra en `clarifications.md`. **La spec no avanza con marcadores pendientes.*
 Adopta el perfil de @.claude/agents/ux-designer.md. Procedimiento:
 @.claude/skills/sdd-design/SKILL.md
 
+**Antes de dibujar**: `docs/design/DIRECCION-VISUAL.md` tiene que existir y estar **aprobada por
+el usuario**. Los seis estados y la accesibilidad son un suelo, no un techo: se cumplen enteros y
+aun así sale el MVP de cuatro cajas grises.
+
 Produce `docs/specs/NNN-slug/design.md`: flujo **con los caminos de error** · los **seis estados
-por pantalla** (vacío, cargando, parcial, error, sin permiso, éxito) · componentes clasificados en
-reutiliza/extiende/nuevo · accesibilidad WCAG 2.2 AA verificada **sobre el diseño**.
+por pantalla** (vacío, cargando, parcial, error, sin permiso, éxito) · **un elemento con carácter
+por pantalla** · componentes clasificados en reutiliza/extiende/nuevo · accesibilidad WCAG 2.2 AA
+verificada **sobre el diseño**.
 
 Pregunta antes de dibujar. Requisito nuevo que aparezca aquí → vuelve al paso 1.
 **Cero tecnología.** Si la funcionalidad no tiene UI, di por qué se salta y pasa al paso 4.

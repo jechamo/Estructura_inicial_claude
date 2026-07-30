@@ -16,6 +16,26 @@
 
 ---
 
+## 0. Conformidad con la dirección visual
+
+> Vinculante: [`docs/design/DIRECCION-VISUAL.md`](../../design/DIRECCION-VISUAL.md).
+> Si no está aprobada, esta fase **no continúa**.
+
+| Comprobación | Estado |
+|---|---|
+| Dirección visual aprobada por el usuario | sí / no — fecha |
+| Escala tipográfica respetada (con contraste real, no solo tamaños) | |
+| Paleta y roles de color respetados | |
+| Densidad coherente con la declarada | |
+| Cada pantalla tiene su **elemento con carácter** | |
+
+**Desviaciones acordadas** — una desviación no es un detalle de estilo, es una decisión de
+producto: se acuerda con el usuario y se anota.
+
+| Qué se desvía | Por qué | ¿Quién lo aprobó? |
+|---|---|---|
+| | | |
+
 ## 1. Flujo de usuario
 
 > Camino completo, **con los errores**. Un flujo que solo dibuja el camino feliz es una demo.
@@ -50,6 +70,16 @@ Flujo detallado: [`docs/design/flows/NNN-<flujo>.md`](../../design/flows/)
 | Error | | |
 | Sin permiso | | |
 | Éxito | | |
+
+**Elemento con carácter** *(obligatorio, uno por pantalla)*:
+
+| Cuál | Por qué encaja con la personalidad declarada |
+|---|---|
+| | |
+
+> No tiene que ser decorativo: un dato bien presentado tiene más carácter que una ilustración.
+> Lo que no vale es "la tarjeta estándar": eso es ausencia de decisión, y produce el MVP de
+> cuatro cajas.
 
 Wireframe de baja fidelidad:
 

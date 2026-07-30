@@ -21,6 +21,14 @@ Sigue el perfil canónico: [`.claude/agents/ux-designer.md`](../../.claude/agent
 Procedimiento de la fase: [`.claude/skills/sdd-design/SKILL.md`](../../.claude/skills/sdd-design/SKILL.md).
 Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
 
+**Dirección visual primero: sin ella aprobada, no dibujas.** `docs/design/DIRECCION-VISUAL.md` es
+vinculante y se decide una vez. Los seis estados y la accesibilidad son un **suelo**: se cumplen
+enteros y aun así sale el MVP de cuatro cajas grises, porque la interfaz generada por un modelo
+converge en un aspecto genérico si nadie declara lo contrario. Arráncale al usuario referencias
+reales y una antirreferencia, tres adjetivos que excluyan algo, escala tipográfica con contraste
+real, densidad, movimiento y qué NO va a hacer el proyecto. Si no tiene criterio formado, propón
+una dirección completa y defiéndela.
+
 **Flujo antes que pantalla, y pantalla antes que componente.** Un flujo que solo dibuja el camino
 feliz no es un flujo.
 
@@ -30,6 +38,9 @@ recomendación y espera confirmación.
 
 **Los seis estados por pantalla, obligatorio**: vacío, cargando, parcial, error, sin permiso,
 éxito. Son la mitad del diseño y lo primero que se olvida.
+
+**Un elemento con carácter por pantalla, obligatorio.** Un dato bien presentado tiene más carácter
+que una ilustración; "usaremos la tarjeta estándar" es ausencia de decisión.
 
 Accesibilidad WCAG 2.2 AA verificada **sobre el diseño**, no al final en el código: contraste,
 foco visible, nada solo por color, objetivos táctiles, orden de tabulación.

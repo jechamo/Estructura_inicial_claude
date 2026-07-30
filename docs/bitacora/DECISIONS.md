@@ -9,6 +9,41 @@
 
 ---
 
+## 2026-07-30 · La accesibilidad es el suelo: hace falta una dirección visual vinculante
+
+- **Tipo**: decisión
+- **Contexto**: requisito explícito del usuario —*que lo que salga de aquí no sea el típico MVP
+  soso de cuatro cajas*—. Al revisarlo, la plantilla no lo cubría: los gates de `/sdd-design`
+  (seis estados, WCAG 2.2 AA, tokens, flujo con errores) garantizan que la interfaz **funcione**,
+  no que tenga carácter. Peor: cuando el criterio dominante es "contraste ≥ 4.5:1 y foco visible",
+  el camino de menor resistencia es una interfaz correcta y anodina. Y hay un sesgo documentado —
+  la UI generada por un modelo converge en una estética genérica reconocible—, hasta el punto de
+  que las skills de diseño de 2026 lo tratan como su problema central.
+- **Decisión**: `docs/design/DIRECCION-VISUAL.md` como artefacto **vinculante que se decide una
+  vez**, igual que la constitución de arquitectura, y **puerta dura** en `/sdd-design`: sin
+  dirección aprobada por el usuario, no se dibuja. Obligatorio además un **elemento con carácter
+  por pantalla**. `/front` verifica el código contra la dirección y `check-sdd --strict` falla si
+  hay `design.md` con la dirección sin aprobar.
+- **Alternativas descartadas**:
+  - *Confiar en las skills externas de diseño* (`frontend-design`, `shadcn`, `web-design-guidelines`):
+    son buenas y están catalogadas, pero dependen del stack y de que alguien las apruebe. La
+    decisión de qué aspecto tiene **este** producto no la puede tomar una skill genérica.
+  - *Dejarlo al criterio del `ux-designer` en cada spec*: produce deriva. Cinco pantallas
+    diseñadas en cinco momentos distintos sin dirección común no forman un producto.
+  - *Una guía de estilo descriptiva sin puerta*: se lee una vez y se ignora. Sin gate no obliga.
+- **Impacto**: `/sdd-design` gana un paso previo que exige conversación con el usuario. Es
+  fricción deliberada: es más barato discutir la dirección ahora que cuando haya diez pantallas
+  hechas con el criterio de "cumple contraste".
+- **Deuda aceptada**: la verificación es **estructural, no estética**. `check-sdd` comprueba que
+  la dirección esté aprobada y que se declare un elemento con carácter; no puede juzgar si el
+  resultado es bueno. Eso sigue siendo criterio humano, y así debe ser.
+- **Referencias**: [`docs/design/DIRECCION-VISUAL.md`](../design/DIRECCION-VISUAL.md),
+  [`baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §5 bis,
+  [`SKILLS-EXTERNAS.md`](../agents/SKILLS-EXTERNAS.md)
+- **Quién**: agente `ux-designer` + revisión humana pendiente
+
+---
+
 ## 2026-07-30 · El handoff no aísla: el aislamiento se impone con herramientas y territorios
 
 - **Tipo**: decisión

@@ -50,7 +50,8 @@ flowchart TD
 conocen su sucesor natural y hacen handoff explícito. Los especialistas **nunca encadenan**
 por su cuenta: hacen su trabajo y devuelven el control.
 
-**Profundidad máxima de delegación: 2 niveles.**
+**Profundidad máxima de delegación: 2 niveles**, contando saltos entre agentes —tú no cuentas—:
+`orchestrator` → agente de fase → especialista. Ahí se acaba.
 
 ---
 
@@ -115,7 +116,9 @@ Todo agente cierra con:
 1. Un agente **no salta fases** del circuito SDD.
 2. Un agente **no modifica artefactos de una fase anterior** sin avisar y registrar.
 3. Ante ambigüedad que cambie materialmente el resultado → **pregunta al humano**.
-4. Profundidad máxima de delegación: **2 niveles**.
+4. Profundidad máxima de delegación: **2 niveles**, contando saltos entre agentes. El humano no
+   cuenta: `Tú → orchestrator → implementer → backend-expert` **es exactamente el máximo**.
+   Que el `backend-expert` llamara a otro sería el nivel 3.
 5. Los especialistas **devuelven el control** a quien los invocó; no encadenan.
 6. Un agente **no escribe en el territorio de otro**.
 

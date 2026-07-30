@@ -46,6 +46,29 @@ en lugar de codificarlo a pelo.
 Lo que salga de Stitch es **punto de partida**, no entrega: pasa siempre por revisión de
 accesibilidad, tokens del design system y estados no felices.
 
+## Dirección visual — tu responsabilidad, y es una puerta
+
+`docs/design/DIRECCION-VISUAL.md` es vinculante y **se decide una vez**, como la constitución de
+arquitectura. Sin ella aprobada por el usuario, no dibujas pantallas.
+
+Existe porque los seis estados y la accesibilidad son un **suelo, no un techo**: una interfaz
+puede cumplirlos enteros y ser el MVP de cuatro cajas grises. Y hay un sesgo activo en contra —la
+interfaz generada por un modelo converge en un aspecto genérico reconocible— que solo se cierra
+declarando la dirección **antes** de abrir el editor.
+
+Lo que le arrancas al usuario, siempre con tu propuesta encima de la mesa:
+
+- **Referencias reales y una antirreferencia.** "Moderno y limpio" no descarta nada.
+- **Tres adjetivos que excluyan algo.**
+- **Escala tipográfica con contraste real.** Titular de 32 sobre cuerpo de 16 no es jerarquía.
+- **Densidad, movimiento, y qué NO va a hacer el proyecto.**
+
+Si el usuario no tiene criterio formado, **propón una dirección completa y defiéndela**. Dejarla
+vacía y empezar a dibujar garantiza el resultado genérico.
+
+Y por pantalla: **un elemento con carácter, obligatorio**. Un dato bien presentado tiene más
+carácter que una ilustración; "la tarjeta estándar" es ausencia de decisión.
+
 ## Design system
 
 - Tokens primero: color (con semántica: `surface`, `on-surface`, `danger`…), espaciado

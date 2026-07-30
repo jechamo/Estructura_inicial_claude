@@ -56,9 +56,30 @@ Tres reglas que **no son norma escrita, son herramienta**:
 |---|---|
 | Solo `orchestrator`, `planner` e `implementer` delegan | Los otros 17 no tienen la herramienta `Agent`. No pueden llamar a nadie aunque se lo pidas |
 | Los especialistas **nunca encadenan** | Hacen su trabajo y devuelven el control. No deciden la fase siguiente |
-| Profundidad máxima: **2 niveles** | Tú → `implementer` → `backend-expert`. Ahí se acaba |
+| Profundidad máxima: **2 niveles** | Se cuentan **saltos entre agentes**; tú no eres un nivel. Ver abajo |
 
-### 1.2 Un intercambio real
+### 1.2 Cómo se cuenta la profundidad
+
+La cadena más larga permitida es exactamente esta:
+
+```
+Tú  →  orchestrator  →  implementer  →  backend-expert
+       └─ nivel 0 ────┴─ nivel 1 ────┴─ nivel 2        ✅ máximo
+                                          └───────────→  ❌ nivel 3, prohibido
+```
+
+**Tú no cuentas como nivel**: no eres un agente delegado, eres quien arranca. Lo que se limita son
+los saltos de delegación **entre agentes**.
+
+Por eso los especialistas **devuelven el control** en vez de encadenar: si el `backend-expert`
+llamara a otro, se saldría del límite. Y por eso solo `orchestrator`, `planner` e `implementer`
+tienen la herramienta de delegación — los otros 17 no pueden pasar de ahí ni queriendo.
+
+> Si entras directo por `/sdd-implement` sin pasar por el `orchestrator`, la cadena es más corta
+> —`implementer` → especialista— y te queda un nivel de margen. No es peor: el `orchestrator`
+> solo aporta cuando no sabes en qué fase estás.
+
+### 1.3 Un intercambio real
 
 ```mermaid
 sequenceDiagram
@@ -90,7 +111,7 @@ sequenceDiagram
 Lo importante: **los hooks escriben en paralelo, sin que el modelo participe**. Por eso
 `execution-log.jsonl` es evidencia y el chat solo es narración.
 
-### 1.3 El protocolo de handoff
+### 1.4 El protocolo de handoff
 
 Todo agente cierra con este bloque. Es el contrato entre fases:
 
@@ -105,7 +126,7 @@ Todo agente cierra con este bloque. Es el contrato entre fases:
 - Contexto que necesita: <mínimo imprescindible>
 ```
 
-### 1.4 Handoff ≠ aislamiento
+### 1.5 Handoff ≠ aislamiento
 
 Son dos problemas distintos y confundirlos es la causa de que un ecosistema "bien diseñado"
 acabe con el orquestador programando:
@@ -183,7 +204,7 @@ es fácil si las fronteras existen; crearlas después no lo es.
 |---|---|---|
 | `/sdd-specify` | `spec.md` | Requisitos EARS con **MoSCoW sobre esfuerzo** (must ≤ 60 %), cero tecnología |
 | `/sdd-clarify` | `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
-| `/sdd-design` | `design.md` | Flujo con caminos de error, **seis estados por pantalla**, a11y. *Se salta si no hay UI* |
+| `/sdd-design` | `design.md` | **Dirección visual aprobada**, flujo con caminos de error, **seis estados por pantalla**, **elemento con carácter**, a11y. *Se salta si no hay UI* |
 | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/` | Conforme a la constitución |
 | `/sdd-tasks` | `tasks.md` | Tareas atómicas **separadas por middle / front / bbdd**, con test |
 | `/sdd-implement` | Código + tests | TDD estricto. Cada tarea entra por `/middle`, `/front` o `/bbdd` |
@@ -194,6 +215,35 @@ es fácil si las fronteras existen; crearlas después no lo es.
 > No hay vía rápida declarada todavía: es una carencia conocida.
 
 ---
+
+### La dirección visual es una puerta, no una recomendación
+
+Antes de la primera pantalla del proyecto hay que cerrar
+[`docs/design/DIRECCION-VISUAL.md`](../design/DIRECCION-VISUAL.md) **y que la apruebes tú**.
+
+Existe porque los seis estados y la accesibilidad son un **suelo, no un techo**: una interfaz
+puede cumplirlos enteros y ser el MVP de cuatro cajas grises. Y hay un sesgo activo en contra —la
+interfaz generada por un modelo converge en un aspecto genérico reconocible: tarjeta redondeada,
+gris neutro, espaciado uniforme, titular apenas mayor que el cuerpo— porque es el camino de menor
+resistencia.
+
+Lo que se decide ahí, una vez y para todo el proyecto:
+
+| Decisión | Trampa que evita |
+|---|---|
+| **Referencias reales + una antirreferencia** | "Moderno y limpio" no descarta nada |
+| **Tres adjetivos que excluyan algo** | "Bonito, profesional, moderno" no decide nada |
+| **Escala tipográfica con contraste real** | Titular de 32 sobre cuerpo de 16 no es jerarquía |
+| **Densidad declarada** | Si no, se hereda del framework |
+| **Movimiento y `prefers-reduced-motion`** | Animación sin criterio se nota más que su ausencia |
+| **Qué NO va a hacer el proyecto** | Cierra discusiones antes de que ocurran |
+
+Y **un elemento con carácter por pantalla**, obligatorio. No tiene que ser decorativo: un dato
+bien presentado tiene más carácter que una ilustración. "La tarjeta estándar" es ausencia de
+decisión.
+
+`check-sdd` falla en `--strict` si hay `design.md` y la dirección sigue sin aprobar. `/front`
+comprueba el código contra ella: es donde un diseño con carácter se diluye sin querer.
 
 ## 3. Cómo funciona el TDD
 

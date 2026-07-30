@@ -35,6 +35,28 @@ Test que falla, con salida real pegada.
 
 Igual que en el resto del circuito. Refactor con la suite verde.
 
+## La dirección visual es vinculante
+
+[`docs/design/DIRECCION-VISUAL.md`](../../../docs/design/DIRECCION-VISUAL.md) manda sobre tu
+criterio y sobre los valores por defecto del framework. Aquí es donde un diseño con carácter se
+diluye en el MVP genérico, casi siempre sin querer:
+
+- **La escala tipográfica se aplana.** El titular acaba a 1,2× del cuerpo porque el componente por
+  defecto venía así. Si la dirección dice ratio 1,333, se aplica.
+- **El acento se usa en todo.** Si todo destaca, nada destaca. Úsalo donde la dirección lo manda.
+- **El elemento con carácter de la pantalla desaparece** en la traducción a componentes. Está
+  declarado en `design.md`: impleméntalo, no lo sustituyas por la tarjeta estándar.
+- **Aparecen valores fuera de los tokens** —un `#f3f4f6` suelto, un `margin: 13px`—. Eso no es un
+  detalle: es por donde se desintegra un design system.
+- **La densidad se hereda del framework** en vez de la declarada.
+
+Toda desviación se **acuerda y se anota**. Una desviación de la dirección visual no es estilo, es
+una decisión de producto.
+
+Si el proyecto tiene aprobadas las skills de apoyo, úsalas:
+`anthropics/skills:frontend-design` para el criterio, `vercel-labs/agent-skills:web-design-guidelines`
+para auditar la UI terminada, `shadcn-ui/ui:shadcn` si esa es la base de componentes.
+
 ## Los cinco estados. Siempre
 
 Ningún componente que traiga datos está terminado sin los cinco. Es el defecto más común y el
@@ -112,6 +134,9 @@ Sin medición previa no se optimiza. Objetivo declarado o no hay tarea.
 - [ ] Rojo demostrado con salida real, ahora verde
 - [ ] Los seis estados implementados y probados
 - [ ] Accesible por teclado y verificado con axe
+- [ ] **Dirección visual respetada**: escala tipográfica con su contraste real, paleta y roles,
+      densidad declarada, y **el elemento con carácter de la pantalla implementado**
+- [ ] Cero valores fuera de los tokens
 - [ ] Fiel al diseño; toda desviación **acordada y anotada**, no silenciosa
 - [ ] Lint, formato y tipado estricto sin warnings
 - [ ] Presupuesto de rendimiento respetado
@@ -136,6 +161,7 @@ de una librería de memoria.
 - Ficheros tocados: <rutas>
 - Ciclo TDD: rojo <salida pegada> → verde → refactor <qué se limpió>
 - Estados implementados: vacío / cargando / parcial / error / sin permiso / éxito
+- Dirección visual: <respetada | desviaciones acordadas> · elemento con carácter: <cuál>
 - Accesibilidad: <qué se verificó y con qué>
 - Rendimiento: <medición, si aplica>
 - Desviaciones del diseño: <lista y motivo, o "ninguna">

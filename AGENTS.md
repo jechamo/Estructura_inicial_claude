@@ -75,7 +75,7 @@ El `architect` solo interviene si el cambio la viola (entonces → nuevo ADR).
 | Principios | `/sdd-init` | `docs/architecture/constitution.md`, `docs/architecture/adr/ADR-0001-*.md` | Arquitectura elegida y justificada |
 | Qué | `/sdd-specify` | `docs/specs/NNN-slug/spec.md` | Requisitos EARS con prioridad **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios de aceptación testables, **cero** decisiones técnicas |
 | Dudas | `/sdd-clarify` | `spec.md` actualizado + `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
-| Diseño | `/sdd-design` | `design.md`, flujos en `docs/design/flows/` | Flujo con caminos de error, **seis estados por pantalla**, accesibilidad verificada sobre el diseño. Se salta si no hay UI |
+| Diseño | `/sdd-design` | `design.md`, flujos, `docs/design/DIRECCION-VISUAL.md` | **Dirección visual aprobada por el usuario**, flujo con caminos de error, **seis estados por pantalla**, un **elemento con carácter** por pantalla, accesibilidad verificada sobre el diseño. Se salta si no hay UI |
 | Cómo | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/`, `research.md` | Plan conforme a la constitución |
 | Trocear | `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, **separadas por middle / front / BBDD**, con test asociado |
 | Construir | `/sdd-implement` | Código + tests | TDD estricto: rojo → verde → refactor. Cada tarea entra por su skill: `/middle`, `/front` o `/bbdd` |
@@ -397,7 +397,18 @@ Reglas duras:
 - Un agente **no** escribe en el territorio de otro. Devuelve el control y que se delegue.
 - Un agente **no** modifica artefactos de una fase anterior sin avisar y registrar en bitácora.
 - Ante ambigüedad que cambie materialmente el resultado → **pregunta al humano**, no adivines.
-- Profundidad máxima de delegación: **2 niveles**.
+- Profundidad máxima de delegación: **2 niveles**. Se cuentan **saltos de delegación entre
+  agentes**; tú no cuentas como nivel porque no eres un agente delegado:
+
+  ```
+  Tú → orchestrator → implementer → backend-expert
+       └ nivel 0 ────┴ nivel 1 ────┴ nivel 2      ✅ es el máximo permitido
+                                        └─────────→ especialista  ❌ sería nivel 3
+  ```
+
+  Por eso los especialistas **devuelven el control** en lugar de encadenar: si el
+  `backend-expert` llamara a otro, se saldría del límite. Y por eso solo tres agentes tienen la
+  herramienta de delegación.
 
 Catálogo completo: `docs/agents/CATALOG.md`. Diagramas: `README.md`.
 

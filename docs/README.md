@@ -12,7 +12,7 @@ docs/
 ├── architecture/       Constitución, ADR, guía de decisión, patrones
 │   ├── adr/            Decisiones estructurales (MADR)
 │   └── CURRENT-STATE   Solo en repos adoptados con /onboard
-├── design/             Flujos, wireframes, design system, accesibilidad
+├── design/             Dirección visual (vinculante), flujos, wireframes, design system
 ├── quality/            Estrategia de test, Definition of Done, informes, deuda
 │   └── reports/        Informes de /sdd-verify
 ├── security/           Checklist OWASP, modelo de amenazas, seguridad MCP
@@ -42,6 +42,7 @@ Estos **obligan**, no son sugerencias:
 | [`architecture/adr/`](./architecture/adr/) | Decisiones estructurales tomadas |
 | [`quality/DEFINITION-OF-DONE.md`](./quality/DEFINITION-OF-DONE.md) | Cuándo algo está terminado |
 | [`quality/TEST-STRATEGY.md`](./quality/TEST-STRATEGY.md) | Cómo se prueba |
+| [`design/DIRECCION-VISUAL.md`](./design/DIRECCION-VISUAL.md) | Referencias, personalidad, tipografía, color, densidad y movimiento. **Sin aprobar, `/sdd-design` no dibuja** |
 | [`security/SECURITY-CHECKLIST.md`](./security/SECURITY-CHECKLIST.md) | Qué se audita |
 
 ## Documentos de referencia

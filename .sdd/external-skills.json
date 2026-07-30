@@ -42,7 +42,67 @@
       "cuando": { "siempre": true },
       "pin": null,
       "estado": "candidata",
-      "notas": "Instalación alternativa en Claude Code: /plugin marketplace add anthropics/skills. Solapa parcialmente con @ux-designer: si se adopta, decidir quién manda en tokens."
+      "notas": "LA CANDIDATA PRIORITARIA si el producto tiene interfaz: existe para sacar el resultado del 'look de plantilla', que es el riesgo por defecto. Apoya la fase de dirección visual (docs/design/DIRECCION-VISUAL.md). Instalación alternativa en Claude Code: /plugin marketplace add anthropics/skills. Solapa con @ux-designer: si se adopta, decidir quién manda en tokens."
+    },
+    {
+      "id": "anthropic-theme-factory",
+      "ref": "anthropics/skills:theme-factory",
+      "publicador": "Anthropic (oficial)",
+      "terreno": "front",
+      "aporta": "Construcción de sistemas de tema coherentes (color, tipografía, modo claro/oscuro)",
+      "licencia": "Apache-2.0",
+      "cuando": { "siempre": true },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Encaja con las secciones 3, 4 y 5 de DIRECCION-VISUAL.md. Útil cuando hay que derivar una paleta completa y accesible desde un color de marca."
+    },
+    {
+      "id": "anthropic-canvas-design",
+      "ref": "anthropics/skills:canvas-design",
+      "publicador": "Anthropic (oficial)",
+      "terreno": "diseño",
+      "aporta": "Composición visual y maquetación con criterio",
+      "licencia": "Apache-2.0",
+      "cuando": { "siempre": true },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Para wireframes y composiciones de la fase /sdd-design, antes de tocar código."
+    },
+    {
+      "id": "anthropic-web-artifacts-builder",
+      "ref": "anthropics/skills:web-artifacts-builder",
+      "publicador": "Anthropic (oficial)",
+      "terreno": "front",
+      "aporta": "Construcción de interfaces web autocontenidas para prototipar",
+      "licencia": "Apache-2.0",
+      "cuando": { "siempre": true },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Prototipo rápido para validar dirección visual con el usuario ANTES de implementar. Lo que salga es punto de partida, no entrega."
+    },
+    {
+      "id": "vercel-web-design-guidelines",
+      "ref": "vercel-labs/agent-skills:web-design-guidelines",
+      "publicador": "Vercel (oficial)",
+      "terreno": "front",
+      "aporta": "Audita el código de UI contra las Web Interface Guidelines de Vercel; salida en formato fichero:línea",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "siempre": true },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Complemento natural del checklist de /front: audita la UI TERMINADA. Ojo: descarga las guías de una fuente remota antes de cada revisión, así que en la auditoría hay que mirar qué red toca. Instalación: npx skills add vercel-labs/agent-skills --skill web-design-guidelines"
+    },
+    {
+      "id": "shadcn-ui",
+      "ref": "shadcn-ui/ui:shadcn",
+      "publicador": "shadcn (oficial, en el propio repo shadcn-ui/ui)",
+      "terreno": "front",
+      "aporta": "Añadir, componer y depurar componentes de shadcn/ui y registros de componentes",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["components.json"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Instruye al agente a evitar la estética genérica de IA y tomar decisiones de diseño intencionadas, que es exactamente el riesgo que cubre DIRECCION-VISUAL.md. Solo aplica si el proyecto usa shadcn/ui."
     },
     {
       "id": "anthropic-webapp-testing",

@@ -8,6 +8,20 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Dirección visual vinculante: `docs/design/DIRECCION-VISUAL.md` + puerta en `/sdd-design`.**
+  Se decide **una vez**, como la constitución de arquitectura, y sin ella aprobada por el usuario
+  no se dibuja ninguna pantalla. Fija referencias reales y una antirreferencia, tres adjetivos que
+  excluyan algo, escala tipográfica con contraste real, densidad, movimiento y qué NO va a hacer
+  el proyecto. Además, **un elemento con carácter por pantalla** es obligatorio.
+  Motivo: los seis estados y WCAG 2.2 AA son un **suelo**, no un techo — se cumplen enteros y aun
+  así sale el MVP de cuatro cajas grises. Y la interfaz generada por un modelo converge en una
+  estética genérica reconocible si nadie declara lo contrario.
+  `/front` verifica el código contra la dirección —es donde el carácter se diluye sin querer— y
+  `check-sdd --strict` falla si hay `design.md` con la dirección sin aprobar.
+- **6 skills de diseño visual catalogadas**: `frontend-design`, `theme-factory`, `canvas-design` y
+  `web-artifacts-builder` de Anthropic, `web-design-guidelines` de Vercel (audita la UI terminada
+  en formato `fichero:línea`) y la oficial de `shadcn-ui/ui`. Son refuerzo, no sustituto de la
+  dirección visual propia.
 - **Aislamiento por territorio: `.sdd/territories.json` + guarda en `guard-write.mjs`.** Declara
   qué rutas pertenecen a qué agentes, y bloquea al que escribe en terreno ajeno. El agente activo
   lo registran `SubagentStart`/`SubagentStop` en `.sdd/state/`, **fuera del modelo**: `PreToolUse`
@@ -75,6 +89,10 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   de clave es exacta.
 
 ### Changed
+- La regla de **profundidad máxima de delegación** era ambigua sobre qué se cuenta. Ahora es
+  explícita: se cuentan **saltos entre agentes**, el humano no es un nivel. Así
+  `Tú → orchestrator → implementer → backend-expert` es exactamente el máximo permitido, y que el
+  especialista llamara a otro sería el nivel 3.
 - `subagent-log.mjs` ya no registra `observed` cuando el host no expone el nombre del subagente:
   en ese caso escribe `unverified` con el motivo. Afirmar que se observó a un agente sin saber
   cuál era es fabricar la evidencia que este registro existe para dar.

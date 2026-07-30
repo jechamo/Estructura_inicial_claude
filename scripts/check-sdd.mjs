@@ -231,6 +231,23 @@ for (const s of specs) {
     );
     if (faltan.length)
       warn('design/estados', `${s}: design.md no menciona estado(s): ${faltan.join(', ')}`);
+
+    // Cumplir accesibilidad y estados es el suelo. Sin dirección visual declarada, el
+    // resultado por defecto es el MVP genérico: correcto y sin carácter.
+    const direccion = leer(join(ROOT, 'docs/design/DIRECCION-VISUAL.md'));
+    const filaEstado = (direccion || '').match(/^\|\s*\*{0,2}Estado\*{0,2}\s*\|([^|]*)\|/im)?.[1] || '';
+    // La plantilla ofrece las dos opciones en la misma celda ("borrador | aprobada"). Solo
+    // cuenta como aprobada cuando se ha elegido: queda 'aprobada' y ya no queda 'borrador'.
+    const aprobada = /aprobada/i.test(filaEstado) && !/borrador/i.test(filaEstado);
+
+    if (!direccion) {
+      warn('design/direccion', `${s}: hay design.md pero no existe docs/design/DIRECCION-VISUAL.md`);
+    } else if (!aprobada) {
+      const m = `${s}: la dirección visual sigue sin aprobar (docs/design/DIRECCION-VISUAL.md, campo Estado)`;
+      STRICT ? err('design/direccion', m) : warn('design/direccion', m);
+    }
+    if (!/car[áa]cter/i.test(design))
+      warn('design/caracter', `${s}: ninguna pantalla declara su elemento con carácter`);
   }
 
   // 3.1 ter · Prioridad: una spec sin prioridades es una lista de deseos

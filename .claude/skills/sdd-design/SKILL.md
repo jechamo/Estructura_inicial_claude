@@ -22,6 +22,42 @@ Saltarla es legítimo; lo que no vale es saltarla y luego improvisar pantallas e
 - [ ] Si hay Figma, Stitch o bocetos, están a mano (MCP `figma` / `stitch`)
 - [ ] `docs/design/design-system.md`, si el proyecto ya tiene design system
 
+## Paso 0 bis — Dirección visual: sin esto no se dibuja
+
+**Antes de la primera pantalla del proyecto**, comprueba
+[`docs/design/DIRECCION-VISUAL.md`](../../../docs/design/DIRECCION-VISUAL.md).
+
+| Estado | Qué haces |
+|---|---|
+| No existe | La rellenas **con el usuario** y él la aprueba. Es una fase, no un trámite |
+| Existe en `borrador` | La cierras con el usuario antes de seguir |
+| Aprobada | La lees y la aplicas. Cada pantalla se contrasta contra ella |
+
+**Por qué es una puerta y no una recomendación**: los seis estados y la accesibilidad son un
+**suelo**. Una interfaz puede cumplirlos enteros y seguir siendo el MVP de cuatro cajas grises.
+Y hay un sesgo activo en contra: la interfaz generada por un modelo converge en un aspecto
+reconocible y genérico —tarjeta redondeada, gris neutro, espaciado uniforme, titular apenas mayor
+que el cuerpo— porque es el camino de menor resistencia. Sin dirección declarada, ese es el
+resultado por defecto.
+
+Lo que hay que arrancarle al usuario, con tu propuesta encima de la mesa:
+
+- **Referencias reales**: dos o tres productos y **por qué**. "Moderno y limpio" no descarta nada,
+  así que no es una referencia. Pide también una **antirreferencia**.
+- **Tres adjetivos que excluyan algo**: "sobrio, denso, técnico" decide cosas; "bonito,
+  profesional, moderno" no decide ninguna.
+- **Escala tipográfica con contraste real**: un titular de 32 px sobre cuerpo de 16 no es
+  jerarquía, es una lista con la primera línea un poco más grande.
+- **Densidad**: aire generoso o compacta. Se decide, no se hereda del framework.
+- **Movimiento**: qué se anima, cuánto, y la alternativa para `prefers-reduced-motion`.
+- **Qué NO va a hacer este proyecto**: cierra discusiones antes de que ocurran.
+
+Si el usuario no tiene criterio formado, **propón tú una dirección completa y defiéndela**. Lo que
+no vale es dejarla vacía y empezar a dibujar: eso garantiza el resultado genérico.
+
+Skills de apoyo si están aprobadas (ver [`SKILLS-EXTERNAS.md`](../../../docs/agents/SKILLS-EXTERNAS.md)):
+`anthropics/skills:frontend-design` para el criterio visual, `theme-factory` para sistemas de tema.
+
 ## Paso 1 — Preguntar antes de dibujar
 
 Igual que en `/sdd-specify`: **pregunta con sugerencia y espera confirmación**. Las dudas típicas
@@ -61,6 +97,18 @@ olvidan hasta que salen en producción:
 
 Una pantalla sin sus seis estados no está diseñada.
 
+## Paso 3 bis — Un elemento con carácter por pantalla
+
+**Obligatorio, uno por pantalla.** Es lo que separa un producto de un formulario.
+
+No tiene que ser decorativo: **un dato bien presentado tiene más carácter que una ilustración**.
+Vale un número con tratamiento tipográfico propio, un estado vacío que enseña el siguiente paso en
+lugar de disculparse, una visualización, una composición deliberadamente asimétrica.
+
+Lo que **no** vale: "usaremos la tarjeta estándar". Eso es ausencia de decisión.
+
+Declara en `design.md`, por pantalla, cuál es y por qué encaja con la personalidad declarada.
+
 ## Paso 4 — Componentes
 
 Por cada pantalla: qué componentes se **reutilizan** del design system, cuáles se **extienden**
@@ -86,6 +134,9 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 
 ## Puerta de salida
 
+- [ ] `docs/design/DIRECCION-VISUAL.md` existe y está **aprobada por el usuario**
+- [ ] Cada pantalla declara su **elemento con carácter**
+- [ ] La escala tipográfica tiene contraste real, no solo tamaños distintos
 - [ ] Flujo completo con caminos de error, no solo el feliz
 - [ ] Los seis estados definidos en **cada** pantalla
 - [ ] Cada `CA` de la spec tiene su recorrido en el diseño; y cada pantalla, su `CA`
@@ -102,7 +153,8 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - Agente origen: ux-designer
 - Fase completada: design
 - Artefactos: docs/specs/NNN-slug/design.md · docs/design/flows/NNN-<flujo>.md
-- Pantallas: <n> · con los seis estados: <n/n>
+- Dirección visual: <aprobada el YYYY-MM-DD | creada en esta fase y pendiente de aprobación>
+- Pantallas: <n> · con los seis estados: <n/n> · con elemento con carácter: <n/n>
 - Componentes: <n> reutilizados · <n> extendidos · <n> nuevos
 - Requisitos nuevos descubiertos: <lista, o "ninguno"> → si hay, vuelve a /sdd-specify
 - Inconsistencias con el design system: <lista, o "ninguna">
