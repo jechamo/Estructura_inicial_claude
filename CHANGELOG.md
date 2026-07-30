@@ -26,7 +26,9 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   existe: el único scoping documentado es `Agent(tipo)`. El agente se quedaba sin `Bash`.
   El scoping se ha movido a `permissions` de `settings.json`, que es su sitio.
 - El job de trazabilidad del CI **falla** en lugar de emitir avisos decorativos.
-- Actions de GitHub fijadas por SHA (14 usos) en vez de por tag flotante.
+- Actions de GitHub fijadas por SHA (14 usos) en vez de por tag flotante, y en la major
+  vigente: checkout, setup-node y upload-artifact en v7, gitleaks en v3. Los SHA se
+  verificaron con `gh` y `git ls-remote` de forma independiente.
 - `toolCall()` no reconocía el payload plano de Cursor y dejaba las guardas sin datos,
   permitiéndolo todo en silencio.
 - Nivel ASVS del `security-auditor` alineado con la constitución: L2 por defecto, no L1.
