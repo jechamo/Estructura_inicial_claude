@@ -59,6 +59,9 @@ const sensibles = [
   { re: /\b(npm|pnpm|yarn)\s+publish\b|\bcargo\s+publish\b|\btwine\s+upload\b/, motivo: 'Publicación pública e irreversible.' },
   { re: /\bdocker\s+system\s+prune\b.*-a/, motivo: 'Purga total de Docker.' },
   { re: /\bgh\s+(pr\s+(create|merge)|release\s+create)\b/, motivo: 'Acción pública en GitHub.' },
+  { re: /\bskills\s+add\b|\bplugin\s+marketplace\s+add\b/,
+    motivo: 'Instala una skill de terceros: instrucciones que este agente obedecerá y scripts que ' +
+            'puede ejecutar. Auditala y fíjala primero (docs/agents/SKILLS-EXTERNAS.md).' },
 ];
 
 for (const cmd of comandos) {

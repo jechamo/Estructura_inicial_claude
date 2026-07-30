@@ -43,20 +43,26 @@ Dos circuitos, misma maquinaria. **Siempre** se recorre en orden; nunca se salta
 ### 2.1 Circuito A — Proyecto nuevo (greenfield)
 
 ```
-/sdd-init  →  /sdd-specify  →  /sdd-clarify  →  /sdd-plan  →  /sdd-tasks  →  /sdd-implement  →  /sdd-verify  →  /sdd-ship
-   │              │               │               │              │                │                  │              │
-architect     spec-analyst    spec-analyst     planner        planner         implementer        reviewer      release
-+ bitacora                                    + architect                     + test-engineer    + security     manager
-                                              + especialistas                 + especialistas
+/sdd-init → /sdd-specify → /sdd-clarify → /sdd-design → /sdd-plan → /sdd-tasks → /sdd-implement → /sdd-verify → /sdd-ship
+│           │              │              │             │           │            │                │             │
+architect   spec-analyst   spec-analyst   ux-designer   planner     planner      implementer      reviewer      release-mgr
++ bitacora                                              + architect              + /middle        + security
+                                                        + especialistas          + /front         + especialistas
+                                                                                 + /bbdd
+                                                                                 + test-engineer
 ```
 
 `/sdd-init` es **exclusivo de proyecto nuevo**: fija principios, elige arquitectura,
 crea el esqueleto de carpetas y el ADR-0001.
 
+`/sdd-design` **se salta si la funcionalidad no tiene interfaz** (un job, una integración, una
+migración). Saltarla es legítimo y se anota; lo que no vale es saltarla y luego improvisar
+pantallas durante la implementación.
+
 ### 2.2 Circuito B — Nueva funcionalidad sobre proyecto existente (brownfield)
 
 ```
-/sdd-specify  →  /sdd-clarify  →  /sdd-plan  →  /sdd-tasks  →  /sdd-implement  →  /sdd-verify  →  /sdd-ship
+/sdd-specify → /sdd-clarify → /sdd-design → /sdd-plan → /sdd-tasks → /sdd-implement → /sdd-verify → /sdd-ship
 ```
 
 La arquitectura **ya está decidida**: se lee de `docs/architecture/constitution.md`.
@@ -67,11 +73,12 @@ El `architect` solo interviene si el cambio la viola (entonces → nuevo ADR).
 | Fase | Comando | Produce | Puerta de salida (gate) |
 |---|---|---|---|
 | Principios | `/sdd-init` | `docs/architecture/constitution.md`, `docs/architecture/adr/ADR-0001-*.md` | Arquitectura elegida y justificada |
-| Qué | `/sdd-specify` | `docs/specs/NNN-slug/spec.md` | Requisitos en formato EARS, criterios de aceptación testables, **cero** decisiones técnicas |
+| Qué | `/sdd-specify` | `docs/specs/NNN-slug/spec.md` | Requisitos EARS con prioridad **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios de aceptación testables, **cero** decisiones técnicas |
 | Dudas | `/sdd-clarify` | `spec.md` actualizado + `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
+| Diseño | `/sdd-design` | `design.md`, flujos en `docs/design/flows/` | Flujo con caminos de error, **seis estados por pantalla**, accesibilidad verificada sobre el diseño. Se salta si no hay UI |
 | Cómo | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/`, `research.md` | Plan conforme a la constitución |
-| Trocear | `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, con test asociado |
-| Construir | `/sdd-implement` | Código + tests | TDD estricto: rojo → verde → refactor |
+| Trocear | `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, **separadas por middle / front / BBDD**, con test asociado |
+| Construir | `/sdd-implement` | Código + tests | TDD estricto: rojo → verde → refactor. Cada tarea entra por su skill: `/middle`, `/front` o `/bbdd` |
 | Validar | `/sdd-verify` | `docs/quality/reports/`, informe de seguridad, `evidence.md` | Todos los gates de §7 en verde |
 | Entregar | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana aprobada |
 
@@ -82,8 +89,9 @@ Formato: `feat(042): implementa checkout — task T-042-07`.
 
 ```
 docs/specs/042-checkout-invitado/
-├── spec.md              # QUÉ y POR QUÉ. Sin tecnología.
+├── spec.md              # QUÉ y POR QUÉ. Sin tecnología. EARS + MoSCoW.
 ├── clarifications.md    # Preguntas resueltas con el usuario
+├── design.md            # CÓMO SE VE y SE RECORRE. Flujo, estados, componentes. Sin tecnología.
 ├── plan.md              # CÓMO. Arquitectura aplicada, componentes, riesgos
 ├── research.md          # Alternativas evaluadas, benchmarks, decisiones
 ├── data-model.md        # Entidades, invariantes, migraciones
@@ -107,18 +115,33 @@ La decisión la toma el agente `architect` con `docs/architecture/DECISION-GUIDE
 describen dimensiones distintas y se combinan. Toda decisión arquitectónica fija una posición
 en cada uno de estos seis ejes:
 
+**Macro arquitectura** — cómo se descompone el sistema:
+
 | Eje | Opciones | Pregunta |
 |---|---|---|
 | Despliegue | monolito · web+worker · servicios · serverless · edge | ¿Qué debe desplegarse, escalar o fallar por separado? |
-| Dependencias | layered · hexagonal · clean/onion · vertical slice | ¿Cómo aislamos la política del detalle volátil? |
+| Dependencias | layered · hexagonal · clean/onion | ¿Cómo aislamos la política del detalle volátil? |
 | Dominio | módulos · bounded contexts · servicios | ¿Dónde cambian lenguaje, reglas y propiedad? |
 | Integración | llamada · cola · evento · stream · batch | ¿Qué latencia y acoplamiento admite el proceso? |
 | Datos | compartidos/propios · ACID/eventual · OLTP/OLAP | ¿Quién posee cada hecho y qué consistencia exige? |
 | Experiencia | SSR · SPA · móvil · desktop · microfrontend | ¿Qué composición optimiza usuario, equipo y operación? |
 
+**Micro arquitectura** — cómo se organiza el código **dentro** de una frontera:
+
+| Eje | Opciones | Pregunta |
+|---|---|---|
+| Organización interna | por capas técnicas · **vertical slice** (por feature) | ¿Qué ficheros se tocan juntos cuando cambia una cosa? |
+
+`vertical slice` **no compite** con hexagonal ni con monolito modular: responde a otra pregunta.
+El monolito modular decide las fronteras; el vertical slice, cómo se ordena el código dentro de
+una. Y es **decisión local de cada módulo**: el de facturación no está obligado a organizarse por
+dentro como el de notificaciones. Confundir los dos niveles produce discusiones que no se pueden
+ganar porque las partes hablan de cosas distintas.
+
 Una decisión completa suena así: *monolito modular con fronteras hexagonales sobre bounded
-contexts, integración síncrona salvo notificaciones por evento, datos propios por contexto*.
-Son cuatro decisiones justificables y revisables por separado, no una etiqueta.
+contexts, integración síncrona salvo notificaciones por evento, datos propios por contexto, y por
+dentro vertical slice en los módulos con muchas features independientes*.
+Son cinco decisiones justificables y revisables por separado, no una etiqueta.
 
 ### 3.2 Familias por eje y sus disparadores
 
@@ -127,7 +150,7 @@ Son cuatro decisiones justificables y revisables por separado, no una etiqueta.
 | **Monolito modular** (por defecto) | Equipo ≤ 8, dominio poco conocido, time-to-market | Es el default. Solo se abandona con razón escrita |
 | **Hexagonal / Ports & Adapters** | Lógica de negocio rica, muchos sistemas externos | Sobrecoste si es un CRUD |
 | **Clean Architecture** | Dominio complejo + vida útil larga + varios frontends | Capas vacías = mala señal |
-| **Vertical Slice** | Muchas features independientes, equipos en paralelo | Duplicación transversal |
+| **Vertical Slice** (micro) | Muchas features independientes, equipos en paralelo. Se decide **por módulo**, no para todo el sistema | Duplicación transversal |
 | **Microservicios** | Escalado independiente real + equipos autónomos + madurez ops | Prohibido si no hay CI/CD, observabilidad y ownership claro |
 | **Event-Driven / CQRS+ES** | Auditoría, integraciones asíncronas, lecturas ≫ escrituras | Complejidad eventual; no usar por moda |
 | **Serverless** | Carga irregular, poca operación, latencia tolerable | Cold starts, vendor lock-in |
@@ -211,6 +234,12 @@ Reglas:
 - Un *spike* exploratorio puede saltarse el ciclo, pero **se etiqueta como desechable y no se integra**: si el código sirve, se rehace con TDD.
 - Los tests son documentación: nómbralos `debe_<comportamiento>_cuando_<condición>`.
 - Un test que nunca ha fallado no demuestra nada. Verifica el rojo.
+- **Los tests generados por un modelo mienten con más facilidad**: cobertura presentable y
+  *mutation score* bajo significa que no detectan defectos inyectados. Por eso el humano posee la
+  especificación y el test, y el agente la implementación: así no se valida a sí mismo.
+  Herramientas: Stryker (TS), mutmut (Python). Dato de contexto: DORA mide **−7,2 % de
+  estabilidad** de entrega cuando se adopta IA sin fundamentos de ingeniería sólidos.
+  Ver [`docs/research/baseline-2026-07-30.md`](docs/research/baseline-2026-07-30.md) §2.
 
 Detalles: `docs/quality/TEST-STRATEGY.md`.
 
@@ -292,10 +321,14 @@ Modelo **híbrido**: un orquestador central + agentes con criterio propio de han
 
 - El **`orchestrator`** es la puerta de entrada por defecto: clasifica la petición, detecta
   si es proyecto nuevo o feature, y enruta a la fase SDD correcta.
-- Los **agentes de fase** (`spec-analyst`, `architect`, `planner`, `implementer`, `reviewer`,
-  `release-manager`) conocen su sucesor natural y hacen handoff explícito.
+- Los **agentes de fase** (`spec-analyst`, `ux-designer` en `/sdd-design`, `architect`, `planner`,
+  `implementer`, `code-reviewer`, `release-manager`) conocen su sucesor natural y hacen handoff
+  explícito.
 - Los **especialistas** (`frontend`, `backend`, `database`, `security`, `test`, …) se invocan
   bajo demanda y **devuelven control** a quien los llamó. Nunca encadenan por su cuenta.
+  Cada uno tiene su procedimiento en una skill: `/middle` (backend y capa media), `/front`
+  (interfaz) y `/bbdd` (datos). Ahí viven las puertas de entrada, el ciclo TDD, los patrones y
+  la lista de comprobación de cada terreno.
 
 **Protocolo de handoff.** Al terminar, todo agente cierra con este bloque:
 

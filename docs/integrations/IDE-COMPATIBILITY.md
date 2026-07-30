@@ -18,9 +18,16 @@ El ecosistema tiene cuatro capas con **portabilidad muy distinta**:
 | Capa | Qué es | Portabilidad |
 |---|---|---|
 | **Reglas** | `AGENTS.md` y sus adaptadores | ✅ **Universal.** Es texto que el modelo lee |
+| **Skills** | Los 22 `SKILL.md` de `.claude/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
 | **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo en 3 hosts, por referencia en el resto |
 | **Handoff** | El bloque `### HANDOFF` | ✅ **Universal como contrato**, ⚠️ la ejecución no |
 | **Hooks** | Las garantías deterministas | 🔴 **Lo menos portable.** Aquí están las diferencias reales |
+
+**Skills y agentes no se comportan igual, y conviene tenerlo claro**: las skills son estándar
+abierto —Claude Code, Codex, Antigravity, Gemini CLI, Cursor, Copilot, OpenCode, Windsurf— y **no
+hay que duplicarlas por IDE**. Los agentes sí necesitan envoltorio por superficie, porque el
+frontmatter cambia. Por eso `/middle`, `/front` y `/bbdd` viven en un solo sitio, mientras
+`backend-expert` tiene envoltorios en `.github/agents/` y referencias en `.cursor/`.
 
 La consecuencia práctica, y es la más importante de este documento:
 
@@ -127,9 +134,19 @@ Comprueba contra el sistema de ficheros:
 - ninguna delegación queda `unverified` sin justificación;
 - el log de ejecución no se ha manipulado a mano;
 - ningún agente lleva especificadores inválidos en `tools`;
+- toda skill declara `name` coincidente con su carpeta y tiene `description`;
 - los envoltorios de otras superficies no han derivado del perfil canónico.
 
-Está en CI (`.github/workflows/quality-gates.yml`, job `sdd`) y falla el build.
+Y su gemelo para las dependencias ejecutables de terceros:
+
+```bash
+node scripts/skills-sync.mjs --check
+```
+
+Exige que ninguna skill externa esté aprobada sin versión fijada ni licencia verificada, y que
+todo descarte tenga motivo escrito. Ver [`../agents/SKILLS-EXTERNAS.md`](../agents/SKILLS-EXTERNAS.md).
+
+Los dos están en CI (`.github/workflows/quality-gates.yml`, job `sdd`) y fallan el build.
 
 **Si trabajas en un host sin hooks, este validador es tu única garantía real.** Ejecútalo
 antes de cada entrega, y deja que CI lo ejecute en cada PR.
@@ -203,6 +220,9 @@ Honestidad explícita, para que nadie confíe de más:
 - Comportamiento de `handoffs:` en la versión concreta de VS Code que uses.
 - `SubagentStart`/`SubagentStop` fuera de Claude Code: **no existen** que yo haya verificado.
   La trazabilidad `observed` es exclusiva de Claude Code hoy.
+- Que una misma skill produzca la **misma salida** en Claude Code, Codex y Copilot: el formato es
+  portable por estándar, pero **no he comparado el resultado real** en cada superficie.
 
 Lo verificado y su fuente está en
+[`docs/research/baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) (vigente) y
 [`docs/research/baseline-2026-07-29.md`](../research/baseline-2026-07-29.md).

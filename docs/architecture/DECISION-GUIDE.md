@@ -27,22 +27,37 @@ Sin respuesta a estas ocho, no hay decisión posible, solo preferencia personal.
 "monolito" y "microservicios" como si fueran opciones del mismo menú. No lo son.
 Describen **dimensiones distintas** y se combinan.
 
+**Macro arquitectura** — cómo se descompone el sistema:
+
 | Eje | Opciones | La pregunta que responde |
 |---|---|---|
 | **Despliegue** | monolito · web+worker · servicios · serverless · edge | ¿Qué necesita desplegarse, escalar o fallar por separado? |
-| **Dependencias** | layered · hexagonal · clean/onion · vertical slice | ¿Cómo aislamos la política del detalle volátil? |
+| **Dependencias** | layered · hexagonal · clean/onion | ¿Cómo aislamos la política del detalle volátil? |
 | **Dominio** | módulos · bounded contexts · servicios | ¿Dónde cambian el lenguaje, las reglas y la propiedad? |
 | **Integración** | llamada directa · cola · evento · stream · batch | ¿Qué latencia y acoplamiento admite el proceso? |
 | **Datos** | compartidos/propios · ACID/eventual · OLTP/OLAP | ¿Quién posee cada hecho y qué consistencia exige? |
 | **Experiencia** | SSR · SPA · móvil · desktop · microfrontend | ¿Qué composición optimiza usuario, equipo y operación? |
 
+**Micro arquitectura** — cómo se organiza el código dentro de una frontera ya decidida:
+
+| Eje | Opciones | La pregunta que responde |
+|---|---|---|
+| **Organización interna** | por capas técnicas · **vertical slice** (por feature) | ¿Qué ficheros se tocan juntos cuando cambia una cosa? |
+
+Este eje se decide **después** de fijar las fronteras, y **por módulo, no para todo el sistema**.
+El monolito modular responde a la pregunta macro (dónde están las fronteras); el vertical slice, a
+la micro (cómo se ordena el código dentro de una). No compiten. El módulo de facturación puede ir
+por vertical slice y el de notificaciones por capas, y las dos decisiones son correctas si cada
+una se justifica.
+
 Una decisión real suena así:
 
 > *Monolito modular* (despliegue) con *fronteras hexagonales* (dependencias) sobre
 > *bounded contexts* (dominio), integración *síncrona* salvo notificaciones por *evento*,
-> datos *propios por contexto* con *ACID* dentro de cada uno, y frontend *SSR*.
+> datos *propios por contexto* con *ACID* dentro de cada uno, frontend *SSR*, y por dentro
+> *vertical slice* en los contextos con muchas features independientes.
 
-Eso son seis decisiones, no una. Cada una se justifica por separado y **cada una se puede
+Eso son siete decisiones, no una. Cada una se justifica por separado y **cada una se puede
 revisar sin tocar las demás**. Preguntar "¿hacemos clean o microservicios?" es como preguntar
 "¿el coche lo hacemos rojo o diésel?".
 
@@ -89,7 +104,7 @@ flowchart TD
 | **Monolito modular** | Default. Equipo ≤ 8, dominio en descubrimiento, time-to-market corto | Bajo. Riesgo: big ball of mud sin disciplina de módulos | Necesitas escalado o despliegue independiente **real** |
 | **Hexagonal / Ports & Adapters** | Lógica rica, muchos externos, quieres testear sin infraestructura | Medio: más ficheros, más indirección | Es un CRUD fino |
 | **Clean / Onion** | Dominio complejo + vida larga + varios frontends | Medio-alto. Capas vacías si el dominio es pobre | El equipo no lo domina (la mala Clean es peor que un buen monolito) |
-| **Vertical Slice** | Muchas features poco acopladas, equipos en paralelo | Medio. Duplicación de transversales | Hay mucha lógica compartida |
+| **Vertical Slice** *(micro: se elige por módulo)* | Muchas features poco acopladas, equipos en paralelo | Medio. Duplicación de transversales | Hay mucha lógica compartida |
 | **Microservicios** | Escalado independiente real + equipos autónomos + ops madura | **Muy alto**: red, datos distribuidos, versionado, observabilidad, latencia | No hay CI/CD, ni ownership, ni observabilidad. **Prohibido sin ADR** |
 | **Event-Driven** | Integraciones asíncronas, desacople temporal, auditoría | Alto: orden, duplicados, idempotencia, depuración difícil | El flujo es síncrono y simple |
 | **CQRS + Event Sourcing** | Lecturas ≫ escrituras, auditoría legal, historial temporal | Muy alto: proyecciones, versionado de eventos, replays | Solo querías separar lectura de escritura (basta CQRS ligero) |

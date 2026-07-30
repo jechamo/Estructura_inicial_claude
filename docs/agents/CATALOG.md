@@ -2,6 +2,9 @@
 
 20 agentes en tres niveles. Definición canónica en [`.claude/agents/`](../../.claude/agents/).
 
+De dónde viene este reparto y qué se cambió respecto a la idea original de 10 agentes:
+[`MAPEO-10-AGENTES.md`](./MAPEO-10-AGENTES.md).
+
 ---
 
 ## Jerarquía
@@ -11,6 +14,7 @@ flowchart TD
     U([Usuario]) --> O["🎯 orchestrator<br/><i>router</i>"]
 
     O --> F1["📝 spec-analyst"]
+    O --> F0["🎨 ux-designer<br/><i>fase design</i>"]
     O --> F2["📐 architect"]
     O --> F3["🗂️ planner"]
     O --> F4["⚙️ implementer"]
@@ -60,7 +64,8 @@ por su cuenta: hacen su trabajo y devuelven el control.
 
 | Agente | Fase | Modelo | Produce | Handoff natural |
 |---|---|---|---|---|
-| [`spec-analyst`](../../.claude/agents/spec-analyst.md) | specify · clarify | `opus` | `spec.md`, `clarifications.md` | → `planner` |
+| [`spec-analyst`](../../.claude/agents/spec-analyst.md) | specify · clarify | `opus` | `spec.md` (EARS + MoSCoW), `clarifications.md` | → `ux-designer` o `planner` |
+| [`ux-designer`](../../.claude/agents/ux-designer.md) | **design** | `inherit` | `design.md`, flujos, estados | → `planner` |
 | [`architect`](../../.claude/agents/architect.md) | init · decisiones estructurales | `opus` | `constitution.md`, ADR | → `spec-analyst` o `planner` |
 | [`planner`](../../.claude/agents/planner.md) | plan · tasks | `opus` | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | → `implementer` |
 | [`implementer`](../../.claude/agents/implementer.md) | implement | `inherit` | Código + tests | → `code-reviewer` |
@@ -70,20 +75,23 @@ por su cuenta: hacen su trabajo y devuelven el control.
 
 ## Nivel 2 · Especialistas
 
-| Agente | Terreno | Modelo | MCP |
-|---|---|---|---|
-| [`ux-designer`](../../.claude/agents/ux-designer.md) | Flujos, wireframes, design system, accesibilidad | `inherit` | `figma`, `stitch` |
-| [`frontend-expert`](../../.claude/agents/frontend-expert.md) | Componentes, estado, rendimiento de UI, a11y | `inherit` | `figma`, `context7` |
-| [`backend-expert`](../../.claude/agents/backend-expert.md) | Dominio, casos de uso, integraciones, colas | `inherit` | `context7` |
-| [`database-expert`](../../.claude/agents/database-expert.md) | Modelado, migraciones, índices, RLS | `inherit` | `supabase`, `context7` |
-| [`api-designer`](../../.claude/agents/api-designer.md) | Contratos REST/GraphQL/eventos, versionado | `inherit` | `context7` |
-| [`test-engineer`](../../.claude/agents/test-engineer.md) | Estrategia de test, tests difíciles, auditoría de suite | `inherit` | `playwright` |
-| [`security-auditor`](../../.claude/agents/security-auditor.md) | OWASP, ASVS, Agentic | `opus` | — |
-| [`refactor-specialist`](../../.claude/agents/refactor-specialist.md) | SOLID, DRY, KISS, YAGNI, patrones | `opus` | — |
-| [`performance-optimizer`](../../.claude/agents/performance-optimizer.md) | Latencia, memoria, bundle, consultas | `inherit` | — |
-| [`devops-expert`](../../.claude/agents/devops-expert.md) | CI/CD, contenedores, IaC, observabilidad | `inherit` | — |
-| [`docs-writer`](../../.claude/agents/docs-writer.md) | README, guías, documentación de API | `haiku` | — |
-| [`bitacora-keeper`](../../.claude/agents/bitacora-keeper.md) | Memoria del proyecto, decisiones, deuda | `haiku` | — |
+La columna **skill** es el procedimiento escrito del especialista: puertas de entrada, ciclo TDD,
+patrones y lista de comprobación. Un agente al que solo le dices "aplica SOLID" no aplica SOLID.
+
+| Agente | Terreno | Skill | Modelo | MCP |
+|---|---|---|---|---|
+| [`ux-designer`](../../.claude/agents/ux-designer.md) | Flujos, wireframes, design system, accesibilidad | [`/sdd-design`](../../.claude/skills/sdd-design/SKILL.md) | `inherit` | `figma`, `stitch` |
+| [`frontend-expert`](../../.claude/agents/frontend-expert.md) | Componentes, estado, rendimiento de UI, a11y | [`/front`](../../.claude/skills/front/SKILL.md) | `inherit` | `figma`, `context7` |
+| [`backend-expert`](../../.claude/agents/backend-expert.md) | Dominio, casos de uso, integraciones, colas | [`/middle`](../../.claude/skills/middle/SKILL.md) | `inherit` | `context7` |
+| [`database-expert`](../../.claude/agents/database-expert.md) | Modelado, migraciones, índices, RLS | [`/bbdd`](../../.claude/skills/bbdd/SKILL.md) | `inherit` | `supabase`, `context7` |
+| [`api-designer`](../../.claude/agents/api-designer.md) | Contratos REST/GraphQL/eventos, versionado | — | `inherit` | `context7` |
+| [`test-engineer`](../../.claude/agents/test-engineer.md) | Estrategia de test, tests difíciles, auditoría de suite | [`/tdd`](../../.claude/skills/tdd/SKILL.md) | `inherit` | `playwright` |
+| [`security-auditor`](../../.claude/agents/security-auditor.md) | OWASP, ASVS, Agentic | [`/security-scan`](../../.claude/skills/security-scan/SKILL.md) | `opus` | — |
+| [`refactor-specialist`](../../.claude/agents/refactor-specialist.md) | SOLID, DRY, KISS, YAGNI, patrones | — | `opus` | — |
+| [`performance-optimizer`](../../.claude/agents/performance-optimizer.md) | Latencia, memoria, bundle, consultas | — | `inherit` | — |
+| [`devops-expert`](../../.claude/agents/devops-expert.md) | CI/CD, contenedores, IaC, observabilidad | — | `inherit` | — |
+| [`docs-writer`](../../.claude/agents/docs-writer.md) | README, guías, documentación de API | — | `haiku` | — |
+| [`bitacora-keeper`](../../.claude/agents/bitacora-keeper.md) | Memoria del proyecto, decisiones, deuda | [`/bitacora`](../../.claude/skills/bitacora/SKILL.md) | `haiku` | — |
 
 ---
 
@@ -116,14 +124,18 @@ Todo agente cierra con:
 
 ```mermaid
 flowchart LR
-    SA["spec-analyst"] -->|spec aprobada| PL["planner"]
+    SA["spec-analyst"] -->|con UI| UXD["ux-designer<br/>/sdd-design"]
+    SA -->|sin UI| PL["planner"]
+    UXD -->|design.md| PL
+    UXD -.requisito nuevo.-> SA
     AR["architect"] -->|constitución lista| SA
     PL -->|consulta| DB["database-expert"]
     PL -->|consulta| AP["api-designer"]
-    PL -->|consulta| UX["ux-designer"]
+    PL -.consulta.-> UXD
     PL -->|tasks.md| IM["implementer"]
-    IM -->|delega| FE["frontend-expert"]
-    IM -->|delega| BE["backend-expert"]
+    IM -->|/front| FE["frontend-expert"]
+    IM -->|/middle| BE["backend-expert"]
+    IM -->|/bbdd| DB
     IM -->|delega| TE["test-engineer"]
     IM -->|delega| RF["refactor-specialist"]
     IM -->|código listo| CR["code-reviewer"]

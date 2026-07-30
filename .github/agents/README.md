@@ -15,14 +15,19 @@ referencian. Si cambias un comportamiento, cámbialo en `.claude/agents/`.
 Solo los agentes del eje principal del circuito SDD, que son los que se seleccionan a mano
 desde el picker:
 
-`orchestrator` · `spec-analyst` · `architect` · `planner` · `implementer` · `code-reviewer` ·
-`security-auditor`
+`orchestrator` · `spec-analyst` · `ux-designer` · `architect` · `planner` · `implementer` ·
+`code-reviewer` · `security-auditor`
 
-Los especialistas (`frontend-expert`, `backend-expert`, `database-expert`, `ux-designer`,
-`test-engineer`, `refactor-specialist`, `performance-optimizer`, `api-designer`,
-`devops-expert`, `docs-writer`, `bitacora-keeper`, `research-analyst`, `release-manager`)
-están en `.claude/agents/` y VS Code también los lee desde ahí. Si usas el **agente en la
-nube** de Copilot y necesitas alguno, crea su envoltorio con el mismo patrón.
+`ux-designer` tiene envoltorio porque es **agente de fase** en `/sdd-design`, no solo especialista.
+
+Los especialistas (`frontend-expert`, `backend-expert`, `database-expert`, `test-engineer`,
+`refactor-specialist`, `performance-optimizer`, `api-designer`, `devops-expert`, `docs-writer`,
+`bitacora-keeper`, `research-analyst`, `release-manager`) están en `.claude/agents/` y VS Code
+también los lee desde ahí. Si usas el **agente en la nube** de Copilot y necesitas alguno, crea su
+envoltorio con el mismo patrón.
+
+Su procedimiento de trabajo vive en las skills, que **sí son portables sin duplicar**:
+`/middle`, `/front` y `/bbdd` valen igual aquí que en Claude Code, Cursor o Codex.
 
 ## Handoffs
 

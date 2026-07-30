@@ -24,6 +24,12 @@ Lo verifica `/sdd-verify` y lo exige `release-manager` antes de `/sdd-ship`.
 - [ ] Cada tarea `hecho` tiene ejecución registrada en `execution-log.jsonl`
 - [ ] Cobertura dominio/aplicación ≥ 80 % **y cero zonas críticas sin probar** ← este segundo
       criterio es el que manda; el porcentaje es solo un punto de partida ajustable por riesgo
+- [ ] *Mutation score* del core medido y reportado como **número** en `evidence.md`, no como
+      adjetivo. Cobertura alta con *mutation score* bajo = suite decorativa
+- [ ] Si la funcionalidad tenía interfaz: `design.md` existe, con los seis estados por pantalla y
+      accesibilidad verificada
+- [ ] Todos los requisitos *must* de la spec entregados. Lo que quede fuera es lo que la spec ya
+      marcó como *should*, *could* o *won't*, no lo que dio menos pereza
 - [ ] `code-reviewer` → veredicto ✅
 - [ ] `refactor-specialist` → sin violaciones SOLID sin justificar
 - [ ] `security-auditor` → sin hallazgos CRÍTICO ni ALTO
@@ -53,7 +59,9 @@ voluntad, se olvida.
 | Tests de contrato | CI | Sí |
 | Revisión de código | `code-reviewer` + humano | Sí |
 | Auditoría de seguridad | `security-auditor` | Sí (CRÍTICO/ALTO) |
-| Trazabilidad spec ↔ test | `/sdd-verify` | Sí |
+| Trazabilidad spec ↔ test | `/sdd-verify` + `scripts/check-sdd.mjs --strict` | Sí |
+| Evidencia y ejecución de toda tarea `hecho` | `scripts/check-sdd.mjs --strict` | Sí |
+| Skills de terceros fijadas y con licencia verificada | `scripts/skills-sync.mjs --check` | Sí |
 
 ---
 

@@ -8,6 +8,29 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Skills de dominio `/middle`, `/front` y `/bbdd`**: el procedimiento escrito de cada
+  especialista, con puerta de entrada, ciclo TDD, patrones aplicables y lista de comprobación
+  antes de devolver el control. Un agente al que solo le dices "aplica SOLID" no aplica SOLID.
+- **`/sdd-design`**: el diseño pasa a ser fase propia entre `/sdd-clarify` y `/sdd-plan`, con
+  `design.md` como artefacto. Obliga a los seis estados por pantalla (vacío, cargando, parcial,
+  error, sin permiso, éxito) y a verificar accesibilidad **sobre el diseño**. Se salta si la
+  funcionalidad no tiene interfaz. Descubrir una pantalla que falta después de planificar la
+  arquitectura significa replanificar.
+- **Priorización MoSCoW con las reglas del DSDM** en `spec.md`: prioridad y esfuerzo relativo por
+  requisito, reparto calculado **sobre esfuerzo y no sobre número de requisitos**, y aviso
+  automático si los *must* pasan del 60 %. Sección obligatoria de *won't have this time*.
+- **`.sdd/external-skills.json` + `scripts/skills-sync.mjs` + `docs/agents/SKILLS-EXTERNAS.md`**:
+  13 skills oficiales de Anthropic, Vercel, Supabase, Cloudflare, Netlify, Stripe y Neon
+  catalogadas para middle, front y BBDD. Se **declaran, no se copian**: nada se aprueba sin
+  versión fijada y licencia verificada, y el script imprime el comando pero **no instala** —
+  una skill de terceros es una dependencia ejecutable (OWASP Agentic ASI04).
+- `docs/agents/MAPEO-10-AGENTES.md`: de dónde viene este diseño, qué se conservó de la idea
+  original de 10 agentes y el motivo de cada cambio.
+- `docs/research/baseline-2026-07-30.md`: baseline vigente — ecosistema de skills y su cadena de
+  suministro, TDD y QA con agentes (datos DORA), separación macro/micro en arquitectura, reglas
+  reales de MoSCoW.
+- 4 prompts nuevos para Copilot (15 en total), 4 comandos nuevos para Cursor y envoltorio de
+  `ux-designer` para VS Code, ahora que es agente de fase.
 - `scripts/check-sdd.mjs`: validador determinista del circuito SDD, con modo `--strict`.
   Convierte la Definition of Done en un gate que falla el build en lugar de una casilla que
   marca el modelo. Integrado en CI, `/sdd-verify` y `/sdd-ship`.
@@ -38,7 +61,21 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   de clave es exacta.
 
 ### Changed
--
+- **El eje de arquitectura se separa en macro y micro.** `vertical slice` estaba junto a layered,
+  hexagonal y clean, como si compitieran; responde a otra pregunta. El monolito modular decide
+  dónde están las fronteras (macro); el vertical slice, cómo se ordena el código dentro de una
+  (micro), y es **decisión local de cada módulo**. Aplicado a `AGENTS.md` §3.1 y a
+  `DECISION-GUIDE.md`. La ley del proyecto no cambia.
+- `/sdd-tasks` separa las tareas por **terreno** (middle / front / BBDD) y le asigna a cada una su
+  skill. BBDD va antes de middle cuando el esquema es prerrequisito; el contrato antes del front
+  siempre, y por eso front y middle pueden ir en paralelo.
+- El orden de implementación respeta MoSCoW: todos los *must* antes del primer *should*.
+- Mutation testing pasa de mención a requisito con dato: los tests generados por un modelo tienen
+  cobertura presentable y *mutation score* bajo. El número va en `evidence.md`.
+- `guard-bash` pregunta antes de `skills add` y `plugin marketplace add`; `guard-write` trata
+  `.sdd/external-skills.json` como política del ecosistema.
+- `check-sdd` comprueba además que toda skill declara `name` coincidente con su carpeta, que
+  `design.md` no lleva ambigüedades si ya hay plan, y avisa si una spec no tiene prioridades.
 
 ### Deprecated
 -
@@ -46,11 +83,11 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ### Removed
 -
 
-### Fixed
--
-
 ### Security
--
+- Instalar una skill de terceros se trata como decisión de cadena de suministro: `ask` en el hook,
+  auditoría registrada, versión fijada y licencia verificada antes de aprobar. `skills-sync.mjs`
+  **no instala** por su cuenta — un script que descarga y activa instrucciones de terceros sin
+  intervención humana es el vector ASI04 con otro nombre.
 
 ---
 

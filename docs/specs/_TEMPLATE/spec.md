@@ -31,13 +31,39 @@
 |---|---|---|---|
 | | | | |
 
-## 4. Requisitos funcionales (EARS)
+## 4. Requisitos funcionales (EARS) con prioridad MoSCoW
 
 > Formatos: `El sistema DEBE …` · `CUANDO <disparador>, el sistema DEBE …` ·
 > `MIENTRAS <estado>, el sistema DEBE …` · `SI <condición no deseada>, ENTONCES el sistema DEBE …`
+>
+> Prioridad: **M** must · **S** should · **C** could · **W** won't have this time.
+> Esfuerzo: estimación **relativa** (1, 2, 3, 5, 8). No son horas; sirven para repartir.
 
-- **RF-01** — <requisito atómico y verificable>
-- **RF-02** — <…>
+| Id | Requisito | Prioridad | Esfuerzo |
+|---|---|---|---|
+| **RF-01** | <requisito atómico y verificable> | M | |
+| **RF-02** | <…> | S | |
+
+### Reparto MoSCoW
+
+> **El reparto es sobre esfuerzo estimado, no sobre número de requisitos.** Diez must pequeños y
+> dos enormes no son "el 83 % must". Reglas del DSDM:
+
+| Prioridad | Esfuerzo | % | Límite recomendado |
+|---|---|---|---|
+| Must | | | **≤ 60 %** |
+| Should | | | ~20 % |
+| Could | | | ~20 % — es la **contingencia deliberada** |
+| **Total** | | 100 % | |
+
+Si los *must* pasan del 60 %, hay riesgo de previsibilidad: o se baja algo a *should*, o se
+justifica por escrito aquí (tecnología conocida, equipo estable, riesgo externo bajo).
+
+**Won't have this time** — se escribe. Un descarte no registrado vuelve como discusión:
+
+| Id | Qué se descarta | Por qué ahora no | ¿Volverá? |
+|---|---|---|---|
+| **RF-W01** | | | |
 
 ## 5. Requisitos no funcionales
 
@@ -86,6 +112,9 @@ Escenario: <nombre>
 ## 9. Fuera de alcance
 
 > Tan importante como el alcance. Defensa contra el scope creep.
+>
+> No confundir con los **won't have** de §4: aquello está en el ámbito de esta spec pero se aplaza
+> a otra iteración. Esto **no pertenece** a esta spec.
 
 - <lo que esta spec NO hace, y por qué>
 

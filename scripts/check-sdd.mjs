@@ -99,6 +99,32 @@ for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 1 bis · Skills: el nombre declarado manda sobre la carpeta
+//
+// Una skill se invoca por su `name`, no por el nombre del directorio. Si divergen,
+// el comando que documentas no es el que existe.
+// ─────────────────────────────────────────────────────────────────────────────
+const SKILLS_DIR = join(ROOT, '.claude/skills');
+for (const d of dirs(SKILLS_DIR)) {
+  const t = leer(join(SKILLS_DIR, d, 'SKILL.md'));
+  if (t === null) {
+    err('skill/estructura', `.claude/skills/${d}/: falta SKILL.md`);
+    continue;
+  }
+  const fin = t.indexOf('\n---', 4);
+  if (!t.startsWith('---') || fin === -1) {
+    err('skill/frontmatter', `${d}/SKILL.md: sin frontmatter cerrado`);
+    continue;
+  }
+  const fm = t.slice(4, fin);
+  const nombre = (fm.match(/^name:\s*(.+)$/m) || [])[1]?.trim();
+  if (!nombre) err('skill/name', `${d}/SKILL.md: falta 'name'`);
+  else if (nombre !== d) err('skill/name', `${d}/SKILL.md: name '${nombre}' no coincide con la carpeta`);
+  if (!/^description:\s*\S/m.test(fm))
+    err('skill/description', `${d}/SKILL.md: falta 'description' — sin ella el modelo no sabe cuándo usarla`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 2 · Hooks referenciados en settings.json que existan de verdad
 // ─────────────────────────────────────────────────────────────────────────────
 const settings = leer(join(ROOT, '.claude/settings.json'));
@@ -143,6 +169,37 @@ for (const s of specs) {
   const tienePlan = existsSync(join(dir, 'plan.md'));
   if (marcadores && tienePlan)
     err('spec/clarify', `${s}: ${marcadores} marcador(es) [NEEDS CLARIFICATION] y ya existe plan.md — se planificó sobre ambigüedad`);
+
+  // 3.1 bis · El diseño tampoco avanza con ambigüedades sin resolver
+  const design = leer(join(dir, 'design.md'));
+  if (design) {
+    const marcadoresDiseño = (design.match(/\[NEEDS CLARIFICATION/g) || []).length;
+    if (marcadoresDiseño && tienePlan)
+      err(
+        'design/clarify',
+        `${s}: ${marcadoresDiseño} marcador(es) [NEEDS CLARIFICATION] en design.md y ya existe plan.md`,
+      );
+
+    // Los estados no felices son la mitad del diseño y son lo primero que se olvida.
+    const faltan = ['vacío', 'cargando', 'error', 'sin permiso'].filter(
+      (e) => !new RegExp(e.replace('í', '[íi]'), 'i').test(design),
+    );
+    if (faltan.length)
+      warn('design/estados', `${s}: design.md no menciona estado(s): ${faltan.join(', ')}`);
+  }
+
+  // 3.1 ter · Prioridad: una spec sin prioridades es una lista de deseos
+  if (/\bRF-\d+\b/.test(spec)) {
+    const tienePrioridad =
+      /\|\s*(M|S|C|W)\s*\|/.test(spec) || /\b(must|should|could|won't)\b/i.test(spec);
+    if (!tienePrioridad)
+      warn(
+        'spec/prioridad',
+        `${s}: hay requisitos pero ninguna prioridad MoSCoW. Sin prioridad no hay alcance negociable`,
+      );
+    else if (/Reparto MoSCoW/i.test(spec) && !/%/.test(spec))
+      warn('spec/prioridad', `${s}: hay tabla de reparto MoSCoW sin porcentajes calculados`);
+  }
 
   const tasks = leer(join(dir, 'tasks.md'));
   if (tienePlan && !tasks) warn('spec/estructura', `${s}: hay plan.md pero no tasks.md`);
@@ -225,7 +282,11 @@ for (const p of walk(join(ROOT, 'docs/specs'), (n) => n.endsWith('.md'))) {
 // Informe
 // ─────────────────────────────────────────────────────────────────────────────
 const modo = STRICT ? 'estricto' : 'normal';
-console.log(`check-sdd (${modo}) · ${specs.length} spec(s) · ${tareasHechas} tarea(s) hecha(s) · ${nombresAgentes.size} agente(s)\n`);
+const nSkills = dirs(SKILLS_DIR).length;
+console.log(
+  `check-sdd (${modo}) · ${specs.length} spec(s) · ${tareasHechas} tarea(s) hecha(s) · ` +
+    `${nombresAgentes.size} agente(s) · ${nSkills} skill(s)\n`,
+);
 
 if (avisos.length) {
   console.log('Avisos:');

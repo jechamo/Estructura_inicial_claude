@@ -12,8 +12,14 @@ Reglas del proyecto: @AGENTS.md · Arquitectura: @docs/architecture/constitution
 Adopta el perfil de @.claude/agents/spec-analyst.md.
 
 Crea `docs/specs/NNN-slug/spec.md` con: problema · objetivo medible · usuarios ·
-requisitos funcionales en **EARS** · requisitos no funcionales · criterios de aceptación en
-**Gherkin** · casos límite · reglas de negocio · **fuera de alcance** · riesgos · supuestos.
+requisitos funcionales en **EARS con prioridad MoSCoW** · requisitos no funcionales · criterios de
+aceptación en **Gherkin** · casos límite · reglas de negocio · **fuera de alcance** · riesgos ·
+supuestos.
+
+MoSCoW **sobre esfuerzo estimado, no sobre número de requisitos**: must ≤ 60 %, should ~20 %,
+could ~20 % como contingencia. Si los must pasan del 60 %, avisa y propón qué bajar.
+
+Por cada duda que cambie el resultado: **pregunta, trae tu recomendación y espera confirmación.**
 
 **Cero tecnología.** Lo que no sepas → `[NEEDS CLARIFICATION: ...]`.
 
@@ -22,7 +28,19 @@ requisitos funcionales en **EARS** · requisitos no funcionales · criterios de 
 Mismo perfil. Máximo 5 preguntas por ronda, cada una con opciones concretas y tu recomendación.
 Registra en `clarifications.md`. **La spec no avanza con marcadores pendientes.**
 
-## 3. Planificar
+## 3. Diseñar (solo si hay interfaz)
+
+Adopta el perfil de @.claude/agents/ux-designer.md. Procedimiento:
+@.claude/skills/sdd-design/SKILL.md
+
+Produce `docs/specs/NNN-slug/design.md`: flujo **con los caminos de error** · los **seis estados
+por pantalla** (vacío, cargando, parcial, error, sin permiso, éxito) · componentes clasificados en
+reutiliza/extiende/nuevo · accesibilidad WCAG 2.2 AA verificada **sobre el diseño**.
+
+Pregunta antes de dibujar. Requisito nuevo que aparezca aquí → vuelve al paso 1.
+**Cero tecnología.** Si la funcionalidad no tiene UI, di por qué se salta y pasa al paso 4.
+
+## 4. Planificar
 
 Adopta el perfil de @.claude/agents/planner.md.
 
@@ -33,13 +51,13 @@ tema sea de su terreno.
 Si el plan viola la constitución → para y adopta el perfil de @.claude/agents/architect.md
 para escribir el ADR correspondiente.
 
-## 4. Trocear
+## 5. Trocear
 
-Mismo perfil. `tasks.md` con tareas atómicas, ordenadas **de dentro hacia fuera**
-(domain → application → infrastructure → interfaces), cada una con su test y su
-trazabilidad a RF/CA.
+Mismo perfil. `tasks.md` con tareas atómicas, **separadas por middle / front / BBDD**, ordenadas
+**de dentro hacia fuera** (domain → application → infrastructure → interfaces), cada una con su
+test y su trazabilidad a RF/CA. Las de BBDD van antes que las de middle que dependan de ellas.
 
-## 5. Implementar
+## 6. Implementar
 
 Adopta el perfil de @.claude/agents/implementer.md. **Una tarea por ciclo**:
 
@@ -48,7 +66,14 @@ Adopta el perfil de @.claude/agents/implementer.md. **Una tarea por ciclo**:
 3. 🔵 Refactor con SOLID, tests en verde.
 4. `tasks.md` → `hecho`.
 
-## 6. Verificar
+Según el terreno de la tarea, sigue el procedimiento correspondiente — ahí están las puertas de
+entrada, los patrones y la lista de comprobación de cada capa:
+
+- Capa media: @.claude/skills/middle/SKILL.md (perfil @.claude/agents/backend-expert.md)
+- Frontend: @.claude/skills/front/SKILL.md (perfil @.claude/agents/frontend-expert.md)
+- Base de datos: @.claude/skills/bbdd/SKILL.md (perfil @.claude/agents/database-expert.md)
+
+## 7. Verificar
 
 Adopta @.claude/agents/code-reviewer.md y luego @.claude/agents/security-auditor.md.
 
@@ -57,7 +82,10 @@ trazabilidad RF→CA→test, revisión del diff, auditoría SOLID, auditoría de
 
 **CRÍTICO o ALTO en seguridad bloquea la entrega.**
 
-## 7. Entregar
+Ejecuta también los verificadores deterministas, que no dependen del IDE ni del modelo:
+`node scripts/check-sdd.mjs --strict` y `node scripts/skills-sync.mjs --check`.
+
+## 8. Entregar
 
 Adopta @.claude/agents/release-manager.md.
 

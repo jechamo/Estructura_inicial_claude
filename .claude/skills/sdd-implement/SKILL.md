@@ -52,12 +52,15 @@ Anuncia: *"T-042-03 · <título> — test: `<ruta>`"*.
 
 ## Delegación
 
-| Terreno | Agente |
-|---|---|
-| UI, estado, accesibilidad | `@frontend-expert` |
-| Dominio, casos de uso, integraciones | `@backend-expert` |
-| Esquema, migraciones, consultas | `@database-expert` |
-| Contratos | `@api-designer` |
+Cada terreno tiene su **procedimiento escrito**: puerta de entrada, ciclo, patrones y lista de
+comprobación. Delega con la skill, no con una instrucción genérica.
+
+| Terreno | Agente | Skill |
+|---|---|---|
+| UI, estado, accesibilidad | `@frontend-expert` | [`/front`](../front/SKILL.md) |
+| Dominio, casos de uso, integraciones | `@backend-expert` | [`/middle`](../middle/SKILL.md) |
+| Esquema, migraciones, consultas | `@database-expert` | [`/bbdd`](../bbdd/SKILL.md) |
+| Contratos | `@api-designer` | — |
 | Test difícil, fixtures, dobles | `@test-engineer` |
 | Lentitud medida | `@performance-optimizer` |
 | Olor de diseño | `@refactor-specialist` |

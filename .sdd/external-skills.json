@@ -1,0 +1,204 @@
+{
+  "$comment": [
+    "Skills de terceros declaradas, NO vendorizadas. Copiar el SKILL.md de otro dentro de este",
+    "repositorio crea una copia que envejece en silencio y arrastra su licencia. Aquí se declara",
+    "la referencia y se instala con el gestor del ecosistema.",
+    "",
+    "Una skill es instrucciones que tu agente obedece más scripts que puede ejecutar: es una",
+    "dependencia ejecutable. Se trata como tal (OWASP Agentic ASI04, cadena de suministro).",
+    "",
+    "Ninguna entrada pasa a estado 'aprobada' sin 'pin' (versión o commit) y sin auditoría",
+    "registrada en docs/agents/SKILLS-EXTERNAS.md. Verifícalo con:",
+    "  node scripts/skills-sync.mjs --check"
+  ],
+  "baseline": "docs/research/baseline-2026-07-30.md",
+  "registro": "docs/agents/SKILLS-EXTERNAS.md",
+  "gestor": {
+    "nombre": "skills.sh",
+    "instalar": "npx skills add <ref>",
+    "nota": "El comando se muestra para que lo ejecute una persona. Este script no instala código de terceros por su cuenta."
+  },
+  "politica": {
+    "estados": {
+      "candidata": "Descubierta y catalogada. No instalada. No auditada.",
+      "aprobada": "Auditada (licencia, permisos, scripts, dependencias, colisión de triggers) y fijada. Instalable.",
+      "rechazada": "Auditada y descartada. El motivo queda escrito y evita repetir la evaluación."
+    },
+    "reglas": [
+      "Sin 'pin' no hay estado 'aprobada'. Nunca se sigue una referencia móvil tipo 'latest'.",
+      "La auditoría se hace cuando el proyecto adopta ese stack, no antes: auditar lo que no se usa es teatro.",
+      "Al actualizar se revisa el diff del SKILL.md, igual que en cualquier dependencia.",
+      "Colisión de triggers con las skills propias (/middle, /front, /bbdd) es motivo de rechazo."
+    ]
+  },
+  "skills": [
+    {
+      "id": "anthropic-frontend-design",
+      "ref": "anthropics/skills:frontend-design",
+      "publicador": "Anthropic (oficial)",
+      "terreno": "front",
+      "aporta": "Criterio de diseño visual y sistema de diseño antes de escribir código de UI",
+      "licencia": "Apache-2.0",
+      "cuando": { "siempre": true },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Instalación alternativa en Claude Code: /plugin marketplace add anthropics/skills. Solapa parcialmente con @ux-designer: si se adopta, decidir quién manda en tokens."
+    },
+    {
+      "id": "anthropic-webapp-testing",
+      "ref": "anthropics/skills:webapp-testing",
+      "publicador": "Anthropic (oficial)",
+      "terreno": "qa",
+      "aporta": "Verificación en navegador real de una aplicación web",
+      "licencia": "Apache-2.0",
+      "cuando": { "cualquierDependencia": ["@playwright/test", "playwright", "cypress"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Complementa al MCP playwright que ya usa @test-engineer; no lo sustituye."
+    },
+    {
+      "id": "vercel-next-best-practices",
+      "ref": "vercel-labs/next-best-practices",
+      "publicador": "Vercel (oficial)",
+      "terreno": "front",
+      "aporta": "Patrones recomendados de Next.js por el equipo que lo mantiene",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["next"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "vercel-next-cache-components",
+      "ref": "vercel-labs/next-cache-components",
+      "publicador": "Vercel (oficial)",
+      "terreno": "front",
+      "aporta": "Estrategias de caché y componentes cache-aware",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["next"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Relevante solo si hay problema de caché medido. No instalar por completitud."
+    },
+    {
+      "id": "vercel-next-upgrade",
+      "ref": "vercel-labs/next-upgrade",
+      "publicador": "Vercel (oficial)",
+      "terreno": "front",
+      "aporta": "Migración de versiones de Next.js",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["next"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Útil de forma puntual, en la migración. Desinstalable después."
+    },
+    {
+      "id": "supabase-postgres-best-practices",
+      "ref": "supabase/postgres-best-practices",
+      "publicador": "Supabase (oficial)",
+      "terreno": "bbdd",
+      "aporta": "Buenas prácticas de PostgreSQL sobre Supabase, incluido RLS",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["@supabase/supabase-js", "supabase"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Encaja directamente con la sección de seguridad de /bbdd. Primera candidata si el proyecto usa Supabase. El propio servidor MCP de Supabase recomienda instalar su conjunto con 'npx skills add supabase/agent-skills': verificar en la auditoría qué ref es la vigente."
+    },
+    {
+      "id": "neon-postgres",
+      "ref": "neondatabase/neon-postgres",
+      "publicador": "Neon (oficial)",
+      "terreno": "bbdd",
+      "aporta": "Prácticas de Postgres serverless en Neon",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["@neondatabase/serverless"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "netlify-db",
+      "ref": "netlify/netlify-db",
+      "publicador": "Netlify (oficial)",
+      "terreno": "bbdd",
+      "aporta": "Postgres gestionado con branching por deploy preview",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["netlify.toml"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "cloudflare-workers-best-practices",
+      "ref": "cloudflare/workers-best-practices",
+      "publicador": "Cloudflare (oficial)",
+      "terreno": "middle",
+      "aporta": "Revisión y autoría de Workers contra prácticas de producción",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["wrangler.toml", "wrangler.jsonc", "wrangler.json"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "cloudflare-wrangler",
+      "ref": "cloudflare/wrangler",
+      "publicador": "Cloudflare (oficial)",
+      "terreno": "middle",
+      "aporta": "Workers, KV, R2, D1, Vectorize, Queues y Workflows desde la CLI",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["wrangler.toml", "wrangler.jsonc", "wrangler.json"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Ejecuta despliegues. Si se aprueba, revisar qué comandos deja pasar guard-bash.mjs."
+    },
+    {
+      "id": "netlify-functions",
+      "ref": "netlify/netlify-functions",
+      "publicador": "Netlify (oficial)",
+      "terreno": "middle",
+      "aporta": "Endpoints serverless y tareas en segundo plano",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["netlify.toml"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "netlify-edge-functions",
+      "ref": "netlify/netlify-edge-functions",
+      "publicador": "Netlify (oficial)",
+      "terreno": "middle",
+      "aporta": "Middleware en edge y lógica de geolocalización",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierFichero": ["netlify.toml"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": null
+    },
+    {
+      "id": "stripe-best-practices",
+      "ref": "stripe/stripe-best-practices",
+      "publicador": "Stripe (oficial)",
+      "terreno": "middle",
+      "aporta": "Prácticas de integración de pagos: idempotencia, webhooks, reintentos",
+      "licencia": "por verificar en auditoría",
+      "cuando": { "cualquierDependencia": ["stripe", "@stripe/stripe-js"] },
+      "pin": null,
+      "estado": "candidata",
+      "notas": "Si hay pagos, @security-auditor revisa el resultado igualmente. Una skill del fabricante no sustituye la auditoría."
+    },
+    {
+      "id": "coleccion-completa",
+      "ref": "*/*",
+      "publicador": "varios",
+      "terreno": "todos",
+      "aporta": "Instalar colecciones curadas completas (miles de skills)",
+      "licencia": "heterogénea",
+      "cuando": { "siempre": false },
+      "pin": null,
+      "estado": "rechazada",
+      "notas": "Colisión de triggers, consumo de contexto, superficie de ejecución y deuda de actualización. Las listas curadas se usan para descubrir, no para instalar en bloque."
+    }
+  ]
+}

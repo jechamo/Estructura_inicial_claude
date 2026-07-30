@@ -78,6 +78,9 @@ const politica = [
   /(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$/,
   /(^|\/)docs\/architecture\/constitution\.md$/,
   /(^|\/)\.mcp\.json$/,
+  // Aprobar una skill de terceros es una decisión de cadena de suministro (ASI04):
+  // instrucciones que el agente obedecerá, más scripts que puede ejecutar.
+  /(^|\/)\.sdd\/external-skills\.json$/,
 ];
 
 if (gatesEnabled()) {

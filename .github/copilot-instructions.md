@@ -26,8 +26,13 @@ Empieza por **`orchestrator`** si no sabes qué agente usar.
 ## Prompts reutilizables
 
 En `.github/prompts/*.prompt.md`. Invócalos con `/nombre` en el chat.
-El circuito SDD son: `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-plan`,
+El circuito SDD son: `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-design`, `/sdd-plan`,
 `/sdd-tasks`, `/sdd-implement`, `/sdd-verify`, `/sdd-ship`.
+`/sdd-design` se salta si la funcionalidad no tiene interfaz.
+
+Para implementar, entra por el prompt del terreno de la tarea: **`/middle`** (dominio, casos de
+uso, integraciones), **`/front`** (interfaz) o **`/bbdd`** (esquema, migraciones, consultas). Cada
+uno lleva su puerta de entrada, su ciclo TDD y su lista de comprobación.
 
 ## Instrucciones por tipo de fichero
 

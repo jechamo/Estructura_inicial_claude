@@ -13,7 +13,7 @@ Solo lectura. Rápido y sin adornos.
 1. ¿Existe `docs/architecture/constitution.md`? → arquitectura declarada.
 2. `Glob docs/specs/*/spec.md` → lista de specs con su estado (metadatos del fichero).
 3. Por cada spec activa, qué artefactos existen:
-   `spec.md · clarifications.md · plan.md · data-model.md · contracts/ · tasks.md · test-plan.md`
+   `spec.md · clarifications.md · design.md · plan.md · data-model.md · contracts/ · tasks.md · test-plan.md`
 4. `Grep` en `tasks.md` → tareas por estado.
 5. `git status` y `git log -5` → trabajo sin cerrar.
 6. Últimas 3 entradas de `docs/bitacora/DECISIONS.md`.

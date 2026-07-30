@@ -17,6 +17,8 @@ Agente responsable: `@planner`.
 ```markdown
 ### T-NNN-XX · <título imperativo>
 - Estado: pendiente
+- Terreno: middle | front | bbdd | contratos | test | infra | docs
+- Skill: /middle | /front | /bbdd | —
 - Capa: domain | application | infrastructure | interfaces | test | infra | docs
 - Cubre: RF-03, CA-05
 - Test que la define: `tests/domain/order/place_order.test.ts::debe_rechazar_cuando_stock_insuficiente`
@@ -43,8 +45,16 @@ Agente responsable: `@planner`.
    ```
    **Nunca** empieces por la pantalla ni por la tabla: empezar por fuera lleva a diseñar el
    dominio para encajar en la UI o en el ORM.
-4. Marca `[P]` las tareas que tocan ficheros disjuntos y pueden ir en paralelo.
-5. Incluye tareas que se olvidan siempre:
+4. **Separa por terreno y da a cada tarea su skill**: `middle`, `front` o `bbdd`. No es
+   burocracia: cada terreno tiene puertas de entrada y comprobaciones distintas, y la tarea entra
+   por la skill que las aplica. Una tarea que mezcla los tres está mal cortada.
+   Orden entre terrenos: **bbdd antes que middle** cuando el esquema es prerrequisito, y
+   **contratos antes que front** siempre —sin contrato, el front adivina la respuesta.
+5. Marca `[P]` las tareas que tocan ficheros disjuntos y pueden ir en paralelo. Con el contrato
+   fijado, front y middle **sí** pueden ir en paralelo: es la razón de que el contrato vaya antes.
+6. **El orden respeta MoSCoW**: todos los *must* antes del primer *should*. Si el trabajo se corta
+   por tiempo, lo que queda fuera debe ser lo que la spec ya marcó como sacrificable.
+7. Incluye tareas que se olvidan siempre:
    - migración de datos existentes
    - actualización de contratos y regeneración de tipos
    - logs, métricas y trazas de los caminos nuevos

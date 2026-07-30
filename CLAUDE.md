@@ -16,6 +16,10 @@ a la fase correcta del circuito SDD.
 | Revalidar formatos y estándares | `/sdd-refresh` |
 | Algo se ha caído en producción | `/respond-incident` |
 | Nueva funcionalidad | `/sdd-specify` |
+| Diseñar las pantallas de una spec | `/sdd-design` |
+| Implementar una tarea de backend | `/middle` |
+| Implementar una tarea de interfaz | `/front` |
+| Implementar una tarea de datos | `/bbdd` |
 | No sé en qué punto estoy | `/sdd-status` |
 
 ## Subagentes
@@ -31,6 +35,16 @@ según el protocolo de `AGENTS.md` §10.
 En `.claude/skills/`. Los que empiezan por `sdd-` son el circuito principal y son
 **de invocación explícita** (`disable-model-invocation: true`) para que el flujo lo
 controles tú, no el modelo.
+
+`/middle`, `/front` y `/bbdd` son el procedimiento de cada especialista —puertas de entrada,
+ciclo TDD, patrones y lista de comprobación— y **sí** son invocables por el modelo: el
+`implementer` las usa según el terreno de la tarea.
+
+Skills de terceros: se declaran en [`.sdd/external-skills.json`](.sdd/external-skills.json), no se
+copian al repositorio. Catálogo y auditoría en
+[`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md); política verificada con
+`node scripts/skills-sync.mjs --check`. Una skill externa es una dependencia ejecutable: sin
+versión fijada y licencia verificada no se aprueba.
 
 ## Hooks activos
 

@@ -11,7 +11,8 @@ const prompt = (input.prompt || '').toLowerCase();
 const root = projectRoot(input);
 
 // Si el usuario ya invoca una skill del circuito, no estorbamos.
-if (/^\s*\/(sdd-|onboard|adr|bitacora|tdd|security-scan|design-sync)/.test(input.prompt || '')) allow();
+if (/^\s*\/(sdd-|onboard|adr|bitacora|tdd|security-scan|design-sync|middle|front|bbdd)\b/.test(input.prompt || ''))
+  allow();
 
 const patrones = [
   {
@@ -42,6 +43,13 @@ const patrones = [
       'Suena a defecto → triage con `@research-analyst`, y luego test de regresión ROJO antes del arreglo. ' +
       'Regla de las tres hipótesis: si tres intentos no confirman la causa, para de parchear y revisa supuestos. ' +
       'Si cambia el comportamiento esperado, es una spec nueva.',
+  },
+  {
+    re: /\b(pantalla|pantallas|maqueta|wireframe|figma|stitch|flujo de usuario|dise[ñn]o de la (pantalla|interfaz)|ux)\b/,
+    aviso:
+      'Suena a diseño de interfaz → `/sdd-design` (agente `ux-designer`), y va **antes** de ' +
+      '`/sdd-plan`. Requisito: los seis estados por pantalla (vacío, cargando, parcial, error, ' +
+      'sin permiso, éxito). Un flujo que solo dibuja el camino feliz no es un flujo.',
   },
   {
     re: /\b(refactoriza|limpia|mejora el c[óo]digo|huele mal|deuda t[ée]cnica)\b/,

@@ -46,6 +46,11 @@ jobs:
         if: github.event_name == 'pull_request'
         run: node scripts/check-sdd.mjs --strict
 
+      # Una skill de terceros es una dependencia ejecutable: sin pin y sin licencia
+      # verificada no puede estar aprobada.
+      - name: Gobierno de skills externas
+        run: node scripts/skills-sync.mjs --check
+
       - name: Los commits referencian spec y tarea
         if: github.event_name == 'pull_request'
         run: |

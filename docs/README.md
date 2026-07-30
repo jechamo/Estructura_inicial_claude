@@ -7,7 +7,7 @@ no hace falta escribirlo.
 docs/
 ├── product/            Visión, contexto de negocio, público objetivo
 ├── specs/              ⭐ El corazón. Una carpeta por funcionalidad
-│   └── _TEMPLATE/      spec · clarifications · research · plan · data-model
+│   └── _TEMPLATE/      spec · clarifications · design · research · plan · data-model
 │                       · contracts · tasks · test-plan · evidence
 ├── architecture/       Constitución, ADR, guía de decisión, patrones
 │   ├── adr/            Decisiones estructurales (MADR)
@@ -51,9 +51,12 @@ Estos **obligan**, no son sugerencias:
 | [`architecture/DECISION-GUIDE.md`](./architecture/DECISION-GUIDE.md) | Elegir arquitectura con criterio |
 | [`architecture/PATTERNS.md`](./architecture/PATTERNS.md) | Elegir patrón cuando aparece el problema |
 | [`agents/CATALOG.md`](./agents/CATALOG.md) | Qué agente hace qué y a quién llama |
+| [`agents/MAPEO-10-AGENTES.md`](./agents/MAPEO-10-AGENTES.md) | La idea original de 10 agentes y por qué cambió cada pieza |
+| [`agents/SKILLS-EXTERNAS.md`](./agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, auditoría y registro |
 | [`security/MCP-SECURITY.md`](./security/MCP-SECURITY.md) | Usar MCP sin abrir un agujero |
 | [`integrations/IDE-COMPATIBILITY.md`](./integrations/IDE-COMPATIBILITY.md) | Qué funciona en cada IDE y proveedor, y qué no |
-| [`research/baseline-2026-07-29.md`](./research/baseline-2026-07-29.md) | Qué se verificó, cuándo y con qué fuente |
+| [`research/baseline-2026-07-30.md`](./research/baseline-2026-07-30.md) | Baseline vigente: skills de dominio, TDD/QA, macro/micro, MoSCoW |
+| [`research/baseline-2026-07-29.md`](./research/baseline-2026-07-29.md) | Baseline anterior: formatos por IDE, hooks, seguridad, MCP |
 
 ---
 

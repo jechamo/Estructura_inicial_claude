@@ -108,6 +108,20 @@ productor lo verifica en su CI. Un cambio incompatible **debe romper el build**.
 La cobertura es un **termómetro, no el objetivo**. Un 95 % con asserts triviales vale menos
 que un 70 % con casos límite reales. Por eso existe el mutation testing.
 
+**Y por eso importa más que antes.** Los tests generados por un modelo tienen un patrón
+reconocible: cobertura presentable y *mutation score* bajo, porque no detectan los defectos que se
+les inyectan. Herramientas: **Stryker** (TypeScript/JS), **mutmut** (Python). Ratio test:código
+sano en proyectos con TDD real: **1:1 a 1,5:1**.
+
+El umbral de *mutation score* **no tiene cifra universal defendible**: se declara en la
+constitución del proyecto y se justifica. Lo que no es negociable es medirlo en el core y
+reportarlo en `evidence.md` como número, no como adjetivo.
+
+Contexto que justifica el rigor: DORA mide **−7,2 % de estabilidad** de entrega cuando se adopta
+IA sin fundamentos de ingeniería sólidos, y los PR generados por IA presentan **1,7× más
+incidencias**. Detalle y fuentes en
+[`../research/baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §2.
+
 ---
 
 ## 9. Auditoría de la suite

@@ -48,16 +48,19 @@ flowchart LR
     subgraph B["Circuito B · Toda funcionalidad"]
         S["/sdd-specify<br/>📝 spec-analyst"]
         C["/sdd-clarify<br/>📝 spec-analyst"]
+        D["/sdd-design<br/>🎨 ux-designer"]
         P["/sdd-plan<br/>🗂️ planner"]
         T["/sdd-tasks<br/>🗂️ planner"]
-        M["/sdd-implement<br/>⚙️ implementer"]
+        M["/sdd-implement<br/>⚙️ implementer<br/><i>/middle · /front · /bbdd</i>"]
         V["/sdd-verify<br/>🔍 reviewer + 🛡️ security"]
         SH["/sdd-ship<br/>🚀 release-manager"]
     end
 
-    I --> S --> C --> P --> T --> M --> V --> SH
+    I --> S --> C --> D --> P --> T --> M --> V --> SH
+    C -->|sin interfaz| P
     V -.rojo.-> M
     C -.dudas.-> S
+    D -.requisito nuevo.-> S
     P -.viola arquitectura.-> I
 
     style I fill:#553c9a,color:#fff
@@ -72,11 +75,12 @@ no depende del chat, vive en el repositorio.
 | Fase | Produce | Puerta de salida |
 |---|---|---|
 | `/sdd-init` | `constitution.md` + ADR-0001 | Arquitectura elegida y justificada |
-| `/sdd-specify` | `spec.md` | Requisitos EARS, criterios testables, **cero tecnología** |
+| `/sdd-specify` | `spec.md` | Requisitos EARS con **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios testables, **cero tecnología** |
 | `/sdd-clarify` | `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
+| `/sdd-design` | `design.md`, flujos | Flujo con caminos de error, **seis estados por pantalla**, a11y sobre el diseño. Se salta si no hay UI |
 | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/`, `research.md` | Conforme a la constitución |
-| `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, con test asociado |
-| `/sdd-implement` | Código + tests | TDD: rojo → verde → refactor |
+| `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, **separadas por middle / front / BBDD**, con test asociado |
+| `/sdd-implement` | Código + tests | TDD: rojo → verde → refactor. Cada tarea entra por `/middle`, `/front` o `/bbdd` |
 | `/sdd-verify` | Informes de calidad y seguridad | Todos los gates en verde |
 | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana |
 
@@ -165,14 +169,18 @@ flowchart TD
     S --> C{¿Marcadores<br/>NEEDS CLARIFICATION?}
     C -->|Sí| CL["/sdd-clarify<br/>máx. 5 preguntas por ronda"]
     CL --> C
-    C -->|No| P["/sdd-plan<br/>🗂️ planner"]
+    C -->|No| UI{¿Tiene<br/>interfaz?}
+    UI -->|Sí| D["/sdd-design<br/>🎨 ux-designer"]
+    D --> P["/sdd-plan<br/>🗂️ planner"]
+    UI -->|No| P
+    D -.requisito nuevo.-> S
 
     P --> AR{¿Viola la<br/>constitución?}
     AR -->|Sí| ADR["📐 architect<br/>nuevo ADR"]
     ADR --> P
     AR -->|No| T["/sdd-tasks"]
 
-    T --> IM["/sdd-implement<br/>⚙️ TDD por tarea"]
+    T --> IM["/sdd-implement<br/>⚙️ TDD por tarea<br/><i>/middle · /front · /bbdd</i>"]
     IM --> V["/sdd-verify"]
     V --> G{¿Gates<br/>en verde?}
     G -->|No| IM
@@ -188,8 +196,9 @@ flowchart TD
 
 | Situación | Quién entra |
 |---|---|
-| Hay diseño en Figma o Stitch | `ux-designer` → `/design-sync` → `frontend-expert` |
-| Cambia el esquema de datos | `database-expert` (migración reversible, expand→migrate→contract) |
+| Hay diseño en Figma o Stitch | `ux-designer` en `/sdd-design` → `/design-sync` → `frontend-expert` con `/front` |
+| Hay que implementar dominio o casos de uso | `backend-expert` con `/middle` |
+| Cambia el esquema de datos | `database-expert` con `/bbdd` (migración reversible, expand→migrate→contract) |
 | Se toca la API pública | `api-designer` (contract-first, versionado, tests de contrato) |
 | El test es difícil de escribir | `test-engineer` |
 | El código huele mal | `refactor-specialist` |
@@ -322,13 +331,13 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ├── .claude/
 │   ├── settings.json             Permisos y hooks
 │   ├── agents/                   20 perfiles canónicos
-│   ├── skills/                   18 comandos (/sdd-*, /onboard, /adr, /tdd, /respond-incident…)
+│   ├── skills/                   22 comandos (/sdd-*, /middle, /front, /bbdd, /onboard, /tdd…)
 │   └── hooks/                    8 hooks en Node, multiplataforma
 ├── .github/
 │   ├── copilot-instructions.md   Instrucciones de repo
 │   ├── instructions/             Reglas por glob (tests, dominio, seguridad)
 │   ├── agents/                   Envoltorios con handoffs para VS Code y Copilot
-│   ├── prompts/                  11 prompts: el circuito SDD como comandos /
+│   ├── prompts/                  15 prompts: el circuito SDD y las skills de dominio
 │   ├── workflows/                CI con los gates de calidad
 │   └── dependabot.yml            Actualización de dependencias y actions
 ├── .cursor/
@@ -384,13 +393,16 @@ registra no es la decisión, sino **la alternativa descartada y por qué**.
 | [`AGENTS.md`](AGENTS.md) | La constitución. Empieza aquí |
 | [`docs/README.md`](docs/README.md) | Mapa de toda la documentación |
 | [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md) | Los 20 agentes y sus handoffs |
+| [`docs/agents/MAPEO-10-AGENTES.md`](docs/agents/MAPEO-10-AGENTES.md) | De dónde viene este diseño: los 10 agentes de la idea original y qué cambió |
+| [`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, política de auditoría y registro |
 | [`docs/architecture/DECISION-GUIDE.md`](docs/architecture/DECISION-GUIDE.md) | Elegir arquitectura con criterio |
 | [`docs/architecture/PATTERNS.md`](docs/architecture/PATTERNS.md) | Catálogo de patrones por problema |
 | [`docs/quality/TEST-STRATEGY.md`](docs/quality/TEST-STRATEGY.md) | Cómo se prueba aquí |
 | [`docs/quality/DEFINITION-OF-DONE.md`](docs/quality/DEFINITION-OF-DONE.md) | Cuándo algo está terminado |
 | [`docs/security/SECURITY-CHECKLIST.md`](docs/security/SECURITY-CHECKLIST.md) | Qué se audita |
 | [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) | Qué funciona en cada IDE, y qué no |
-| [`docs/research/baseline-2026-07-29.md`](docs/research/baseline-2026-07-29.md) | Qué se verificó, cuándo y con qué fuente |
+| [`docs/research/baseline-2026-07-30.md`](docs/research/baseline-2026-07-30.md) | Baseline vigente: skills de dominio, TDD/QA con agentes, macro/micro, MoSCoW |
+| [`docs/research/baseline-2026-07-29.md`](docs/research/baseline-2026-07-29.md) | Baseline anterior: formatos por IDE, hooks, seguridad, MCP |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Cómo trabajar en un repo con este sistema |
 
 ---
@@ -408,8 +420,18 @@ Verifica que toda tarea `hecho` tiene evidencia y ejecución registrada, que nin
 de aceptación quedó sin test, que no se planificó sobre ambigüedades, que el log de ejecución
 no se ha manipulado, y que las superficies de los IDE no han derivado del perfil canónico.
 
-Está en CI y **falla el build**. No depende del IDE, del proveedor ni del modelo: solo de
-Node y del repositorio. En un host sin hooks, es tu única garantía real.
+Y el segundo, para las skills de terceros:
+
+```bash
+node scripts/skills-sync.mjs --check
+```
+
+Una skill de terceros es una **dependencia ejecutable**: instrucciones que tu agente obedece
+más scripts que puede ejecutar. Este comando exige que nada esté aprobado sin versión fijada y
+licencia verificada. Ver [`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md).
+
+Los dos están en CI y **fallan el build**. No dependen del IDE, del proveedor ni del modelo:
+solo de Node y del repositorio. En un host sin hooks, son tu única garantía real.
 
 ---
 
@@ -421,7 +443,8 @@ cada elección**, y trae `/sdd-refresh` para revalidar el baseline cuando cambie
 estándares, los formatos de los IDE o los riesgos.
 
 Lo que no se ha verificado está listado como tal en el
-[baseline](docs/research/baseline-2026-07-29.md) §7. Preferimos un hueco declarado a una
+[baseline vigente](docs/research/baseline-2026-07-30.md) §5 y en el
+[anterior](docs/research/baseline-2026-07-29.md) §7. Preferimos un hueco declarado a una
 afirmación cómoda.
 
 ---

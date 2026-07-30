@@ -11,7 +11,11 @@ Agente responsable: `@planner`, con consulta a los especialistas.
 ## Paso 0 — Puerta de entrada
 
 - `spec.md` en estado `aprobada` y **sin marcadores**. Si no, → `/sdd-clarify`.
+- Si la funcionalidad tiene interfaz: `design.md` existe y **sin marcadores**. Si no,
+  → `/sdd-design`. Planificar antes de saber cuántas pantallas hay es planificar dos veces.
 - Lee `docs/architecture/constitution.md` y los ADR vigentes.
+- Las prioridades MoSCoW de la spec **ordenan el plan**: lo *must* va primero y completo. No se
+  empieza un *could* con un *must* a medias.
 
 ## Paso 1 — Investigación (`research.md`)
 
