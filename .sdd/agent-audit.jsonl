@@ -4,3 +4,4 @@
 {"ts":"2026-07-30T13:40:06.093Z","evento":"subagent-stop","agente":"database-expert","sesion":"prueba1","verificacion":"observed"}
 {"ts":"2026-07-30T13:40:06.217Z","evento":"subagent-start","agente":"implementer","sesion":"p2","verificacion":"observed"}
 {"ts":"2026-07-30T14:00:49.057Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
+{"ts":"2026-07-30T14:08:12.981Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
