@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Router principal del ecosistema SDD. Úsalo cuando no sepas qué agente necesitas, cuando llegue una petición nueva sin clasificar, o cuando haya que coordinar varias fases. Detecta si es proyecto nuevo o feature sobre proyecto existente y enruta a la fase SDD correcta. Usar proactivamente al inicio de cualquier trabajo.
-tools: Read, Glob, Grep, Agent, TodoWrite, Bash(git status:*), Bash(git log:*)
+tools: Read, Glob, Grep, Agent, TodoWrite, Bash
 model: opus
 ---
 

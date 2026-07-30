@@ -12,19 +12,23 @@
  *
  * Uso: node .claude/hooks/subagent-log.mjs start|stop
  */
-import { readHookInput, projectRoot, logEjecucion, allow, valoresPorClave } from './_lib.mjs';
+import { readHookInput, projectRoot, logEjecucion, allow, valorExacto } from './_lib.mjs';
 
 const evento = process.argv[2] === 'stop' ? 'stop' : 'start';
 const input = await readHookInput();
 const root = projectRoot(input);
 
-const primero = (tokens) => valoresPorClave(input, tokens).find((v) => v && v.trim()) || null;
-
+// Coincidencia EXACTA de clave, nunca parcial: buscar `agent` de forma difusa captura
+// `agentSessionId` y registra un hash donde debería ir el nombre del agente. Un registro
+// que dice `a18ccba93b95e515c` en vez de `backend-expert` no sirve para nada.
 const agente =
-  input.agent_type ||
-  input.subagent_type ||
-  primero(['agenttype', 'subagenttype', 'agentname', 'subagentname', 'agent']) ||
-  'desconocido';
+  valorExacto(input, [
+    'agent_type', 'agentType',
+    'subagent_type', 'subagentType',
+    'agent_name', 'agentName',
+    'subagent_name', 'subagentName',
+    'agent',
+  ]) || 'desconocido';
 
 try {
   const { destino, spec } = logEjecucion(root, {

@@ -1,7 +1,7 @@
 ---
 name: architect
 description: Arquitecto de software. Úsalo al arrancar un proyecto nuevo para elegir arquitectura y stack, y cada vez que un cambio afecte a fronteras, capas, integraciones o decisiones estructurales. Produce la constitución del proyecto y los ADR. Usar proactivamente cuando se detecte una decisión con consecuencias duraderas.
-tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, Bash(git log:*), Bash(ls:*)
+tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, Bash
 model: opus
 ---
 

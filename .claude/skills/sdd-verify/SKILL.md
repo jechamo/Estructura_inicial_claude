@@ -12,6 +12,10 @@ Agentes: `@code-reviewer`, `@security-auditor`, `@refactor-specialist`, `@test-e
 
 Ejecuta y **pega la salida real** de cada uno:
 
+```bash
+node scripts/check-sdd.mjs --strict
+```
+
 ```
 suite de tests completa
 cobertura
@@ -20,6 +24,11 @@ typecheck
 build
 auditoría de dependencias (npm audit / pip-audit / …)
 ```
+
+`check-sdd --strict` es el gate que **no marca el modelo**: comprueba contra el sistema de
+ficheros que toda tarea `hecho` tiene evidencia y ejecución registrada, que ningún criterio
+de aceptación quedó sin test, que no se planificó sobre ambigüedades y que el log de
+ejecución no se ha manipulado. Si sale con código 1, **para**.
 
 Si algo está en rojo, **para aquí**. No se revisa código que no compila ni pasa tests.
 

@@ -25,20 +25,30 @@ export const gatesEnabled = () => process.env.SDD_GATES !== 'off';
 export const projectRoot = (input = {}) => input.cwd || process.cwd();
 
 /**
- * Normaliza la llamada a herramienta entre hosts.
- * Claude Code / Copilot: { tool_name, tool_input }
- * Antigravity:           { toolCall: { name, args } }
- * Devuelve { herramienta, entrada, antigravity }.
+ * Normaliza la llamada a herramienta entre hosts. Cada uno la envuelve distinto:
+ *
+ *   Claude Code / Copilot  { tool_name, tool_input: { command, file_path, … } }
+ *   Antigravity            { toolCall: { name, args: { … } } }
+ *   Cursor                 { command, cwd, … }              ← plano, sin envoltorio
+ *
+ * Devuelve { herramienta, entrada }. Si no hay envoltorio reconocible, el propio
+ * payload es la entrada: es lo que hace Cursor, y asumir un envoltorio que no existe
+ * deja la guarda sin datos y permitiéndolo todo en silencio.
  */
 export function toolCall(payload = {}) {
   const esAntigravity = payload.toolCall && typeof payload.toolCall === 'object';
-  const call = esAntigravity ? payload.toolCall : payload;
-  const nombre = esAntigravity ? call.name : (call.tool_name ?? call.toolName ?? '');
-  const entrada = esAntigravity ? call.args : (call.tool_input ?? call.toolInput ?? {});
+  if (esAntigravity) {
+    const c = payload.toolCall;
+    return {
+      herramienta: String(c.name || '').toLowerCase(),
+      entrada: c.args && typeof c.args === 'object' ? c.args : {},
+    };
+  }
+
+  const envoltorio = payload.tool_input ?? payload.toolInput;
   return {
-    herramienta: String(nombre || '').toLowerCase(),
-    entrada: entrada && typeof entrada === 'object' ? entrada : {},
-    antigravity: Boolean(esAntigravity),
+    herramienta: String(payload.tool_name ?? payload.toolName ?? '').toLowerCase(),
+    entrada: envoltorio && typeof envoltorio === 'object' ? envoltorio : payload,
   };
 }
 
@@ -68,19 +78,74 @@ export const rutasDe = (entrada) =>
 export const comandosDe = (entrada) => valoresPorClave(entrada, ['command', 'cmd']);
 
 /**
- * Emite una decisión de permiso. A diferencia de exit 2 (que solo puede denegar),
- * permite `ask`: escalar al humano en lugar de bloquear o dejar pasar.
+ * Busca el primer valor cuya clave coincida **exactamente** con una de las candidatas.
+ *
+ * A diferencia de `valoresPorClave`, no hace coincidencia parcial: buscar `agent` de forma
+ * difusa captura `agentSessionId` y acaba registrando un hash donde debería ir el nombre
+ * del agente, que es precisamente el dato que da valor a la bitácora.
  */
-export function decide(decision, motivo, antigravity = false) {
-  const salida = antigravity
-    ? { decision: decision === 'ask' ? 'force_ask' : decision, reason: motivo }
-    : {
-        hookSpecificOutput: {
-          hookEventName: 'PreToolUse',
-          permissionDecision: decision,
-          permissionDecisionReason: motivo,
-        },
-      };
+export function valorExacto(valor, claves) {
+  const buscadas = new Set(claves.map((c) => c.toLowerCase().replace(/[_-]/g, '')));
+  if (Array.isArray(valor)) {
+    for (const v of valor) {
+      const r = valorExacto(v, claves);
+      if (r) return r;
+    }
+    return null;
+  }
+  if (!valor || typeof valor !== 'object') return null;
+
+  for (const [k, v] of Object.entries(valor)) {
+    if (buscadas.has(k.toLowerCase().replace(/[_-]/g, '')) && typeof v === 'string' && v.trim()) {
+      return v.trim();
+    }
+  }
+  for (const v of Object.values(valor)) {
+    const r = valorExacto(v, claves);
+    if (r) return r;
+  }
+  return null;
+}
+
+/**
+ * Host de destino. Se pasa como `--host=cursor|antigravity|claude`.
+ * Sin flag se asume `claude`, que es el formato de Claude Code y Copilot.
+ */
+export function hostDestino() {
+  const flag = process.argv.find((a) => a.startsWith('--host='));
+  return flag ? flag.slice(7) : 'claude';
+}
+
+/**
+ * Emite una decisión de permiso en el formato que espera cada host.
+ *
+ * Los tres soportan el mismo modelo de tres niveles —`allow`, `ask`, `deny`—, solo
+ * cambia el envoltorio. `ask` es lo que distingue un gate maduro: bloquear un
+ * `terraform apply` legítimo frustra; dejarlo pasar sin preguntar, arruina.
+ */
+export function decide(decision, motivo, host = 'claude') {
+  // Compatibilidad: antes el tercer argumento era el booleano `antigravity`.
+  const h = host === true ? 'antigravity' : host === false ? 'claude' : host;
+
+  let salida;
+  if (h === 'antigravity') {
+    salida = { decision: decision === 'ask' ? 'force_ask' : decision, reason: motivo };
+  } else if (h === 'cursor') {
+    salida = {
+      continue: decision !== 'deny',
+      permission: decision,
+      agentMessage: motivo,
+      ...(decision === 'deny' ? { userMessage: motivo } : {}),
+    };
+  } else {
+    salida = {
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: decision,
+        permissionDecisionReason: motivo,
+      },
+    };
+  }
   process.stdout.write(JSON.stringify(salida) + '\n');
   process.exit(0);
 }

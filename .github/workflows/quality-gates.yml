@@ -2,6 +2,11 @@
 #
 # PLANTILLA: adapta los comandos a tu stack durante /sdd-init.
 # Lo que no se automatiza aquí, se olvida.
+#
+# Las actions van fijadas por SHA, no por tag flotante: un tag se puede mover y
+# ejecutarías código que nadie revisó. Predicar supply chain y usar `@v4` es incoherente.
+# Para actualizar: `gh api repos/OWNER/REPO/git/ref/tags/vN --jq .object.sha`
+# (si devuelve type `tag`, desreferencia con `git/tags/<sha>`).
 
 name: Quality Gates
 
@@ -18,13 +23,68 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Lo barato primero: falla rápido.
+  # ── Gate propio del circuito SDD ───────────────────────────────────────────
+  # Va primero y sin dependencias: si la spec no es coherente, no merece la pena
+  # gastar minutos de CI compilando.
+  sdd:
+    name: Circuito SDD · trazabilidad y evidencia
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+
+      - name: Estructura, agentes y coherencia de specs
+        run: node scripts/check-sdd.mjs
+
+      - name: Trazabilidad y evidencia (estricto)
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-sdd.mjs --strict
+
+      - name: Los commits referencian spec y tarea
+        if: github.event_name == 'pull_request'
+        run: |
+          # Formato: tipo(NNN): descripción — task T-NNN-XX
+          patron='^(feat|fix|refactor|perf|test|docs|build|ci|chore)(\([0-9]{3}\))?!?: .+'
+          fallos=0
+          while read -r sha asunto; do
+            [ -z "$sha" ] && continue
+            if ! printf '%s' "$asunto" | grep -qE "$patron"; then
+              echo "::error::Commit $sha no sigue Conventional Commits: $asunto"
+              fallos=$((fallos + 1))
+            fi
+          done < <(git log --format='%h %s' --no-merges "origin/${{ github.base_ref }}..HEAD")
+          if [ "$fallos" -gt 0 ]; then
+            echo "::error::$fallos commit(s) sin formato. Formato esperado: feat(042): descripción — task T-042-07"
+            exit 1
+          fi
+          echo "Todos los commits siguen el formato."
+
+      - name: La rama tiene una spec asociada
+        if: github.event_name == 'pull_request'
+        run: |
+          rama="${{ github.head_ref }}"
+          id=$(printf '%s' "$rama" | grep -oE '[0-9]{3}' | head -1)
+          if [ -z "$id" ]; then
+            echo "::error::La rama '$rama' no lleva id de spec. Formato: feature/NNN-slug"
+            exit 1
+          fi
+          if ! ls -d "docs/specs/${id}-"* >/dev/null 2>&1; then
+            echo "::error::No existe docs/specs/${id}-* para la rama '$rama'"
+            exit 1
+          fi
+          echo "Spec encontrada: $(ls -d docs/specs/${id}-*)"
+
+  # ── Lo barato primero: falla rápido ────────────────────────────────────────
   static:
     name: Lint · formato · tipos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
@@ -41,8 +101,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: static
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
@@ -55,7 +115,7 @@ jobs:
             echo "::error::Hay tests con .only o .skip"
             exit 1
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: coverage
@@ -66,8 +126,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: static
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
@@ -79,10 +139,10 @@ jobs:
     name: Seguridad · dependencias y secretos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
@@ -90,52 +150,17 @@ jobs:
       - name: Auditoría de dependencias
         run: npm audit --audit-level=high
       - name: Escaneo de secretos
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  traceability:
-    name: Trazabilidad SDD
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Los commits referencian spec y tarea
-        run: |
-          # Formato esperado: tipo(NNN): descripción — task T-NNN-XX
-          patron='^(feat|fix|refactor|perf|test|docs|build|ci|chore)(\([0-9]{3}\))?!?: .+'
-          fallos=0
-          while read -r sha asunto; do
-            if ! echo "$asunto" | grep -qE "$patron"; then
-              echo "::warning::Commit $sha no sigue Conventional Commits: $asunto"
-              fallos=$((fallos+1))
-            fi
-          done < <(git log --format='%h %s' origin/${{ github.base_ref }}..HEAD)
-          echo "Commits fuera de formato: $fallos"
-
-      - name: La rama tiene una spec asociada
-        run: |
-          rama="${{ github.head_ref }}"
-          id=$(echo "$rama" | grep -oE '[0-9]{3}' | head -1)
-          if [ -z "$id" ]; then
-            echo "::warning::La rama '$rama' no lleva id de spec (feature/NNN-slug)"
-            exit 0
-          fi
-          if ! ls -d docs/specs/${id}-* >/dev/null 2>&1; then
-            echo "::error::No existe docs/specs/${id}-* para la rama '$rama'"
-            exit 1
-          fi
-          echo "Spec encontrada: $(ls -d docs/specs/${id}-*)"
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [test, contracts]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm

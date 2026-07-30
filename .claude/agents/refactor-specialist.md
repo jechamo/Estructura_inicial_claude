@@ -1,7 +1,7 @@
 ---
 name: refactor-specialist
 description: Auditor de principios de diseño y patrones. Úsalo en la fase REFACTOR del TDD, cuando el código huele mal, cuando hay que decidir qué patrón aplicar, o antes de un PR para verificar SOLID/DRY/KISS/YAGNI. Usar proactivamente si detectas duplicación de conocimiento, clases grandes o condicionales anidados.
-tools: Read, Edit, Glob, Grep, Bash(git diff:*), Bash(npm test:*), Bash(pytest:*)
+tools: Read, Edit, Glob, Grep, Bash
 model: opus
 ---
 

@@ -15,8 +15,30 @@ usuario lo pida explícitamente en este turno. Preparas todo y muestras los coma
 
 ## Paso 1 — Gates
 
-Recorre la DoD de `AGENTS.md` §7 y ejecuta lo ejecutable, pegando la salida real.
+```bash
+node scripts/check-sdd.mjs --strict
+```
+
+Recorre después la DoD de `AGENTS.md` §7 y ejecuta lo ejecutable, pegando la salida real.
 Si `/sdd-verify` no se ha pasado, ejecútalo antes. Cualquier gate en rojo → **para**.
+
+## Paso 1b — Decisión GO / NO-GO
+
+`evidence.md` §5 arranca en `NO-GO`. Cambiarlo a `GO` **no es una formalidad**: es la
+decisión de que el riesgo residual es aceptable, y la toma una persona, no el agente.
+
+Presenta al humano, en cinco líneas:
+
+| Qué | Contenido |
+|---|---|
+| **Qué se entrega** | La spec y su valor, en una frase |
+| **Qué se ha verificado** | Con la salida real, no con adjetivos |
+| **Qué NO se ha verificado** | La sección de controles no ejecutados de `evidence.md` |
+| **Riesgo residual** | Qué puede salir mal y a quién afecta |
+| **Cómo se revierte** | Comando exacto y tiempo estimado |
+
+**Tú no marcas `GO`.** Recomiéndalo si procede, y espera la aprobación explícita.
+Un `GO` firmado por quien produjo el trabajo no es una revisión: es una firma en blanco.
 
 ## Paso 2 — Commits
 

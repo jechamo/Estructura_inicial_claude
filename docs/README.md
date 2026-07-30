@@ -20,6 +20,7 @@ docs/
 ├── ops/                Runbooks, observabilidad, despliegue
 │   └── runbooks/
 ├── agents/             Catálogo de agentes y su protocolo de handoff
+├── integrations/       Compatibilidad entre IDEs y política de MCP
 ├── research/           Baseline fechado de lo verificado (/sdd-refresh lo revalida)
 ├── guides/             Guías por tarea para desarrolladores
 └── bitacora/           ⭐ Memoria del proyecto
@@ -51,6 +52,7 @@ Estos **obligan**, no son sugerencias:
 | [`architecture/PATTERNS.md`](./architecture/PATTERNS.md) | Elegir patrón cuando aparece el problema |
 | [`agents/CATALOG.md`](./agents/CATALOG.md) | Qué agente hace qué y a quién llama |
 | [`security/MCP-SECURITY.md`](./security/MCP-SECURITY.md) | Usar MCP sin abrir un agujero |
+| [`integrations/IDE-COMPATIBILITY.md`](./integrations/IDE-COMPATIBILITY.md) | Qué funciona en cada IDE y proveedor, y qué no |
 | [`research/baseline-2026-07-29.md`](./research/baseline-2026-07-29.md) | Qué se verificó, cuándo y con qué fuente |
 
 ---

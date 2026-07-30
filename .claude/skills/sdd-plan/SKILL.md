@@ -79,7 +79,33 @@ qué se automatiza en CI, criterio de "suficiente".
 15. Conformidad con la constitución
 ```
 
-## Paso 4 — Puerta de salida
+## Paso 4 — Análisis de coherencia (antes de la puerta de salida)
+
+Los artefactos se han escrito en momentos distintos y por manos distintas. **Contrástalos
+entre sí antes de dar el plan por bueno**: un hueco detectado aquí cuesta una edición; el
+mismo hueco detectado en implementación cuesta rehacer el trabajo.
+
+Recorre esta matriz y anota cada discrepancia:
+
+| Contraste | Qué buscas |
+|---|---|
+| `spec.md` ↔ `plan.md` | Todo `RF` tiene componente que lo cubre. Ningún componente sin `RF` detrás |
+| `spec.md` ↔ `test-plan.md` | Todo `CA` tiene un test previsto. Ningún test sin `CA` |
+| `spec.md` ↔ `data-model.md` | Toda entidad sale de un requisito. Ningún campo huérfano |
+| `plan.md` ↔ `contracts/` | Toda operación del contrato aparece en el plan, y al revés |
+| `data-model.md` ↔ `contracts/` | Los tipos coinciden. Nada opcional en uno y obligatorio en el otro |
+| `spec.md` ↔ RNF | Cada requisito no funcional tiene una decisión técnica que lo sostiene |
+| Casos límite ↔ `test-plan.md` | Cada caso límite de la spec tiene test o justificación de por qué no |
+| `research.md` ↔ dependencias | Toda dependencia nueva del plan está justificada |
+| Todo ↔ "fuera de alcance" | Nada del plan implementa algo declarado fuera de alcance |
+
+**Corrige los huecos antes de trocear.** Si un hueco revela que la spec era incompleta,
+vuelve a `spec-analyst`: no lo rellenes tú desde el plan, porque entonces habrás decidido
+requisitos disfrazados de decisiones técnicas.
+
+Deja constancia del resultado en `plan.md` §15.
+
+## Paso 5 — Puerta de salida
 
 Checklist de conformidad:
 - [ ] Respeta las reglas de dependencia de la constitución

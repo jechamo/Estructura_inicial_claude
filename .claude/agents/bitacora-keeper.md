@@ -1,7 +1,7 @@
 ---
 name: bitacora-keeper
 description: Guardián de la memoria del proyecto. Registra decisiones, alternativas descartadas, deuda aceptada e incidentes en docs/bitacora/. Úsalo tras cualquier decisión relevante y para responder "¿por qué hicimos X?". Usar proactivamente cuando se tome o se cambie una decisión técnica.
-tools: Read, Write, Edit, Glob, Grep, Bash(git log:*), Bash(date:*)
+tools: Read, Write, Edit, Glob, Grep, Bash
 model: haiku
 ---
 

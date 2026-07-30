@@ -30,9 +30,17 @@ const patrones = [
     aviso: 'Suena a proyecto nuevo → `/sdd-init` (agente `architect`) para fijar arquitectura y constitución.',
   },
   {
+    re: /\b(ca[íi]d[oa]|producci[óo]n.*(cae|falla|rot[oa])|incidente|urgente|usuarios.*(no pueden|afectad)|est[áa] roto ahora)\b/,
+    aviso:
+      '⚠️ Suena a INCIDENTE en producción → `/respond-incident`. Primero se para el dolor ' +
+      '(feature flag, reversión, degradación), después se diagnostica. No diagnostiques con ' +
+      'usuarios cayéndose, y no toques la base de datos a mano.',
+  },
+  {
     re: /\b(no funciona|falla|error|bug|se rompe|petado)\b/,
     aviso:
       'Suena a defecto → triage con `@research-analyst`, y luego test de regresión ROJO antes del arreglo. ' +
+      'Regla de las tres hipótesis: si tres intentos no confirman la causa, para de parchear y revisa supuestos. ' +
       'Si cambia el comportamiento esperado, es una spec nueva.',
   },
   {

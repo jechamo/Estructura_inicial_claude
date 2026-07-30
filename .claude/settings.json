@@ -5,18 +5,36 @@
       "Read(**)",
       "Glob(**)",
       "Grep(**)",
+
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git branch:*)",
+      "Bash(git blame:*)",
+      "Bash(git show:*)",
+
+      "Bash(ls:*)",
+      "Bash(cloc:*)",
+      "Bash(date:*)",
+
       "Bash(npm test:*)",
       "Bash(npm run test:*)",
       "Bash(npm run lint:*)",
       "Bash(npm run build:*)",
       "Bash(npm run typecheck:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm ci:*)",
       "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)",
       "Bash(pytest:*)",
-      "Bash(node .claude/hooks/*)"
+      "Bash(ruff:*)",
+      "Bash(pip-audit:*)",
+      "Bash(cargo test:*)",
+      "Bash(go test:*)",
+
+      "Bash(node .claude/hooks/*)",
+      "Bash(node scripts/check-sdd.mjs:*)"
     ],
     "ask": [
       "Bash(git push:*)",

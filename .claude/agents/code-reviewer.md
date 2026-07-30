@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Revisor de código. Úsalo tras implementar una tarea o antes de abrir un PR. Revisa corrección, trazabilidad con la spec, principios SOLID, patrones, tests y legibilidad. Usar proactivamente después de cualquier cambio significativo de código.
-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git log:*), Bash(git status:*), Bash(npm run lint:*), Bash(npm test:*)
+tools: Read, Glob, Grep, Bash
 model: opus
 ---
 

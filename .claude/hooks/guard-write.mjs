@@ -7,14 +7,15 @@
  *   ask   → escala al humano (políticas de agentes, configuración compartida)
  *   allow → adelante
  */
-import { readHookInput, decide, gatesEnabled, toolCall, rutasDe } from './_lib.mjs';
+import { readHookInput, decide, gatesEnabled, toolCall, rutasDe, hostDestino } from './_lib.mjs';
 
 const input = await readHookInput();
-const { entrada, antigravity } = toolCall(input);
+const { entrada } = toolCall(input);
+const host = hostDestino();
 const rutas = rutasDe(entrada);
 const contenido = entrada.content || entrada.new_string || '';
 
-if (!rutas.length) decide('allow', 'Sin ruta que evaluar.', antigravity);
+if (!rutas.length) decide('allow', 'Sin ruta que evaluar.', host);
 
 // `.env.example` / `.sample` / `.template` sí se editan: documentan nombres, no valores.
 const esPlantillaEnv = (r) => /(^|\/)\.env\.(example|sample|template|dist)$/.test(r);
@@ -38,7 +39,7 @@ const prohibidas = [
 for (const r of rutas) {
   if (esPlantillaEnv(r)) continue;
   for (const p of prohibidas) {
-    if (p.re.test(r)) decide('deny', `Escritura bloqueada en \`${r}\`. ${p.motivo}`, antigravity);
+    if (p.re.test(r)) decide('deny', `Escritura bloqueada en \`${r}\`. ${p.motivo}`, host);
   }
 }
 
@@ -59,7 +60,7 @@ if (gatesEnabled() && contenido) {
         'deny',
         `Posible secreto en \`${rutas[0]}\` (${s.que}). Usa una variable de entorno y ` +
           'documenta su nombre en `.env.example`, sin el valor. Si es un valor de prueba, hazlo evidente.',
-        antigravity,
+        host,
       );
     }
   }
@@ -86,7 +87,7 @@ if (gatesEnabled()) {
         'ask',
         `\`${r}\` define el comportamiento de los agentes o la arquitectura del proyecto. ` +
           'Un cambio aquí afecta a todas las sesiones futuras: requiere revisión humana.',
-        antigravity,
+        host,
       );
     }
   }
@@ -104,4 +105,4 @@ if (gatesEnabled() && esNucleo) {
   );
 }
 
-decide('allow', 'Ruta permitida por la guarda SDD.', antigravity);
+decide('allow', 'Ruta permitida por la guarda SDD.', host);

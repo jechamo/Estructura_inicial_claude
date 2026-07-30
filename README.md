@@ -1,11 +1,17 @@
 # Ecosistema de agentes SDD
 
 Estructura inicial lista para **copiar y pegar** en cualquier proyecto. Trae un circuito de
-Spec-Driven Development completo, 20 agentes especializados, skills, hooks y reglas que
-funcionan igual en **Claude Code, GitHub Copilot, VS Code, Cursor y Google Antigravity**.
+Spec-Driven Development completo, 20 agentes especializados, skills, hooks y un validador
+determinista, con soporte para **Claude Code, GitHub Copilot, VS Code, Cursor, Antigravity
+y Codex**.
 
 > **Regla cero: ninguna línea de código se escribe sin una especificación aprobada.**
 > El artefacto de verdad es la spec. El código es su compilación.
+
+El soporte no es idéntico en todos: las reglas y el protocolo de handoff son universales,
+pero la delegación real y los hooks dependen de lo que cada host expone. La matriz honesta
+—con lo verificado y lo no verificado separado— está en
+[`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md).
 
 ---
 
@@ -316,18 +322,20 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ├── .claude/
 │   ├── settings.json             Permisos y hooks
 │   ├── agents/                   20 perfiles canónicos
-│   ├── skills/                   17 comandos (/sdd-*, /onboard, /adr, /tdd, /sdd-refresh…)
-│   └── hooks/                    7 hooks en Node, multiplataforma
+│   ├── skills/                   18 comandos (/sdd-*, /onboard, /adr, /tdd, /respond-incident…)
+│   └── hooks/                    8 hooks en Node, multiplataforma
 ├── .github/
 │   ├── copilot-instructions.md   Instrucciones de repo
 │   ├── instructions/             Reglas por glob (tests, dominio, seguridad)
 │   ├── agents/                   Envoltorios con handoffs para VS Code y Copilot
-│   ├── prompts/                  El circuito SDD como prompts
+│   ├── prompts/                  11 prompts: el circuito SDD como comandos /
 │   ├── workflows/                CI con los gates de calidad
 │   └── dependabot.yml            Actualización de dependencias y actions
 ├── .cursor/
 │   ├── rules/                    Reglas .mdc con activación por glob
 │   ├── agents/ · commands/       Agentes y comandos de Cursor
+│   └── hooks.json                Guardas funcionando también en Cursor
+├── scripts/check-sdd.mjs         ⭐ El gate determinista, en cualquier proveedor
 ├── .agents/                      Antigravity: rules + workflows
 ├── .mcp.json · .vscode/mcp.json  Servidores MCP
 └── docs/
@@ -381,8 +389,27 @@ registra no es la decisión, sino **la alternativa descartada y por qué**.
 | [`docs/quality/TEST-STRATEGY.md`](docs/quality/TEST-STRATEGY.md) | Cómo se prueba aquí |
 | [`docs/quality/DEFINITION-OF-DONE.md`](docs/quality/DEFINITION-OF-DONE.md) | Cuándo algo está terminado |
 | [`docs/security/SECURITY-CHECKLIST.md`](docs/security/SECURITY-CHECKLIST.md) | Qué se audita |
+| [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) | Qué funciona en cada IDE, y qué no |
 | [`docs/research/baseline-2026-07-29.md`](docs/research/baseline-2026-07-29.md) | Qué se verificó, cuándo y con qué fuente |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Cómo trabajar en un repo con este sistema |
+
+---
+
+## El gate que no puede mentir
+
+Una Definition of Done que marca el propio modelo no es un gate: es una declaración de
+intenciones. Por eso hay un validador que comprueba **contra el sistema de ficheros**:
+
+```bash
+node scripts/check-sdd.mjs --strict
+```
+
+Verifica que toda tarea `hecho` tiene evidencia y ejecución registrada, que ningún criterio
+de aceptación quedó sin test, que no se planificó sobre ambigüedades, que el log de ejecución
+no se ha manipulado, y que las superficies de los IDE no han derivado del perfil canónico.
+
+Está en CI y **falla el build**. No depende del IDE, del proveedor ni del modelo: solo de
+Node y del repositorio. En un host sin hooks, es tu única garantía real.
 
 ---
 

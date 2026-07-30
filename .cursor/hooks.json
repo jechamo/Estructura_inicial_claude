@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "node ./.claude/hooks/guard-bash.mjs --host=cursor" }
+    ],
+    "beforeReadFile": [
+      { "command": "node ./.claude/hooks/guard-write.mjs --host=cursor" }
+    ],
+    "afterFileEdit": [
+      { "command": "node ./.claude/hooks/format-and-lint.mjs" }
+    ],
+    "stop": [
+      { "command": "node ./.claude/hooks/session-log.mjs" }
+    ]
+  }
+}

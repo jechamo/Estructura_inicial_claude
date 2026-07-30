@@ -14,6 +14,7 @@ a la fase correcta del circuito SDD.
 | Proyecto nuevo desde cero | `/sdd-init` |
 | Repo existente sin documentar | `/onboard` |
 | Revalidar formatos y estándares | `/sdd-refresh` |
+| Algo se ha caído en producción | `/respond-incident` |
 | Nueva funcionalidad | `/sdd-specify` |
 | No sé en qué punto estoy | `/sdd-status` |
 

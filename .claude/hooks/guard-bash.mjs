@@ -9,12 +9,13 @@
  * Distinguir `deny` de `ask` importa: bloquear un `terraform apply` legítimo
  * frustra; dejarlo pasar sin preguntar, arruina.
  */
-import { readHookInput, decide, gatesEnabled, toolCall, comandosDe } from './_lib.mjs';
+import { readHookInput, decide, gatesEnabled, toolCall, comandosDe, hostDestino } from './_lib.mjs';
 
 const input = await readHookInput();
-const { entrada, antigravity } = toolCall(input);
+const { entrada } = toolCall(input);
+const host = hostDestino();
 const comandos = comandosDe(entrada);
-if (!comandos.length || !gatesEnabled()) decide('allow', 'Sin comando que evaluar.', antigravity);
+if (!comandos.length || !gatesEnabled()) decide('allow', 'Sin comando que evaluar.', host);
 
 // ── deny: destructivo sin vuelta atrás ───────────────────────────────────────
 const destructivos = [
@@ -40,7 +41,7 @@ for (const cmd of comandos) {
         'deny',
         `Comando bloqueado: ${cmd.slice(0, 120)}\nMotivo: ${d.motivo}\n` +
           'Si es realmente necesario, explícaselo al usuario y que lo ejecute él.',
-        antigravity,
+        host,
       );
     }
   }
@@ -63,9 +64,9 @@ const sensibles = [
 for (const cmd of comandos) {
   for (const s of sensibles) {
     if (s.re.test(cmd)) {
-      decide('ask', `${s.motivo}\nComando: ${cmd.slice(0, 160)}`, antigravity);
+      decide('ask', `${s.motivo}\nComando: ${cmd.slice(0, 160)}`, host);
     }
   }
 }
 
-decide('allow', 'Comando permitido por la guarda SDD.', antigravity);
+decide('allow', 'Comando permitido por la guarda SDD.', host);

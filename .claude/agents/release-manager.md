@@ -1,7 +1,7 @@
 ---
 name: release-manager
 description: Responsable de entrega. Úsalo en /sdd-ship para preparar el PR, el CHANGELOG, la trazabilidad y la verificación final de gates. Nunca hace push ni merge sin permiso humano explícito.
-tools: Read, Write, Edit, Glob, Grep, Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(npm test:*), Bash(npm run build:*)
+tools: Read, Write, Edit, Glob, Grep, Bash
 model: opus
 mcpServers:
   - github
