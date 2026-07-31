@@ -89,6 +89,14 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   de clave es exacta.
 
 ### Changed
+- **VS Code sí tiene hooks, y son compatibles campo por campo**: mismos eventos —incluidos
+  `SubagentStart`/`SubagentStop`—, mismo payload y misma decisión por stdout, y **lee
+  `.claude/settings.json`**. Los hooks de la plantilla funcionan ahí sin tocar nada, y con ellos
+  la guarda de territorio y la trazabilidad `observed`, que se daban por exclusivas de Claude Code.
+  **No se crea `.github/hooks/`**: duplicaría la carga y cada guarda se ejecutaría dos veces.
+- Los `matcher` de `.claude/settings.json` cubren ahora los nombres de herramienta de los dos
+  hosts (`Edit` y `edit/editFiles`). Un matcher que no coincide no dispara el hook, y **una guarda
+  que no se ejecuta falla en abierto**: permite todo en silencio.
 - La regla de **profundidad máxima de delegación** era ambigua sobre qué se cuenta. Ahora es
   explícita: se cuentan **saltos entre agentes**, el humano no es un nivel. Así
   `Tú → orchestrator → implementer → backend-expert` es exactamente el máximo permitido, y que el

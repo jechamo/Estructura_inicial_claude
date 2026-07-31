@@ -236,7 +236,9 @@ son **herramientas y rutas**, no flujo. Tres capas:
    en el tuyo*: lo que no es de nadie se permite.
 3. **CI.** `check-sdd.mjs` verifica que el mapa no nombra agentes que ya no existen.
 
-Las tres capas en Claude Code y Cursor; 1 y 3 en VS Code; solo la 3 en Antigravity y Codex.
+Las tres capas en Claude Code y Cursor, probadas. También en VS Code según su documentación —tiene
+los mismos eventos de hook y lee `.claude/settings.json`—, aunque está en *preview* y no se ha
+ejecutado en vivo. Solo la 3 en Antigravity y Codex.
 Matriz honesta: [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) §3 bis.
 
 Catálogo completo con handoffs: [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md).

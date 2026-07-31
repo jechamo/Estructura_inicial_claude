@@ -389,8 +389,10 @@ rutas**, no de flujo.
    que ya no existen y avisa de quién no está gobernado por nadie.
 
 **Dónde funciona cada capa** — ver [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md):
-las tres en Claude Code; 1 y 2 en Cursor (con `readonly: true` a nivel de plataforma); 1 y 3 en
-VS Code; solo la 3 en Antigravity y Codex, donde el reparto es convención y el CI el único juez.
+las tres en Claude Code y Cursor (probadas); las tres también en VS Code según su documentación de
+hooks —mismos eventos y mismo protocolo, y lee `.claude/settings.json`—, pero ahí es *preview* y no
+se ha ejecutado en vivo; solo la 3 en Antigravity y Codex, donde el reparto es convención y el CI
+el único juez.
 
 Reglas duras:
 - Un agente **no** salta fases del circuito SDD.

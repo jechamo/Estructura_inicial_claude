@@ -9,6 +9,48 @@
 
 ---
 
+## 2026-07-31 · Una sola ubicación por elemento: duplicar tiene coste real
+
+- **Tipo**: decisión + corrección
+- **Contexto**: el usuario vio **agentes repetidos** en el selector de VS Code y preguntó por qué
+  no había carpetas `skills/` y `hooks/` bajo `.github/` y `.cursor/`. Al investigarlo salieron
+  tres cosas:
+  1. VS Code lee `.github/agents/` **y** `.claude/agents/` y **no deduplica por nombre**
+     ([microsoft/vscode#312256](https://github.com/microsoft/vscode/issues/312256)). Los 8 agentes
+     con envoltorio aparecían dos veces.
+  2. **VS Code sí tiene hooks**, con los mismos 8 eventos, el mismo payload y la misma decisión
+     por stdout que Claude Code — y **lee `.claude/settings.json`**. El baseline los daba por no
+     verificados.
+  3. Las skills **no necesitan duplicarse**: VS Code y Cursor leen `.claude/skills/` de forma
+     nativa.
+- **Decisión**: **una sola ubicación por elemento, y se duplica solo donde el formato del host lo
+  exige.**
+  - Agentes: se desactiva `.claude/agents` en `.vscode/settings.json` y se completan los 20
+    envoltorios. Se conserva `.github/agents` —y no al revés— porque lleva `handoffs:` y
+    **`agents:`**, la lista blanca de delegación, que es el aislamiento en VS Code.
+  - Hooks: **no se crea `.github/hooks/`**. VS Code ya lee `.claude/settings.json`; crear la otra
+    ubicación haría que cada guarda se ejecutara **dos veces por llamada**.
+  - Skills: no se crea nada. Una carpeta sirve a las cuatro superficies.
+- **Alternativas descartadas**:
+  - *Desactivar `.github/agents` en vez de `.claude/agents`*: más simple, pero perdía `handoffs:`
+    y la lista blanca de delegación. Habría cambiado un problema cosmético por uno de seguridad.
+  - *Crear `.github/hooks/` "por completitud"*: habría duplicado la ejecución de todas las guardas.
+- **Impacto**: `check-sdd` falla si una superficie en uso tiene agentes sin envoltorio —a partir
+  del ajuste, un agente sin envoltorio **no existe** en VS Code—. Verificado retirando
+  `docs-writer`. Y los `matcher` de `.claude/settings.json` se amplían para cubrir los nombres de
+  herramienta de los dos hosts: un matcher que no coincide no dispara el hook, y **una guarda que
+  no se ejecuta falla en abierto**.
+- **Deuda aceptada**: los hooks de VS Code están **verificados contra la documentación, no
+  ejecutados en vivo**, y están en *preview*. Que los matchers ampliados cubran los nombres reales
+  de VS Code es **inferencia**. Si al probarlo falla, se anota aquí y en el baseline.
+- **Referencias**: [`.vscode/settings.json`](../../.vscode/settings.json),
+  [`.github/agents/README.md`](../../.github/agents/README.md),
+  [`baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §5.1 bis y §5.1 ter,
+  [`IDE-COMPATIBILITY.md`](../integrations/IDE-COMPATIBILITY.md) §3 ter
+- **Quién**: agente `research-analyst` + revisión humana pendiente
+
+---
+
 ## 2026-07-30 · La accesibilidad es el suelo: hace falta una dirección visual vinculante
 
 - **Tipo**: decisión

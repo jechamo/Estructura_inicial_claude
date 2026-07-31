@@ -147,8 +147,16 @@ donde no debe. El aislamiento es cuestión de **herramientas y rutas**, no de fl
    de nadie se permite, porque una guarda que bloquea lo desconocido se desactiva el primer día.
 3. **CI.** `check-sdd.mjs` valida el mapa; `test-hooks.mjs` prueba las guardas.
 
-Las tres en Claude Code y Cursor · 1 y 3 en VS Code · solo la 3 en Antigravity y Codex, donde el
-reparto es convención y el CI el único juez.
+Las tres en Claude Code y Cursor (probadas) · las tres también en VS Code según su documentación
+de hooks, que es *preview* y no se ha ejecutado en vivo · solo la 3 en Antigravity y Codex, donde
+el reparto es convención y el CI el único juez.
+
+**Y una pregunta que surge sola al ver el árbol**: no hay `skills/` ni `hooks/` bajo `.github/` ni
+`.cursor/` **a propósito**. Las skills son estándar abierto y las cuatro superficies leen
+`.claude/skills/` de forma nativa; los hooks son scripts de Node que ejecuta quien los invoque, y
+VS Code lee `.claude/settings.json`. Crear `.github/hooks/` haría que VS Code cargara la
+configuración **dos veces** y cada guarda se ejecutaría por duplicado. Se duplica solo donde el
+formato del host obliga —los agentes—, y siempre como envoltorio fino que referencia al canónico.
 
 ---
 

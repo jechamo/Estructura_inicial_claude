@@ -52,10 +52,10 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ⚠️ |
-| **Territorio por agente** | ✅ hook + `territories.json` | ❌ sin hooks verificados | ❌ | ✅ hook + `territories.json` | ⚠️ hook inferido | ❌ |
+| **Territorio por agente** | ✅ hook + `territories.json` | 🟡 mismo hook, sin probar en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ hook inferido | ❌ |
 | Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ |
-| Hooks de herramienta | ✅ 7 eventos, probados | ⚠️ sin verificar | ❌ | ✅ `.cursor/hooks.json` | ⚠️ formato inferido | ❌ |
-| Trazabilidad `observed` | ✅ `SubagentStart/Stop` | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hooks de herramienta | ✅ 7 eventos, probados | ✅ **8 eventos, lee `.claude/settings.json`** (preview) | ❌ | ✅ `.cursor/hooks.json` | ⚠️ formato inferido | ❌ |
+| Trazabilidad `observed` | ✅ `SubagentStart/Stop` | ✅ **tiene los dos eventos** | ❌ | ❌ | ❌ | ❌ |
 | `model:` por agente | ✅ | ✅ (`model:`, admite array) | ✅ | 🟡 | ❌ | ✅ |
 | MCP | ✅ `.mcp.json` | ✅ `.vscode/mcp.json` | ✅ | ✅ | ✅ | ✅ |
 | `check-sdd.mjs` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -146,7 +146,8 @@ escritura en ningún host**.
 El hook cruza el agente activo con la ruta que intenta escribir y bloquea si es territorio ajeno.
 El agente activo lo registran `SubagentStart`/`SubagentStop` en `.sdd/state/`, **fuera del
 modelo**: `PreToolUse` no dice quién escribe, y sin ese dato la guarda vería la ruta pero no la
-mano. Funciona en Claude Code y Cursor, que son los que ejecutan hooks verificados.
+mano. Funciona en Claude Code y Cursor (probado), y **también en VS Code** según su documentación
+de hooks —mismos eventos, mismo payload, misma decisión—, aunque ahí no se ha ejecutado en vivo.
 
 **3 · Verificación determinista** — `check-sdd.mjs` comprueba que el mapa no nombra agentes
 inexistentes y avisa de quién no está gobernado por ninguna regla. **Funciona en todas partes**,
@@ -154,7 +155,30 @@ porque es Node y CI.
 
 > **En Antigravity y Codex el reparto es convención.** No hay herramienta que lo imponga: lo
 > sostienen `AGENTS.md`, el prompt y el CI. Si el aislamiento estricto es un requisito duro para
-> ti, trabaja en Claude Code o Cursor y deja que el CI sea la red en el resto.
+> ti, trabaja en Claude Code o Cursor —donde está probado— y deja que el CI sea la red en el resto.
+
+---
+
+## 3 ter. Qué va en cada carpeta, y por qué no se duplica
+
+La pregunta natural al ver el árbol es *"¿no debería haber `skills/` y `hooks/` también en
+`.github/` y en `.cursor/`?"*. La respuesta es **no**, y por motivos distintos en cada caso:
+
+| Elemento | Vive en | Lo leen | ¿Duplicar? |
+|---|---|---|---|
+| **Skills** | `.claude/skills/` | Claude Code · VS Code · Cursor · Codex, **todos de forma nativa** | **No.** Es estándar abierto. Cursor carga `.claude/skills/` por compatibilidad y VS Code también |
+| **Hooks (scripts)** | `.claude/hooks/*.mjs` | Los ejecuta quien los invoque | **No.** Son Node puro, sin dependencias |
+| **Hooks (configuración)** | `.claude/settings.json` + `.cursor/hooks.json` | Claude Code y VS Code leen el primero; Cursor necesita el suyo porque usa otros nombres de evento | Solo donde el formato obliga |
+| **Agentes** | `.claude/agents/` (canónico) + envoltorios | Cada host quiere el suyo: el frontmatter **sí** diverge | Sí, y por eso hay envoltorios finos que referencian el canónico |
+| **Comandos / prompts** | `.claude/skills/` · `.github/prompts/` · `.cursor/commands/` | Cada host tiene su formato | Sí |
+
+La regla general: **se duplica solo donde el formato del host lo exige, y el duplicado es un
+envoltorio fino que referencia al canónico**, nunca una copia del contenido. `check-sdd` verifica
+que no derivan.
+
+Y el corolario que ya nos ha mordido dos veces: **duplicar donde no hace falta tiene coste real**
+—agentes repetidos en el selector, hooks ejecutándose dos veces por llamada—. Ante la duda, una
+sola ubicación.
 
 ---
 
@@ -199,6 +223,38 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 /sdd-start
 ```
 Los 20 agentes con `@nombre`, 18 skills, 7 hooks y trazabilidad `observed`.
+
+### VS Code sí tiene hooks, y con el mismo protocolo
+
+Corrección de una afirmación anterior de este documento. VS Code tiene **agent hooks** (en
+preview) y son sorprendentemente compatibles:
+
+| | Claude Code | VS Code |
+|---|---|---|
+| Eventos | 7 | **8** — los mismos más `PreCompact` |
+| `SubagentStart` / `SubagentStop` | ✅ | ✅ |
+| Payload por stdin | `session_id`, `cwd`, `tool_name`, `tool_input` | **idéntico** |
+| Decisión por stdout | `hookSpecificOutput.permissionDecision` | **idéntica** |
+| Dónde se configura | `.claude/settings.json` | `.github/hooks/*.json` **o `.claude/settings.json`** |
+
+**Consecuencia**: los hooks de `.claude/hooks/` funcionan en VS Code **sin tocar nada**, porque
+VS Code lee `.claude/settings.json` por defecto. Y eso arrastra dos cosas que este documento daba
+por perdidas fuera de Claude Code: **la guarda de territorio** y la **trazabilidad `observed`**.
+
+> **Por eso NO hay `.github/hooks/` en este repositorio.** Si existiera, VS Code cargaría la
+> configuración **dos veces** —la suya y la de `.claude/settings.json`— y cada guarda se
+> ejecutaría por duplicado en cada llamada a herramienta. Es exactamente el mismo error que
+> producía agentes duplicados en el selector, y la solución es la misma: **una sola ubicación**.
+
+Un detalle que hay que vigilar: los `matcher` son expresiones regulares contra el **nombre de la
+herramienta**, y ese nombre cambia por host (`Edit` en Claude Code, `edit/editFiles` en VS Code).
+Un matcher que no coincide **no dispara el hook**, y una guarda que no se ejecuta falla en
+abierto: permite todo en silencio. Por eso los matchers de `.claude/settings.json` cubren los dos
+vocabularios.
+
+**Lo que no está verificado**: nada de esto se ha ejecutado en una sesión real de VS Code. Está
+contrastado contra la documentación oficial y el protocolo coincide campo por campo, pero es
+*preview* y su formato puede cambiar. Si lo pruebas y falla, el sitio para anotarlo es el baseline.
 
 ### VS Code — el duplicado del selector, y por qué
 
@@ -276,7 +332,10 @@ sin borrar el anterior.
 
 Honestidad explícita, para que nadie confíe de más:
 
-- Hooks de repositorio en Copilot/VS Code: **no verificado**, por eso no hay `.github/hooks/`.
+- Hooks de VS Code: **verificados contra la documentación**, no ejecutados en vivo. Están en
+  *preview*. No hay `.github/hooks/` a propósito: duplicaría la carga de `.claude/settings.json`.
+- Si los `matcher` de `.claude/settings.json` cubren o no los nombres de herramienta reales de
+  VS Code: **inferido**. Se han ampliado para cubrir los dos vocabularios, sin comprobarlo en vivo.
 - Esquema de `.agents/hooks.json` de Antigravity: **inferido**, no confirmado en su documentación.
 - Formato exacto de `.cursor/agents/`: los ficheros siguen la convención de reglas de Cursor,
   pero no he confirmado que Cursor los trate como agentes seleccionables.
