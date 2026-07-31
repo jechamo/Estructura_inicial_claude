@@ -86,6 +86,7 @@ for (const f of existsSync(AGENTES_DIR) ? readdirSync(AGENTES_DIR).filter((x) =>
 }
 
 // Los envoltorios de otras superficies deben apuntar a un perfil que exista.
+const envueltos = { '.github/agents': new Set(), '.cursor/agents': new Set() };
 for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')], ['.cursor/agents', (n) => n.endsWith('.md')]]) {
   for (const p of walk(join(ROOT, dir), filtro)) {
     const t = leer(p) || '';
@@ -93,9 +94,21 @@ for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')],
     if (nombre === 'README') continue;
     if (!nombresAgentes.has(nombre))
       err('deriva/envoltorio', `${rel(p)}: '${nombre}' no tiene perfil canónico en .claude/agents/`);
+    else envueltos[dir].add(nombre);
     if (!/\.claude\/agents\//.test(t))
       warn('deriva/envoltorio', `${rel(p)}: no referencia su perfil canónico; puede derivar`);
   }
+}
+
+// Paridad de superficies. Importa porque `.vscode/settings.json` desactiva la lectura de
+// `.claude/agents/` para que VS Code no muestre cada agente por duplicado: a partir de ahí,
+// un agente sin envoltorio simplemente NO EXISTE en VS Code. Y en Cursor el fichero es la
+// identidad del subagente, así que sin él no se le puede delegar.
+for (const [dir, cuantos] of Object.entries(envueltos)) {
+  if (!cuantos.size) continue; // superficie no usada en este repo: no se exige
+  const faltan = [...nombresAgentes].filter((a) => !cuantos.has(a)).sort();
+  if (faltan.length)
+    err('superficie/incompleta', `${dir}: faltan ${faltan.length} agente(s), invisibles en esa superficie: ${faltan.join(', ')}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

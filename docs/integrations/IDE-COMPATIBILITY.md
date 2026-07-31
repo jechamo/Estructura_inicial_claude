@@ -200,6 +200,27 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 Los 20 agentes con `@nombre`, 18 skills, 7 hooks y trazabilidad `observed`.
 
+### VS Code — el duplicado del selector, y por qué
+
+VS Code lee `.github/agents/` **y además** `.claude/agents/`, y **no deduplica por nombre**
+([microsoft/vscode#312256](https://github.com/microsoft/vscode/issues/312256)). Con los 20 agentes
+en ambas carpetas, el selector los mostraba dos veces cada uno.
+
+Se resuelve en [`.vscode/settings.json`](../../.vscode/settings.json), desactivando una ubicación:
+
+```jsonc
+"chat.agentFilesLocations": { ".github/agents": true, ".claude/agents": false }
+```
+
+Se desactiva `.claude/agents` —y no al revés— porque los envoltorios llevan `handoffs:` y
+**`agents:`**, la lista blanca de a quién puede delegar cada agente. Ese campo es el aislamiento en
+VS Code: sin él, el orquestador podría invocar a cualquiera. A cambio, **los 20 agentes necesitan
+envoltorio**, y `check-sdd` falla si falta alguno.
+
+Las **skills no tienen este problema**: VS Code lee `.claude/skills/` de forma nativa, así que el
+mismo `SKILL.md` vale en VS Code, Claude Code, Cursor y Codex sin duplicar nada. Es la diferencia
+práctica entre el estándar abierto de skills y los formatos de agente, que sí divergen por host.
+
 ### VS Code + Copilot — soporte alto
 Picker de agentes (lee `.claude/agents/` y `.github/agents/`), 15 prompts `/`, instrucciones
 por glob, botones de handoff **y delegación real a subagentes**: `orchestrator`, `planner` e

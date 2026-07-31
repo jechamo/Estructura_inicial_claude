@@ -1,0 +1,44 @@
+{
+  // ─────────────────────────────────────────────────────────────────────────
+  // Agentes: una sola ubicación, o salen DUPLICADOS en el selector.
+  //
+  // VS Code lee `.github/agents/` Y ADEMÁS `.claude/agents/`, y no deduplica
+  // por nombre (bug conocido de VS Code, issue microsoft/vscode#312256).
+  // Como aquí los 20 agentes existen en las dos carpetas, sin este ajuste
+  // aparecerían los 20 dos veces.
+  //
+  // Se desactiva `.claude/agents` y se deja `.github/agents` —no al revés—
+  // porque los envoltorios llevan dos campos que solo entiende VS Code y que
+  // no caben en el perfil canónico:
+  //   · `handoffs:`  → botones para pasar el trabajo al siguiente agente
+  //   · `agents:`    → lista blanca de a quién puede delegar cada uno
+  // Ese segundo campo es el que impide que el orquestador programe o que un
+  // especialista llame a quien no debe. Perderlo sería perder el aislamiento.
+  //
+  // Los envoltorios NO duplican contenido: referencian
+  // `.claude/agents/<nombre>.md`, que sigue siendo la única fuente de verdad.
+  // `scripts/check-sdd.mjs` verifica que no derivan.
+  // ─────────────────────────────────────────────────────────────────────────
+  "chat.agentFilesLocations": {
+    ".github/agents": true,
+    ".claude/agents": false
+  },
+
+  // Las skills SÍ son estándar abierto y no se duplican: el mismo SKILL.md
+  // vale en VS Code, Claude Code, Cursor y Codex. VS Code ya lee
+  // `.claude/skills/` por defecto; se declara explícito para que se vea que
+  // es intencionado y no una omisión.
+  "chat.agentSkillsLocations": {
+    ".claude/skills": true
+  },
+
+  // Los prompts del circuito SDD (`/sdd-specify`, `/middle`, `/front`…).
+  "chat.promptFilesLocations": {
+    ".github/prompts": true
+  },
+
+  "files.associations": {
+    "*.agent.md": "markdown",
+    "SKILL.md": "markdown"
+  }
+}

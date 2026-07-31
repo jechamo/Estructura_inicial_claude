@@ -15,16 +15,34 @@ referencian. Si cambias un comportamiento, cámbialo en `.claude/agents/`.
 Solo los agentes del eje principal del circuito SDD, que son los que se seleccionan a mano
 desde el picker:
 
-`orchestrator` · `spec-analyst` · `ux-designer` · `architect` · `planner` · `implementer` ·
-`code-reviewer` · `security-auditor`
+**Los 20.** Y tiene que ser así, por un motivo concreto.
 
-`ux-designer` tiene envoltorio porque es **agente de fase** en `/sdd-design`, no solo especialista.
+VS Code lee `.github/agents/` **y además** `.claude/agents/`, y **no deduplica por nombre**
+([bug conocido](https://github.com/microsoft/vscode/issues/312256)). Con los 20 agentes en las dos
+carpetas, el selector los mostraba **dos veces cada uno**.
 
-Los especialistas (`frontend-expert`, `backend-expert`, `database-expert`, `test-engineer`,
-`refactor-specialist`, `performance-optimizer`, `api-designer`, `devops-expert`, `docs-writer`,
-`bitacora-keeper`, `research-analyst`, `release-manager`) están en `.claude/agents/` y VS Code
-también los lee desde ahí. Si usas el **agente en la nube** de Copilot y necesitas alguno, crea su
-envoltorio con el mismo patrón.
+`.vscode/settings.json` lo resuelve desactivando la lectura de `.claude/agents`:
+
+```jsonc
+"chat.agentFilesLocations": {
+  ".github/agents": true,
+  ".claude/agents": false
+}
+```
+
+Se desactiva esa y no la otra porque los envoltorios llevan dos campos que **solo entiende VS
+Code** y que no caben en el perfil canónico:
+
+| Campo | Para qué |
+|---|---|
+| `handoffs:` | Botones que pasan el trabajo al siguiente agente del circuito |
+| `agents:` | **Lista blanca de a quién puede delegar cada uno** |
+
+El segundo es el que impide que el orquestador programe o que un especialista llame a quien no le
+toca. Perderlo sería perder el aislamiento en VS Code.
+
+**Consecuencia**: a partir de este ajuste, un agente sin envoltorio **no existe** en VS Code.
+Por eso `scripts/check-sdd.mjs` falla si falta alguno.
 
 Su procedimiento de trabajo vive en las skills, que **sí son portables sin duplicar**:
 `/middle`, `/front` y `/bbdd` valen igual aquí que en Claude Code, Cursor o Codex.
