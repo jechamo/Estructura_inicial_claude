@@ -11,6 +11,20 @@ Agentes: `@research-analyst` (investiga) → `@architect` (formaliza).
 Este comando es el puente entre "un repo que ya existe" y "un repo que funciona con SDD".
 **No refactoriza nada.** Documenta la realidad, incluso si la realidad es fea.
 
+## Paso 0 — ¿Está la estructura instalada?
+
+Comprueba que existen `AGENTS.md`, `.claude/agents/` y `.sdd/territories.json`. Si falta alguno,
+la estructura no está puesta y este comando no tiene dónde escribir:
+
+```bash
+npx github:jechamo/Estructura_inicial_claude init
+```
+
+Y avisa de lo que casi siempre se olvida tras instalar: **`.sdd/territories.json` trae rutas
+convencionales** (`src/components/**`, `migrations/**`…). Si este proyecto no las usa, la guarda de
+territorio protege rutas que no existen. Ajustarlo es parte de tu trabajo en la fase 3.
+Guía: [`docs/guides/INSTALACION.md`](../../../docs/guides/INSTALACION.md).
+
 ## Fase 1 — Investigación (`@research-analyst`)
 
 1. **Superficie**: README, manifiestos de dependencias, scripts, Dockerfile, CI, `.env.example`.

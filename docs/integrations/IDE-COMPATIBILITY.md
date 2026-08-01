@@ -176,6 +176,23 @@ La regla general: **se duplica solo donde el formato del host lo exige, y el dup
 envoltorio fino que referencia al canónico**, nunca una copia del contenido. `check-sdd` verifica
 que no derivan.
 
+### La capa global, por host
+
+`npx github:jechamo/Estructura_inicial_claude global` instala agentes y skills a nivel de usuario,
+para que estén disponibles al abrir **cualquier** proyecto:
+
+| Host | Agentes | Skills | ¿Automático? |
+|---|---|---|---|
+| Claude Code | `~/.claude/agents/` | `~/.claude/skills/` | ✅ nativo |
+| Cursor | `~/.cursor/agents/` | lee `~/.claude/skills/` | ✅ nativo |
+| VS Code + Copilot | `~/.github/agents/` | vía `chat.agentSkillsLocations` | 🟡 el instalador añade la clave |
+| Codex | `~/.codex/agents/` en TOML | — | ❌ formato distinto |
+| Antigravity | — | — | ❌ solo reglas globales |
+
+**Los hooks no van en global a propósito**: una guarda activa en todos tus repositorios —incluidos
+los que no usan SDD— es intrusiva, y lo intrusivo se desactiva. Se quedan por proyecto, que es
+donde tienen contexto. Detalle en [`../guides/INSTALACION.md`](../guides/INSTALACION.md).
+
 Y el corolario que ya nos ha mordido dos veces: **duplicar donde no hace falta tiene coste real**
 —agentes repetidos en el selector, hooks ejecutándose dos veces por llamada—. Ante la duda, una
 sola ubicación.

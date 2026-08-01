@@ -9,6 +9,46 @@
 
 ---
 
+## 2026-07-31 · Instalador en dos capas: global para lo inerte, proyecto para lo que obliga
+
+- **Tipo**: decisión
+- **Contexto**: la plantilla solo se podía adoptar clonando el repositorio entero, lo que sirve
+  para empezar de cero pero no para incorporarla a proyectos que ya existen —unos en Cursor, otros
+  en VS Code— sin pisar lo que ya tienen. Y hacía falta poder **actualizar** N repositorios sin
+  copiar ficheros a mano.
+- **Decisión**: instalador `npx` con **dos capas**.
+  - **Global** (`~/.claude/`, `~/.cursor/`, `~/.github/`): solo **agentes y skills**. Nativo en
+    Claude Code y Cursor; en VS Code hay que añadir una clave al `settings.json` de usuario.
+  - **Por proyecto**: todo lo que describe *ese* proyecto y debe viajar con el código.
+  - Política de colisión: **nunca sobrescribir**. Fichero distinto → se deja `.sdd-nuevo` y se
+    informa. JSON conocidos → fusión donde las claves del usuario ganan siempre.
+  - `update` se apoya en `.sdd/installed.json` con el hash de cada fichero instalado: distingue
+    "no lo ha tocado nadie" de "lo ha modificado el usuario", que es la única forma de actualizar
+    sin miedo.
+- **Alternativas descartadas**:
+  - *Instalar también los hooks en global*: una guarda de territorio o un formateador activos en
+    todos los repositorios, incluidos los que no usan SDD, es intrusivo. Lo intrusivo se
+    desactiva, y entonces se pierde todo, no solo lo molesto.
+  - *Plugin de Claude Code* (`/plugin marketplace add`): es el mecanismo nativo y el más limpio,
+    pero **solo cubre Claude Code**. No resuelve Cursor ni Copilot, que era el problema.
+  - *Repositorio plantilla de GitHub*: solo sirve para repos nuevos.
+  - *Sobrescribir y que el usuario mire el diff en git*: asume árbol limpio y confianza previa.
+    Un instalador que pisa se usa una vez.
+- **Impacto**: `scripts/test-install.mjs` verifica sobre directorios reales que un `AGENTS.md`
+  ajeno queda intacto, que las claves propias de `settings.json` sobreviven, que dos ejecuciones
+  seguidas no generan conflictos y que **`check-sdd` y las guardas pasan dentro del destino recién
+  instalado**. En CI.
+- **Deuda aceptada**: Codex (TOML en `~/.codex/agents/`) y Antigravity quedan fuera de la capa
+  global; mantener un traductor de 20 perfiles a otro formato no se justifica hoy. `npx github:`
+  clona el repositorio entero en cada ejecución. Y la capa global hace que los 20 agentes aparezcan
+  en el selector de proyectos donde no se quiere SDD: son inertes, pero ensucian.
+- **Referencias**: [`docs/guides/INSTALACION.md`](../guides/INSTALACION.md),
+  [`scripts/install.mjs`](../../scripts/install.mjs),
+  [`scripts/lib/manifiesto.mjs`](../../scripts/lib/manifiesto.mjs)
+- **Quién**: agente `devops-expert` + revisión humana pendiente
+
+---
+
 ## 2026-07-31 · Una sola ubicación por elemento: duplicar tiene coste real
 
 - **Tipo**: decisión + corrección

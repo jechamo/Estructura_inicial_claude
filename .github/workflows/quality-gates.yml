@@ -47,6 +47,11 @@ jobs:
       - name: Las guardas deciden lo que dicen que deciden
         run: node scripts/test-hooks.mjs
 
+      # El instalador promete no pisar ficheros ajenos. Se verifica sobre directorios reales,
+      # incluida la instalación limpia, que debe pasar los gates dentro del destino.
+      - name: El instalador respeta lo que ya existe
+        run: node scripts/test-install.mjs
+
       - name: Trazabilidad y evidencia (estricto)
         if: github.event_name == 'pull_request'
         run: node scripts/check-sdd.mjs --strict

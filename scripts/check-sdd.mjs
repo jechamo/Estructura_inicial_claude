@@ -14,6 +14,7 @@
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
@@ -341,6 +342,22 @@ for (const s of specs) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 4 · Higiene del repositorio
 // ─────────────────────────────────────────────────────────────────────────────
+// Una plantilla instalada hace un año y nunca actualizada es deuda silenciosa.
+const instalado = leer(join(ROOT, '.sdd/installed.json'));
+if (instalado) {
+  try {
+    const reg = JSON.parse(instalado);
+    const modificados = Object.entries(reg.ficheros || {}).filter(([r, h]) => {
+      const t = leer(join(ROOT, r));
+      return t !== null && h !== createHash('sha256').update(t).digest('hex').slice(0, 16);
+    });
+    if (modificados.length)
+      warn('instalacion/local', `${modificados.length} fichero(s) de la plantilla modificados en local: 'sdd update' no los tocará`);
+  } catch (e) {
+    err('instalacion/json', `.sdd/installed.json no es JSON válido: ${e.message}`);
+  }
+}
+
 if (!existsSync(join(ROOT, 'AGENTS.md'))) err('repo/AGENTS', 'falta AGENTS.md, la fuente de verdad');
 if (existsSync(join(ROOT, '.env'))) err('repo/secretos', '.env está en el árbol de trabajo — comprueba que .gitignore lo excluye');
 

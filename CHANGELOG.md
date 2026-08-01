@@ -8,6 +8,22 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Instalador para proyectos que ya existen**, en dos capas:
+  - `npx github:jechamo/Estructura_inicial_claude global` — agentes y skills a nivel de usuario,
+    disponibles al abrir cualquier proyecto. Nativo en Claude Code y Cursor; en VS Code el
+    instalador añade la clave que hace falta. Codex y Antigravity quedan fuera y está declarado.
+  - `... init` por proyecto, más `check` y `update`. Con `--dry-run` para verlo en seco.
+  - **Nunca pisa un fichero tuyo**: si existe y difiere, deja el nuevo como `.sdd-nuevo` y te dice
+    qué revisar. Los JSON conocidos se fusionan y tus claves ganan. `.gitignore` se amplía en un
+    bloque delimitado.
+  - `update` se apoya en `.sdd/installed.json` (hash por fichero): lo que no has tocado se
+    actualiza solo; lo que has modificado se respeta.
+  - **Los hooks no se instalan en global a propósito**: una guarda activa en todos tus
+    repositorios, incluidos los que no usan SDD, es intrusiva y acaba desactivada.
+- **`scripts/test-install.mjs`**: 35 comprobaciones sobre directorios temporales reales, entre
+  ellas que `check-sdd` y las guardas **pasan dentro del proyecto recién instalado**, que un
+  `AGENTS.md` ajeno queda intacto y que ejecutarlo dos veces no genera conflictos. En CI.
+- `docs/guides/INSTALACION.md` y `package.json` con `bin: sdd`.
 - **Dirección visual vinculante: `docs/design/DIRECCION-VISUAL.md` + puerta en `/sdd-design`.**
   Se decide **una vez**, como la constitución de arquitectura, y sin ella aprobada por el usuario
   no se dibuja ninguna pantalla. Fija referencias reales y una antirreferencia, tres adjetivos que

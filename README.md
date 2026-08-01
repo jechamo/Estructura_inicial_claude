@@ -15,10 +15,30 @@ pero la delegación real y los hooks dependen de lo que cada host expone. La mat
 
 ---
 
-## Empezar en 3 pasos
+## Instalar
 
-1. **Copia** todo el contenido de esta carpeta en tu proyecto (incluidos los directorios que
-   empiezan por punto).
+**Una vez por máquina** — agentes y skills disponibles al abrir cualquier proyecto:
+
+```bash
+npx github:jechamo/Estructura_inicial_claude global
+```
+
+**Una vez por proyecto**, desde su raíz. Míralo en seco primero con `--dry-run`:
+
+```bash
+npx github:jechamo/Estructura_inicial_claude init
+```
+
+**Nunca pisa un fichero tuyo**: si ya existe y es distinto, deja el nuevo al lado como
+`.sdd-nuevo` y te dice qué revisar. Los JSON conocidos se fusionan y tus claves ganan siempre.
+Para actualizar más adelante, `check` y luego `update`: lo que hayas modificado se respeta.
+
+Guía completa: [`docs/guides/INSTALACION.md`](docs/guides/INSTALACION.md).
+
+## Y después
+
+1. **Ajusta** `.sdd/territories.json` a la estructura real de tu proyecto — trae rutas
+   convencionales, y si no coinciden estarás protegiendo rutas que no existen.
 2. **Abre** el proyecto en tu IDE.
 3. **Escribe** lo que quieres construir. El sistema te lleva de la mano.
 
