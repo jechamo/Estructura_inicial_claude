@@ -1,7 +1,6 @@
 ---
 name: sdd-status
 description: Muestra en qué punto del circuito SDD está el proyecto, qué specs hay abiertas, qué tareas quedan y cuál es el siguiente paso.
-disable-model-invocation: true
 ---
 
 # /sdd-status — Dónde estoy

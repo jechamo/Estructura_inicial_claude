@@ -19,13 +19,14 @@ copiar un `postinstall` sin leerlo.
 Eso es exactamente **ASI04 — cadena de suministro agéntica** del OWASP Top 10 for Agentic
 Applications. Por eso: se declaran, se auditan, se fijan, y las instala una persona.
 
-## 2. La decisión de diseño: declarar, no copiar
+## 2. La decisión de diseño: declarar; vendorizar solo el método base auditado
 
 | Opción | Por qué no / sí |
 |---|---|
 | Copiar el `SKILL.md` de Vercel a `.agents/skills/` | **No.** Crea una copia que envejece en silencio, arrastra su licencia y hace que la próxima mejora del fabricante no llegue nunca |
 | Instalar colecciones curadas completas | **No.** Colisión de triggers, consumo de contexto, superficie de ejecución y deuda de actualización |
 | Declarar la referencia, fijarla y auditarla antes de usar | **Sí.** Es como se tratan las demás dependencias |
+| Vendorizar una skill que gobierna el propio método | **Solo excepcionalmente.** `skill-creator` forma parte de la plantilla, se distribuye completa con licencia, commit y revisión registrados |
 
 Y una consecuencia que conviene entender:
 
@@ -49,8 +50,15 @@ que caducará antes de servir para algo.
 
 ## 4. Catálogo
 
-Este repositorio es una plantilla: **no tiene stack todavía**, así que todo está en `candidata` y
-no hay nada instalado. Es el estado correcto, no un pendiente.
+Este repositorio es una plantilla: **no tiene stack de aplicación**, así que las skills de
+fabricantes permanecen como candidatas. La única externa instalada es `skill-creator`, porque
+gobierna la creación y evaluación del propio ecosistema, no un stack de aplicación.
+
+### Método base aprobado
+
+| Skill | Publicador | Pin | Licencia | Estado |
+|---|---|---|---|---|
+| `anthropics/skills:skill-creator` | Anthropic | `b29e7cf65e5cb78a5ac33d582270551bc74a14eb` | Apache-2.0 | **aprobada y vendorizada** |
 
 ### Front y diseño visual
 
@@ -153,6 +161,12 @@ node scripts/skills-sync.mjs --plan   # comandos de lo aprobado y aplicable
 npx skills add <ref>@<pin>            # lo ejecutas tú
 ```
 
+Para reproducir exactamente la skill base con Node 22.20 o superior:
+
+```powershell
+npx --yes skills@1.5.21 add https://github.com/anthropics/skills/tree/b29e7cf65e5cb78a5ac33d582270551bc74a14eb/skills/skill-creator --skill skill-creator --agent universal --copy --yes
+```
+
 `skills-sync.mjs` **no instala nada**. Imprime el comando. Un script que descarga y activa
 instrucciones de terceros por su cuenta es el vector ASI04 con otro nombre, y la plantilla no lo
 va a incluir.
@@ -169,9 +183,8 @@ si la *salida* es idéntica en todas: eso queda declarado como pendiente en el b
 
 | Fecha | Skill | Veredicto | Quién | Notas |
 |---|---|---|---|---|
+| 2026-08-02 | `anthropics/skills:skill-creator` | **aprobada y vendorizada** | usuario + Codex | Apache-2.0; pin `b29e7cf…`; frontmatter, scripts, subprocesos, red y escrituras revisados |
 | 2026-07-30 | Colecciones completas | **rechazada** | plantilla | Descubrimiento sí, instalación en bloque no |
-| | | | | |
 
-> Vacío por debajo de la primera fila **a propósito**: este repositorio no tiene stack, así que no
-> hay nada que auditar todavía. Cuando `/sdd-init` fije el stack, `skills-sync.mjs` dirá qué
-> candidatas aplican y esta tabla se rellena.
+Las skills ligadas al stack siguen sin auditar hasta que `/sdd-init` u `/onboard` confirme que
+aplican. La excepción anterior existe porque `skill-creator` gobierna la propia plantilla.

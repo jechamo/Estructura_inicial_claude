@@ -1,7 +1,6 @@
 ---
 name: sdd-implement
 description: Ejecuta las tareas de tasks.md en ciclo TDD estricto rojo-verde-refactor, una a una, mostrando la salida real de los tests.
-disable-model-invocation: true
 ---
 
 # /sdd-implement — Construir con TDD

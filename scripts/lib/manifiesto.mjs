@@ -141,8 +141,10 @@ Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/age
 `,
   'docs/agents/SKILLS-EXTERNAS.md': `# Skills externas
 
-Las skills de terceros no se vendorizan ni se activan durante la instalación. Se gobiernan en
-[\`.sdd/external-skills.json\`](../../.sdd/external-skills.json), que nace con \`entries: []\`.
+Las skills externas solo se distribuyen si están auditadas, fijadas y son parte del método base.
+Se gobiernan en [\`.sdd/external-skills.json\`](../../.sdd/external-skills.json). La instalación
+incluye únicamente \`skill-creator\`, oficial de Anthropic y fijada a un commit; no hereda
+candidatas, rechazos ni decisiones históricas de la plantilla.
 
 Para aprobar una entrada hacen falta publicador identificado, licencia verificada, versión o
 commit inmutable, revisión de instrucciones y scripts, alcance, riesgo y responsable.
@@ -235,7 +237,17 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "$schema": "./schemas/external-skills.schema.json",
   "version": 1,
   "policy": "Toda skill externa requiere revisión, licencia verificada y versión inmutable antes de aprobarse.",
-  "entries": []
+  "entries": [
+    {
+      "id": "anthropic-skill-creator",
+      "source": "https://github.com/anthropics/skills",
+      "skill": "skill-creator",
+      "commit": "b29e7cf65e5cb78a5ac33d582270551bc74a14eb",
+      "license": "Apache-2.0",
+      "status": "approved-vendored",
+      "path": ".agents/skills/skill-creator"
+    }
+  ]
 }
 `,
   '.sdd/territories.json': `{

@@ -1,7 +1,6 @@
 ---
 name: sdd-refresh
 description: Revalida el baseline del ecosistema — estándares SDD, formatos de agentes de cada IDE, arquitectura, seguridad y MCP — contra fuentes oficiales, y migra la plantilla de forma controlada.
-disable-model-invocation: true
 ---
 
 # /sdd-refresh — Poner el ecosistema al día

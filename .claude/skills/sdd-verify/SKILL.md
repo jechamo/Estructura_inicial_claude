@@ -1,6 +1,6 @@
 ---
 name: sdd-verify
-description: Verifica el trabajo antes de entregar. Ejecuta todos los gates de calidad: tests, cobertura, lint, revisión de código, principios de diseño y auditoría de seguridad.
+description: "Verifica el trabajo antes de entregar. Ejecuta todos los gates de calidad: tests, cobertura, lint, revisión de código, principios de diseño y auditoría de seguridad."
 disable-model-invocation: true
 ---
 

@@ -160,6 +160,9 @@ for (const [dir, cuantos] of Object.entries(envueltos)) {
 // el comando que documentas no es el que existe.
 // ─────────────────────────────────────────────────────────────────────────────
 const SKILLS_DIR = join(ROOT, '.agents/skills');
+const SKILL_FM_PERMITIDO = new Set([
+  'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility',
+]);
 for (const d of dirs(SKILLS_DIR)) {
   const t = leer(join(SKILLS_DIR, d, 'SKILL.md'));
   if (t === null) {
@@ -175,19 +178,42 @@ for (const d of dirs(SKILLS_DIR)) {
   const nombre = (fm.match(/^name:\s*(.+)$/m) || [])[1]?.trim();
   if (!nombre) err('skill/name', `${d}/SKILL.md: falta 'name'`);
   else if (nombre !== d) err('skill/name', `${d}/SKILL.md: name '${nombre}' no coincide con la carpeta`);
-  if (!/^description:\s*\S/m.test(fm))
+  else if (!/^[a-z0-9-]+$/.test(nombre) || nombre.startsWith('-') || nombre.endsWith('-') || nombre.includes('--') || nombre.length > 64)
+    err('skill/name', `${d}/SKILL.md: name '${nombre}' no cumple kebab-case ni el máximo de 64 caracteres`);
+  const descripcionRaw = (fm.match(/^description:\s*(.+)$/m) || [])[1]?.trim() || '';
+  const descripcion = descripcionRaw.replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, '$1$2');
+  if (!descripcion)
     err('skill/description', `${d}/SKILL.md: falta 'description' — sin ella el modelo no sabe cuándo usarla`);
+  else {
+    if (!/^["']/.test(descripcionRaw) && /:\s/.test(descripcionRaw))
+      err('skill/frontmatter', `${d}/SKILL.md: description con ':' debe ir entre comillas para ser YAML válido`);
+    if (descripcion.includes('<') || descripcion.includes('>'))
+      err('skill/description', `${d}/SKILL.md: description no puede contener '<' ni '>'`);
+    if (descripcion.length > 1024)
+      err('skill/description', `${d}/SKILL.md: description supera 1024 caracteres`);
+  }
+  const claves = [...fm.matchAll(/^([a-zA-Z][\w-]*):/gm)].map((m) => m[1]);
+  const noPortables = claves.filter((clave) => !SKILL_FM_PERMITIDO.has(clave));
+  if (noPortables.length)
+    err('skill/frontmatter', `${d}/SKILL.md: claves no portables: ${[...new Set(noPortables)].sort().join(', ')}`);
+  if (t.split(/\r?\n/).length > 500)
+    warn('skill/progressive-disclosure', `${d}/SKILL.md supera 500 líneas; mueve detalle a references/`);
 }
 
 const skillsCanonicas = dirs(SKILLS_DIR);
 const skillsClaude = dirs(join(ROOT, '.claude/skills'));
 if (nombresAgentes.size !== 20)
   err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
-if (skillsCanonicas.length !== 22)
-  err('paridad/skills', `se esperaban 22 skills canónicas y hay ${skillsCanonicas.length}`);
+if (skillsCanonicas.length !== 23)
+  err('paridad/skills', `se esperaban 23 skills canónicas y hay ${skillsCanonicas.length}`);
 const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
 if (adaptersFaltantes.length)
   err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
+for (const skill of skillsCanonicas.filter((nombre) => skillsClaude.includes(nombre))) {
+  const adapter = leer(join(ROOT, '.claude/skills', skill, 'SKILL.md')) || '';
+  if (!adapter.includes(`.agents/skills/${skill}/SKILL.md`))
+    err('paridad/skills', `.claude/skills/${skill}/SKILL.md no referencia la fuente canónica portable`);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 ter · Mapa de territorios: quién puede escribir dónde
@@ -470,8 +496,14 @@ if (VIRGIN) {
 
   try {
     const externas = JSON.parse(leer(join(ROOT, '.sdd/external-skills.json')) || '{}');
-    if (!Array.isArray(externas.entries) || externas.entries.length)
-      err('virgin/skills-externas', 'el registro de skills externas debe usar entries: []');
+    const entries = externas.entries;
+    const validas = Array.isArray(entries) && entries.every((entrada) =>
+      entrada.status === 'approved-vendored' &&
+      /^[0-9a-f]{40}$/.test(entrada.commit || '') &&
+      entrada.license && entrada.path && existsSync(join(ROOT, entrada.path))
+    );
+    if (!validas)
+      err('virgin/skills-externas', 'solo se permiten skills base vendorizadas, aprobadas, licenciadas y fijadas a commit');
   } catch (error) {
     err('virgin/skills-externas', `.sdd/external-skills.json inválido: ${error.message}`);
   }

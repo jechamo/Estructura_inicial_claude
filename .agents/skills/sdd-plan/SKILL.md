@@ -1,7 +1,6 @@
 ---
 name: sdd-plan
 description: Convierte una spec aprobada en plan técnico, modelo de datos, contratos e investigación. Aquí se decide el CÓMO, conforme a la arquitectura vigente.
-disable-model-invocation: true
 ---
 
 # /sdd-plan — Cómo

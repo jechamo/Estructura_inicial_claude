@@ -1,7 +1,6 @@
 ---
 name: onboard
 description: Documenta un repositorio existente que aún no tiene el circuito SDD. Reconstruye la arquitectura real, crea la constitución y deja el proyecto listo para trabajar con specs.
-disable-model-invocation: true
 ---
 
 # /onboard — Adoptar un repo existente

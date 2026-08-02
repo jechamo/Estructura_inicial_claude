@@ -1,6 +1,6 @@
 ---
 name: sdd-ship
-description: Prepara la entrega: verificación final de gates, PR con trazabilidad, CHANGELOG, bitácora y plan de reversión. No hace push ni merge sin permiso explícito.
+description: "Prepara la entrega: verificación final de gates, PR con trazabilidad, CHANGELOG, bitácora y plan de reversión. No hace push ni merge sin permiso explícito."
 disable-model-invocation: true
 ---
 

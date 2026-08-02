@@ -1,7 +1,6 @@
 ---
 name: sdd-design
 description: Convierte la spec en el documento de diseño de la funcionalidad — flujo de pantallas, estados, componentes y accesibilidad — antes de decidir arquitectura. Úsala cuando la funcionalidad tenga interfaz.
-disable-model-invocation: true
 ---
 
 # /sdd-design — Cómo se ve y cómo se recorre

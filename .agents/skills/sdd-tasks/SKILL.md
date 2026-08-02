@@ -1,7 +1,6 @@
 ---
 name: sdd-tasks
 description: Trocea el plan en tareas atómicas y ordenadas, cada una con su test asociado y su trazabilidad a la spec.
-disable-model-invocation: true
 ---
 
 # /sdd-tasks — Trocear

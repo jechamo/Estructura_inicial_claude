@@ -7,7 +7,15 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+Sin cambios todavía.
+
+## [0.3.0] — 2026-08-02
+
 ### Added
+- **23 skills conformes al estándar Agent Skills.** La fuente canónica permanece en
+  `.agents/skills/`; los metadatos específicos de cada host viven solo en sus adaptadores.
+  Se distribuye la `skill-creator` oficial de Anthropic completa, con licencia Apache-2.0,
+  commit fijado y auditoría reproducible, además de un adaptador fino para Claude.
 - **Instalación universal greenfield/brownfield con estado virgen verificable.** `init` acepta un
   destino explícito y `--mode auto|greenfield|brownfield`; README, changelog, constitución,
   dirección visual, threat model, bitácora, auditoría, specs, ADR e informes nacen sin historia
@@ -36,7 +44,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
     actualiza solo; lo que has modificado se respeta.
   - **Los hooks no se instalan en global a propósito**: una guarda activa en todos tus
     repositorios, incluidos los que no usan SDD, es intrusiva y acaba desactivada.
-- **`scripts/test-install.mjs`**: 87 comprobaciones sobre directorios temporales reales, entre
+- **`scripts/test-install.mjs`**: 89 comprobaciones sobre directorios temporales reales, entre
   ellas que `check-sdd` y las guardas **pasan dentro del proyecto recién instalado**, que un
   `AGENTS.md` ajeno queda intacto y que ejecutarlo dos veces no genera conflictos. En CI.
 - `docs/guides/INSTALACION.md` y `package.json` con `bin: sdd`.

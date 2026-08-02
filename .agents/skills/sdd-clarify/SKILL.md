@@ -1,7 +1,6 @@
 ---
 name: sdd-clarify
 description: Resuelve las ambigüedades de una spec. Recorre los marcadores [NEEDS CLARIFICATION], pregunta al humano con opciones concretas y actualiza la spec. Gate obligatorio antes de planificar.
-disable-model-invocation: true
 ---
 
 # /sdd-clarify — Cerrar ambigüedades

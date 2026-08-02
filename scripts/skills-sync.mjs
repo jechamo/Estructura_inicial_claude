@@ -106,8 +106,15 @@ if (CHECK) {
       if (!s.pin) err(`${et}: 'aprobada' sin 'pin'. Seguir una referencia móvil es instalar lo que otro decida mañana`);
       if (!s.licencia || /por verificar/i.test(s.licencia))
         err(`${et}: 'aprobada' con licencia sin verificar ('${s.licencia}')`);
-      if (locales.has(s.id) || locales.has(String(s.ref).split(/[:/]/).pop()))
+      const nombreLocal = s.local || String(s.ref).split(/[:/]/).pop();
+      if (s.vendorizada === true) {
+        if (!s.local) err(`${et}: vendorizada sin nombre 'local'`);
+        else if (!locales.has(s.local)) err(`${et}: declara copia vendorizada pero falta .agents/skills/${s.local}/`);
+        if (!s.comando || !String(s.comando).includes(String(s.pin)))
+          err(`${et}: vendorizada sin comando reproducible fijado al mismo pin`);
+      } else if (locales.has(s.id) || locales.has(nombreLocal)) {
         err(`${et}: colisiona con una skill propia de .agents/skills/`);
+      }
     }
     if (s.estado === 'rechazada' && !s.notas)
       err(`${et}: 'rechazada' sin motivo escrito. Un descarte sin motivo se repite`);
@@ -158,7 +165,8 @@ if (PLAN) {
   if (!instalables.length) {
     console.log('Nada aprobado y aplicable. Audita una candidata primero y anótala en el registro.');
   } else {
-    for (const s of instalables) console.log(`npx skills add ${s.ref}${s.pin ? `@${s.pin}` : ''}`);
+    for (const s of instalables)
+      console.log(s.comando || `npx skills add ${s.ref}${s.pin ? `@${s.pin}` : ''}`);
   }
   console.log('');
 }

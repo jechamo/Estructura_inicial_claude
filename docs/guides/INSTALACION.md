@@ -8,8 +8,8 @@ versionado dentro del repositorio. Requiere Node 18 o posterior y no instala dep
 Usa una versión etiquetada; evita instalar directamente desde una rama móvil:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 El destino puede no existir y puede contener espacios. `--dry-run` no crea el directorio.
@@ -34,7 +34,8 @@ bitácora, una spec, un ADR, una sesión, un informe ni un log.
 - Directorios de sesiones, informes, flujos y wireframes vacíos.
 - `docs/bitacora/DECISIONS.md` sin entradas.
 - `.sdd/agent-audit.jsonl` a cero bytes.
-- `.sdd/external-skills.json` con `entries: []`.
+- `.sdd/external-skills.json` solo con `skill-creator`, auditada, licenciada y fijada a commit;
+  sin candidatas, descartes ni decisiones históricas de la plantilla.
 - `.sdd/territories.json` en `audit`, sin rutas de aplicación asumidas.
 - `.sdd/checks.json` con solo el gate SDD; el stack queda sin configurar.
 
@@ -62,7 +63,7 @@ La instalación normal no crea `.mcp.json`, `.vscode/mcp.json` ni entradas MCP d
 solo los servidores que hayas elegido:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" `
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" `
   --mode auto --with-mcp context7,playwright
 ```
 
@@ -92,8 +93,8 @@ los comandos encontrados a `.sdd/checks.json`.
 ## Actualizar
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z check "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 update "C:\ruta\proyecto"
 ```
 
 Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y recibe una propuesta
@@ -106,7 +107,7 @@ y nunca se reinician.
 necesario para que un repositorio instalado funcione y no instala hooks globales:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z global --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 global --dry-run
 ```
 
 Codex y Antigravity se mantienen por proyecto para no alterar configuración personal.

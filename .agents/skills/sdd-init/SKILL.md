@@ -1,7 +1,6 @@
 ---
 name: sdd-init
 description: Arranca un proyecto NUEVO. Define principios, elige arquitectura y stack, crea la constitución, el ADR-0001 y el esqueleto de carpetas. Solo para greenfield.
-disable-model-invocation: true
 ---
 
 # /sdd-init — Bootstrap de proyecto nuevo

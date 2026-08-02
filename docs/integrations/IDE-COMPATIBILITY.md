@@ -48,7 +48,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
-| Comandos `/` | ✅ 22 skills | ✅ 15 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
+| Comandos `/` | ✅ 23 skills | ✅ 15 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
@@ -241,7 +241,7 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 /sdd-start
 ```
-Los 20 agentes con `@nombre`, 22 skills, 7 hooks y trazabilidad `observed`.
+Los 20 agentes con `@nombre`, 23 skills, 7 hooks y trazabilidad `observed`.
 
 ### VS Code sí tiene hooks, y con el mismo protocolo
 

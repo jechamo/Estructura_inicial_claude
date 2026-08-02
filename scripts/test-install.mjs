@@ -78,6 +78,11 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los agentes', existsSync(join(d, '.claude/agents/implementer.md')));
   comprueba('instala las skills canónicas portables', existsSync(join(d, '.agents/skills/middle/SKILL.md')));
   comprueba('instala los adaptadores de skill de Claude', existsSync(join(d, '.claude/skills/middle/SKILL.md')));
+  comprueba('instala skill-creator completa y con licencia',
+    existsSync(join(d, '.agents/skills/skill-creator/scripts/quick_validate.py')) &&
+    existsSync(join(d, '.agents/skills/skill-creator/LICENSE.txt')));
+  comprueba('adapta skill-creator para Claude sin duplicar la implementación',
+    (leer(join(d, '.claude/skills/skill-creator/SKILL.md')) || '').includes('.agents/skills/skill-creator/SKILL.md'));
   comprueba('instala los hooks compartidos', existsSync(join(d, '.sdd/hooks/guard-write.mjs')));
   comprueba('instala los territorios', existsSync(join(d, '.sdd/territories.json')));
   comprueba('instala las superficies de Cursor', existsSync(join(d, '.cursor/agents/backend-expert.md')));
@@ -98,8 +103,12 @@ console.log('\n1 · init sobre un directorio vacío');
     /\[Unreleased\]/.test(leer(join(d, 'CHANGELOG.md')) || '') &&
     !/\[0\.1\.0\]|agentes.*Codex|2026-07-29/i.test(leer(join(d, 'CHANGELOG.md')) || ''));
   comprueba('crea auditoría de agentes vacía', leer(join(d, '.sdd/agent-audit.jsonl')) === '');
-  comprueba('crea registro de skills externas vacío', (() => {
-    try { return JSON.parse(leer(join(d, '.sdd/external-skills.json')) || '{}').entries?.length === 0; }
+  comprueba('solo registra la skill base auditada y fijada', (() => {
+    try {
+      const entries = JSON.parse(leer(join(d, '.sdd/external-skills.json')) || '{}').entries;
+      return entries?.length === 1 && entries[0].skill === 'skill-creator' &&
+        /^[0-9a-f]{40}$/.test(entries[0].commit || '') && entries[0].status === 'approved-vendored';
+    }
     catch { return false; }
   })());
   comprueba('crea territorios en audit sin asumir carpetas de aplicación', (() => {
@@ -194,7 +203,7 @@ console.log('\n1 · init sobre un directorio vacío');
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('inventory cuenta agentes y skills canónicos',
-    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 22);
+    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 23);
 
   const nuevaSpec = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'new-spec', 'checkout-invitado', '--json'], { cwd: d, encoding: 'utf8' });
   comprueba('new-spec crea el siguiente scaffold sin execution-log',

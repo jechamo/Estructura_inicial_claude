@@ -147,7 +147,7 @@ for Agentic Applications si el producto usa LLM.
 
 | Requisito | Estado |
 |---|---|
-| Estructura de agentes, hooks, skills, prompts y handoff | 20 agentes en `.claude/agents/` · 7 hooks en `.claude/hooks/` · 22 skills en `.claude/skills/` · 15 prompts de Copilot en `.github/prompts/` · 6 comandos de Cursor · workflows de Antigravity · protocolo de handoff obligatorio en `AGENTS.md` §10 |
+| Estructura de agentes, hooks, skills, prompts y handoff | 20 agentes en `.claude/agents/` · 7 hooks en `.claude/hooks/` · 23 skills en `.claude/skills/` · 15 prompts de Copilot en `.github/prompts/` · 6 comandos de Cursor · workflows de Antigravity · protocolo de handoff obligatorio en `AGENTS.md` §10 |
 | Información actualizada de patrones, SOLID y arquitecturas | [`baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §3 y [`baseline-2026-07-29.md`](../research/baseline-2026-07-29.md) · corrección del eje macro/micro aplicada a `AGENTS.md` §3.1 |
 | Información actualizada de QA, TDD y mejores prácticas | [`baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §2, con datos DORA y mutation testing incorporado a `AGENTS.md` §6 |
 | **Las mejores skills de repos oficiales para middle, front y BBDD** | [`SKILLS-EXTERNAS.md`](./SKILLS-EXTERNAS.md): 13 skills oficiales catalogadas (Anthropic, Vercel, Supabase, Cloudflare, Netlify, Stripe, Neon), con política de auditoría y `scripts/skills-sync.mjs --check` en CI. **Hallazgo:** Anthropic no publica ninguna de backend ni BBDD — de sus 17 skills, solo 3 tocan este terreno. El método lo pone esta plantilla; el fabricante pone lo específico de su stack |

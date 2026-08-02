@@ -21,8 +21,8 @@ Instálalo por proyecto desde una versión etiquetada. El mismo comando vale par
 brownfield, y el destino puede no existir:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -385,7 +385,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
 │   └── hooks.json                Contrato de hooks de Codex
 ├── .agents/
-│   ├── skills/                   22 skills canónicas portables
+│   ├── skills/                   23 skills canónicas portables
 │   └── rules/ · workflows/       Adaptadores de Antigravity
 ├── .sdd/
 │   ├── hooks/                    Implementaciones Node compartidas por host

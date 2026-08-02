@@ -1,7 +1,6 @@
 ---
 name: adr
 description: Crea un Architecture Decision Record en formato MADR. Úsalo cuando se tome una decisión con consecuencias estructurales duraderas.
-disable-model-invocation: true
 ---
 
 # /adr — Registrar una decisión arquitectónica

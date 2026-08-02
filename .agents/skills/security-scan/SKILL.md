@@ -1,6 +1,6 @@
 ---
 name: security-scan
-description: Auditoría de seguridad del código: OWASP Top 10, ASVS y OWASP Agentic si hay LLM. Úsala antes de un release o al tocar auth, datos personales, pagos, ficheros o integraciones.
+description: "Auditoría de seguridad del código: OWASP Top 10, ASVS y OWASP Agentic si hay LLM. Úsala antes de un release o al tocar auth, datos personales, pagos, ficheros o integraciones."
 ---
 
 # /security-scan — Auditoría de seguridad

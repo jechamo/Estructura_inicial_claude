@@ -9,6 +9,34 @@
 
 ---
 
+## 2026-08-02 · Skills canónicas portables y `skill-creator` vendorizada
+
+- **Tipo**: decisión de compatibilidad y cadena de suministro
+- **Contexto**: trece skills canónicas usaban `disable-model-invocation`, una extensión de Claude
+  que no pertenece al estándar Agent Skills. Además, la plantilla no incluía una herramienta
+  común para crear, validar y evaluar skills nuevas desde los hosts soportados.
+- **Decisión / hecho**: limitar el frontmatter canónico a los campos de Agent Skills y mantener
+  cualquier extensión de host en su adaptador. Se añade la `skill-creator` oficial de Anthropic
+  en `.agents/skills/`, completa, con licencia Apache-2.0 y commit
+  `b29e7cf65e5cb78a5ac33d582270551bc74a14eb`; Claude recibe un adaptador fino. Es la única skill
+  externa que nace instalada: forma parte del método base, no del stack de aplicación.
+- **Alternativas descartadas**:
+  - *Instalar solo en `.claude/skills/`*: rompería el objetivo multihost y duplicaría la fuente.
+  - *Seguir `main` de Anthropic*: haría mutable la cadena de suministro.
+  - *Depender de `npx skills` en runtime*: su versión 1.5.21 requiere Node 22.20, mientras el
+    instalador mantiene compatibilidad con Node 18.
+- **Impacto**: 23 skills canónicas y 23 adaptadores Claude; el gate rechaza claves no portables y
+  la instalación virgen conserva la skill base auditada sin heredar candidatas ni historial.
+  La suite del instalador cubre 89 comprobaciones.
+- **Limitación aceptada**: el comando `npx skills` no terminó de resolver en esta máquina; la
+  copia se obtuvo por Git desde el commit exacto y se validó con el script oficial. Los smokes
+  interactivos en los cinco hosts y la matriz completa de sistemas/Node siguen sin ejecutarse.
+- **Referencias**: spec `003-skills-portables-estandar` · tareas `T-003-01` a `T-003-03` ·
+  `docs/research/baseline-2026-08-02.md`
+- **Quién**: Codex `declared-direct`, entrega y tag solicitados por el usuario
+
+---
+
 ## 2026-08-02 · Distribución portable con semillas vírgenes y estado propiedad del proyecto
 
 - **Tipo**: decisión y cambio

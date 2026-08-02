@@ -1,7 +1,6 @@
 ---
 name: sdd-specify
 description: Crea la especificación de una funcionalidad nueva. Convierte la idea en requisitos EARS con criterios de aceptación testables. Sin decisiones técnicas.
-disable-model-invocation: true
 ---
 
 # /sdd-specify — Qué y por qué
