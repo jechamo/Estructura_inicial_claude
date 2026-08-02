@@ -12,3 +12,4 @@
 {"ts":"2026-07-31T08:33:02.529Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
 {"ts":"2026-08-01T08:44:12.886Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
 {"ts":"2026-08-01T08:47:34.438Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
+{"ts":"2026-08-01T09:01:25.569Z","evento":"subagent-stop","agente":"desconocido","sesion":"180b515a","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
