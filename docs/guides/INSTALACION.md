@@ -3,19 +3,75 @@
 Dos capas. Una se instala **una vez por máquina** y aparece en todos tus proyectos; la otra se
 instala **por repositorio** y se versiona con el código.
 
-```bash
-# Una vez por máquina: agentes y skills en todos tus proyectos
-npx github:jechamo/Estructura_inicial_claude global
+## Clonar y ejecutar
 
-# Una vez por proyecto, desde su raíz
-npx github:jechamo/Estructura_inicial_claude init
-```
-
-**Antes de la primera vez, míralo en seco.** No escribe nada:
+Es la vía principal: funciona con el repositorio privado, no depende de npm y esquiva los
+problemas de certificados.
 
 ```bash
-npx github:jechamo/Estructura_inicial_claude init --dry-run
+# Una sola vez: traer la plantilla a tu máquina
+git clone --depth 1 https://github.com/jechamo/Estructura_inicial_claude.git ~/sdd-plantilla
+
+# En cada proyecto, desde su raíz
+cd /ruta/a/mi-proyecto
+node ~/sdd-plantilla/scripts/install.mjs init --dry-run   # míralo en seco primero
+node ~/sdd-plantilla/scripts/install.mjs init
 ```
+
+En PowerShell (Windows):
+
+```powershell
+git clone --depth 1 https://github.com/jechamo/Estructura_inicial_claude.git $env:TEMP\sdd-plantilla
+
+cd C:\ruta\a\mi-proyecto
+node $env:TEMP\sdd-plantilla\scripts\install.mjs init --dry-run
+node $env:TEMP\sdd-plantilla\scripts\install.mjs init
+```
+
+**`--dry-run` no escribe nada**: lista lo que haría. Úsalo la primera vez.
+
+Y la capa global, si la quieres, desde la misma copia:
+
+```bash
+node ~/sdd-plantilla/scripts/install.mjs global
+```
+
+## Si prefieres `npx`
+
+Es más corto, pero **no sirve en todos los casos**:
+
+| Situación | ¿Funciona `npx github:jechamo/…`? |
+|---|---|
+| El repositorio es **público** | ✅ Sí |
+| El repositorio es **privado** | ❌ **No.** Descarga por `codeload.github.com` sin credenciales. Usa el clon, o `npx git+ssh://git@github.com/jechamo/Estructura_inicial_claude.git init` si tienes SSH configurado con GitHub |
+| Antivirus, VPN o proxy interceptando HTTPS | ❌ Falla con `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Ver abajo |
+
+## Si falla por certificados
+
+```
+npm error code UNABLE_TO_VERIFY_LEAF_SIGNATURE
+npm error request to https://codeload.github.com/... failed
+```
+
+Significa que **Node no confía en la cadena de certificados** que le presentan. Casi siempre hay
+algo interceptando HTTPS: un antivirus con análisis de tráfico, una VPN o un proxy corporativo.
+El error ocurre **dentro de npm**, antes de ejecutar una línea del instalador.
+
+Por orden:
+
+| Si… | Haz |
+|---|---|
+| La CA está en el almacén de certificados del sistema | `$env:NODE_OPTIONS="--use-system-ca"` y repite. Es lo que sugiere el propio mensaje de npm |
+| Tienes el `.pem` de la CA | `$env:NODE_EXTRA_CA_CERTS="C:\ruta\ca.pem"` y repite |
+| Ninguna de las dos, o no quieres pelearte | **Clona y ejecuta** (arriba). Lo esquiva por completo |
+
+> **No desactives la verificación de certificados** (`npm config set strict-ssl false`). Es la
+> primera respuesta que sale al buscar y funciona, pero deja tu npm sin comprobar certificados en
+> todo lo que instales a partir de entonces. Este repositorio bloquea `curl | sh` en sus propios
+> hooks: recomendarte desactivar TLS para instalarlo sería incoherente.
+
+**Diagnóstico rápido**: si `git clone` te funciona y `npx` no, el problema es el almacén de
+confianza de Node, no tu red. Los dos usan almacenes distintos.
 
 ---
 
@@ -80,9 +136,14 @@ construyó la plantilla. Es referencia útil, pero es de la plantilla, no tuya.
 
 ## Actualizar
 
+Primero traes la versión nueva de la plantilla, y después la aplicas al proyecto:
+
 ```bash
-npx github:jechamo/Estructura_inicial_claude check    # ¿hay novedades? ¿qué he tocado yo?
-npx github:jechamo/Estructura_inicial_claude update
+git -C ~/sdd-plantilla pull                              # trae la plantilla actualizada
+
+cd /ruta/a/mi-proyecto
+node ~/sdd-plantilla/scripts/install.mjs check           # ¿hay novedades? ¿qué he tocado yo?
+node ~/sdd-plantilla/scripts/install.mjs update
 ```
 
 `update` funciona gracias a `.sdd/installed.json`, que guarda el hash de cada fichero instalado:
@@ -136,8 +197,9 @@ con eso y `git` puedes revertir con precisión.
 
 ## Límites declarados
 
-- **`npx github:` clona el repositorio entero** en cada ejecución. Es aceptable para un comando
-  puntual; si molesta, la alternativa es publicarlo en npm.
+- **`npx github:` no sirve si el repositorio es privado**, y depende del almacén de confianza de
+  Node, que es distinto del de git. Por eso la vía principal es clonar: funciona con la
+  autenticación de git que ya tienes y no pasa por npm.
 - **Codex y Antigravity no reciben la capa global.** Codex usa TOML en `~/.codex/agents/`;
   mantener un traductor de 20 perfiles a otro formato es coste que hoy no se justifica.
 - **VS Code necesita que se toque tu `settings.json` de usuario.** Es la única escritura fuera del

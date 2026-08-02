@@ -377,5 +377,11 @@ switch (comando) {
 Opciones
   --dry-run       imprime lo que haría, sin escribir nada
   --con-baseline  incluye docs/research/ (la investigación fechada de la plantilla)
+
+Se puede invocar desde una copia local, que es la vía recomendada: funciona con repositorios
+privados y no depende del almacén de certificados de npm.
+
+  git clone --depth 1 <url-de-la-plantilla> ~/sdd-plantilla
+  cd /mi/proyecto && node ~/sdd-plantilla/scripts/install.mjs init
 `);
 }

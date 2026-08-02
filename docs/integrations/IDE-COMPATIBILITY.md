@@ -166,7 +166,7 @@ La pregunta natural al ver el árbol es *"¿no debería haber `skills/` y `hooks
 
 | Elemento | Vive en | Lo leen | ¿Duplicar? |
 |---|---|---|---|
-| **Skills** | `.claude/skills/` | Claude Code · VS Code · Cursor · Codex, **todos de forma nativa** | **No.** Es estándar abierto. Cursor carga `.claude/skills/` por compatibilidad y VS Code también |
+| **Skills** | `.claude/skills/` | Claude Code · VS Code · Cursor · Codex, **todos de forma nativa** | **No.** Es estándar abierto. Cursor y Codex cargan `.claude/skills/` explícitamente por compatibilidad, y VS Code también |
 | **Hooks (scripts)** | `.claude/hooks/*.mjs` | Los ejecuta quien los invoque | **No.** Son Node puro, sin dependencias |
 | **Hooks (configuración)** | `.claude/settings.json` + `.cursor/hooks.json` | Claude Code y VS Code leen el primero; Cursor necesita el suyo porque usa otros nombres de evento | Solo donde el formato obliga |
 | **Agentes** | `.claude/agents/` (canónico) + envoltorios | Cada host quiere el suyo: el frontmatter **sí** diverge | Sí, y por eso hay envoltorios finos que referencian el canónico |
@@ -175,6 +175,38 @@ La pregunta natural al ver el árbol es *"¿no debería haber `skills/` y `hooks
 La regla general: **se duplica solo donde el formato del host lo exige, y el duplicado es un
 envoltorio fino que referencia al canónico**, nunca una copia del contenido. `check-sdd` verifica
 que no derivan.
+
+### Por qué las skills viven en `.claude/`, aunque el nombre engañe
+
+Es la pregunta que se hace todo el mundo al ver el árbol: *¿no es eso específico de Claude?* No.
+El dato que lo decide:
+
+| Ubicación | Quién la lee |
+|---|---|
+| **`.claude/skills/`** | Claude Code · VS Code · Cursor · Codex → **las cuatro** |
+| `.agents/skills/` | VS Code · Cursor · Codex → **Claude Code no** |
+
+`.agents/` suena más neutral, pero **tiene menos cobertura**. `.claude/skills/` es la única
+ubicación que leen los cuatro hosts, así que mover las skills allí para que "pareciera" agnóstico
+rompería Claude Code. El nombre es herencia de quién publicó el estándar primero, no una
+limitación técnica.
+
+### Cómo las descubre el host, y por qué importa la `description`
+
+El mecanismo explica una decisión de diseño que si no parece cosmética:
+
+1. Al abrir el proyecto, el host **escanea** sus ubicaciones por defecto buscando `*/SKILL.md`.
+2. De cada una lee **solo el frontmatter** —`name` y `description`—, no el cuerpo.
+3. Con esas descripciones construye un **índice** que sí entra en el contexto del modelo.
+4. Cuando lo que pides encaja con una descripción, **entonces** carga el cuerpo completo.
+
+En esta plantilla eso son **~60 líneas de índice permanente** frente a **2.186 líneas** de cuerpo
+que solo se cargan bajo demanda. Se llama divulgación progresiva.
+
+> **Consecuencia práctica: la `description` es la señal de enrutado, no documentación.** Es lo
+> único que el modelo ve hasta que la skill se activa. Una descripción vaga significa que la skill
+> no se dispara cuando debería, o se dispara cuando no toca. Es el mismo mecanismo por el que la
+> `description` de un agente decide la delegación automática en Cursor.
 
 ### La capa global, por host
 

@@ -17,17 +17,21 @@ pero la delegación real y los hooks dependen de lo que cada host expone. La mat
 
 ## Instalar
 
-**Una vez por máquina** — agentes y skills disponibles al abrir cualquier proyecto:
+**Una sola vez**, traer la plantilla a tu máquina:
 
 ```bash
-npx github:jechamo/Estructura_inicial_claude global
+git clone --depth 1 https://github.com/jechamo/Estructura_inicial_claude.git ~/sdd-plantilla
 ```
 
-**Una vez por proyecto**, desde su raíz. Míralo en seco primero con `--dry-run`:
+**En cada proyecto**, desde su raíz. Míralo en seco primero con `--dry-run`:
 
 ```bash
-npx github:jechamo/Estructura_inicial_claude init
+node ~/sdd-plantilla/scripts/install.mjs init
 ```
+
+> `npx github:jechamo/Estructura_inicial_claude init` es más corto, pero **no funciona si el
+> repositorio es privado** ni en redes que interceptan HTTPS. La vía del clon usa tu
+> autenticación de git y no pasa por npm.
 
 **Nunca pisa un fichero tuyo**: si ya existe y es distinto, deja el nuevo al lado como
 `.sdd-nuevo` y te dice qué revisar. Los JSON conocidos se fusionan y tus claves ganan siempre.
