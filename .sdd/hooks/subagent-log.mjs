@@ -10,10 +10,10 @@
  *   docs/specs/NNN-slug/execution-log.jsonl   (si hay spec activa)
  *   .sdd/agent-audit.jsonl                    (si no, para no perder el evento)
  *
- * Uso: node .claude/hooks/subagent-log.mjs start|stop
+ * Uso: node .sdd/hooks/subagent-log.mjs start|stop
  */
 import {
-  readHookInput, projectRoot, logEjecucion, allow, valorExacto, entraAgente, saleAgente,
+  readHookInput, projectRoot, logEjecucion, allow, valorExacto, entraAgente, saleAgente, hostDestino,
 } from './_lib.mjs';
 
 const evento = process.argv[2] === 'stop' ? 'stop' : 'start';
@@ -56,11 +56,14 @@ try {
 
   if (evento === 'stop') {
     const rel = destino.replace(/\\/g, '/').replace(root.replace(/\\/g, '/'), '.');
-    process.stdout.write(
-      `Bitácora: subagent-stop de \`${agente}\` registrado en ${rel}` +
-        (spec ? ` (spec ${spec}).` : ' (sin spec activa).') +
-        '\nAl cerrar la tarea en `tasks.md`, cita este agente y la evidencia real (ficheros, comandos, salida).\n',
-    );
+    const mensaje = `Bitácora: subagent-stop de \`${agente}\` registrado en ${rel}` +
+      (spec ? ` (spec ${spec}).` : ' (sin spec activa).') +
+      '\nAl cerrar la tarea en `tasks.md`, cita este agente y la evidencia real (ficheros, comandos, salida).';
+    if (hostDestino() === 'codex') {
+      process.stdout.write(`${JSON.stringify({ continue: true, systemMessage: mensaje })}\n`);
+      process.exit(0);
+    }
+    process.stdout.write(`${mensaje}\n`);
   }
 } catch {
   /* la trazabilidad nunca debe romper la sesión */

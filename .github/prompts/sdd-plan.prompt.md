@@ -5,8 +5,8 @@ description: Convierte una spec aprobada en plan técnico, modelo de datos, cont
 
 Ejecuta las fases **plan** y **tasks** del circuito SDD sobre la spec: `${input:spec:¿Qué spec (NNN-slug)?}`
 
-Sigue [`.claude/skills/sdd-plan/SKILL.md`](../../.claude/skills/sdd-plan/SKILL.md) y
-[`.claude/skills/sdd-tasks/SKILL.md`](../../.claude/skills/sdd-tasks/SKILL.md).
+Sigue [`.agents/skills/sdd-plan/SKILL.md`](../../.agents/skills/sdd-plan/SKILL.md) y
+[`.agents/skills/sdd-tasks/SKILL.md`](../../.agents/skills/sdd-tasks/SKILL.md).
 
 **Puerta de entrada**: `spec.md` sin marcadores `[NEEDS CLARIFICATION]`. Si los hay, para y
 pide `/sdd-clarify`.

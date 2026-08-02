@@ -1,6 +1,6 @@
 {
   "name": "sdd-agents",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Ecosistema de agentes SDD: circuito spec-driven, 20 agentes, skills, hooks y gates deterministas. Para Claude Code, Cursor, VS Code + Copilot, Antigravity y Codex.",
   "bin": {
     "sdd": "scripts/install.mjs"

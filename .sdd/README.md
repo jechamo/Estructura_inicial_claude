@@ -15,7 +15,7 @@ reescribir su propio registro, el registro no serviría como evidencia de nada.
 ## Formato de cada línea
 
 ```json
-{"ts":"2026-07-29T15:52:00.000Z","evento":"subagent-stop","agente":"backend-expert","sesion":"9392d223","verificacion":"observed"}
+{"ts":"AAAA-MM-DDTHH:mm:ss.sssZ","evento":"subagent-stop","agente":"backend-expert","sesion":"<id-sesion>","verificacion":"observed"}
 ```
 
 `verificacion: observed` significa que un hook del host vio el ciclo real del subagente.

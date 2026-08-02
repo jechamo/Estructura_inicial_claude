@@ -13,12 +13,13 @@
  * Node >= 18, sin dependencias.
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
 const STRICT = args.includes('--strict');
+const VIRGIN = args.includes('--virgin');
 const soloSpec = (args[args.indexOf('--spec') + 1] || '').replace(/^--.*/, '');
 
 const problemas = [];
@@ -84,6 +85,15 @@ for (const f of existsSync(AGENTES_DIR) ? readdirSync(AGENTES_DIR).filter((x) =>
     err('agente/model', `${f}: model '${fm.model}' no válido`);
   if (fm.tools && SCOPING_INVALIDO.test(fm.tools))
     err('agente/tools', `${f}: 'tools' lleva especificadores — el scoping va en permissions de settings.json. Valor: ${fm.tools}`);
+
+  const delegadores = new Set(['orchestrator', 'planner', 'implementer']);
+  const puedeDelegar = /(^|,\s*)Agent(\s*,|$)/.test(fm.tools || '');
+  if (puedeDelegar && !delegadores.has(fm.name))
+    err('delegacion/permiso', `${f}: '${fm.name}' puede delegar y no está en la lista de coordinadores`);
+  if (delegadores.has(fm.name) && !puedeDelegar)
+    err('delegacion/permiso', `${f}: '${fm.name}' debe disponer de Agent para cumplir su handoff`);
+  if (!/^### HANDOFF\s*$/m.test(t))
+    err('handoff/ausente', `${f}: el perfil no cierra con un bloque ### HANDOFF`);
 }
 
 // Los envoltorios de otras superficies deben apuntar a un perfil que exista.
@@ -149,11 +159,11 @@ for (const [dir, cuantos] of Object.entries(envueltos)) {
 // Una skill se invoca por su `name`, no por el nombre del directorio. Si divergen,
 // el comando que documentas no es el que existe.
 // ─────────────────────────────────────────────────────────────────────────────
-const SKILLS_DIR = join(ROOT, '.claude/skills');
+const SKILLS_DIR = join(ROOT, '.agents/skills');
 for (const d of dirs(SKILLS_DIR)) {
   const t = leer(join(SKILLS_DIR, d, 'SKILL.md'));
   if (t === null) {
-    err('skill/estructura', `.claude/skills/${d}/: falta SKILL.md`);
+    err('skill/estructura', `.agents/skills/${d}/: falta SKILL.md`);
     continue;
   }
   const fin = t.indexOf('\n---', 4);
@@ -168,6 +178,16 @@ for (const d of dirs(SKILLS_DIR)) {
   if (!/^description:\s*\S/m.test(fm))
     err('skill/description', `${d}/SKILL.md: falta 'description' — sin ella el modelo no sabe cuándo usarla`);
 }
+
+const skillsCanonicas = dirs(SKILLS_DIR);
+const skillsClaude = dirs(join(ROOT, '.claude/skills'));
+if (nombresAgentes.size !== 20)
+  err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
+if (skillsCanonicas.length !== 22)
+  err('paridad/skills', `se esperaban 22 skills canónicas y hay ${skillsCanonicas.length}`);
+const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
+if (adaptersFaltantes.length)
+  err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 ter · Mapa de territorios: quién puede escribir dónde
@@ -185,7 +205,7 @@ if (territoriosRaw) {
   }
 
   if (cfg) {
-    if (!['deny', 'ask', 'off'].includes(cfg.modo))
+    if (!['audit', 'deny', 'ask', 'off'].includes(cfg.modo))
       err('territorios/modo', `modo '${cfg.modo}' no válido (deny | ask | off)`);
     if (cfg.modo === 'off')
       warn('territorios/modo', 'el reparto de territorios está desactivado: nadie impide que un agente escriba fuera de su terreno');
@@ -194,7 +214,10 @@ if (territoriosRaw) {
       if (!nombresAgentes.has(a)) err('territorios/agente', `coordinador '${a}' no existe en .claude/agents/`);
 
     const conDueño = new Set();
-    for (const [nombre, t] of Object.entries(cfg.territorios || {})) {
+    const territorios = Array.isArray(cfg.territories)
+      ? cfg.territories.map((t, i) => [t.name || `territory-${i + 1}`, { duenos: [t.agent], patrones: t.paths }])
+      : Object.entries(cfg.territorios || {});
+    for (const [nombre, t] of territorios) {
       if (!Array.isArray(t.duenos) || !t.duenos.length)
         err('territorios/duenos', `territorio '${nombre}' sin dueños: no protege nada`);
       for (const a of t.duenos || []) {
@@ -205,11 +228,13 @@ if (territoriosRaw) {
         err('territorios/patrones', `territorio '${nombre}' sin patrones`);
     }
 
-    // Un agente que escribe y no aparece en ningún sitio no está gobernado por nadie.
-    const AUDITORES = new Set(['code-reviewer', 'security-auditor', 'research-analyst', 'orchestrator']);
-    for (const a of nombresAgentes) {
-      if (conDueño.has(a) || (cfg.coordinadores || []).includes(a) || AUDITORES.has(a)) continue;
-      warn('territorios/huerfano', `'${a}' no es dueño de ningún territorio ni coordinador: puede escribir en cualquier sitio no reclamado`);
+    // Antes de activar ask/deny, /onboard debe gobernar a todos los agentes que escriben.
+    if (['ask', 'deny'].includes(cfg.modo)) {
+      const AUDITORES = new Set(['code-reviewer', 'security-auditor', 'research-analyst', 'orchestrator']);
+      for (const a of nombresAgentes) {
+        if (conDueño.has(a) || (cfg.coordinadores || []).includes(a) || AUDITORES.has(a)) continue;
+        warn('territorios/huerfano', `'${a}' no es dueño de ningún territorio ni coordinador: puede escribir en cualquier sitio no reclamado`);
+      }
     }
   }
 }
@@ -228,8 +253,8 @@ if (settings) {
   for (const grupos of Object.values(cfg?.hooks || {})) {
     for (const g of grupos) {
       for (const h of g.hooks || []) {
-        const m = String(h.command || '').match(/\.claude\/hooks\/([\w-]+\.mjs)/);
-        if (m && !existsSync(join(ROOT, '.claude/hooks', m[1])))
+        const m = String(h.command || '').match(/\.sdd\/hooks\/([\w-]+\.mjs)/);
+        if (m && !existsSync(join(ROOT, '.sdd/hooks', m[1])))
           err('hook/inexistente', `settings.json referencia ${m[1]}, que no existe`);
       }
     }
@@ -263,6 +288,7 @@ for (const s of specs) {
   // 3.1 bis · El diseño tampoco avanza con ambigüedades sin resolver
   const design = leer(join(dir, 'design.md'));
   if (design) {
+    const sinUi = /no aplica|sin interfaz gr[áa]fica|dise[ñn]o se salta/i.test(design);
     const marcadoresDiseño = (design.match(/\[NEEDS CLARIFICATION/g) || []).length;
     if (marcadoresDiseño && tienePlan)
       err(
@@ -270,6 +296,8 @@ for (const s of specs) {
         `${s}: ${marcadoresDiseño} marcador(es) [NEEDS CLARIFICATION] en design.md y ya existe plan.md`,
       );
 
+    // Los gates visuales no aplican a CLI, jobs o migraciones cuya omisión esté declarada.
+    if (!sinUi) {
     // Los estados no felices son la mitad del diseño y son lo primero que se olvida.
     const faltan = ['vacío', 'cargando', 'error', 'sin permiso'].filter(
       (e) => !new RegExp(e.replace('í', '[íi]'), 'i').test(design),
@@ -293,6 +321,7 @@ for (const s of specs) {
     }
     if (!/car[áa]cter/i.test(design))
       warn('design/caracter', `${s}: ninguna pantalla declara su elemento con carácter`);
+    }
   }
 
   // 3.1 ter · Prioridad: una spec sin prioridades es una lista de deseos
@@ -408,9 +437,84 @@ for (const p of walk(join(ROOT, 'docs/specs'), (n) => n.endsWith('.md'))) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 5 · Invariantes de una instalación virgen
+// ─────────────────────────────────────────────────────────────────────────────
+if (VIRGIN) {
+  const changelog = leer(join(ROOT, 'CHANGELOG.md')) || '';
+  if (!/## \[Unreleased\]/.test(changelog) || /^## \[(?!Unreleased\])/m.test(changelog))
+    err('virgin/changelog', 'CHANGELOG.md debe contener solo [Unreleased], sin versiones');
+
+  const decisiones = leer(join(ROOT, 'docs/bitacora/DECISIONS.md')) || '';
+  if (!/decisiones:insertar-aqui/.test(decisiones) || /^## \d{4}-\d{2}-\d{2}/m.test(decisiones))
+    err('virgin/bitacora', 'DECISIONS.md contiene decisiones heredadas o no tiene marcador');
+
+  if ((leer(join(ROOT, '.sdd/agent-audit.jsonl')) || '').length)
+    err('virgin/auditoria', '.sdd/agent-audit.jsonl no está vacío');
+
+  const gruposVacios = [
+    ['docs/bitacora/sessions', () => false],
+    ['docs/quality/reports', () => false],
+    ['docs/security/reports', () => false],
+    ['docs/specs', (n) => n === '_TEMPLATE'],
+    ['docs/architecture/adr', (n) => n === '_TEMPLATE.md'],
+  ];
+  for (const [ruta, permitida] of gruposVacios) {
+    const extras = existsSync(join(ROOT, ruta))
+      ? readdirSync(join(ROOT, ruta)).filter((n) => n !== '.gitkeep' && !permitida(n))
+      : [];
+    if (extras.length) err('virgin/historia', `${ruta} contiene historia: ${extras.join(', ')}`);
+  }
+
+  if (walk(join(ROOT, 'docs/specs'), (n) => n === 'execution-log.jsonl').length)
+    err('virgin/execution-log', 'no debe existir execution-log.jsonl antes de la primera ejecución');
+
+  try {
+    const externas = JSON.parse(leer(join(ROOT, '.sdd/external-skills.json')) || '{}');
+    if (!Array.isArray(externas.entries) || externas.entries.length)
+      err('virgin/skills-externas', 'el registro de skills externas debe usar entries: []');
+  } catch (error) {
+    err('virgin/skills-externas', `.sdd/external-skills.json inválido: ${error.message}`);
+  }
+
+  try {
+    const mapa = JSON.parse(leer(join(ROOT, '.sdd/territories.json')) || '{}');
+    if (mapa.modo !== 'audit' || /src\/|supabase|prisma|\.tsx|\.sql/i.test(JSON.stringify(mapa)))
+      err('virgin/territorios', 'los territorios deben estar en audit y sin rutas de aplicación asumidas');
+  } catch (error) {
+    err('virgin/territorios', `.sdd/territories.json inválido: ${error.message}`);
+  }
+
+  for (const ruta of ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'])
+    if (existsSync(join(ROOT, ruta))) err('virgin/mcp', `${ruta} no debe activarse por defecto`);
+
+  const ci = leer(join(ROOT, '.github/workflows/sdd-gates.yml')) || '';
+  if (!ci || /npm ci|npm run|pytest|gradle|mvn /i.test(ci))
+    err('virgin/ci', 'el CI universal ejecuta comandos de un stack no configurado');
+
+  const contaminacion = /001-agentes-codex|Estructura_inicial_claude|2026-0[78]-/;
+  for (const ruta of ['README.md', 'CHANGELOG.md', 'docs/README.md', 'docs/bitacora/DECISIONS.md']) {
+    if (contaminacion.test(leer(join(ROOT, ruta)) || ''))
+      err('virgin/contaminacion', `${ruta} contiene contexto de la plantilla`);
+  }
+
+  for (const ruta of ['README.md', 'docs/README.md']) {
+    const absoluta = join(ROOT, ruta);
+    const contenido = leer(absoluta) || '';
+    for (const match of contenido.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+      const enlace = match[1].trim().replace(/^<|>$/g, '').split('#')[0].split('?')[0];
+      if (!enlace || /^(?:https?:|mailto:|#|\/)/i.test(enlace)) continue;
+      let decodificado = enlace;
+      try { decodificado = decodeURIComponent(enlace); } catch { /* se comprobará tal cual */ }
+      if (!existsSync(resolve(dirname(absoluta), decodificado)))
+        err('virgin/enlace', `${ruta}: el enlace interno '${enlace}' no existe`);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Informe
 // ─────────────────────────────────────────────────────────────────────────────
-const modo = STRICT ? 'estricto' : 'normal';
+const modo = VIRGIN ? 'virgen' : STRICT ? 'estricto' : 'normal';
 const nSkills = dirs(SKILLS_DIR).length;
 console.log(
   `check-sdd (${modo}) · ${specs.length} spec(s) · ${tareasHechas} tarea(s) hecha(s) · ` +

@@ -5,7 +5,7 @@ description: Documenta un repositorio existente y lo prepara para el circuito SD
 
 Adopta este repositorio en el circuito SDD.
 
-Sigue [`.claude/skills/onboard/SKILL.md`](../../.claude/skills/onboard/SKILL.md).
+Sigue [`.agents/skills/onboard/SKILL.md`](../../.agents/skills/onboard/SKILL.md).
 
 **No refactorices nada.** Documenta la realidad, aunque la realidad sea fea.
 

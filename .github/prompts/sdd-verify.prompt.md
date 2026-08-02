@@ -5,7 +5,7 @@ description: Verifica todos los gates de calidad antes de entregar - tests, revi
 
 Ejecuta la fase **verify** sobre los cambios de esta rama.
 
-Sigue [`.claude/skills/sdd-verify/SKILL.md`](../../.claude/skills/sdd-verify/SKILL.md).
+Sigue [`.agents/skills/sdd-verify/SKILL.md`](../../.agents/skills/sdd-verify/SKILL.md).
 
 1. **Automático**: suite completa, cobertura, lint, formato, typecheck, build, auditoría de
    dependencias. **Pega la salida real de cada uno.** Si algo está en rojo, para aquí.

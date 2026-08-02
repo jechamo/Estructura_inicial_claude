@@ -11,6 +11,12 @@
       "type": "promptString",
       "description": "Context7 API Key",
       "password": true
+    },
+    {
+      "id": "stitch-key",
+      "type": "promptString",
+      "description": "Google Stitch API Key",
+      "password": true
     }
   ],
   "servers": {
@@ -24,25 +30,25 @@
       "url": "http://127.0.0.1:3845/mcp"
     },
     "stitch": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@google/stitch-mcp@latest"]
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": { "X-Goog-Api-Key": "${input:stitch-key}" }
     },
     "supabase": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@supabase/mcp-server-supabase@latest", "--read-only"],
+      "args": ["-y", "@supabase/mcp-server-supabase@0.9.0", "--read-only"],
       "env": { "SUPABASE_ACCESS_TOKEN": "${input:supabase-token}" }
     },
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": ["-y", "@playwright/mcp@0.0.78"]
     },
     "sequential-thinking": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2026.7.4"]
     }
   }
 }

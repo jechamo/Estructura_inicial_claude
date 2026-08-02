@@ -3,7 +3,7 @@
 Para un repo que ya tiene código pero **no** tiene el circuito SDD.
 **No refactoriza nada**: documenta la realidad, aunque la realidad sea fea.
 
-Reglas del proyecto: @AGENTS.md · Detalle: @.claude/skills/onboard/SKILL.md
+Reglas del proyecto: @AGENTS.md · Detalle: @.agents/skills/onboard/SKILL.md
 
 ---
 

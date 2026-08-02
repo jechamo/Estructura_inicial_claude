@@ -13,19 +13,16 @@
       "url": "http://127.0.0.1:3845/mcp"
     },
     "stitch": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@google/stitch-mcp@latest"],
-      "env": {
-        "STITCH_API_KEY": "${STITCH_API_KEY}"
-      }
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": { "X-Goog-Api-Key": "${STITCH_API_KEY}" }
     },
     "supabase": {
       "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
-        "@supabase/mcp-server-supabase@latest",
+        "@supabase/mcp-server-supabase@0.9.0",
         "--read-only",
         "--project-ref=${SUPABASE_PROJECT_REF}"
       ],
@@ -36,7 +33,7 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": ["-y", "@playwright/mcp@0.0.78"]
     },
     "github": {
       "type": "http",
@@ -48,7 +45,7 @@
     "sequential-thinking": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking@2026.7.4"]
     }
   }
 }

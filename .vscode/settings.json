@@ -29,7 +29,13 @@
   // `.claude/skills/` por defecto; se declara explícito para que se vea que
   // es intencionado y no una omisión.
   "chat.agentSkillsLocations": {
-    ".claude/skills": true
+    ".agents/skills": true,
+    ".claude/skills": false
+  },
+
+  "chat.hookFilesLocations": {
+    ".github/hooks": true,
+    ".claude/settings.json": false
   },
 
   // Los prompts del circuito SDD (`/sdd-specify`, `/middle`, `/front`…).

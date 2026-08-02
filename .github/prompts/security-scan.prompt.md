@@ -5,7 +5,7 @@ description: Auditoría OWASP Top 10, ASVS 5.0 y OWASP Agentic sobre los cambios
 
 Audita la seguridad de: `${input:alcance:¿Diff de la rama o repositorio completo?}`
 
-Sigue [`.claude/skills/security-scan/SKILL.md`](../../.claude/skills/security-scan/SKILL.md).
+Sigue [`.agents/skills/security-scan/SKILL.md`](../../.agents/skills/security-scan/SKILL.md).
 
 Modo defensivo: encuentras, explicas el impacto y das el arreglo. **No escribes exploits.**
 

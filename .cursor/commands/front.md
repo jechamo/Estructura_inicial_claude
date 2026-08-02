@@ -1,6 +1,6 @@
 Implementa una tarea de **frontend** con los seis estados, accesibilidad y TDD.
 
-Procedimiento completo: [`.claude/skills/front/SKILL.md`](../../.claude/skills/front/SKILL.md)
+Procedimiento completo: [`.agents/skills/front/SKILL.md`](../../.agents/skills/front/SKILL.md)
 Perfil del agente: [`.claude/agents/frontend-expert.md`](../../.claude/agents/frontend-expert.md)
 
 **Puerta de entrada**: tarea con criterio de aceptación, `design.md` (o flujo en

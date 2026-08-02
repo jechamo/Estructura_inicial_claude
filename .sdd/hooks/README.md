@@ -1,7 +1,8 @@
 # Hooks
 
 Implementados en **Node ≥ 18** (`.mjs`, sin dependencias) para que funcionen igual en
-Windows, macOS y Linux. Se registran en [`../settings.json`](../settings.json).
+Windows, macOS y Linux. Cada host los registra en su adaptador: `.claude/settings.json`,
+`.cursor/hooks.json`, `.agents/hooks.json`, `.codex/hooks.json` o `.github/hooks/sdd.json`.
 
 | Fichero | Evento | Qué hace | Decisión |
 |---|---|---|---|
@@ -35,12 +36,14 @@ bloquear un `terraform apply` legítimo frustra, y dejarlo pasar sin preguntar a
 
 ## Portabilidad entre hosts
 
-`toolCall()` en `_lib.mjs` normaliza las dos formas de payload:
+`toolCall()` en `_lib.mjs` normaliza las formas de payload soportadas:
 
 | Host | Forma del payload | Forma de la respuesta |
 |---|---|---|
 | Claude Code, Copilot | `{ tool_name, tool_input }` | `hookSpecificOutput.permissionDecision` |
 | Antigravity | `{ toolCall: { name, args } }` | `{ decision, reason }` con `force_ask` |
+| Cursor | Payload plano del evento | `{ continue, permission, agentMessage }` |
+| Codex | Payload de hook de proyecto | `hookSpecificOutput`; un `ask` se convierte en `deny` y exige reintento humano |
 
 Las rutas y comandos se extraen recursivamente por nombre de clave (`path`, `file`, `target`,
 `command`, …), así que los hooks no dependen del nombre exacto que cada IDE dé a su herramienta
@@ -65,13 +68,14 @@ documentarlo. Eso es una limitación real, no un fallo de la plantilla.
 SDD_GATES=off
 ```
 
-Desactiva las comprobaciones de secretos, los avisos de TDD y el bloqueo de comandos
-peligrosos. Úsalo con cabeza y vuelve a activarlo.
+Desactiva los gates contextuales, como territorios y escalado de política. Las prohibiciones
+incondicionales —`.env`, credenciales, material criptográfico o comandos destructivos— siguen
+activas. Úsalo con cabeza y vuelve a activarlo.
 
 ## Probar un hook a mano
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' | node .claude/hooks/guard-bash.mjs
+echo '{"tool_name":"Bash","tool_input":{"command":"git push --force"}}' | node .sdd/hooks/guard-bash.mjs
 ```
 
 Debe devolver un JSON con `"permissionDecision":"ask"`. Cambia el comando por uno destructivo
@@ -83,7 +87,7 @@ y debe devolver `"deny"`; por `npm test` y debe devolver `"allow"`.
 
 ## Añadir uno nuevo
 
-1. Crea `.claude/hooks/<nombre>.mjs` importando las utilidades de `_lib.mjs`.
-2. Regístralo en `settings.json` bajo el evento correspondiente.
+1. Crea `.sdd/hooks/<nombre>.mjs` importando las utilidades de `_lib.mjs`.
+2. Regístralo en cada adaptador de host aplicable.
 3. Un hook **nunca** debe romper la sesión: envuelve en `try/catch` todo lo que toque disco
    o procesos externos.

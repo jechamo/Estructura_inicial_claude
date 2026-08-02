@@ -5,7 +5,7 @@ description: Resuelve las ambigüedades de una spec antes de planificar
 
 Ejecuta la fase **clarify** sobre la spec: `${input:spec:¿Qué spec (NNN-slug)?}`
 
-Sigue [`.claude/skills/sdd-clarify/SKILL.md`](../../.claude/skills/sdd-clarify/SKILL.md).
+Sigue [`.agents/skills/sdd-clarify/SKILL.md`](../../.agents/skills/sdd-clarify/SKILL.md).
 
 Esta fase existe porque **el coste de una ambigüedad se multiplica en cada fase**: resolverla
 aquí cuesta una pregunta; en implementación cuesta rehacer el trabajo.

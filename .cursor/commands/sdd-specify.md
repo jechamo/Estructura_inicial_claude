@@ -1,6 +1,6 @@
 Ejecuta la fase **specify** del circuito SDD.
 
-Procedimiento completo: [`.claude/skills/sdd-specify/SKILL.md`](../../.claude/skills/sdd-specify/SKILL.md)
+Procedimiento completo: [`.agents/skills/sdd-specify/SKILL.md`](../../.agents/skills/sdd-specify/SKILL.md)
 Perfil del agente: [`.claude/agents/spec-analyst.md`](../../.claude/agents/spec-analyst.md)
 
 1. Siguiente número libre en `docs/specs/`. Copia `docs/specs/_TEMPLATE/` a `docs/specs/NNN-slug/`.

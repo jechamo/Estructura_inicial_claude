@@ -5,7 +5,7 @@ description: Implementa una tarea de base de datos con migración reversible e �
 
 Implementa la tarea de **base de datos**: `${input:tarea:¿Qué tarea? (p. ej. T-042-01)}`
 
-Procedimiento completo: [`.claude/skills/bbdd/SKILL.md`](../../.claude/skills/bbdd/SKILL.md)
+Procedimiento completo: [`.agents/skills/bbdd/SKILL.md`](../../.agents/skills/bbdd/SKILL.md)
 Perfil del agente: [`.claude/agents/database-expert.md`](../../.claude/agents/database-expert.md)
 
 **Puerta de entrada**: la tarea existe con su criterio, `data-model.md` define entidades e

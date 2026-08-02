@@ -55,8 +55,8 @@ test-results/
 Thumbs.db
 
 # ─── Configuración local de agentes ──────────────────────────────────────────
-# Los ficheros compartidos SÍ se commitean: .claude/agents/, .claude/skills/,
-# .claude/hooks/, .claude/settings.json
+# Los ficheros compartidos SÍ se commitean: `.claude/agents/`, `.agents/skills/`,
+# `.sdd/hooks/` y los adaptadores de cada host.
 .claude/settings.local.json
 .claude/.cache/
 .cursor/local/
@@ -65,6 +65,7 @@ Thumbs.db
 # Es efímero y por sesión. Lo que SÍ se commitea es la bitácora de ejecución
 # (execution-log.jsonl / agent-audit.jsonl), que es la evidencia.
 .sdd/state/
+.sdd/conflicts/
 
 # ─── Logs ────────────────────────────────────────────────────────────────────
 *.log

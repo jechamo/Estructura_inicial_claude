@@ -117,10 +117,9 @@ El umbral de *mutation score* **no tiene cifra universal defendible**: se declar
 constitución del proyecto y se justifica. Lo que no es negociable es medirlo en el core y
 reportarlo en `evidence.md` como número, no como adjetivo.
 
-Contexto que justifica el rigor: DORA mide **−7,2 % de estabilidad** de entrega cuando se adopta
-IA sin fundamentos de ingeniería sólidos, y los PR generados por IA presentan **1,7× más
-incidencias**. Detalle y fuentes en
-[`../research/baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) §2.
+El rigor se justifica con evidencia del propio proyecto: defectos escapados, caminos críticos,
+mutation score y tiempo de feedback. Las cifras externas pueden orientar una investigación, pero
+no se copian como umbral ni como decisión automática.
 
 ---
 

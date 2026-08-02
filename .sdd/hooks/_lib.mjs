@@ -137,6 +137,18 @@ export function decide(decision, motivo, host = 'claude') {
       agentMessage: motivo,
       ...(decision === 'deny' ? { userMessage: motivo } : {}),
     };
+  } else if (h === 'codex') {
+    // Codex no admite `ask` como decisión de PreToolUse. Convertirlo en `deny` evita
+    // que la acción continúe silenciosamente; la persona puede revisarla y reintentarlo.
+    salida = {
+      hookSpecificOutput: {
+        hookEventName: 'PreToolUse',
+        permissionDecision: decision === 'ask' ? 'deny' : decision,
+        permissionDecisionReason: decision === 'ask'
+          ? `${motivo} Codex requiere revisión humana y un reintento explícito.`
+          : motivo,
+      },
+    };
   } else {
     salida = {
       hookSpecificOutput: {

@@ -2,7 +2,7 @@
 
 Activación: **Always On**.
 
-La fuente de verdad completa es @AGENTS.md. La arquitectura vigente está en
+La entrada es @AGENTS.md y la política completa está en @docs/sdd/OPERATING-MODEL.md. La arquitectura vigente está en
 @docs/architecture/constitution.md. Léelas antes de actuar.
 
 ## Reglas duras

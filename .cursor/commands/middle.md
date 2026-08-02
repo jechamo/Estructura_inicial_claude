@@ -1,6 +1,6 @@
 Implementa una tarea de **capa media / backend** con SOLID, patrones y TDD estricto.
 
-Procedimiento completo: [`.claude/skills/middle/SKILL.md`](../../.claude/skills/middle/SKILL.md)
+Procedimiento completo: [`.agents/skills/middle/SKILL.md`](../../.agents/skills/middle/SKILL.md)
 Perfil del agente: [`.claude/agents/backend-expert.md`](../../.claude/agents/backend-expert.md)
 
 **Puerta de entrada**: tarea con id y criterio de aceptación en `tasks.md`, `plan.md` con la

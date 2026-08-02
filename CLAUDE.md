@@ -2,80 +2,13 @@
 
 @AGENTS.md
 
-> Todo lo anterior (`AGENTS.md`) es vinculante. Aquí solo van los añadidos específicos de Claude Code.
+<!-- sdd:start -->
+Lee y aplica primero `AGENTS.md` y, para cualquier fase o decisión, el modelo completo en
+[`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
 
-## Punto de entrada
-
-Si no sabes por dónde empezar, invoca `/sdd-start`. Clasificará la petición y te llevará
-a la fase correcta del circuito SDD.
-
-| Situación | Comando |
-|---|---|
-| Proyecto nuevo desde cero | `/sdd-init` |
-| Repo existente sin documentar | `/onboard` |
-| Revalidar formatos y estándares | `/sdd-refresh` |
-| Algo se ha caído en producción | `/respond-incident` |
-| Nueva funcionalidad | `/sdd-specify` |
-| Diseñar las pantallas de una spec | `/sdd-design` |
-| Implementar una tarea de backend | `/middle` |
-| Implementar una tarea de interfaz | `/front` |
-| Implementar una tarea de datos | `/bbdd` |
-| No sé en qué punto estoy | `/sdd-status` |
-
-## Subagentes
-
-Viven en `.claude/agents/`. Invócalos con `@nombre-agente` o deja que el `orchestrator`
-delegue. Catálogo en `docs/agents/CATALOG.md`.
-
-El `orchestrator` es el router por defecto. Los agentes de fase hacen handoff explícito
-según el protocolo de `AGENTS.md` §10.
-
-## Skills / comandos
-
-En `.claude/skills/`. Los que empiezan por `sdd-` son el circuito principal y son
-**de invocación explícita** (`disable-model-invocation: true`) para que el flujo lo
-controles tú, no el modelo.
-
-`/middle`, `/front` y `/bbdd` son el procedimiento de cada especialista —puertas de entrada,
-ciclo TDD, patrones y lista de comprobación— y **sí** son invocables por el modelo: el
-`implementer` las usa según el terreno de la tarea.
-
-Skills de terceros: se declaran en [`.sdd/external-skills.json`](.sdd/external-skills.json), no se
-copian al repositorio. Catálogo y auditoría en
-[`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md); política verificada con
-`node scripts/skills-sync.mjs --check`. Una skill externa es una dependencia ejecutable: sin
-versión fijada y licencia verificada no se aprueba.
-
-## Hooks activos
-
-Definidos en `.claude/settings.json`, implementados en Node (`.claude/hooks/*.mjs`) para
-que funcionen igual en Windows, macOS y Linux.
-
-| Evento | Hook | Efecto |
-|---|---|---|
-| `SessionStart` | `session-context.mjs` | Inyecta spec activa, últimas entradas de bitácora y estado de tareas |
-| `UserPromptSubmit` | `sdd-router.mjs` | Recuerda la fase SDD actual y avisa si intentas saltarte una |
-| `PreToolUse` (Edit\|Write) | `guard-write.mjs` | `deny` en `.env`, secretos, artefactos generados y **territorio ajeno** (`.sdd/territories.json`); `ask` en agentes, skills y constitución |
-| `PreToolUse` (Bash) | `guard-bash.mjs` | `deny` en destructivo sin retorno; `ask` en push, commit, IaC, kubectl y publicación |
-| `PostToolUse` (Edit\|Write) | `format-and-lint.mjs` | Formatea y linta lo tocado |
-| `SubagentStart` / `SubagentStop` | `subagent-log.mjs` | Registra qué subagente trabajó realmente, fuera del modelo, y mantiene el agente activo en `.sdd/state/` para que `guard-write` sepa quién escribe |
-| `Stop` | `session-log.mjs` | Registra la sesión en `docs/bitacora/sessions/` |
-
-Para desactivar temporalmente un gate: `SDD_GATES=off` en el entorno.
-
-## Preferencias de trabajo
-
-- Ejecuta los tests y **muestra la salida real** antes de decir que algo funciona.
-- Rutas de fichero como enlaces markdown relativos.
-- Al terminar una fase, cierra siempre con el bloque `### HANDOFF`.
-- No hagas commit ni push salvo que te lo pidan explícitamente.
-- Prefiere editar ficheros existentes a crear nuevos.
-- No crees documentación no solicitada fuera de la estructura `docs/`.
-
-## Modelos sugeridos por agente
-
-| Trabajo | Modelo |
-|---|---|
-| Arquitectura, specs, planificación, revisión de seguridad | `opus` |
-| Implementación, tests, especialistas de dominio | `inherit` (o `sonnet`) |
-| Búsqueda, formateo, bitácora, tareas mecánicas | `haiku` |
+- Perfiles de subagente: `.claude/agents/`.
+- Skills canónicas: `.agents/skills/`; `.claude/skills/` conserva el descubrimiento nativo.
+- Hooks: `.claude/settings.json`, con implementaciones compartidas en `.sdd/hooks/`.
+- Entrada recomendada si la petición no está clasificada: `/sdd-start` o `orchestrator`.
+- Cierra cada fase con el bloque `### HANDOFF` de `AGENTS.md`.
+<!-- sdd:end -->

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "checks": {
+    "sdd": {
+      "command": "node scripts/check-sdd.mjs",
+      "required": true
+    }
+  },
+  "unconfigured": ["lint", "test", "typecheck", "build", "mutation"]
+}

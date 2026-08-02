@@ -5,7 +5,7 @@ description: Implementa una tarea de capa media con SOLID, patrones y TDD estric
 
 Implementa la tarea de **capa media**: `${input:tarea:¿Qué tarea? (p. ej. T-042-03)}`
 
-Procedimiento completo: [`.claude/skills/middle/SKILL.md`](../../.claude/skills/middle/SKILL.md)
+Procedimiento completo: [`.agents/skills/middle/SKILL.md`](../../.agents/skills/middle/SKILL.md)
 Perfil del agente: [`.claude/agents/backend-expert.md`](../../.claude/agents/backend-expert.md)
 
 **Puerta de entrada**: la tarea existe en `tasks.md` con criterio de aceptación, y `plan.md` fija

@@ -5,7 +5,7 @@ description: Prepara la entrega con trazabilidad, CHANGELOG y decisión GO/NO-GO
 
 Ejecuta la fase **ship** sobre: `${input:spec:¿Qué spec (NNN-slug)?}`
 
-Sigue [`.claude/skills/sdd-ship/SKILL.md`](../../.claude/skills/sdd-ship/SKILL.md).
+Sigue [`.agents/skills/sdd-ship/SKILL.md`](../../.agents/skills/sdd-ship/SKILL.md).
 
 **Regla absoluta: no ejecutas `git push`, ni abres PR, ni mergeas, ni etiquetas, ni
 despliegas** sin que el usuario lo pida explícitamente en este turno. Preparas y muestras

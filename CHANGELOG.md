@@ -8,6 +8,19 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Instalación universal greenfield/brownfield con estado virgen verificable.** `init` acepta un
+  destino explícito y `--mode auto|greenfield|brownfield`; README, changelog, constitución,
+  dirección visual, threat model, bitácora, auditoría, specs, ADR e informes nacen sin historia
+  de la plantilla. `update` nunca reinicia esas semillas.
+- **Skills canónicas en `.agents/skills/` y hooks compartidos en `.sdd/hooks/`.** Claude conserva
+  adaptadores finos y cada host tiene su contrato: Claude, Cursor, Copilot/VS Code, Antigravity y
+  Codex. `test-hooks` valida las cinco superficies.
+- **MCP opt-in y selectivo** mediante `--with-mcp <lista>`, con versiones ejecutables fijadas y
+  fusión de `.mcp.json`, `.vscode/mcp.json` y el bloque MCP de Codex.
+- **`scripts/sdd-project.mjs`**: inventario, detección de stack sin escritura, aprobación explícita
+  de checks, ejecución de gates y scaffolds deterministas `new-spec` / `new-adr`.
+- **Conflictos centralizados** en `.sdd/conflicts/<version>/` y propiedad/hash por fichero en
+  `.sdd/installed.json`.
 - **Los 20 agentes ya son nativos en Codex por proyecto** mediante `.codex/agents/*.toml`.
   Son adaptadores finos hacia `.claude/agents/`, por lo que no duplican la definición canónica;
   los cuatro auditores usan sandbox de solo lectura. `sdd init` los instala y `check-sdd` falla si
@@ -17,14 +30,13 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
     disponibles al abrir cualquier proyecto. Nativo en Claude Code y Cursor; en VS Code el
     instalador añade la clave que hace falta. Codex y Antigravity quedan fuera de esta capa global.
   - `... init` por proyecto, más `check` y `update`. Con `--dry-run` para verlo en seco.
-  - **Nunca pisa un fichero tuyo**: si existe y difiere, deja el nuevo como `.sdd-nuevo` y te dice
-    qué revisar. Los JSON conocidos se fusionan y tus claves ganan. `.gitignore` se amplía en un
-    bloque delimitado.
+  - **Nunca pisa un fichero tuyo**: si existe y difiere, conserva el original y deja la propuesta
+    bajo `.sdd/conflicts/<version>/`. Los JSON conocidos se fusionan y tus claves ganan.
   - `update` se apoya en `.sdd/installed.json` (hash por fichero): lo que no has tocado se
     actualiza solo; lo que has modificado se respeta.
   - **Los hooks no se instalan en global a propósito**: una guarda activa en todos tus
     repositorios, incluidos los que no usan SDD, es intrusiva y acaba desactivada.
-- **`scripts/test-install.mjs`**: 41 comprobaciones sobre directorios temporales reales, entre
+- **`scripts/test-install.mjs`**: 87 comprobaciones sobre directorios temporales reales, entre
   ellas que `check-sdd` y las guardas **pasan dentro del proyecto recién instalado**, que un
   `AGENTS.md` ajeno queda intacto y que ejecutarlo dos veces no genera conflictos. En CI.
 - `docs/guides/INSTALACION.md` y `package.json` con `bin: sdd`.
@@ -53,7 +65,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   pueden llamar; `.cursor/agents/` pasa de 2 a **los 20 agentes**, con `readonly: true` en
   `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` — que a nivel de
   plataforma no pueden escribir.
-- **`scripts/test-hooks.mjs`**: 33 comprobaciones de que las guardas deciden lo que documentan.
+- **`scripts/test-hooks.mjs`**: 40 comprobaciones de que las guardas y contratos deciden lo que documentan.
   En CI. Una guarda rota falla en silencio devolviendo `allow`; si estos gates son la garantía del
   proyecto, tienen que demostrarlo en cada PR.
 - **Skills de dominio `/middle`, `/front` y `/bbdd`**: el procedimiento escrito de cada

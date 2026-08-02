@@ -54,7 +54,9 @@ try {
   salir();
 }
 
-const skills = Array.isArray(manifiesto.skills) ? manifiesto.skills : [];
+const skills = Array.isArray(manifiesto.entries)
+  ? manifiesto.entries
+  : Array.isArray(manifiesto.skills) ? manifiesto.skills : [];
 
 // ── Stack detectado ──────────────────────────────────────────────────────────
 const pkg = existsSync(join(ROOT, 'package.json'))
@@ -80,8 +82,8 @@ function aplica(cuando) {
 // ── --check: la política se cumple o el CI falla ─────────────────────────────
 if (CHECK) {
   const locales = new Set(
-    existsSync(join(ROOT, '.claude/skills'))
-      ? readdirSync(join(ROOT, '.claude/skills'), { withFileTypes: true })
+    existsSync(join(ROOT, '.agents/skills'))
+      ? readdirSync(join(ROOT, '.agents/skills'), { withFileTypes: true })
           .filter((d) => d.isDirectory())
           .map((d) => d.name)
       : [],
@@ -105,7 +107,7 @@ if (CHECK) {
       if (!s.licencia || /por verificar/i.test(s.licencia))
         err(`${et}: 'aprobada' con licencia sin verificar ('${s.licencia}')`);
       if (locales.has(s.id) || locales.has(String(s.ref).split(/[:/]/).pop()))
-        err(`${et}: colisiona con una skill propia de .claude/skills/`);
+        err(`${et}: colisiona con una skill propia de .agents/skills/`);
     }
     if (s.estado === 'rechazada' && !s.notas)
       err(`${et}: 'rechazada' sin motivo escrito. Un descarte sin motivo se repite`);

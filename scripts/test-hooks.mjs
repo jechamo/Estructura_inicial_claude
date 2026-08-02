@@ -12,7 +12,7 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = process.cwd();
@@ -28,8 +28,9 @@ let ok = 0;
 const fallos = [];
 
 /** Ejecuta un hook con un payload y devuelve la decisión que emite. */
-function decisionDe(hook, payload) {
-  const r = spawnSync(process.execPath, [join('.claude/hooks', hook)], {
+function decisionDe(hook, payload, host = null) {
+  const argumentos = [join('.sdd/hooks', hook), ...(host ? [`--host=${host}`] : [])];
+  const r = spawnSync(process.execPath, argumentos, {
     input: JSON.stringify(payload),
     encoding: 'utf8',
   });
@@ -101,10 +102,26 @@ comprueba(
   'ask',
 );
 comprueba('tocar skills de terceros escala', decisionDe('guard-write.mjs', escribir('.sdd/external-skills.json')), 'ask');
+comprueba(
+  'Codex convierte ask en deny para no continuar sin revisión',
+  decisionDe('guard-write.mjs', escribir('.agents/skills/tdd/SKILL.md'), 'codex'),
+  'deny',
+);
 
 // ─── guard-write: territorio ─────────────────────────────────────────────────
 // Es la guarda que impide que un agente haga el trabajo de otro.
 console.log('\nguard-write · territorio por agente');
+
+const restriccionesTerritorio = (() => {
+  try {
+    const cfg = JSON.parse(readFileSync(join(ROOT, '.sdd', 'territories.json'), 'utf8'));
+    return cfg.modo !== 'audit' && Object.keys(cfg.territorios || {}).length > 0;
+  } catch {
+    return false;
+  }
+})();
+
+if (restriccionesTerritorio) {
 
 agenteActivo('database-expert');
 comprueba('bbdd → componente de front se bloquea', decisionDe('guard-write.mjs', escribir('src/components/A.tsx')), 'deny');
@@ -139,6 +156,14 @@ comprueba(
   decisionDe('guard-write.mjs', escribir('src/components/A.tsx')),
   'allow',
 );
+} else {
+  agenteActivo('database-expert');
+  comprueba(
+    'un mapa virgen en audit no inventa territorios de aplicación',
+    decisionDe('guard-write.mjs', escribir('src/components/A.tsx')),
+    'allow',
+  );
+}
 
 // ─── guard-bash ──────────────────────────────────────────────────────────────
 console.log('\nguard-bash · comandos');
@@ -151,6 +176,49 @@ comprueba('terraform apply escala', decisionDe('guard-bash.mjs', ejecutar('terra
 comprueba('instalar skill de terceros escala', decisionDe('guard-bash.mjs', ejecutar('npx skills add foo/bar')), 'ask');
 comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test')), 'allow');
 comprueba('git status se permite', decisionDe('guard-bash.mjs', ejecutar('git status')), 'allow');
+
+// ─── contratos por host ──────────────────────────────────────────────────────
+console.log('\ncontratos de hooks · cinco hosts');
+const contratos = [
+  ['Claude Code', '.claude/settings.json'],
+  ['Cursor', '.cursor/hooks.json'],
+  ['Antigravity', '.agents/hooks.json'],
+  ['Codex', '.codex/hooks.json'],
+  ['Copilot/VS Code', '.github/hooks/sdd.json'],
+];
+
+function comandosEn(valor, out = []) {
+  if (Array.isArray(valor)) for (const x of valor) comandosEn(x, out);
+  else if (valor && typeof valor === 'object') {
+    for (const [clave, x] of Object.entries(valor)) {
+      if (clave === 'command' && typeof x === 'string') out.push(x);
+      else comandosEn(x, out);
+    }
+  }
+  return out;
+}
+
+for (const [host, ruta] of contratos) {
+  let config = null;
+  try { config = JSON.parse(readFileSync(join(ROOT, ruta), 'utf8')); } catch { /* aserción inferior */ }
+  comprueba(`${host}: contrato JSON válido`, config ? 'ok' : 'fail', 'ok');
+  const comandos = comandosEn(config);
+  const rutasValidas = comandos.every((command) => {
+    const match = command.match(/\.sdd\/hooks\/([\w-]+\.mjs)/);
+    return !match || existsSync(join(ROOT, '.sdd/hooks', match[1]));
+  });
+  comprueba(`${host}: todos los scripts referenciados existen`, rutasValidas ? 'ok' : 'fail', 'ok');
+  comprueba(`${host}: no referencia la ubicación obsoleta`,
+    comandos.some((command) => command.includes('.claude/hooks/')) ? 'fail' : 'ok', 'ok');
+}
+
+const antigravity = JSON.parse(readFileSync(join(ROOT, '.agents/hooks.json'), 'utf8'));
+comprueba('Antigravity usa hooks nombrados con event',
+  Object.values(antigravity.hooks || {}).every((hook) => typeof hook.event === 'string') ? 'ok' : 'fail', 'ok');
+
+const codexHooks = readFileSync(join(ROOT, '.codex/hooks.json'), 'utf8');
+comprueba('Codex separa la guarda de shell de la guarda de escritura',
+  /guard-bash\.mjs/.test(codexHooks) && /guard-write\.mjs/.test(codexHooks) ? 'ok' : 'fail', 'ok');
 
 // ─── SDD_GATES=off ───────────────────────────────────────────────────────────
 // Documentado como escape; si no funciona, la gente edita los hooks y ahí se pierde todo.

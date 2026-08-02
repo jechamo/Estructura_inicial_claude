@@ -154,7 +154,7 @@ Antigravity solo queda el CI.
 
 **Y una pregunta que surge sola al ver el árbol**: no hay `skills/` ni `hooks/` bajo `.github/` ni
 `.cursor/` **a propósito**. Las skills son estándar abierto y las cuatro superficies leen
-`.claude/skills/` de forma nativa; los hooks son scripts de Node que ejecuta quien los invoque, y
+`.agents/skills/` de forma nativa; los hooks son scripts de Node que ejecuta quien los invoque, y
 VS Code lee `.claude/settings.json`. Crear `.github/hooks/` haría que VS Code cargara la
 configuración **dos veces** y cada guarda se ejecutaría por duplicado. Se duplica solo donde el
 formato del host obliga —los agentes—, y siempre como envoltorio fino que referencia al canónico.

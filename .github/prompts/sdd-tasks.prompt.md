@@ -5,7 +5,7 @@ description: Trocea el plan en tareas atómicas con test asociado y trazabilidad
 
 Ejecuta la fase **tasks** sobre: `${input:spec:¿Qué spec (NNN-slug)?}`
 
-Sigue [`.claude/skills/sdd-tasks/SKILL.md`](../../.claude/skills/sdd-tasks/SKILL.md).
+Sigue [`.agents/skills/sdd-tasks/SKILL.md`](../../.agents/skills/sdd-tasks/SKILL.md).
 
 Cada tarea lleva: estado · capa · qué `RF`/`CA` cubre · **el test que la define** ·
 dependencias · ficheros previstos · definición de hecho · estimación.

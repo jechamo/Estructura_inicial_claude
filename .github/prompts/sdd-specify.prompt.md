@@ -5,7 +5,7 @@ description: Crea la especificación de una funcionalidad nueva (requisitos EARS
 
 Ejecuta la fase **specify** del circuito SDD sobre: `${input:funcionalidad:¿Qué funcionalidad hay que especificar?}`
 
-Sigue el procedimiento completo de [`.claude/skills/sdd-specify/SKILL.md`](../../.claude/skills/sdd-specify/SKILL.md)
+Sigue el procedimiento completo de [`.agents/skills/sdd-specify/SKILL.md`](../../.agents/skills/sdd-specify/SKILL.md)
 y las reglas de [`AGENTS.md`](../../AGENTS.md) §2.
 
 Resumen:

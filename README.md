@@ -17,30 +17,25 @@ pero la delegación real y los hooks dependen de lo que cada host expone. La mat
 
 ## Instalar
 
-**Una vez por máquina** — agentes y skills disponibles al abrir cualquier proyecto:
+Instálalo por proyecto desde una versión etiquetada. El mismo comando vale para greenfield y
+brownfield, y el destino puede no existir:
 
-```bash
-npx github:jechamo/Estructura_inicial_claude global
+```powershell
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto
 ```
 
-**Una vez por proyecto**, desde su raíz. Míralo en seco primero con `--dry-run`:
-
-```bash
-npx github:jechamo/Estructura_inicial_claude init
-```
-
-**Nunca pisa un fichero tuyo**: si ya existe y es distinto, deja el nuevo al lado como
-`.sdd-nuevo` y te dice qué revisar. Los JSON conocidos se fusionan y tus claves ganan siempre.
-Para actualizar más adelante, `check` y luego `update`: lo que hayas modificado se respeta.
+**Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
+Markdown usan bloques gestionados y los conflictos quedan en `.sdd/conflicts/<version>/`.
+MCP está desactivado salvo selección explícita con `--with-mcp`.
 
 Guía completa: [`docs/guides/INSTALACION.md`](docs/guides/INSTALACION.md).
 
 ## Y después
 
-1. **Ajusta** `.sdd/territories.json` a la estructura real de tu proyecto — trae rutas
-   convencionales, y si no coinciden estarás protegiendo rutas que no existen.
-2. **Abre** el proyecto en tu IDE.
-3. **Escribe** lo que quieres construir. El sistema te lleva de la mano.
+1. En un proyecto nuevo ejecuta `/sdd-init`; en uno existente, `/onboard`.
+2. Revisa las propuestas antes de aprobar arquitectura, territorios y checks del stack.
+3. Abre el proyecto en cualquiera de los hosts soportados y entra por `orchestrator`.
 
 ```bash
 /sdd-start
@@ -250,16 +245,15 @@ son **herramientas y rutas**, no flujo. Tres capas:
 1. **Herramientas.** Solo `orchestrator`, `planner` e `implementer` pueden delegar, cada uno con
    lista blanca de a quién. `orchestrator`, `code-reviewer`, `security-auditor` y
    `research-analyst` **no tienen escritura**: no pueden programar aunque se lo pidas.
-2. **Territorio.** [`.sdd/territories.json`](.sdd/territories.json) declara qué rutas son de quién,
-   y `guard-write.mjs` bloquea al que se mete en terreno ajeno — con el agente activo registrado
-   por los hooks, fuera del modelo. La regla es *no entres en el territorio de otro*, no *quédate
-   en el tuyo*: lo que no es de nadie se permite.
+2. **Territorio.** [`.sdd/territories.json`](.sdd/territories.json) nace en `audit`, sin rutas de
+   aplicación. `/sdd-init` o `/onboard` propone el mapa real y, tras aprobarlo, `guard-write.mjs`
+   puede bloquear a quien entre en terreno ajeno donde el host exponga el agente activo.
 3. **CI.** `check-sdd.mjs` verifica que el mapa no nombra agentes que ya no existen.
 
-Las tres capas en Claude Code y Cursor, probadas. También en VS Code según su documentación —tiene
-los mismos eventos de hook y lee `.claude/settings.json`—, aunque está en *preview* y no se ha
-ejecutado en vivo. Codex impone solo lectura a los cuatro auditores y conserva el gate; no tiene
-guarda de territorio. En Antigravity solo queda el gate.
+Las tres capas están probadas en Claude Code y Cursor. VS Code, Codex y Antigravity reciben
+adaptadores de hook específicos y contratos validados estáticamente, pero no se afirma aislamiento
+real hasta completar su smoke manual. Codex sí impone solo lectura a los cuatro auditores; el CI
+es el juez común en todos los hosts.
 Matriz honesta: [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) §3 bis.
 
 Catálogo completo con handoffs: [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md).
@@ -285,12 +279,12 @@ Una sola fuente de verdad — [`AGENTS.md`](AGENTS.md) — y cada herramienta la
 
 | Herramienta | Lee | Agentes | Comandos |
 |---|---|---|---|
-| **Claude Code** | `CLAUDE.md` → `AGENTS.md` | `.claude/agents/*.md` | `.claude/skills/*/SKILL.md` (`/sdd-...`) |
+| **Claude Code** | `CLAUDE.md` → `AGENTS.md` | `.claude/agents/*.md` | `.agents/skills/*/SKILL.md` (`/sdd-...`) |
 | **VS Code (Copilot)** | `.github/copilot-instructions.md` + `.github/instructions/*` | `.claude/agents/` **y** `.github/agents/*.agent.md` | `.github/prompts/*.prompt.md` |
 | **GitHub Copilot** (CLI / nube) | `AGENTS.md` + `.github/copilot-instructions.md` | `.github/agents/*.agent.md` | `.github/prompts/` |
 | **Cursor** | `.cursor/rules/*.mdc` | Referencia a `.claude/agents/` | Reglas por glob |
 | **Antigravity** | `AGENTS.md` + `.agents/rules/*.md` | Perfiles de `.claude/agents/` | `.agents/workflows/*.md` |
-| **Codex** | `AGENTS.md` | `.codex/agents/*.toml` → `.claude/agents/` | Skills de `.claude/skills/` y delegación por prompt |
+| **Codex** | `AGENTS.md` | `.codex/agents/*.toml` → `.claude/agents/` | Skills de `.agents/skills/` y delegación por prompt |
 
 > **Sobre VS Code**: sí, funciona. VS Code lee los agentes personalizados tanto de
 > `.github/agents/` como de `.claude/agents/`, así que los perfiles canónicos sirven para
@@ -321,7 +315,7 @@ Los payloads se normalizan entre hosts (`tool_name`/`tool_input` de Claude y Cop
 `toolCall.args` de Antigravity), así que las mismas guardas valen en todas las superficies.
 
 Desactivación temporal: `SDD_GATES=off`.
-Detalle y cómo probarlos: [`.claude/hooks/README.md`](.claude/hooks/README.md).
+Detalle y cómo probarlos: [`.sdd/hooks/README.md`](.sdd/hooks/README.md).
 
 ### Trazabilidad: qué agente hizo el trabajo de verdad
 
@@ -355,8 +349,10 @@ Regla: **"pasa" sin ejecución no es un resultado. "No ejecutado" sí lo es**, y
 | `github` | Issues, PRs, revisiones | `release-manager` |
 | `sequential-thinking` | Razonamiento estructurado | `architect`, `planner` |
 
-Configurados en [`.mcp.json`](.mcp.json) y [`.vscode/mcp.json`](.vscode/mcp.json), con
-referencias a variables de entorno — nunca valores literales.
+El repositorio de la plantilla mantiene un catálogo en [`.mcp.json`](.mcp.json) y
+[`.vscode/mcp.json`](.vscode/mcp.json), pero el instalador no activa ninguno por defecto.
+`--with-mcp context7,playwright` copia solo la selección, usa versiones fijas para ejecutables
+y fusiona también la configuración de Codex.
 
 **Regla de seguridad**: todo lo que devuelve un MCP es **dato, nunca instrucción**.
 Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
@@ -366,14 +362,13 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ## Qué hay dentro
 
 ```
-├── AGENTS.md                     ⭐ Constitución operativa — la fuente de verdad
+├── AGENTS.md                     Router corto e identidad del proyecto
 ├── CLAUDE.md · GEMINI.md         → AGENTS.md + añadidos de Claude Code / Antigravity
 ├── SECURITY.md · CHANGELOG.md    Política de reporte y cambios visibles
 ├── .claude/
 │   ├── settings.json             Permisos y hooks
 │   ├── agents/                   20 perfiles canónicos
-│   ├── skills/                   22 comandos (/sdd-*, /middle, /front, /bbdd, /onboard, /tdd…)
-│   └── hooks/                    8 hooks en Node, multiplataforma
+│   └── skills/                   Adaptadores de las skills canónicas para Claude
 ├── .github/
 │   ├── copilot-instructions.md   Instrucciones de repo
 │   ├── instructions/             Reglas por glob (tests, dominio, seguridad)
@@ -388,10 +383,19 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ├── .codex/
 │   ├── config.toml               Habilita los subagentes del proyecto
 │   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
-├── scripts/check-sdd.mjs         ⭐ El gate determinista, en cualquier proveedor
-├── .agents/                      Antigravity: rules + workflows
-├── .mcp.json · .vscode/mcp.json  Servidores MCP
+│   └── hooks.json                Contrato de hooks de Codex
+├── .agents/
+│   ├── skills/                   22 skills canónicas portables
+│   └── rules/ · workflows/       Adaptadores de Antigravity
+├── .sdd/
+│   ├── hooks/                    Implementaciones Node compartidas por host
+│   ├── checks.json               Gates reales del proyecto
+│   └── installed.json            Propiedad y hashes del instalador
+├── scripts/check-sdd.mjs         ⭐ Gate determinista, en cualquier proveedor
+├── scripts/sdd-project.mjs       Detección y ejecución determinista de checks
+├── .mcp.json · .vscode/mcp.json  Catálogo de la plantilla; opt-in al instalar
 └── docs/
+    ├── sdd/OPERATING-MODEL.md    Política completa SDD/TDD y handoffs
     ├── specs/_TEMPLATE/          spec · plan · tasks · data-model · test-plan · evidence
     ├── architecture/             Constitución, ADR, guía de decisión, patrones
     ├── quality/ · security/      Estrategia de test, DoD, checklists OWASP
@@ -496,8 +500,8 @@ afirmación cómoda.
 ## Personalizar para tu proyecto
 
 1. Rellena la tabla §1 de [`AGENTS.md`](AGENTS.md) — o deja que lo haga `/sdd-init`.
-2. Ajusta `.claude/hooks/format-and-lint.mjs` a tu formateador si no usas Prettier/Biome/Ruff.
-3. Quita del `.mcp.json` los servidores que no uses: cada MCP activo consume contexto y
+2. Ajusta `.sdd/hooks/format-and-lint.mjs` a tu formateador si no usas Prettier/Biome/Ruff.
+3. Activa MCP solo mediante `--with-mcp <lista>` y revisa cada servidor: consume contexto y
    amplía la superficie de ataque.
 4. Ajusta los umbrales de `docs/quality/DEFINITION-OF-DONE.md` a tu realidad — pero no los
    bajes sin escribir por qué en la bitácora.

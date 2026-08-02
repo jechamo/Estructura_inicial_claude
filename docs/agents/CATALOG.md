@@ -81,18 +81,18 @@ patrones y lista de comprobación. Un agente al que solo le dices "aplica SOLID"
 
 | Agente | Terreno | Skill | Modelo | MCP |
 |---|---|---|---|---|
-| [`ux-designer`](../../.claude/agents/ux-designer.md) | Flujos, wireframes, design system, accesibilidad | [`/sdd-design`](../../.claude/skills/sdd-design/SKILL.md) | `inherit` | `figma`, `stitch` |
-| [`frontend-expert`](../../.claude/agents/frontend-expert.md) | Componentes, estado, rendimiento de UI, a11y | [`/front`](../../.claude/skills/front/SKILL.md) | `inherit` | `figma`, `context7` |
-| [`backend-expert`](../../.claude/agents/backend-expert.md) | Dominio, casos de uso, integraciones, colas | [`/middle`](../../.claude/skills/middle/SKILL.md) | `inherit` | `context7` |
-| [`database-expert`](../../.claude/agents/database-expert.md) | Modelado, migraciones, índices, RLS | [`/bbdd`](../../.claude/skills/bbdd/SKILL.md) | `inherit` | `supabase`, `context7` |
+| [`ux-designer`](../../.claude/agents/ux-designer.md) | Flujos, wireframes, design system, accesibilidad | [`/sdd-design`](../../.agents/skills/sdd-design/SKILL.md) | `inherit` | `figma`, `stitch` |
+| [`frontend-expert`](../../.claude/agents/frontend-expert.md) | Componentes, estado, rendimiento de UI, a11y | [`/front`](../../.agents/skills/front/SKILL.md) | `inherit` | `figma`, `context7` |
+| [`backend-expert`](../../.claude/agents/backend-expert.md) | Dominio, casos de uso, integraciones, colas | [`/middle`](../../.agents/skills/middle/SKILL.md) | `inherit` | `context7` |
+| [`database-expert`](../../.claude/agents/database-expert.md) | Modelado, migraciones, índices, RLS | [`/bbdd`](../../.agents/skills/bbdd/SKILL.md) | `inherit` | `supabase`, `context7` |
 | [`api-designer`](../../.claude/agents/api-designer.md) | Contratos REST/GraphQL/eventos, versionado | — | `inherit` | `context7` |
-| [`test-engineer`](../../.claude/agents/test-engineer.md) | Estrategia de test, tests difíciles, auditoría de suite | [`/tdd`](../../.claude/skills/tdd/SKILL.md) | `inherit` | `playwright` |
-| [`security-auditor`](../../.claude/agents/security-auditor.md) | OWASP, ASVS, Agentic | [`/security-scan`](../../.claude/skills/security-scan/SKILL.md) | `opus` | — |
+| [`test-engineer`](../../.claude/agents/test-engineer.md) | Estrategia de test, tests difíciles, auditoría de suite | [`/tdd`](../../.agents/skills/tdd/SKILL.md) | `inherit` | `playwright` |
+| [`security-auditor`](../../.claude/agents/security-auditor.md) | OWASP, ASVS, Agentic | [`/security-scan`](../../.agents/skills/security-scan/SKILL.md) | `opus` | — |
 | [`refactor-specialist`](../../.claude/agents/refactor-specialist.md) | SOLID, DRY, KISS, YAGNI, patrones | — | `opus` | — |
 | [`performance-optimizer`](../../.claude/agents/performance-optimizer.md) | Latencia, memoria, bundle, consultas | — | `inherit` | — |
 | [`devops-expert`](../../.claude/agents/devops-expert.md) | CI/CD, contenedores, IaC, observabilidad | — | `inherit` | — |
 | [`docs-writer`](../../.claude/agents/docs-writer.md) | README, guías, documentación de API | — | `haiku` | — |
-| [`bitacora-keeper`](../../.claude/agents/bitacora-keeper.md) | Memoria del proyecto, decisiones, deuda | [`/bitacora`](../../.claude/skills/bitacora/SKILL.md) | `haiku` | — |
+| [`bitacora-keeper`](../../.claude/agents/bitacora-keeper.md) | Memoria del proyecto, decisiones, deuda | [`/bitacora`](../../.agents/skills/bitacora/SKILL.md) | `haiku` | — |
 
 ---
 

@@ -75,7 +75,9 @@ if (gatesEnabled() && contenido) {
 // Cambiar un agente, una skill o un hook cambia el comportamiento de TODO el
 // proyecto y de todas las sesiones futuras. Eso lo aprueba una persona.
 const politica = [
-  /(^|\/)\.claude\/(agents|skills|hooks)\//,
+  /(^|\/)\.claude\/(agents|skills)\//,
+  /(^|\/)\.agents\/skills\//,
+  /(^|\/)\.sdd\/hooks\//,
   /(^|\/)\.claude\/settings\.json$/,
   /(^|\/)\.github\/(agents|prompts|instructions)\//,
   /(^|\/)\.cursor\/(rules|agents|commands)\//,
@@ -124,8 +126,14 @@ if (gatesEnabled()) {
   const modo = cfg?.modo || 'deny';
 
   // Sin agente identificado es el hilo principal —el humano y su agente—, no un especialista.
-  if (cfg && agente && modo !== 'off' && !(cfg.coordinadores || []).includes(agente)) {
-    for (const [nombre, t] of Object.entries(cfg.territorios || {})) {
+  if (cfg && agente && !['off', 'audit'].includes(modo) && !(cfg.coordinadores || []).includes(agente)) {
+    const territorios = Array.isArray(cfg.territories)
+      ? cfg.territories.map((t, i) => [
+          t.name || `territory-${i + 1}`,
+          { duenos: [t.agent].filter(Boolean), patrones: t.paths || [] },
+        ])
+      : Object.entries(cfg.territorios || {});
+    for (const [nombre, t] of territorios) {
       const duenos = t.duenos || [];
       if (duenos.includes(agente)) continue;
 

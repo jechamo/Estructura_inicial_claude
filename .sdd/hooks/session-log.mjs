@@ -5,7 +5,7 @@
  */
 import { join } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync } from 'node:fs';
-import { readHookInput, projectRoot, appendLine, findActiveSpec, allow } from './_lib.mjs';
+import { readHookInput, projectRoot, appendLine, findActiveSpec, allow, hostDestino } from './_lib.mjs';
 
 const input = await readHookInput();
 const root = projectRoot(input);
@@ -39,4 +39,8 @@ const sesion = (input.session_id || '').slice(0, 8) || 'n/a';
 
 appendLine(fichero, `- ${fecha} ${hora} · sesión \`${sesion}\` · ${contexto}`);
 
+if (hostDestino() === 'codex') {
+  process.stdout.write(`${JSON.stringify({ continue: true })}\n`);
+  process.exit(0);
+}
 allow();

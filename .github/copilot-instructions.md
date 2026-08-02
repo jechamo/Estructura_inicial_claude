@@ -1,8 +1,8 @@
 # Instrucciones para GitHub Copilot
 
-Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)**. Léelo antes de responder:
-contiene el circuito SDD, la arquitectura vigente, los principios SOLID/DRY/KISS/YAGNI,
-los patrones permitidos, la política de TDD, los gates de calidad y las reglas de seguridad.
+Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)** y por el modelo completo en
+[`docs/sdd/OPERATING-MODEL.md`](../docs/sdd/OPERATING-MODEL.md). Léelos antes de responder:
+contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y handoff.
 
 ## Resumen operativo
 

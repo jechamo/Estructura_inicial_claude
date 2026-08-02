@@ -5,6 +5,7 @@ no hace falta escribirlo.
 
 ```
 docs/
+├── sdd/                Modelo operativo completo compartido por los hosts
 ├── product/            Visión, contexto de negocio, público objetivo
 ├── specs/              ⭐ El corazón. Una carpeta por funcionalidad
 │   └── _TEMPLATE/      spec · clarifications · design · research · plan · data-model
@@ -37,7 +38,8 @@ Estos **obligan**, no son sugerencias:
 
 | Documento | Qué obliga |
 |---|---|
-| [`../AGENTS.md`](../AGENTS.md) | Constitución operativa: circuito SDD, principios, TDD, seguridad |
+| [`../AGENTS.md`](../AGENTS.md) | Router operativo e identidad del proyecto |
+| [`sdd/OPERATING-MODEL.md`](./sdd/OPERATING-MODEL.md) | Circuito SDD, principios, TDD, seguridad, delegación y handoff |
 | [`architecture/constitution.md`](./architecture/constitution.md) | Arquitectura, capas, stack, prohibiciones |
 | [`architecture/adr/`](./architecture/adr/) | Decisiones estructurales tomadas |
 | [`quality/DEFINITION-OF-DONE.md`](./quality/DEFINITION-OF-DONE.md) | Cuándo algo está terminado |
@@ -50,6 +52,7 @@ Estos **obligan**, no son sugerencias:
 | Documento | Para qué |
 |---|---|
 | [`architecture/DECISION-GUIDE.md`](./architecture/DECISION-GUIDE.md) | Elegir arquitectura con criterio |
+| [`architecture/_TEMPLATE.constitution.md`](./architecture/_TEMPLATE.constitution.md) | Plantilla completa; no es una decisión del proyecto |
 | [`architecture/PATTERNS.md`](./architecture/PATTERNS.md) | Elegir patrón cuando aparece el problema |
 | [`guides/INSTALACION.md`](./guides/INSTALACION.md) | **Empieza aquí si tienes un proyecto ya montado**: cómo instalar la estructura sin pisar lo que ya tienes, y cómo actualizarla |
 | [`guides/COMO-TRABAJAR-CON-LOS-AGENTES.md`](./guides/COMO-TRABAJAR-CON-LOS-AGENTES.md) | **Empieza aquí si vas a usar el sistema**: comunicación entre agentes, por dónde empezar, TDD, calidad y seguridad |
@@ -57,6 +60,8 @@ Estos **obligan**, no son sugerencias:
 | [`agents/MAPEO-10-AGENTES.md`](./agents/MAPEO-10-AGENTES.md) | La idea original de 10 agentes y por qué cambió cada pieza |
 | [`agents/SKILLS-EXTERNAS.md`](./agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, auditoría y registro |
 | [`security/MCP-SECURITY.md`](./security/MCP-SECURITY.md) | Usar MCP sin abrir un agujero |
+| [`security/_TEMPLATE.threat-model.md`](./security/_TEMPLATE.threat-model.md) | Plantilla STRIDE; no es un análisis real |
+| [`design/DIRECTION-GUIDE.md`](./design/DIRECTION-GUIDE.md) | Guía para decidir una dirección visual sin prefijarla |
 | [`integrations/IDE-COMPATIBILITY.md`](./integrations/IDE-COMPATIBILITY.md) | Qué funciona en cada IDE y proveedor, y qué no |
 | [`research/baseline-2026-07-30.md`](./research/baseline-2026-07-30.md) | Baseline vigente: skills de dominio, TDD/QA, macro/micro, MoSCoW |
 | [`research/baseline-2026-07-29.md`](./research/baseline-2026-07-29.md) | Baseline anterior: formatos por IDE, hooks, seguridad, MCP |

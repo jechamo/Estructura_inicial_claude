@@ -1,154 +1,112 @@
-# Instalar la estructura en un proyecto existente
+# Instalación universal
 
-Dos capas. Una se instala **una vez por máquina** y aparece en todos tus proyectos; la otra se
-instala **por repositorio** y se versiona con el código.
+La instalación es por proyecto y funciona igual desde cualquier IDE porque todo queda
+versionado dentro del repositorio. Requiere Node 18 o posterior y no instala dependencias.
 
-```bash
-# Una vez por máquina: agentes y skills en todos tus proyectos
-npx github:jechamo/Estructura_inicial_claude global
+## Comando recomendado
 
-# Una vez por proyecto, desde su raíz
-npx github:jechamo/Estructura_inicial_claude init
+Usa una versión etiquetada; evita instalar directamente desde una rama móvil:
+
+```powershell
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" --mode auto
 ```
 
-**Antes de la primera vez, míralo en seco.** No escribe nada:
+El destino puede no existir y puede contener espacios. `--dry-run` no crea el directorio.
 
-```bash
-npx github:jechamo/Estructura_inicial_claude init --dry-run
-```
+## Modos
 
----
-
-## Por qué dos capas
-
-| | Capa global | Capa por proyecto |
+| Modo | Uso | Efecto sobre contexto existente |
 |---|---|---|
-| **Qué** | Agentes y skills | Hooks, territorios, `AGENTS.md`, docs, CI, reglas por IDE |
-| **Dónde** | Tu carpeta de usuario | Dentro del repositorio |
-| **Por qué ahí** | Para que estén al abrir cualquier proyecto sin tocar nada | Porque describen **ese** proyecto y quien lo clone debe recibirlos |
+| `greenfield` | Directorio vacío o proyecto nuevo | Crea esqueletos vírgenes |
+| `brownfield` | Repositorio en vuelo | Instala el motor y preserva todo el contexto |
+| `auto` | Valor recomendado | Considera brownfield cualquier destino con contenido; nunca autoriza un reset |
 
-**Los hooks no se instalan en global, a propósito.** Una guarda de territorio o un formateador
-activos en todos tus repositorios —incluidos los que no usan SDD— es intrusivo, y lo intrusivo
-acaba desactivado. Se quedan donde tienen contexto.
+“Virgen” solo se aplica a ficheros que no existían. `update` jamás vacía un changelog, una
+bitácora, una spec, un ADR, una sesión, un informe ni un log.
 
-Los agentes y skills se instalan **en las dos capas**: en tu máquina para tenerlos siempre, y en
-el repositorio para que quien lo clone no tenga que instalar nada. Es la única duplicación
-aceptada, y es entre máquina y repo, nunca dentro del repo.
+## Qué nace virgen
 
-La excepción es Codex: el comando `global` no modifica `~/.codex`, pero `init` sí instala los
-agentes nativos de proyecto en `.codex/agents/`. Así el soporte viaja con el repositorio y no
-altera la configuración personal de Codex.
+- `README.md` de proyecto en estado bootstrap.
+- `CHANGELOG.md` con solo `[Unreleased]`.
+- Constitución, visión, dirección visual y modelo de amenazas como stubs sin decisiones.
+- `docs/specs/` y `docs/architecture/adr/` con solo sus plantillas.
+- Directorios de sesiones, informes, flujos y wireframes vacíos.
+- `docs/bitacora/DECISIONS.md` sin entradas.
+- `.sdd/agent-audit.jsonl` a cero bytes.
+- `.sdd/external-skills.json` con `entries: []`.
+- `.sdd/territories.json` en `audit`, sin rutas de aplicación asumidas.
+- `.sdd/checks.json` con solo el gate SDD; el stack queda sin configurar.
 
----
+El README, changelog, specs, ADR, informes, sesiones, auditoría y decisiones de esta plantilla
+no viajan al destino.
 
-## Qué IDE coge la capa global
+## Fusión brownfield
 
-| Host | Agentes | Skills | ¿Automático? |
-|---|---|---|---|
-| **Claude Code** | `~/.claude/agents/` | `~/.claude/skills/` | ✅ Nativo |
-| **Cursor** | `~/.cursor/agents/` | lee `~/.claude/skills/` por compatibilidad | ✅ Nativo |
-| **VS Code + Copilot** | `~/.github/agents/` | vía `chat.agentSkillsLocations` | 🟡 El instalador añade la clave a tu `settings.json` de usuario |
-| **Codex** | `~/.codex/agents/` en TOML | — | ❌ No se instala globalmente; `init` usa `.codex/agents/` por proyecto |
-| **Antigravity** | — | — | ❌ Solo admite reglas globales |
-
-**Coste honesto**: los 20 agentes aparecerán en el selector de **todos** tus proyectos, también
-donde no quieras SDD. Son inertes si no los invocas, pero ensucian la lista. Si eso te molesta,
-sáltate `global` y usa solo `init` donde lo quieras.
-
----
-
-## Qué hace `init` con lo que ya tienes
-
-La regla es una: **nunca se pisa un fichero tuyo.**
-
-| Situación | Qué pasa |
+| Tipo | Política |
 |---|---|
-| El fichero no existe | Se escribe |
-| Existe y es idéntico | No se toca |
-| Existe y es **distinto** | **No se toca.** El nuevo se deja como `<fichero>.sdd-nuevo` y se lista al final |
-| Es un JSON conocido (`.vscode/settings.json`, `.claude/settings.json`, `.mcp.json`) | Se **fusionan** las claves que falten. Las tuyas ganan siempre |
-| `.gitignore` | Se añaden solo las líneas ausentes, en un bloque delimitado y comentado |
+| Markdown de host | Bloque delimitado `<!-- sdd:start -->` / `<!-- sdd:end -->` |
+| JSON/JSONC | Fusión conservadora; las claves del proyecto ganan |
+| Hooks JSON | Unión por estructura sin borrar entradas existentes |
+| TOML de Codex | Bloque gestionado; nunca reemplaza valores existentes |
+| `.gitignore` | Apéndice delimitado; solo líneas ausentes |
+| Documentos, specs, ADR y logs existentes | Se conservan íntegramente |
 
-Al terminar te dice cuántos ficheros escribió, cuáles fusionó y **qué tienes que revisar**.
+Si una configuración no se puede fusionar o un fichero gestionado fue modificado, la propuesta
+queda en `.sdd/conflicts/<version>/<ruta>` y el original permanece intacto. La propiedad y los
+hashes están en `.sdd/installed.json`.
 
-Para Codex, `init` añade `.codex/config.toml` y veinte adaptadores TOML bajo `.codex/agents/`.
-Si ya existe una configuración distinta, se aplica la misma regla de seguridad: no se pisa y la
-nueva se deja como `.sdd-nuevo` para revisión manual.
+## MCP: siempre opt-in
 
-### Lo que nunca se copia
+La instalación normal no crea `.mcp.json`, `.vscode/mcp.json` ni entradas MCP de Codex. Activa
+solo los servidores que hayas elegido:
 
-El historial de la plantilla no es el de tu proyecto: `README.md`, `CHANGELOG.md`, las sesiones de
-bitácora, el log de auditoría y el propio instalador se quedan fuera. `docs/bitacora/DECISIONS.md`
-se instala **vacío**, con su cabecera y su formato.
-
-Con `--con-baseline` se incluye además `docs/research/`, la investigación fechada sobre la que se
-construyó la plantilla. Es referencia útil, pero es de la plantilla, no tuya.
-
----
-
-## Actualizar
-
-```bash
-npx github:jechamo/Estructura_inicial_claude check    # ¿hay novedades? ¿qué he tocado yo?
-npx github:jechamo/Estructura_inicial_claude update
+```powershell
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z init "C:\ruta\proyecto" `
+  --mode auto --with-mcp context7,playwright
 ```
 
-`update` funciona gracias a `.sdd/installed.json`, que guarda el hash de cada fichero instalado:
-
-- Si el fichero **está como lo dejamos**, nadie lo ha tocado → se actualiza en silencio.
-- Si **lo has modificado**, se respeta y el nuevo llega como `.sdd-nuevo`.
-
-Así puedes personalizar los territorios, los agentes o la constitución sin miedo a que una
-actualización se lleve tu trabajo por delante.
-
----
+Las referencias ejecutables están fijadas a una versión. Las credenciales no se escriben: cada
+host las solicita o las lee del entorno. Revisa [MCP-SECURITY.md](../security/MCP-SECURITY.md).
 
 ## Después de instalar
 
-Instalar **no** es adoptar. Quedan dos cosas, y la primera es la que más se olvida:
+En un proyecto nuevo ejecuta `/sdd-init`. En uno existente ejecuta `/onboard`. Esos pasos son los
+que pueden proponer arquitectura, territorios y comandos de calidad a partir de la realidad del
+proyecto; el instalador no los inventa.
 
-### 1. Ajustar los territorios
+Comandos deterministas disponibles:
 
-`.sdd/territories.json` trae rutas convencionales: `src/components/**`, `migrations/**`,
-`src/domain/**`… Si tu proyecto no las usa, **la guarda de territorio estará protegiendo rutas que
-no existen** y no protegiendo las que sí. Ábrelo y ajústalo a tu estructura real.
-
-### 2. Documentar lo que ya hay
-
-```
-/onboard
-```
-
-`@research-analyst` reconstruye la arquitectura **real** —no la declarada— y `@architect` la
-formaliza en `docs/architecture/constitution.md` y el ADR-0001. No refactoriza nada: documenta la
-realidad, aunque la realidad sea fea.
-
-A partir de ahí ya estás en el circuito: `/sdd-specify` para lo siguiente que toques.
-
-### Y comprueba que quedó bien
-
-```bash
-node scripts/check-sdd.mjs
-node scripts/test-hooks.mjs
+```powershell
+node scripts/check-sdd.mjs --virgin       # justo después de un greenfield
+node scripts/check-sdd.mjs                # estructura y coherencia
+node scripts/test-hooks.mjs               # guardas y contratos
+node scripts/sdd-project.mjs detect --json
+node scripts/sdd-project.mjs configure --accept-detected
+node scripts/sdd-project.mjs run --ci
 ```
 
----
+`detect` no escribe. `configure --accept-detected` es la aprobación explícita para incorporar
+los comandos encontrados a `.sdd/checks.json`.
 
-## Desinstalar
+## Actualizar
 
-No hay comando, y es deliberado: borrar ficheros del proyecto de alguien automáticamente es
-justo lo que este sistema evita. `.sdd/installed.json` tiene la lista exacta de lo que se instaló;
-con eso y `git` puedes revertir con precisión.
+```powershell
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z update "C:\ruta\proyecto"
+```
 
----
+Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y recibe una propuesta
+en `conflicts`. Las semillas de estado virgen pasan a ser propiedad del proyecto desde su creación
+y nunca se reinician.
 
-## Límites declarados
+## Capa global opcional
 
-- **`npx github:` clona el repositorio entero** en cada ejecución. Es aceptable para un comando
-  puntual; si molesta, la alternativa es publicarlo en npm.
-- **Codex y Antigravity no reciben la capa global.** Codex sí recibe los veinte agentes por
-  proyecto mediante `init`; se evita escribir en `~/.codex/agents/` para respetar el alcance y la
-  configuración personal de cada máquina.
-- **VS Code necesita que se toque tu `settings.json` de usuario.** Es la única escritura fuera del
-  proyecto además de las carpetas de agentes. El instalador lo anuncia antes de hacerlo, y si no
-  encuentra el fichero te imprime la clave para que la pegues tú.
+`global` instala perfiles y skills para descubrirlos fuera de proyectos preparados, pero no es
+necesario para que un repositorio instalado funcione y no instala hooks globales:
+
+```powershell
+npx --yes github:jechamo/Estructura_inicial_claude#vX.Y.Z global --dry-run
+```
+
+Codex y Antigravity se mantienen por proyecto para no alterar configuración personal.

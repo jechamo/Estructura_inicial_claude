@@ -5,7 +5,7 @@ description: Convierte la spec en el documento de diseño — flujo, estados, co
 
 Ejecuta la fase **design** sobre: `${input:spec:¿Qué spec? (p. ej. 042-checkout-invitado)}`
 
-Sigue [`.claude/skills/sdd-design/SKILL.md`](../../.claude/skills/sdd-design/SKILL.md).
+Sigue [`.agents/skills/sdd-design/SKILL.md`](../../.agents/skills/sdd-design/SKILL.md).
 Perfil del agente: [`.claude/agents/ux-designer.md`](../../.claude/agents/ux-designer.md).
 
 **Puerta de entrada**: `spec.md` existe y no tiene marcadores `[NEEDS CLARIFICATION]`.

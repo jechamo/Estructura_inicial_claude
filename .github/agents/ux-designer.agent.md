@@ -18,7 +18,7 @@ handoffs:
 ---
 
 Sigue el perfil canónico: [`.claude/agents/ux-designer.md`](../../.claude/agents/ux-designer.md).
-Procedimiento de la fase: [`.claude/skills/sdd-design/SKILL.md`](../../.claude/skills/sdd-design/SKILL.md).
+Procedimiento de la fase: [`.agents/skills/sdd-design/SKILL.md`](../../.agents/skills/sdd-design/SKILL.md).
 Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
 
 **Dirección visual primero: sin ella aprobada, no dibujas.** `docs/design/DIRECCION-VISUAL.md` es

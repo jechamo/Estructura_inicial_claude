@@ -9,6 +9,37 @@
 
 ---
 
+## 2026-08-02 · Distribución portable con semillas vírgenes y estado propiedad del proyecto
+
+- **Tipo**: decisión y cambio
+- **Contexto**: el repositorio de la plantilla contenía su propia historia —specs, ADR, bitácora,
+  informes, sesiones, auditoría y changelog— y el instalador podía trasladar parte de ese contexto
+  a un proyecto nuevo. También coexistían skills y hooks duplicados por host, y la instalación
+  presuponía Node, npm y MCP concretos.
+- **Decisión / hecho**: separar distribución, referencias y estado. Las 22 skills canónicas viven
+  en `.agents/skills/`, los hooks compartidos en `.sdd/hooks/` y cada IDE conserva un adaptador en
+  su formato. `init` crea semillas vírgenes solo cuando faltan; `update` nunca las reinicia. Las
+  modificaciones gestionadas se conservan y la propuesta nueva va a `.sdd/conflicts/<version>/`.
+  MCP es opt-in y selectivo; `.sdd/checks.json` nace sin asumir el stack. El CI universal ejecuta
+  únicamente scripts distribuidos.
+- **Alternativas descartadas**:
+  - *Copiar el repositorio y borrar después*: el borrado por nombres concretos es frágil y puede
+    eliminar contexto legítimo de un brownfield.
+  - *Symlinks entre superficies*: crean fricción en Windows y en clones sin permisos adecuados.
+  - *Una copia completa de cada skill por IDE*: multiplica la deriva y el coste de actualización.
+  - *Activar MCP y comandos de aplicación por detección*: detectar no equivale a una decisión
+    aprobada del proyecto.
+- **Impacto**: instalación greenfield y brownfield conservadora, estado virgen comprobable,
+  paridad de 20 agentes y 22 skills, handoff/delegación documentados y contratos de hooks para
+  Claude, Cursor, Copilot/VS Code, Codex y Antigravity. La suite del instalador cubre 87 escenarios
+  y las guardas 40.
+- **Deuda aceptada**: falta el smoke manual en los cinco hosts y la confirmación remota de la
+  matriz Windows/Linux con Node 18/20/22; se exige antes de publicar un tag estable.
+- **Referencias**: spec `002-portabilidad-instalador-universal` · tareas `T-002-01` a `T-002-07`
+- **Quién**: Codex `declared-direct`, alcance aprobado por el usuario
+
+---
+
 ## 2026-08-02 · Agentes Codex versionados por proyecto mediante adaptadores TOML
 
 - **Tipo**: decisión de compatibilidad

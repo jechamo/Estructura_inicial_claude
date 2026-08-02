@@ -23,7 +23,7 @@ Applications. Por eso: se declaran, se auditan, se fijan, y las instala una pers
 
 | Opción | Por qué no / sí |
 |---|---|
-| Copiar el `SKILL.md` de Vercel a `.claude/skills/` | **No.** Crea una copia que envejece en silencio, arrastra su licencia y hace que la próxima mejora del fabricante no llegue nunca |
+| Copiar el `SKILL.md` de Vercel a `.agents/skills/` | **No.** Crea una copia que envejece en silencio, arrastra su licencia y hace que la próxima mejora del fabricante no llegue nunca |
 | Instalar colecciones curadas completas | **No.** Colisión de triggers, consumo de contexto, superficie de ejecución y deuda de actualización |
 | Declarar la referencia, fijarla y auditarla antes de usar | **Sí.** Es como se tratan las demás dependencias |
 

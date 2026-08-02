@@ -31,7 +31,7 @@ Registra en `clarifications.md`. **La spec no avanza con marcadores pendientes.*
 ## 3. Diseñar (solo si hay interfaz)
 
 Adopta el perfil de @.claude/agents/ux-designer.md. Procedimiento:
-@.claude/skills/sdd-design/SKILL.md
+@.agents/skills/sdd-design/SKILL.md
 
 **Antes de dibujar**: `docs/design/DIRECCION-VISUAL.md` tiene que existir y estar **aprobada por
 el usuario**. Los seis estados y la accesibilidad son un suelo, no un techo: se cumplen enteros y
@@ -74,9 +74,9 @@ Adopta el perfil de @.claude/agents/implementer.md. **Una tarea por ciclo**:
 Según el terreno de la tarea, sigue el procedimiento correspondiente — ahí están las puertas de
 entrada, los patrones y la lista de comprobación de cada capa:
 
-- Capa media: @.claude/skills/middle/SKILL.md (perfil @.claude/agents/backend-expert.md)
-- Frontend: @.claude/skills/front/SKILL.md (perfil @.claude/agents/frontend-expert.md)
-- Base de datos: @.claude/skills/bbdd/SKILL.md (perfil @.claude/agents/database-expert.md)
+- Capa media: @.agents/skills/middle/SKILL.md (perfil @.claude/agents/backend-expert.md)
+- Frontend: @.agents/skills/front/SKILL.md (perfil @.claude/agents/frontend-expert.md)
+- Base de datos: @.agents/skills/bbdd/SKILL.md (perfil @.claude/agents/database-expert.md)
 
 ## 7. Verificar
 

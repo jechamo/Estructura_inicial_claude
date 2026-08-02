@@ -5,7 +5,7 @@ description: Implementa una tarea de frontend con los seis estados, accesibilida
 
 Implementa la tarea de **frontend**: `${input:tarea:¿Qué tarea? (p. ej. T-042-05)}`
 
-Procedimiento completo: [`.claude/skills/front/SKILL.md`](../../.claude/skills/front/SKILL.md)
+Procedimiento completo: [`.agents/skills/front/SKILL.md`](../../.agents/skills/front/SKILL.md)
 Perfil del agente: [`.claude/agents/frontend-expert.md`](../../.claude/agents/frontend-expert.md)
 
 **Puerta de entrada**: la tarea existe con su criterio de aceptación, hay `design.md` (o flujo en

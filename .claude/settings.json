@@ -33,7 +33,7 @@
       "Bash(cargo test:*)",
       "Bash(go test:*)",
 
-      "Bash(node .claude/hooks/*)",
+      "Bash(node .sdd/hooks/*)",
       "Bash(node scripts/check-sdd.mjs:*)"
     ],
     "ask": [
@@ -63,14 +63,14 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/session-context.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/session-context.mjs" }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/sdd-router.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/sdd-router.mjs" }
         ]
       }
     ],
@@ -78,13 +78,13 @@
       {
         "matcher": "Edit|Write|MultiEdit|NotebookEdit|edit/|editFiles|createFile|applyPatch",
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/guard-write.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/guard-write.mjs" }
         ]
       },
       {
         "matcher": "Bash|runInTerminal|runCommands|terminal",
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/guard-bash.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/guard-bash.mjs" }
         ]
       }
     ],
@@ -92,28 +92,28 @@
       {
         "matcher": "Edit|Write|MultiEdit|edit/|editFiles|createFile|applyPatch",
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/format-and-lint.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/format-and-lint.mjs" }
         ]
       }
     ],
     "SubagentStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/subagent-log.mjs start" }
+          { "type": "command", "command": "node .sdd/hooks/subagent-log.mjs start" }
         ]
       }
     ],
     "SubagentStop": [
       {
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/subagent-log.mjs stop" }
+          { "type": "command", "command": "node .sdd/hooks/subagent-log.mjs stop" }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "node .claude/hooks/session-log.mjs" }
+          { "type": "command", "command": "node .sdd/hooks/session-log.mjs" }
         ]
       }
     ]

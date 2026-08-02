@@ -1,0 +1,21 @@
+name: SDD gates
+
+on:
+  pull_request:
+  push:
+
+permissions:
+  contents: read
+
+jobs:
+  sdd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.3.0
+      - uses: actions/setup-node@v6.0.0
+        with:
+          node-version: 22
+      - name: Run configured project gates
+        run: node scripts/sdd-project.mjs run --ci
+      - name: Validate hook contracts
+        run: node scripts/test-hooks.mjs

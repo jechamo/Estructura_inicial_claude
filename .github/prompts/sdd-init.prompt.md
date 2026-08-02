@@ -5,7 +5,7 @@ description: Arranca un proyecto nuevo - elige arquitectura y stack, crea la con
 
 Ejecuta la fase **init** para el proyecto: `${input:proyecto:¿Qué producto vamos a construir?}`
 
-Sigue [`.claude/skills/sdd-init/SKILL.md`](../../.claude/skills/sdd-init/SKILL.md).
+Sigue [`.agents/skills/sdd-init/SKILL.md`](../../.agents/skills/sdd-init/SKILL.md).
 
 **Solo para proyectos nuevos.** Si ya existe `docs/architecture/constitution.md`, para y avisa.
 Si hay código sin documentar, usa el prompt de onboarding.

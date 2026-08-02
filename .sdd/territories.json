@@ -1,132 +1,17 @@
 {
-  "$comment": [
-    "Quién puede escribir dónde. Lo aplica .claude/hooks/guard-write.mjs usando el agente",
-    "activo que registran SubagentStart/SubagentStop.",
-    "",
-    "La regla NO es 'solo puedes escribir en tu territorio' —en un proyecto nuevo nadie sabe",
-    "aún dónde vive cada cosa y eso bloquearía trabajo legítimo—. La regla es:",
-    "",
-    "   NO ESCRIBAS EN EL TERRITORIO DE OTRO.",
-    "",
-    "Una ruta que no encaja en ningún territorio se permite. Una que encaja en un territorio",
-    "ajeno se bloquea. Eso es lo que impide que el especialista de datos escriba un componente",
-    "de interfaz, sin castigar al que crea un fichero en una carpeta que nadie ha reclamado.",
-    "",
-    "Ajusta 'patrones' a la estructura real de tu proyecto: /sdd-init o /onboard deberían",
-    "hacerlo al fijar la arquitectura. Verifica con: node scripts/check-sdd.mjs"
-  ],
-  "modo": "deny",
-  "$modo": "deny | ask | off. 'ask' escala al humano en vez de bloquear: útil mientras afinas los patrones en un repo que ya existe.",
-
-  "coordinadores": ["orchestrator", "planner", "implementer", "release-manager", "research-analyst"],
-  "$coordinadores": [
-    "Exentos de la regla de territorio, y es una decisión consciente, no un olvido:",
-    "- orchestrator y research-analyst no tienen Write ni Edit en su 'tools': ya no pueden escribir.",
-    "- planner escribe artefactos de varias fases (plan, tareas, contratos, modelo de datos).",
-    "- implementer es el ejecutor del ciclo TDD y toca las tres capas por diseño; su disciplina",
-    "  es delegar en el especialista, y eso lo verifica execution-log.jsonl, no esta guarda.",
-    "- release-manager toca CHANGELOG, bitácora y metadatos de entrega."
-  ],
-
-  "territorios": {
-    "front": {
-      "descripcion": "Interfaz: componentes, páginas, estilos, estado de UI",
-      "duenos": ["frontend-expert", "ux-designer", "refactor-specialist"],
-      "patrones": [
-        "src/components/**",
-        "src/pages/**",
-        "src/app/**",
-        "src/ui/**",
-        "src/styles/**",
-        "src/hooks/**",
-        "app/**",
-        "components/**",
-        "pages/**",
-        "**/*.tsx",
-        "**/*.jsx",
-        "**/*.vue",
-        "**/*.svelte",
-        "**/*.css",
-        "**/*.scss"
-      ]
+  "version": 1,
+  "modo": "audit",
+  "descripcion": "La plantilla no asume rutas de aplicación. /sdd-init o /onboard proponen territorios a partir del proyecto real.",
+  "territories": [
+    {
+      "name": "arquitectura-sdd",
+      "agent": "architect",
+      "paths": ["docs/architecture/**"]
     },
-
-    "middle": {
-      "descripcion": "Dominio, casos de uso, adaptadores y servicios de servidor",
-      "duenos": ["backend-expert", "api-designer", "performance-optimizer", "refactor-specialist"],
-      "patrones": [
-        "src/domain/**",
-        "src/application/**",
-        "src/infrastructure/**",
-        "src/services/**",
-        "src/usecases/**",
-        "domain/**",
-        "application/**",
-        "server/**",
-        "api/**"
-      ]
-    },
-
-    "bbdd": {
-      "descripcion": "Esquema, migraciones y consultas",
-      "duenos": ["database-expert"],
-      "patrones": [
-        "migrations/**",
-        "db/**",
-        "database/**",
-        "supabase/migrations/**",
-        "prisma/**",
-        "**/*.sql"
-      ]
-    },
-
-    "specs": {
-      "descripcion": "Requisitos: el QUÉ y el POR QUÉ",
-      "duenos": ["spec-analyst"],
-      "patrones": ["docs/specs/**/spec.md", "docs/specs/**/clarifications.md"]
-    },
-
-    "diseño": {
-      "descripcion": "Diseño de producto: flujos, pantallas, estados, design system",
-      "duenos": ["ux-designer"],
-      "patrones": ["docs/specs/**/design.md", "docs/design/**"]
-    },
-
-    "arquitectura": {
-      "descripcion": "Constitución y ADR. Decisiones con consecuencias duraderas",
-      "duenos": ["architect"],
-      "patrones": ["docs/architecture/**"]
-    },
-
-    "bitacora": {
-      "descripcion": "Memoria del proyecto",
-      "duenos": ["bitacora-keeper", "release-manager"],
-      "patrones": ["docs/bitacora/**"]
-    },
-
-    "tests": {
-      "descripcion": "Suite de pruebas",
-      "duenos": ["test-engineer", "backend-expert", "frontend-expert", "database-expert"],
-      "patrones": ["tests/**", "test/**", "**/*.test.*", "**/*.spec.*", "**/test_*.py"]
-    },
-
-    "documentacion": {
-      "descripcion": "Documentación para personas: guías, README, onboarding",
-      "duenos": ["docs-writer"],
-      "patrones": ["docs/guides/**", "README.md", "docs/README.md", "CONTRIBUTING.md"]
-    },
-
-    "infra": {
-      "descripcion": "CI/CD, contenedores e infraestructura como código",
-      "duenos": ["devops-expert"],
-      "patrones": [
-        ".github/workflows/**",
-        "infra/**",
-        "terraform/**",
-        "k8s/**",
-        "Dockerfile*",
-        "docker-compose*"
-      ]
+    {
+      "name": "especificacion-sdd",
+      "agent": "spec-analyst",
+      "paths": ["docs/specs/**/spec.md", "docs/specs/**/clarifications.md"]
     }
-  }
+  ]
 }

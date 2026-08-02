@@ -1,6 +1,6 @@
 Implementa una tarea de **base de datos** con migración reversible e índices justificados.
 
-Procedimiento completo: [`.claude/skills/bbdd/SKILL.md`](../../.claude/skills/bbdd/SKILL.md)
+Procedimiento completo: [`.agents/skills/bbdd/SKILL.md`](../../.agents/skills/bbdd/SKILL.md)
 Perfil del agente: [`.claude/agents/database-expert.md`](../../.claude/agents/database-expert.md)
 
 **Puerta de entrada**: tarea con criterio, `data-model.md` con entidades e invariantes, y volumen y

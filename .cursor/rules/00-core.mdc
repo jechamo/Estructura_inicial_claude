@@ -5,7 +5,8 @@ alwaysApply: true
 
 # Núcleo del proyecto
 
-La fuente de verdad completa es [AGENTS.md](mdc:AGENTS.md). Léela.
+La entrada es [AGENTS.md](mdc:AGENTS.md) y la política completa está en
+[OPERATING-MODEL.md](mdc:docs/sdd/OPERATING-MODEL.md). Léelas.
 Arquitectura vigente: [constitution.md](mdc:docs/architecture/constitution.md).
 
 ## Reglas duras

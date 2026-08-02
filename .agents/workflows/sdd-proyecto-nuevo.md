@@ -10,7 +10,7 @@ Reglas del proyecto: @AGENTS.md
 ## 1. Init — decidir la arquitectura
 
 Adopta el perfil de @.claude/agents/architect.md.
-Procedimiento detallado: @.claude/skills/sdd-init/SKILL.md
+Procedimiento detallado: @.agents/skills/sdd-init/SKILL.md
 
 ### 1.1 Entrevista (máximo 8 preguntas, con opciones y recomendación)
 

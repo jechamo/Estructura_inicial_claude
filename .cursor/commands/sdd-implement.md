@@ -1,6 +1,6 @@
 Ejecuta la fase **implement** del circuito SDD con TDD estricto.
 
-Procedimiento completo: [`.claude/skills/sdd-implement/SKILL.md`](../../.claude/skills/sdd-implement/SKILL.md)
+Procedimiento completo: [`.agents/skills/sdd-implement/SKILL.md`](../../.agents/skills/sdd-implement/SKILL.md)
 Perfil del agente: [`.claude/agents/implementer.md`](../../.claude/agents/implementer.md)
 
 **Puerta de entrada**: `docs/specs/NNN-slug/tasks.md` existe, con tareas trazadas a la spec y

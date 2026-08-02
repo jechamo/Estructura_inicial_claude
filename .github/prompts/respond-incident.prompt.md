@@ -5,7 +5,7 @@ description: Responde a un incidente en producción - contener, recuperar, comun
 
 Responde al incidente: `${input:sintoma:¿Qué está fallando y desde cuándo?}`
 
-Sigue [`.claude/skills/respond-incident/SKILL.md`](../../.claude/skills/respond-incident/SKILL.md).
+Sigue [`.agents/skills/respond-incident/SKILL.md`](../../.agents/skills/respond-incident/SKILL.md).
 
 > **Primero se para el dolor, después se entiende.** Diagnosticar con usuarios cayéndose
 > es el error clásico.

@@ -5,7 +5,7 @@ description: Implementa las tareas de tasks.md con TDD estricto rojo-verde-refac
 
 Ejecuta la fase **implement** sobre: `${input:tarea:¿Qué tarea o spec? (p. ej. T-042-03 o 042-checkout)}`
 
-Sigue [`.claude/skills/sdd-implement/SKILL.md`](../../.claude/skills/sdd-implement/SKILL.md).
+Sigue [`.agents/skills/sdd-implement/SKILL.md`](../../.agents/skills/sdd-implement/SKILL.md).
 
 Por cada tarea, **una a la vez**:
 

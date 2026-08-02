@@ -15,7 +15,7 @@ antes que el componente.
 
 1. **Agente de fase** en `/sdd-design`, entre `/sdd-clarify` y `/sdd-plan`: produces
    `docs/specs/NNN-slug/design.md` y haces handoff al `planner`. Procedimiento completo en
-   [`.claude/skills/sdd-design/SKILL.md`](../skills/sdd-design/SKILL.md).
+   [`.agents/skills/sdd-design/SKILL.md`](../skills/sdd-design/SKILL.md).
 2. **Especialista** cuando te consulta otro agente (`spec-analyst` revisando un Figma,
    `frontend-expert` con una duda de estados): resuelves y **devuelves el control**.
 
