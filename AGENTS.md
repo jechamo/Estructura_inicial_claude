@@ -391,8 +391,9 @@ rutas**, no de flujo.
 **Dónde funciona cada capa** — ver [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md):
 las tres en Claude Code y Cursor (probadas); las tres también en VS Code según su documentación de
 hooks —mismos eventos y mismo protocolo, y lee `.claude/settings.json`—, pero ahí es *preview* y no
-se ha ejecutado en vivo; solo la 3 en Antigravity y Codex, donde el reparto es convención y el CI
-el único juez.
+se ha ejecutado en vivo. Codex aplica solo lectura a los cuatro auditores mediante
+`.codex/agents/*.toml` y conserva la verificación determinista; no dispone de la guarda de
+territorio. En Antigravity solo queda la verificación determinista.
 
 Reglas duras:
 - Un agente **no** salta fases del circuito SDD.

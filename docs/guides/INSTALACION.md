@@ -35,6 +35,10 @@ Los agentes y skills se instalan **en las dos capas**: en tu máquina para tener
 el repositorio para que quien lo clone no tenga que instalar nada. Es la única duplicación
 aceptada, y es entre máquina y repo, nunca dentro del repo.
 
+La excepción es Codex: el comando `global` no modifica `~/.codex`, pero `init` sí instala los
+agentes nativos de proyecto en `.codex/agents/`. Así el soporte viaja con el repositorio y no
+altera la configuración personal de Codex.
+
 ---
 
 ## Qué IDE coge la capa global
@@ -44,7 +48,7 @@ aceptada, y es entre máquina y repo, nunca dentro del repo.
 | **Claude Code** | `~/.claude/agents/` | `~/.claude/skills/` | ✅ Nativo |
 | **Cursor** | `~/.cursor/agents/` | lee `~/.claude/skills/` por compatibilidad | ✅ Nativo |
 | **VS Code + Copilot** | `~/.github/agents/` | vía `chat.agentSkillsLocations` | 🟡 El instalador añade la clave a tu `settings.json` de usuario |
-| **Codex** | `~/.codex/agents/` en TOML | — | ❌ Formato distinto, no se cubre |
+| **Codex** | `~/.codex/agents/` en TOML | — | ❌ No se instala globalmente; `init` usa `.codex/agents/` por proyecto |
 | **Antigravity** | — | — | ❌ Solo admite reglas globales |
 
 **Coste honesto**: los 20 agentes aparecerán en el selector de **todos** tus proyectos, también
@@ -66,6 +70,10 @@ La regla es una: **nunca se pisa un fichero tuyo.**
 | `.gitignore` | Se añaden solo las líneas ausentes, en un bloque delimitado y comentado |
 
 Al terminar te dice cuántos ficheros escribió, cuáles fusionó y **qué tienes que revisar**.
+
+Para Codex, `init` añade `.codex/config.toml` y veinte adaptadores TOML bajo `.codex/agents/`.
+Si ya existe una configuración distinta, se aplica la misma regla de seguridad: no se pisa y la
+nueva se deja como `.sdd-nuevo` para revisión manual.
 
 ### Lo que nunca se copia
 
@@ -138,8 +146,9 @@ con eso y `git` puedes revertir con precisión.
 
 - **`npx github:` clona el repositorio entero** en cada ejecución. Es aceptable para un comando
   puntual; si molesta, la alternativa es publicarlo en npm.
-- **Codex y Antigravity no reciben la capa global.** Codex usa TOML en `~/.codex/agents/`;
-  mantener un traductor de 20 perfiles a otro formato es coste que hoy no se justifica.
+- **Codex y Antigravity no reciben la capa global.** Codex sí recibe los veinte agentes por
+  proyecto mediante `init`; se evita escribir en `~/.codex/agents/` para respetar el alcance y la
+  configuración personal de cada máquina.
 - **VS Code necesita que se toque tu `settings.json` de usuario.** Es la única escritura fuera del
   proyecto además de las carpetas de agentes. El instalador lo anuncia antes de hacerlo, y si no
   encuentra el fichero te imprime la clave para que la pegues tú.

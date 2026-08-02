@@ -258,7 +258,8 @@ son **herramientas y rutas**, no flujo. Tres capas:
 
 Las tres capas en Claude Code y Cursor, probadas. También en VS Code según su documentación —tiene
 los mismos eventos de hook y lee `.claude/settings.json`—, aunque está en *preview* y no se ha
-ejecutado en vivo. Solo la 3 en Antigravity y Codex.
+ejecutado en vivo. Codex impone solo lectura a los cuatro auditores y conserva el gate; no tiene
+guarda de territorio. En Antigravity solo queda el gate.
 Matriz honesta: [`docs/integrations/IDE-COMPATIBILITY.md`](docs/integrations/IDE-COMPATIBILITY.md) §3 bis.
 
 Catálogo completo con handoffs: [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md).
@@ -289,6 +290,7 @@ Una sola fuente de verdad — [`AGENTS.md`](AGENTS.md) — y cada herramienta la
 | **GitHub Copilot** (CLI / nube) | `AGENTS.md` + `.github/copilot-instructions.md` | `.github/agents/*.agent.md` | `.github/prompts/` |
 | **Cursor** | `.cursor/rules/*.mdc` | Referencia a `.claude/agents/` | Reglas por glob |
 | **Antigravity** | `AGENTS.md` + `.agents/rules/*.md` | Perfiles de `.claude/agents/` | `.agents/workflows/*.md` |
+| **Codex** | `AGENTS.md` | `.codex/agents/*.toml` → `.claude/agents/` | Skills de `.claude/skills/` y delegación por prompt |
 
 > **Sobre VS Code**: sí, funciona. VS Code lee los agentes personalizados tanto de
 > `.github/agents/` como de `.claude/agents/`, así que los perfiles canónicos sirven para
@@ -383,6 +385,9 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   ├── rules/                    Reglas .mdc con activación por glob
 │   ├── agents/ · commands/       Agentes y comandos de Cursor
 │   └── hooks.json                Guardas funcionando también en Cursor
+├── .codex/
+│   ├── config.toml               Habilita los subagentes del proyecto
+│   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
 ├── scripts/check-sdd.mjs         ⭐ El gate determinista, en cualquier proveedor
 ├── .agents/                      Antigravity: rules + workflows
 ├── .mcp.json · .vscode/mcp.json  Servidores MCP

@@ -87,7 +87,7 @@ for (const f of existsSync(AGENTES_DIR) ? readdirSync(AGENTES_DIR).filter((x) =>
 }
 
 // Los envoltorios de otras superficies deben apuntar a un perfil que exista.
-const envueltos = { '.github/agents': new Set(), '.cursor/agents': new Set() };
+const envueltos = { '.github/agents': new Set(), '.cursor/agents': new Set(), '.codex/agents': new Set() };
 for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')], ['.cursor/agents', (n) => n.endsWith('.md')]]) {
   for (const p of walk(join(ROOT, dir), filtro)) {
     const t = leer(p) || '';
@@ -101,10 +101,41 @@ for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')],
   }
 }
 
+// Codex usa TOML por proyecto. El adaptador es deliberadamente fino: registra el agente
+// y remite al perfil canónico en vez de copiar sus instrucciones y crear una tercera versión.
+const codexDir = join(ROOT, '.codex/agents');
+const auditoresSoloLectura = new Set(['orchestrator', 'code-reviewer', 'security-auditor', 'research-analyst']);
+for (const p of walk(codexDir, (n) => n.endsWith('.toml'))) {
+  const t = leer(p) || '';
+  const nombre = (t.match(/^name\s*=\s*"([^"]+)"\s*$/m) || [])[1];
+  const descripcion = (t.match(/^description\s*=\s*"([^"]+)"\s*$/m) || [])[1];
+  const instrucciones = /^developer_instructions\s*=\s*"""[\s\S]+?^"""\s*$/m.test(t);
+
+  if (!nombre) {
+    err('codex/name', `${rel(p)}: falta 'name'`);
+    continue;
+  }
+  if (!descripcion) err('codex/description', `${rel(p)}: falta 'description'`);
+  if (!instrucciones) err('codex/instructions', `${rel(p)}: falta 'developer_instructions' multilínea`);
+  if (!nombresAgentes.has(nombre))
+    err('deriva/envoltorio', `${rel(p)}: '${nombre}' no tiene perfil canónico en .claude/agents/`);
+  else envueltos['.codex/agents'].add(nombre);
+  if (!new RegExp(`\\.claude/agents/${nombre}\\.md`).test(t))
+    warn('deriva/envoltorio', `${rel(p)}: no referencia su perfil canónico; puede derivar`);
+  if (auditoresSoloLectura.has(nombre) && !/^sandbox_mode\s*=\s*"read-only"\s*$/m.test(t))
+    err('codex/sandbox', `${rel(p)}: el auditor '${nombre}' debe usar sandbox_mode = "read-only"`);
+}
+
+if (existsSync(codexDir)) {
+  const codexConfig = leer(join(ROOT, '.codex/config.toml')) || '';
+  if (!/^\[agents\]\s*$/m.test(codexConfig) || !/^enabled\s*=\s*true\s*$/m.test(codexConfig))
+    err('codex/config', `.codex/config.toml debe habilitar los agentes del proyecto`);
+}
+
 // Paridad de superficies. Importa porque `.vscode/settings.json` desactiva la lectura de
 // `.claude/agents/` para que VS Code no muestre cada agente por duplicado: a partir de ahí,
-// un agente sin envoltorio simplemente NO EXISTE en VS Code. Y en Cursor el fichero es la
-// identidad del subagente, así que sin él no se le puede delegar.
+// un agente sin envoltorio simplemente NO EXISTE en VS Code. En Cursor y Codex el fichero es
+// la identidad del subagente, así que sin él no se le puede delegar.
 for (const [dir, cuantos] of Object.entries(envueltos)) {
   if (!cuantos.size) continue; // superficie no usada en este repo: no se exige
   const faltan = [...nombresAgentes].filter((a) => !cuantos.has(a)).sort();
@@ -313,8 +344,14 @@ for (const s of specs) {
     if (STRICT) {
       if (!evidence.includes(id))
         err('tarea/evidencia', `${s}/${id}: marcada hecho pero no aparece en evidence.md`);
-      if (!hayEventos)
-        err('tarea/ejecucion', `${s}/${id}: marcada hecho y execution-log.jsonl está vacío — ninguna ejecución registrada`);
+      const ejecucionDirecta = evidence.split('\n').some(
+        (linea) => linea.includes(id) && /\bdeclared-direct\b/i.test(linea),
+      );
+      if (!hayEventos && !ejecucionDirecta)
+        err(
+          'tarea/ejecucion',
+          `${s}/${id}: marcada hecho sin evento observado ni evidencia declared-direct para la tarea`,
+        );
     }
   }
 

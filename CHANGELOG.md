@@ -8,10 +8,14 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Los 20 agentes ya son nativos en Codex por proyecto** mediante `.codex/agents/*.toml`.
+  Son adaptadores finos hacia `.claude/agents/`, por lo que no duplican la definición canónica;
+  los cuatro auditores usan sandbox de solo lectura. `sdd init` los instala y `check-sdd` falla si
+  falta alguno o deriva su esquema. Las superficies existentes de los demás IDE no cambian.
 - **Instalador para proyectos que ya existen**, en dos capas:
   - `npx github:jechamo/Estructura_inicial_claude global` — agentes y skills a nivel de usuario,
     disponibles al abrir cualquier proyecto. Nativo en Claude Code y Cursor; en VS Code el
-    instalador añade la clave que hace falta. Codex y Antigravity quedan fuera y está declarado.
+    instalador añade la clave que hace falta. Codex y Antigravity quedan fuera de esta capa global.
   - `... init` por proyecto, más `check` y `update`. Con `--dry-run` para verlo en seco.
   - **Nunca pisa un fichero tuyo**: si existe y difiere, deja el nuevo como `.sdd-nuevo` y te dice
     qué revisar. Los JSON conocidos se fusionan y tus claves ganan. `.gitignore` se amplía en un
@@ -20,7 +24,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
     actualiza solo; lo que has modificado se respeta.
   - **Los hooks no se instalan en global a propósito**: una guarda activa en todos tus
     repositorios, incluidos los que no usan SDD, es intrusiva y acaba desactivada.
-- **`scripts/test-install.mjs`**: 35 comprobaciones sobre directorios temporales reales, entre
+- **`scripts/test-install.mjs`**: 41 comprobaciones sobre directorios temporales reales, entre
   ellas que `check-sdd` y las guardas **pasan dentro del proyecto recién instalado**, que un
   `AGENTS.md` ajeno queda intacto y que ejecutarlo dos veces no genera conflictos. En CI.
 - `docs/guides/INSTALACION.md` y `package.json` con `bin: sdd`.
@@ -49,7 +53,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   pueden llamar; `.cursor/agents/` pasa de 2 a **los 20 agentes**, con `readonly: true` en
   `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` — que a nivel de
   plataforma no pueden escribir.
-- **`scripts/test-hooks.mjs`**: 31 comprobaciones de que las guardas deciden lo que documentan.
+- **`scripts/test-hooks.mjs`**: 33 comprobaciones de que las guardas deciden lo que documentan.
   En CI. Una guarda rota falla en silencio devolviendo `allow`; si estos gates son la garantía del
   proyecto, tienen que demostrarlo en cada PR.
 - **Skills de dominio `/middle`, `/front` y `/bbdd`**: el procedimiento escrito de cada

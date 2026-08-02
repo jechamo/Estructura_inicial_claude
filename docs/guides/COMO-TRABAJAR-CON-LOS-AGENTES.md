@@ -148,8 +148,9 @@ donde no debe. El aislamiento es cuestión de **herramientas y rutas**, no de fl
 3. **CI.** `check-sdd.mjs` valida el mapa; `test-hooks.mjs` prueba las guardas.
 
 Las tres en Claude Code y Cursor (probadas) · las tres también en VS Code según su documentación
-de hooks, que es *preview* y no se ha ejecutado en vivo · solo la 3 en Antigravity y Codex, donde
-el reparto es convención y el CI el único juez.
+de hooks, que es *preview* y no se ha ejecutado en vivo · en Codex los cuatro auditores usan
+sandbox de solo lectura y el CI valida la paridad, pero no hay territorio por ruta · en
+Antigravity solo queda el CI.
 
 **Y una pregunta que surge sola al ver el árbol**: no hay `skills/` ni `hooks/` bajo `.github/` ni
 `.cursor/` **a propósito**. Las skills son estándar abierto y las cuatro superficies leen

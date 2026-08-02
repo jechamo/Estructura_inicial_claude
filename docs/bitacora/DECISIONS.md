@@ -9,6 +9,30 @@
 
 ---
 
+## 2026-08-02 · Agentes Codex versionados por proyecto mediante adaptadores TOML
+
+- **Tipo**: decisión de compatibilidad
+- **Contexto**: la plantilla ya ofrecía los veinte agentes en Claude Code, VS Code/Copilot y
+  Cursor, pero Codex solo recibía `AGENTS.md`. La documentación oficial actual permite agentes
+  personales en `~/.codex/agents/` y agentes versionados por proyecto en `.codex/agents/`.
+- **Decisión**: añadir veinte TOML de proyecto y `.codex/config.toml`. Cada TOML conserva el mismo
+  nombre y criterio de uso y ordena leer `.claude/agents/<rol>.md`; esa carpeta sigue siendo la
+  única definición canónica. No se toca ningún adaptador de otro IDE. Los cuatro roles auditores
+  declaran `sandbox_mode = "read-only"`.
+- **Alternativas descartadas**:
+  - *Copiar el perfil completo al TOML*: duplicaría instrucciones y crearía deriva.
+  - *Instalar solo en `~/.codex/agents/`*: modificaría configuración personal y no viajaría al clonar.
+  - *Fijar modelo y concurrencia por agente*: no es requisito; se heredan de la sesión.
+- **Impacto**: `sdd init` distribuye la nueva superficie. `check-sdd` valida los tres campos
+  obligatorios, la referencia canónica, los auditores de solo lectura y la paridad 20/20.
+- **Limitación**: Codex no documenta lista blanca de delegación ni territorios por agente; esas
+  reglas siguen en `AGENTS.md` y el CI. Tampoco hay trazabilidad `observed` mediante hooks.
+- **Fuente**: [Subagents — documentación oficial de Codex](https://developers.openai.com/codex/multi-agent/),
+  consultada el 2026-08-02.
+- **Quién**: Codex `declared-direct`, alcance aprobado por el usuario
+
+---
+
 ## 2026-07-31 · Instalador en dos capas: global para lo inerte, proyecto para lo que obliga
 
 - **Tipo**: decisión

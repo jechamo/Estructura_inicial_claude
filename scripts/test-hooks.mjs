@@ -93,6 +93,8 @@ comprueba(
 // ─── guard-write: política del ecosistema ────────────────────────────────────
 console.log('\nguard-write · política del ecosistema');
 comprueba('tocar un agente escala al humano', decisionDe('guard-write.mjs', escribir('.claude/agents/x.md')), 'ask');
+comprueba('tocar un agente Codex escala al humano', decisionDe('guard-write.mjs', escribir('.codex/agents/x.toml')), 'ask');
+comprueba('tocar la configuración Codex escala al humano', decisionDe('guard-write.mjs', escribir('.codex/config.toml')), 'ask');
 comprueba(
   'tocar la constitución escala',
   decisionDe('guard-write.mjs', escribir('docs/architecture/constitution.md')),

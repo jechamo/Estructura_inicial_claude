@@ -10,7 +10,7 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -61,6 +61,10 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los territorios', existsSync(join(d, '.sdd/territories.json')));
   comprueba('instala las superficies de Cursor', existsSync(join(d, '.cursor/agents/backend-expert.md')));
   comprueba('instala las de VS Code', existsSync(join(d, '.github/agents/planner.agent.md')));
+  comprueba('instala la configuración de Codex', existsSync(join(d, '.codex/config.toml')));
+  comprueba('instala los agentes de Codex', existsSync(join(d, '.codex/agents/implementer.toml')));
+  comprueba('instala los 20 agentes de Codex',
+    existsSync(join(d, '.codex/agents')) && readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20);
   comprueba('crea docs/specs', existsSync(join(d, 'docs/specs')));
   comprueba('deja registro de instalación', existsSync(join(d, '.sdd/installed.json')));
 
@@ -68,6 +72,7 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('NO copia el README de la plantilla', !existsSync(join(d, 'README.md')));
   comprueba('NO copia el CHANGELOG', !existsSync(join(d, 'CHANGELOG.md')));
   comprueba('NO copia las sesiones de la plantilla', !existsSync(join(d, 'docs/bitacora/sessions/2026-07.md')));
+  comprueba('NO copia las specs de mantenimiento de la plantilla', !existsSync(join(d, 'docs/specs/001-agentes-codex')));
   comprueba('NO copia el instalador', !existsSync(join(d, 'scripts/install.mjs')));
   comprueba('la bitácora se instala vacía',
     (leer(join(d, 'docs/bitacora/DECISIONS.md')) || '').includes('Bitácora de decisiones') &&
@@ -78,6 +83,65 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('check-sdd pasa en el destino', check.status === 0, (check.stdout || '').slice(-160));
   const hooks = spawnSync(process.execPath, ['scripts/test-hooks.mjs'], { cwd: d, encoding: 'utf8' });
   comprueba('las guardas funcionan en el destino', hooks.status === 0, (hooks.stdout || '').slice(-160));
+}
+
+// ─── 1 ter · Codex registra ejecución directa sin inventar eventos de hook ───────────────────
+console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const specDir = join(d, 'docs/specs/900-directa');
+  mkdirSync(specDir, { recursive: true });
+  writeFileSync(join(specDir, 'spec.md'), `# 900 · Ejecución directa
+
+| **Estado** | aprobada |
+|---|---|
+
+| Id | Requisito | Prioridad | Esfuerzo |
+|---|---|---|---|
+| RF-01 | El sistema DEBE aceptar evidencia directa. | M | 1 |
+
+### CA-01 · Evidencia directa
+`, 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+
+### T-900-01 · Validar evidencia directa
+- **Estado**: hecho
+- **Cubre**: RF-01, CA-01
+- **Test que la define**: scripts/test-install.mjs::acepta_declared_direct
+`, 'utf8');
+  writeFileSync(join(specDir, 'evidence.md'), `# Evidencia
+
+## 1. Ejecuciones
+
+| Fecha | Agente | Verificación | Tarea | Comando | Resultado |
+|---|---|---|---|---|---|
+| 2026-08-02 | implementer | declared-direct | T-900-01 | npm test | verde |
+
+## 3. Controles NO ejecutados
+
+| Control | Motivo | Riesgo | Dueño | Paso |
+|---|---|---|---|---|
+| Hooks | Host sin hooks | Sin observed | usuario | usar declared-direct |
+`, 'utf8');
+
+  const check = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--strict', '--spec', '900'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd acepta declared-direct sin execution-log falso',
+    check.status === 0,
+    (check.stdout || '').slice(-220));
+}
+
+// ─── 1 bis · La paridad de Codex es obligatoria ─────────────────────────────────────────────
+console.log('\n1 bis · detección de deriva en la superficie Codex');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  rmSync(join(d, '.codex/agents/docs-writer.toml'), { force: true });
+
+  const check = spawnSync(process.execPath, ['scripts/check-sdd.mjs'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd detecta un agente de Codex ausente',
+    check.status === 1 && /\.codex\/agents/.test(check.stdout || ''),
+    (check.stdout || '').slice(-180));
 }
 
 // ─── 2 · No pisar lo que ya existe ───────────────────────────────────────────

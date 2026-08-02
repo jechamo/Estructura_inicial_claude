@@ -1,6 +1,6 @@
 # Compatibilidad entre IDEs y proveedores
 
-**Fecha de verificación: 2026-07-29.** Revalidar con `/sdd-refresh`.
+**Fecha de verificación: 2026-08-02.** Revalidar con `/sdd-refresh`.
 
 > **Respuesta corta a "¿funciona todo en todas partes?": no, y ninguna plantilla puede
 > conseguirlo.** Las reglas y el protocolo de handoff funcionan en todos; la ejecución
@@ -19,7 +19,7 @@ El ecosistema tiene cuatro capas con **portabilidad muy distinta**:
 |---|---|---|
 | **Reglas** | `AGENTS.md` y sus adaptadores | ✅ **Universal.** Es texto que el modelo lee |
 | **Skills** | Los 22 `SKILL.md` de `.claude/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
-| **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo en 3 hosts, por referencia en el resto |
+| **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo con adaptadores en 4 hosts, por referencia en el resto |
 | **Handoff** | El bloque `### HANDOFF` | ✅ **Universal como contrato**, ⚠️ la ejecución no |
 | **Hooks** | Las garantías deterministas | 🔴 **Lo menos portable.** Aquí están las diferencias reales |
 
@@ -47,11 +47,11 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 |---|---|---|---|---|---|---|
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
-| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | 🟡 TOML en `~/.codex/agents/` |
+| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
 | Comandos `/` | ✅ 22 skills | ✅ 15 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
-| **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ⚠️ |
+| **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
 | **Territorio por agente** | ✅ hook + `territories.json` | 🟡 mismo hook, sin probar en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ hook inferido | ❌ |
 | Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ |
 | Hooks de herramienta | ✅ 7 eventos, probados | ✅ **8 eventos, lee `.claude/settings.json`** (preview) | ❌ | ✅ `.cursor/hooks.json` | ⚠️ formato inferido | ❌ |
@@ -62,12 +62,12 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 
 ### Qué significa cada casilla incómoda
 
-**Codex — perfiles de agente 🟡.** Codex define agentes como **ficheros TOML en
-`~/.codex/agents/`**, a nivel de usuario, no de repositorio. Una plantilla no puede
-enviarlos: viven en la máquina de cada persona. Lo que **sí** funciona en Codex es
-`AGENTS.md`, que es su fichero nativo de instrucciones, y ahí está la constitución
-completa: circuito SDD, principios, TDD, seguridad y protocolo de handoff. En Codex
-tendrás las reglas y el flujo, no el picker de 20 agentes.
+**Codex — perfiles de agente ✅.** Las versiones actuales aceptan TOML personales en
+`~/.codex/agents/` **y de proyecto en `.codex/agents/`**. Esta plantilla incluye veinte
+adaptadores de proyecto; cada uno registra `name`, `description` y `developer_instructions` y
+remite a `.claude/agents/<rol>.md`, que sigue siendo la fuente canónica. Los cuatro auditores
+usan `sandbox_mode = "read-only"`. Codex carga además `AGENTS.md` de forma nativa. Fuente:
+[documentación oficial de subagentes](https://developers.openai.com/codex/multi-agent/).
 
 **Antigravity — perfiles ❌.** No hay formato de subagente equivalente. Los flujos de
 `.agents/workflows/` indican en cada paso *qué perfil adoptar* y el agente lee ese fichero
@@ -132,11 +132,11 @@ Se impone en tres capas, y cada host soporta unas:
 
 **1 · Herramientas** — la más fuerte, porque no depende de que el modelo obedezca.
 
-| Objetivo | Claude Code | VS Code | Cursor |
-|---|---|---|---|
-| Que no pueda escribir | omitir `Write`/`Edit` de `tools` | omitir `edit/editFiles` | **`readonly: true`** |
-| Que no pueda delegar | omitir `Agent` de `tools` | omitir `agent` de `tools` | omitir de `tools` |
-| Que solo pueda llamar a ciertos agentes | `Agent(tipo)` en `tools` | **`agents: [...]`** en frontmatter | `Agent(tipo)` en `tools` |
+| Objetivo | Claude Code | VS Code | Cursor | Codex |
+|---|---|---|---|---|
+| Que no pueda escribir | omitir `Write`/`Edit` de `tools` | omitir `edit/editFiles` | **`readonly: true`** | **`sandbox_mode = "read-only"`** |
+| Que no pueda delegar | omitir `Agent` de `tools` | omitir `agent` de `tools` | omitir de `tools` | instrucción, sin lista de herramientas por rol |
+| Que solo pueda llamar a ciertos agentes | `Agent(tipo)` en `tools` | **`agents: [...]`** en frontmatter | `Agent(tipo)` en `tools` | instrucción, sin lista blanca nativa documentada |
 
 En esta plantilla: solo `orchestrator`, `planner` e `implementer` delegan, cada uno con su lista
 blanca; y `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` **no tienen
@@ -153,9 +153,10 @@ de hooks —mismos eventos, mismo payload, misma decisión—, aunque ahí no se
 inexistentes y avisa de quién no está gobernado por ninguna regla. **Funciona en todas partes**,
 porque es Node y CI.
 
-> **En Antigravity y Codex el reparto es convención.** No hay herramienta que lo imponga: lo
-> sostienen `AGENTS.md`, el prompt y el CI. Si el aislamiento estricto es un requisito duro para
-> ti, trabaja en Claude Code o Cursor —donde está probado— y deja que el CI sea la red en el resto.
+> **En Codex el territorio sigue siendo convención**, aunque los cuatro auditores sí quedan en
+> solo lectura mediante el sandbox. En Antigravity todo el reparto es convención. Lo sostienen
+> `AGENTS.md`, el prompt y el CI. Si el aislamiento por ruta es un requisito duro, trabaja en
+> Claude Code o Cursor —donde está probado— y deja que el CI sea la red en el resto.
 
 ---
 
@@ -169,7 +170,7 @@ La pregunta natural al ver el árbol es *"¿no debería haber `skills/` y `hooks
 | **Skills** | `.claude/skills/` | Claude Code · VS Code · Cursor · Codex, **todos de forma nativa** | **No.** Es estándar abierto. Cursor carga `.claude/skills/` por compatibilidad y VS Code también |
 | **Hooks (scripts)** | `.claude/hooks/*.mjs` | Los ejecuta quien los invoque | **No.** Son Node puro, sin dependencias |
 | **Hooks (configuración)** | `.claude/settings.json` + `.cursor/hooks.json` | Claude Code y VS Code leen el primero; Cursor necesita el suyo porque usa otros nombres de evento | Solo donde el formato obliga |
-| **Agentes** | `.claude/agents/` (canónico) + envoltorios | Cada host quiere el suyo: el frontmatter **sí** diverge | Sí, y por eso hay envoltorios finos que referencian el canónico |
+| **Agentes** | `.claude/agents/` (canónico) + envoltorios | Cada host quiere el suyo: el frontmatter **sí** diverge | Sí, y por eso `.github/agents/`, `.cursor/agents/` y `.codex/agents/` referencian el canónico |
 | **Comandos / prompts** | `.claude/skills/` · `.github/prompts/` · `.cursor/commands/` | Cada host tiene su formato | Sí |
 
 La regla general: **se duplica solo donde el formato del host lo exige, y el duplicado es un
@@ -186,7 +187,7 @@ para que estén disponibles al abrir **cualquier** proyecto:
 | Claude Code | `~/.claude/agents/` | `~/.claude/skills/` | ✅ nativo |
 | Cursor | `~/.cursor/agents/` | lee `~/.claude/skills/` | ✅ nativo |
 | VS Code + Copilot | `~/.github/agents/` | vía `chat.agentSkillsLocations` | 🟡 el instalador añade la clave |
-| Codex | `~/.codex/agents/` en TOML | — | ❌ formato distinto |
+| Codex | `~/.codex/agents/` en TOML | — | ❌ el comando `global` no los instala; `init` sí instala los de proyecto |
 | Antigravity | — | — | ❌ solo reglas globales |
 
 **Los hooks no van en global a propósito**: una guarda activa en todos tus repositorios —incluidos
@@ -314,10 +315,17 @@ impide escribir a nivel de plataforma. Es, junto a Claude Code, donde el aislami
 `GEMINI.md` + `.agents/rules/00-core.md` (ojo al límite de ~12 000 caracteres) y los flujos
 de `.agents/workflows/`. Los perfiles se **adoptan leyéndolos**. Hooks sin verificar.
 
-### Codex — soporte de reglas
-`AGENTS.md` es su fichero nativo: tienes la constitución completa y el circuito. Los perfiles
-de agente van en TOML de usuario (`~/.codex/agents/`), fuera del repositorio. Ejecuta
-`check-sdd --strict` como gate.
+### Codex — soporte nativo de los 20 agentes
+`AGENTS.md` aporta la constitución completa y `.codex/agents/*.toml` registra los veinte roles
+del proyecto. Los TOML son adaptadores finos: antes de actuar, cada subagente lee su definición
+canónica en `.claude/agents/`. `.codex/config.toml` habilita la herramienta de subagentes sin fijar
+modelo, esfuerzo ni concurrencia, de modo que esos valores se heredan de la sesión.
+
+En la app, CLI o extensión IDE, pide explícitamente el rol —por ejemplo, *«delega en
+`security-auditor`»*— o deja que una instrucción aplicable de `AGENTS.md`/skill solicite la
+delegación. En CLI, `/agent` permite inspeccionar y cambiar entre hilos. Los auditores son de solo
+lectura; la lista blanca de delegación y los territorios continúan como reglas escritas, porque
+Codex no documenta un control nativo equivalente por agente. Ejecuta `check-sdd --strict` como gate.
 
 ### Cualquier otro host compatible con AGENTS.md
 Zed, Windsurf, Gemini CLI, Aider y demás leen `AGENTS.md`. Tendrás las reglas y el circuito.
@@ -337,7 +345,7 @@ Tres defensas:
 2. **`check-sdd.mjs` detecta la deriva**: si un envoltorio apunta a un perfil que no existe,
    falla; si no referencia su perfil canónico, avisa.
 3. **`guard-write.mjs` pide confirmación humana** al tocar `.claude/agents/`, `.github/agents/`,
-   `.cursor/`, `.agents/`, `AGENTS.md` o la constitución. Un cambio ahí afecta a todas las
+   `.cursor/`, `.codex/`, `.agents/`, `AGENTS.md` o la constitución. Un cambio ahí afecta a todas las
    sesiones futuras.
 
 Cuando cambie el formato de una plataforma: `/sdd-refresh`. Genera un baseline nuevo fechado
@@ -359,6 +367,8 @@ Honestidad explícita, para que nadie confíe de más:
 - Comportamiento de `handoffs:` en la versión concreta de VS Code que uses.
 - `SubagentStart`/`SubagentStop` fuera de Claude Code: **no existen** que yo haya verificado.
   La trazabilidad `observed` es exclusiva de Claude Code hoy.
+- La carga interactiva de estos veinte TOML en la versión concreta de Codex instalada: el esquema
+  está verificado contra la documentación oficial y por tests estáticos, no mediante el selector.
 - Que una misma skill produzca la **misma salida** en Claude Code, Codex y Copilot: el formato es
   portable por estándar, pero **no he comparado el resultado real** en cada superficie.
 

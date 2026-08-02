@@ -188,6 +188,7 @@ que lo puede arreglar. Nunca se parchea hacia adelante.
 | **Copilot CLI / nube** | `.github/agents/*.agent.md` |
 | **Cursor** | Referencia el fichero del perfil: `@.claude/agents/architect.md` |
 | **Antigravity** | Los workflows de `.agents/workflows/` indican qué perfil adoptar en cada paso |
+| **Codex** | Pide el rol por nombre; `.codex/agents/*.toml` lo registra y remite al perfil canónico |
 
 ---
 

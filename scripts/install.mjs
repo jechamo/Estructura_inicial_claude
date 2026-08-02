@@ -256,8 +256,8 @@ function instalarGlobal() {
     }
   }
 
-  console.log('\nCodex y Antigravity quedan fuera: Codex usa TOML en ~/.codex/agents/ y Antigravity');
-  console.log('solo admite reglas globales. Está declarado en docs/integrations/IDE-COMPATIBILITY.md.');
+  console.log('\nCodex y Antigravity quedan fuera de la capa global. `sdd init` sí instala los');
+  console.log('20 agentes de proyecto de Codex en .codex/agents/.');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

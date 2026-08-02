@@ -18,6 +18,7 @@ export const NUNCA = [
   'package.json',
   'package-lock.json',
   'docs/agents/MAPEO-10-AGENTES.md',
+  'docs/specs/001-agentes-codex/**',
   'docs/bitacora/sessions/**',
   '.sdd/agent-audit.jsonl',
   '.sdd/state/**',

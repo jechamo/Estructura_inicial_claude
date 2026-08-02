@@ -79,6 +79,7 @@ const politica = [
   /(^|\/)\.claude\/settings\.json$/,
   /(^|\/)\.github\/(agents|prompts|instructions)\//,
   /(^|\/)\.cursor\/(rules|agents|commands)\//,
+  /(^|\/)\.codex\/(agents\/|config\.toml$)/,
   /(^|\/)\.agents\/(rules|workflows)\//,
   /(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$/,
   /(^|\/)docs\/architecture\/constitution\.md$/,
