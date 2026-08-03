@@ -2,8 +2,8 @@
 
 20 agentes en tres niveles. Definición canónica en [`.claude/agents/`](../../.claude/agents/).
 
-De dónde viene este reparto y qué se cambió respecto a la idea original de 10 agentes:
-[`MAPEO-10-AGENTES.md`](./MAPEO-10-AGENTES.md).
+El historial de diseño que originó este reparto pertenece a la plantilla y no se instala en los
+proyectos destino; este catálogo es el contrato operativo portable.
 
 ---
 

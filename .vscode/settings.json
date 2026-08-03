@@ -38,11 +38,6 @@
     ".claude/settings.json": false
   },
 
-  // Los prompts del circuito SDD (`/sdd-specify`, `/middle`, `/front`…).
-  "chat.promptFilesLocations": {
-    ".github/prompts": true
-  },
-
   "files.associations": {
     "*.agent.md": "markdown",
     "SKILL.md": "markdown"

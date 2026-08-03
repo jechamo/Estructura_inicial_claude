@@ -18,7 +18,7 @@ El ecosistema tiene cuatro capas con **portabilidad muy distinta**:
 | Capa | Qué es | Portabilidad |
 |---|---|---|
 | **Reglas** | `AGENTS.md` y sus adaptadores | ✅ **Universal.** Es texto que el modelo lee |
-| **Skills** | Los 22 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
+| **Skills** | Los 23 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
 | **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo con adaptadores en 4 hosts, por referencia en el resto |
 | **Handoff** | El bloque `### HANDOFF` | ✅ **Universal como contrato**, ⚠️ la ejecución no |
 | **Hooks** | Las garantías deterministas | 🔴 **Lo menos portable.** Aquí están las diferencias reales |
@@ -48,7 +48,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
-| Comandos `/` | ✅ 23 skills | ✅ 15 prompts | ✅ prompts | 🟡 `.cursor/commands/` | 🟡 workflows | ❌ |
+| Comandos `/` | ✅ 23 skills | ✅ 23 skills | ✅ skills | ✅ 23 skills | 🟡 workflows | ❌ |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
@@ -172,7 +172,7 @@ La pregunta natural al ver el árbol es *"¿no debería haber `skills/` y `hooks
 | **Hooks (scripts)** | `.sdd/hooks/*.mjs` | Los ejecuta quien los invoque | **No.** Son Node puro, sin dependencias |
 | **Hooks (configuración)** | `.claude/settings.json`, `.cursor/hooks.json`, `.agents/hooks.json`, `.codex/hooks.json`, `.github/hooks/sdd.json` | Cada host carga su adaptador; todos invocan `.sdd/hooks/` | Solo donde el formato obliga |
 | **Agentes** | `.claude/agents/` (canónico) + envoltorios | Cada host quiere el suyo: el frontmatter **sí** diverge | Sí, y por eso `.github/agents/`, `.cursor/agents/` y `.codex/agents/` referencian el canónico |
-| **Comandos / prompts** | `.agents/skills/` · `.github/prompts/` · `.cursor/commands/` | Cada host tiene su formato | Sí |
+| **Comandos / skills** | `.agents/skills/` | Claude Code · VS Code/Copilot · Cursor · Codex | **No.** Una skill canónica evita entradas `/` duplicadas |
 
 La regla general: **se duplica solo donde el formato del host lo exige, y el duplicado es un
 envoltorio fino que referencia al canónico**, nunca una copia del contenido. `check-sdd` verifica
@@ -292,8 +292,12 @@ Las **skills no tienen este problema**: VS Code lee `.agents/skills/` de forma n
 mismo `SKILL.md` vale en VS Code, Claude Code, Cursor y Codex sin duplicar nada. Es la diferencia
 práctica entre el estándar abierto de skills y los formatos de agente, que sí divergen por host.
 
+Los ajustes anteriores no se aplican en **Restricted Mode**. El instalador no cambia la confianza
+del usuario: hay que ejecutar `Workspaces: Manage Workspace Trust`, confiar en el repositorio y
+después `Developer: Reload Window`. Hasta entonces el selector puede mostrar ambas ubicaciones.
+
 ### VS Code + Copilot — soporte alto
-Picker de agentes (usa `.github/agents/` y desactiva el duplicado de `.claude/agents/`), 15 prompts `/`, instrucciones
+Picker de agentes (usa `.github/agents/` y desactiva el duplicado de `.claude/agents/`), skills canónicas `/`, instrucciones
 por glob, botones de handoff **y delegación real a subagentes**: `orchestrator`, `planner` e
 `implementer` declaran la herramienta `agent` y una lista `agents:` que limita a quién pueden
 llamar. El contrato de hooks está instalado, pero hasta completar el smoke real → **apóyate en el CI**.
@@ -303,7 +307,7 @@ Usa `.github/agents/*.agent.md`. Si necesitas un especialista que solo tiene per
 créale el envoltorio con el mismo patrón (ver [`.github/agents/README.md`](../../.github/agents/README.md)).
 
 ### Cursor — soporte alto
-Reglas `.mdc` por glob, **los 20 agentes** en `.cursor/agents/`, comandos en `.cursor/commands/`
+Reglas `.mdc` por glob, **los 20 agentes** en `.cursor/agents/`, skills en `.agents/skills/`
 y **hooks funcionando** vía `.cursor/hooks.json`. Delegación automática según la `description`
 del agente —por eso importa que sean específicas— y `readonly: true` en los auditores, que
 impide escribir a nivel de plataforma. Es, junto a Claude Code, donde el aislamiento es real.

@@ -9,6 +9,24 @@
 
 ---
 
+## 2026-08-03 · Una skill canónica por comando y adaptadores solo para agentes
+
+- **Tipo**: decisión
+- **Contexto**: VS Code mostraba dos agentes por nombre en Restricted Mode y tanto VS Code como
+  Cursor mostraban dos comandos para varias skills porque convivían el estándar Agent Skills y
+  formatos históricos de prompt/command.
+- **Decisión / hecho**: mantener `.agents/skills/` como única superficie de comandos; conservar
+  adaptadores de agente por host donde aportan frontmatter nativo; retirar prompts/commands
+  homónimos y migrarlos solo si `installed.json` demuestra que siguen intactos.
+- **Alternativas descartadas**: eliminar adaptadores Claude habría roto Claude Code; confiar el
+  workspace automáticamente vulneraría la frontera de seguridad de VS Code; borrar rutas sin hash
+  podría destruir personalizaciones brownfield.
+- **Impacto**: un solo slash command por skill, 20 agentes conservados, actualización recuperable
+  y empaquetado npm explícito.
+- **Deuda aceptada**: el smoke visual depende de abrir un workspace confiable en cada host.
+- **Referencias**: spec `004-eliminar-duplicados-ide` · versión `v0.3.1`
+- **Quién**: usuario + Codex con auditorías delegadas
+
 ## 2026-08-02 · Skills canónicas portables y `skill-creator` vendorizada
 
 - **Tipo**: decisión de compatibilidad y cadena de suministro

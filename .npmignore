@@ -1,0 +1,42 @@
+# `package.json#files` es la allowlist canonica de distribucion.
+# La presencia de este fichero impide que npm use `.gitignore` como fallback.
+
+# Secretos y configuracion local
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+secrets/
+credentials/
+.claude/settings.local.json
+.claude/.cache/
+.cursor/local/
+
+# Estado efimero o propio de esta plantilla
+.sdd/state/
+.sdd/conflicts/
+.sdd/installed.json
+.sdd/agent-audit.jsonl
+.sdd/external-skills.json
+docs/specs/[0-9]*/
+docs/architecture/adr/ADR-*.md
+docs/bitacora/sessions/
+docs/quality/reports/
+docs/security/reports/
+
+# Superficies redundantes y CI exclusivo de desarrollo de la plantilla
+.github/prompts/
+.cursor/commands/
+.github/workflows/quality-gates.yml
+
+# Dependencias y salidas locales
+node_modules/
+coverage/
+dist/
+build/
+out/
+*.log

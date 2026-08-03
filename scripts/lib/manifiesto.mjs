@@ -5,7 +5,34 @@
  * reusable y qué parte debe nacer sin contexto en cada proyecto destino.
  */
 
-export const VERSION_MANIFIESTO = 2;
+export const VERSION_MANIFIESTO = 3;
+
+// Artefactos publicados por versiones anteriores que ahora duplican Agent Skills. Una
+// actualización solo los elimina cuando installed.json demuestra propiedad y el hash sigue
+// intacto; cualquier personalización se conserva y deja de considerarse gestionada.
+export const RUTAS_RETIRADAS = [
+  '.github/prompts/bbdd.prompt.md',
+  '.github/prompts/front.prompt.md',
+  '.github/prompts/middle.prompt.md',
+  '.github/prompts/onboard.prompt.md',
+  '.github/prompts/respond-incident.prompt.md',
+  '.github/prompts/sdd-clarify.prompt.md',
+  '.github/prompts/sdd-design.prompt.md',
+  '.github/prompts/sdd-implement.prompt.md',
+  '.github/prompts/sdd-init.prompt.md',
+  '.github/prompts/sdd-plan.prompt.md',
+  '.github/prompts/sdd-ship.prompt.md',
+  '.github/prompts/sdd-specify.prompt.md',
+  '.github/prompts/sdd-tasks.prompt.md',
+  '.github/prompts/sdd-verify.prompt.md',
+  '.github/prompts/security-scan.prompt.md',
+  '.cursor/commands/bbdd.md',
+  '.cursor/commands/front.md',
+  '.cursor/commands/middle.md',
+  '.cursor/commands/sdd-design.md',
+  '.cursor/commands/sdd-implement.md',
+  '.cursor/commands/sdd-specify.md',
+];
 
 export const DIRECTORIOS_VIRGENES = [
   'docs/bitacora/sessions',
@@ -46,7 +73,7 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 - Contexto que necesita:`,
   'CLAUDE.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.`,
   'GEMINI.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los workflows de Antigravity están en \`.agents/workflows/\` y los perfiles canónicos en \`.claude/agents/\`.`,
-  '.github/copilot-instructions.md': `Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y los prompts de \`.github/prompts/\`; no implementes sin spec aprobada ni test rojo previo.`,
+  '.github/copilot-instructions.md': `Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; no implementes sin spec aprobada ni test rojo previo.`,
 };
 
 export const SEMILLAS = {
@@ -123,7 +150,7 @@ Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los workflows de Antigravity es
   '.github/copilot-instructions.md': `# Instrucciones de Copilot
 
 <!-- sdd:start -->
-Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y los prompts de \`.github/prompts/\`; no implementes sin spec aprobada ni test rojo previo.
+Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; no implementes sin spec aprobada ni test rojo previo.
 <!-- sdd:end -->
 `,
   'docs/README.md': `# Documentación
@@ -281,6 +308,26 @@ updates:
 `,
 };
 
+export const BASE_GITIGNORE = [
+  '# Dependencias y entornos locales',
+  'node_modules/',
+  '.venv/',
+  'venv/',
+  '__pycache__/',
+  '*.py[cod]',
+  '',
+  '# Salidas generadas',
+  'dist/',
+  'build/',
+  'coverage/',
+  '.cache/',
+  '',
+  '# IDE y sistema operativo',
+  '.idea/',
+  '.DS_Store',
+  'Thumbs.db',
+];
+
 const EXCLUSIONES_EXACTAS = new Set([
   'README.md', 'CHANGELOG.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md',
   'docs/README.md', 'docs/product/VISION.md',
@@ -291,6 +338,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
   '.sdd/checks.json', '.sdd/installed.json', '.env.example',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
+  '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
   'LICENSE',
   'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock',

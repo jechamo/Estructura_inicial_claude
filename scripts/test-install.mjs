@@ -14,6 +14,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdi
 import { join, dirname, resolve, parse } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const ORIGEN = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALADOR = join(ORIGEN, 'scripts', 'install.mjs');
@@ -54,6 +55,7 @@ function sddDesde(origenTrabajo, ...argumentos) {
 }
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
+const hash = (contenido) => createHash('sha256').update(contenido).digest('hex').slice(0, 16);
 
 function ficherosTexto(raiz, relativa = '') {
   const actual = join(raiz, relativa);
@@ -93,6 +95,19 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los hooks de Copilot', existsSync(join(d, '.github/hooks/sdd.json')));
   comprueba('instala los 20 agentes de Codex',
     existsSync(join(d, '.codex/agents')) && readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20);
+  comprueba('no instala prompts que duplican las skills de VS Code',
+    !existsSync(join(d, '.github/prompts/sdd-init.prompt.md')));
+  comprueba('no instala commands que duplican las skills de Cursor',
+    !existsSync(join(d, '.cursor/commands/sdd-specify.md')));
+  const settingsVsCode = leer(join(d, '.vscode/settings.json')) || '';
+  comprueba('VS Code selecciona una sola superficie de agentes y skills',
+    /"\.github\/agents"\s*:\s*true/.test(settingsVsCode) &&
+    /"\.claude\/agents"\s*:\s*false/.test(settingsVsCode) &&
+    /"\.agents\/skills"\s*:\s*true/.test(settingsVsCode) &&
+    /"\.claude\/skills"\s*:\s*false/.test(settingsVsCode) &&
+    !/chat\.promptFilesLocations/.test(settingsVsCode));
+  comprueba('la salida pide confiar en el workspace y recargar VS Code',
+    /trust|confiar|conf[ií]a/i.test(r.stdout || '') && /reload|recargar/i.test(r.stdout || '') && /VS Code/i.test(r.stdout || ''));
   comprueba('crea docs/specs', existsSync(join(d, 'docs/specs')));
   comprueba('deja registro de instalación', existsSync(join(d, '.sdd/installed.json')));
   comprueba('instala el comando determinista de proyecto', existsSync(join(d, 'scripts/sdd-project.mjs')));
@@ -242,6 +257,11 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 - **Estado**: hecho
 - **Cubre**: RF-01, CA-01
 - **Test que la define**: scripts/test-install.mjs::acepta_declared_direct
+
+### T-900-02 · Validar delegación no observable
+- **Estado**: hecho
+- **Cubre**: RF-01, CA-01
+- **Test que la define**: scripts/test-install.mjs::acepta_unverified_con_motivo
 `, 'utf8');
   writeFileSync(join(specDir, 'evidence.md'), `# Evidencia
 
@@ -250,6 +270,7 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 | Fecha | Agente | Verificación | Tarea | Comando | Resultado |
 |---|---|---|---|---|---|
 | 2026-08-02 | implementer | declared-direct | T-900-01 | npm test | verde |
+| 2026-08-03 | implementer | unverified | T-900-02 | delegación Codex | completada; motivo: el host no expone hooks de subagente al repo |
 
 ## 3. Controles NO ejecutados
 
@@ -414,6 +435,53 @@ console.log('\n4 · update con un fichero modificado a mano');
   comprueba('update preserva un fichero gestionado modificado', leer(hook) === HOOK_LOCAL);
   comprueba('update deja la propuesta gestionada bajo conflicts',
     segundo.status === 0 && existsSync(join(d, `.sdd/conflicts/${VERSION}/.sdd/hooks/guard-bash.mjs`)));
+
+  // Simula dos artefactos gestionados por v0.3.0 que v0.3.1 retira. El primero
+  // sigue intacto y se puede podar; el segundo fue personalizado y se conserva.
+  const retirado = join(d, '.github/prompts/sdd-init.prompt.md');
+  const modificado = join(d, '.cursor/commands/sdd-specify.md');
+  mkdirSync(dirname(retirado), { recursive: true });
+  mkdirSync(dirname(modificado), { recursive: true });
+  const CONTENIDO_ANTERIOR = '# gestionado por v0.3.0\n';
+  writeFileSync(retirado, CONTENIDO_ANTERIOR, 'utf8');
+  writeFileSync(modificado, CONTENIDO_ANTERIOR, 'utf8');
+  const registroRuta = join(d, '.sdd/installed.json');
+  const registro = JSON.parse(leer(registroRuta));
+  registro.files['.github/prompts/sdd-init.prompt.md'] = { hash: hash(CONTENIDO_ANTERIOR), policy: 'managed' };
+  registro.files['.cursor/commands/sdd-specify.md'] = { hash: hash(CONTENIDO_ANTERIOR), policy: 'managed' };
+  writeFileSync(registroRuta, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
+  writeFileSync(modificado, `${CONTENIDO_ANTERIOR}# ajuste local\n`, 'utf8');
+
+  const migracion = sdd(d, 'update');
+  comprueba('update poda un comando retirado si seguía intacto', !existsSync(retirado));
+  comprueba('update conserva un comando retirado modificado', existsSync(modificado));
+  comprueba('update avisa del retirado modificado',
+    /retirad|obsolet|preserv/i.test(migracion.stdout || '') && /sdd-specify\.md/.test(migracion.stdout || ''));
+  const registroMigrado = JSON.parse(leer(registroRuta));
+  comprueba('update quita los artefactos retirados del registro de propiedad',
+    !registroMigrado.files['.github/prompts/sdd-init.prompt.md'] &&
+    !registroMigrado.files['.cursor/commands/sdd-specify.md']);
+
+  const repetida = sdd(d, 'update');
+  comprueba('una segunda actualización mantiene la migración idempotente',
+    repetida.status === 0 && !existsSync(retirado) && existsSync(modificado) &&
+    !/sdd-specify\.md.*(?:eliminado|preservado)/i.test(repetida.stdout || ''));
+}
+
+// ─── 4 bis · contrato explícito de empaquetado ───────────────────────────────
+console.log('\n4 bis · allowlist de distribución npm');
+{
+  const paquete = JSON.parse(leer(join(ORIGEN, 'package.json')) || '{}');
+  const allowlist = paquete.files || [];
+  comprueba('package.json declara una allowlist no vacía', Array.isArray(allowlist) && allowlist.length > 0);
+  comprueba('la allowlist contiene el runtime y los defaults portables',
+    allowlist.some((ruta) => /scripts\/install\.mjs/.test(ruta)) &&
+    allowlist.some((ruta) => /scripts\/lib\/manifiesto\.mjs/.test(ruta)) &&
+    allowlist.includes('.gitignore'));
+  comprueba('existe .npmignore defensivo', existsSync(join(ORIGEN, '.npmignore')));
+  const serializada = JSON.stringify(allowlist);
+  comprueba('la allowlist no publica globs locales ni historia activa',
+    !/\.claude\/\*\*|\.sdd\/\*\*|docs\/specs\/\*\*/.test(serializada));
 }
 
 // ─── 5 · check y dry-run ─────────────────────────────────────────────────────

@@ -280,9 +280,9 @@ Una sola fuente de verdad — [`AGENTS.md`](AGENTS.md) — y cada herramienta la
 | Herramienta | Lee | Agentes | Comandos |
 |---|---|---|---|
 | **Claude Code** | `CLAUDE.md` → `AGENTS.md` | `.claude/agents/*.md` | `.agents/skills/*/SKILL.md` (`/sdd-...`) |
-| **VS Code (Copilot)** | `.github/copilot-instructions.md` + `.github/instructions/*` | `.claude/agents/` **y** `.github/agents/*.agent.md` | `.github/prompts/*.prompt.md` |
-| **GitHub Copilot** (CLI / nube) | `AGENTS.md` + `.github/copilot-instructions.md` | `.github/agents/*.agent.md` | `.github/prompts/` |
-| **Cursor** | `.cursor/rules/*.mdc` | Referencia a `.claude/agents/` | Reglas por glob |
+| **VS Code (Copilot)** | `.github/copilot-instructions.md` + `.github/instructions/*` | `.github/agents/*.agent.md` seleccionado por workspace | `.agents/skills/*/SKILL.md` |
+| **GitHub Copilot** (CLI / nube) | `AGENTS.md` + `.github/copilot-instructions.md` | `.github/agents/*.agent.md` | `.agents/skills/*/SKILL.md` |
+| **Cursor** | `.cursor/rules/*.mdc` | `.cursor/agents/*.md` | `.agents/skills/*/SKILL.md` |
 | **Antigravity** | `AGENTS.md` + `.agents/rules/*.md` | Perfiles de `.claude/agents/` | `.agents/workflows/*.md` |
 | **Codex** | `AGENTS.md` | `.codex/agents/*.toml` → `.claude/agents/` | Skills de `.agents/skills/` y delegación por prompt |
 
@@ -291,6 +291,8 @@ Una sola fuente de verdad — [`AGENTS.md`](AGENTS.md) — y cada herramienta la
 > ambos. En `.github/agents/` solo hay envoltorios finos que apuntan al perfil real y añaden
 > `handoffs`, que es una función propia de VS Code y genera botones de traspaso en el chat.
 > Detalle en [`.github/agents/README.md`](.github/agents/README.md).
+> Esa selección se aplica solo en un workspace confiable: tras instalar, usa
+> `Workspaces: Manage Workspace Trust` y después `Developer: Reload Window`.
 
 ---
 
@@ -373,12 +375,11 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   ├── copilot-instructions.md   Instrucciones de repo
 │   ├── instructions/             Reglas por glob (tests, dominio, seguridad)
 │   ├── agents/                   Envoltorios con handoffs para VS Code y Copilot
-│   ├── prompts/                  15 prompts: el circuito SDD y las skills de dominio
 │   ├── workflows/                CI con los gates de calidad
 │   └── dependabot.yml            Actualización de dependencias y actions
 ├── .cursor/
 │   ├── rules/                    Reglas .mdc con activación por glob
-│   ├── agents/ · commands/       Agentes y comandos de Cursor
+│   ├── agents/                   Adaptadores de agentes de Cursor
 │   └── hooks.json                Guardas funcionando también en Cursor
 ├── .codex/
 │   ├── config.toml               Habilita los subagentes del proyecto

@@ -7,7 +7,7 @@ contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y hand
 ## Resumen operativo
 
 1. **Sin spec no hay código.** Si la petición no tiene spec en `docs/specs/`, propón crearla
-   antes de escribir nada (agente `spec-analyst`, prompt `/sdd-specify`).
+   antes de escribir nada (agente `spec-analyst`, skill `/sdd-specify`).
 2. **TDD estricto.** Test que falla primero, luego el código mínimo, luego refactor.
 3. **Arquitectura vigente**: la que diga `docs/architecture/constitution.md`. No la cambies
    sin un ADR nuevo en `docs/architecture/adr/`.
@@ -23,14 +23,14 @@ Los agentes viven en `.github/agents/*.agent.md` (Copilot y VS Code) y en `.clau
 
 Empieza por **`orchestrator`** si no sabes qué agente usar.
 
-## Prompts reutilizables
+## Skills reutilizables
 
-En `.github/prompts/*.prompt.md`. Invócalos con `/nombre` en el chat.
+Las skills canónicas viven en `.agents/skills/*/SKILL.md`. Invócalas con `/nombre` en el chat.
 El circuito SDD son: `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-design`, `/sdd-plan`,
 `/sdd-tasks`, `/sdd-implement`, `/sdd-verify`, `/sdd-ship`.
 `/sdd-design` se salta si la funcionalidad no tiene interfaz.
 
-Para implementar, entra por el prompt del terreno de la tarea: **`/middle`** (dominio, casos de
+Para implementar, entra por la skill del terreno de la tarea: **`/middle`** (dominio, casos de
 uso, integraciones), **`/front`** (interfaz) o **`/bbdd`** (esquema, migraciones, consultas). Cada
 uno lleva su puerta de entrada, su ciclo TDD y su lista de comprobación.
 

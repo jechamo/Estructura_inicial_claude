@@ -9,6 +9,22 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 Sin cambios todavía.
 
+## [0.3.1] — 2026-08-03
+
+### Fixed
+- **Una sola entrada por agente y skill en VS Code y Cursor.** Se retiraron 15 prompts de Copilot
+  y 6 commands de Cursor que repetían las Agent Skills canónicas. VS Code conserva únicamente
+  `.github/agents` para perfiles y `.agents/skills` para comandos en workspaces confiables.
+- **Actualización segura desde v0.3.0.** `sdd update` elimina superficies retiradas solo cuando
+  `installed.json` demuestra que siguen intactas; cualquier personalización se conserva, se avisa
+  y deja de estar gestionada.
+- **Empaquetado npm explícito.** Una allowlist granular y `.npmignore` evitan el fallback de
+  `.gitignore`, el estado local y la historia de mantenimiento innecesaria.
+
+### Changed
+- La salida del instalador recuerda confiar en el workspace y recargar VS Code para aplicar la
+  selección única de ubicaciones.
+
 ## [0.3.0] — 2026-08-02
 
 ### Added

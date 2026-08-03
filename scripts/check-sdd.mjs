@@ -215,6 +215,29 @@ for (const skill of skillsCanonicas.filter((nombre) => skillsClaude.includes(nom
     err('paridad/skills', `.claude/skills/${skill}/SKILL.md no referencia la fuente canónica portable`);
 }
 
+// Una skill ya aparece como comando `/` en los hosts compatibles. Mantener además un
+// prompt/command homónimo produce dos entradas visibles con contratos que pueden divergir.
+function nombresDeFicheros(dir, sufijo) {
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((entrada) => entrada.isFile() && entrada.name.endsWith(sufijo))
+      .map((entrada) => entrada.name.slice(0, -sufijo.length))
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+const comandosPorHost = [
+  ['.github/prompts', nombresDeFicheros(join(ROOT, '.github/prompts'), '.prompt.md')],
+  ['.cursor/commands', nombresDeFicheros(join(ROOT, '.cursor/commands'), '.md')],
+];
+for (const [superficie, nombres] of comandosPorHost) {
+  const duplicados = nombres.filter((nombre) => skillsCanonicas.includes(nombre));
+  if (duplicados.length)
+    err('superficie/comando-duplicado', `${superficie} duplica skills canónicas: ${duplicados.join(', ')}`);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 ter · Mapa de territorios: quién puede escribir dónde
 //
@@ -402,10 +425,14 @@ for (const s of specs) {
       const ejecucionDirecta = evidence.split('\n').some(
         (linea) => linea.includes(id) && /\bdeclared-direct\b/i.test(linea),
       );
-      if (!hayEventos && !ejecucionDirecta)
+      const ejecucionNoVerificada = evidence.split('\n').some(
+        (linea) => linea.includes(id) && /\bunverified\b/i.test(linea) &&
+          /motivo|no observad|sin hooks?|no expone|limitaci[oó]n|porque/i.test(linea),
+      );
+      if (!hayEventos && !ejecucionDirecta && !ejecucionNoVerificada)
         err(
           'tarea/ejecucion',
-          `${s}/${id}: marcada hecho sin evento observado ni evidencia declared-direct para la tarea`,
+          `${s}/${id}: marcada hecho sin evento observado, declared-direct ni unverified con motivo para la tarea`,
         );
     }
   }

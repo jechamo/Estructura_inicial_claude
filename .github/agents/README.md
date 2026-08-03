@@ -47,6 +47,10 @@ Por eso `scripts/check-sdd.mjs` falla si falta alguno.
 Su procedimiento de trabajo vive en las skills, que **sí son portables sin duplicar**:
 `/middle`, `/front` y `/bbdd` valen igual aquí que en Claude Code, Cursor o Codex.
 
+Las skills canónicas están en `.agents/skills/*/SKILL.md` y aparecen directamente como
+comandos `/` en VS Code y Copilot. No se mantienen prompts paralelos con el mismo nombre,
+porque ambas entradas aparecerían duplicadas en el selector.
+
 ## Handoffs
 
 El campo `handoffs` del frontmatter genera botones en el chat de VS Code para pasar el
@@ -62,5 +66,5 @@ Es la implementación de VS Code del protocolo de handoff descrito en
 |---|---|
 | `.github/copilot-instructions.md` | Instrucciones de repo, siempre activas |
 | `.github/instructions/*.instructions.md` | Instrucciones por glob (`applyTo`) |
-| `.github/prompts/*.prompt.md` | Prompts reutilizables: el circuito SDD como comandos `/` |
+| `.agents/skills/*/SKILL.md` | Skills portables: el circuito SDD como comandos `/` |
 | `.github/workflows/` | CI con los gates de calidad |

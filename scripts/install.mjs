@@ -8,7 +8,7 @@
  *   sdd global [--dry-run]
  */
 import {
-  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync,
+  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync,
 } from 'node:fs';
 import { join, dirname, relative, resolve, sep, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,8 @@ import { homedir } from 'node:os';
 import { createHash } from 'node:crypto';
 import {
   VERSION_MANIFIESTO, DIRECTORIOS_VIRGENES, JSON_FUSIONABLES,
-  BLOQUES_GESTIONADOS, SEMILLAS, APENDICE_GITIGNORE, debeCopiar,
+  BLOQUES_GESTIONADOS, SEMILLAS, BASE_GITIGNORE, APENDICE_GITIGNORE,
+  RUTAS_RETIRADAS, debeCopiar,
 } from './lib/manifiesto.mjs';
 
 const ORIGEN = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -70,6 +71,7 @@ const escritos = [];
 const fusionados = [];
 const omitidos = [];
 const conflictos = [];
+const retirados = [];
 
 function listar(dir, base = dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -186,7 +188,7 @@ function fusionarGitignore(registroNuevo) {
     (linea) => !(actual || '').split(/\r?\n/).some((x) => x.trim() === linea),
   );
   if (actual === null) {
-    const nuevo = `${APENDICE_GITIGNORE.inicio}\n${APENDICE_GITIGNORE.lineas.join('\n')}\n${APENDICE_GITIGNORE.fin}\n`;
+    const nuevo = `${BASE_GITIGNORE.join('\n')}\n\n${APENDICE_GITIGNORE.inicio}\n${APENDICE_GITIGNORE.lineas.join('\n')}\n${APENDICE_GITIGNORE.fin}\n`;
     escribir(ruta, nuevo);
     registroNuevo[ruta] = { hash: hash(nuevo), policy: 'append-block' };
   } else if (faltan.length) {
@@ -195,6 +197,28 @@ function fusionarGitignore(registroNuevo) {
     fusionados.push(`${ruta} (+${faltan.length})`);
     registroNuevo[ruta] = { hash: hash(nuevo), policy: 'append-block' };
   } else omitidos.push(ruta);
+}
+
+function migrarRutasRetiradas(registroNuevo, previos) {
+  if (opciones.comando !== 'update') return;
+  for (const ruta of RUTAS_RETIRADAS) {
+    const previo = previos[ruta];
+    if (!previo) continue;
+    const absoluta = join(DESTINO, ruta);
+    const actual = leer(absoluta);
+    if (actual === null) {
+      delete registroNuevo[ruta];
+      continue;
+    }
+    if (hash(actual) === previo.hash) {
+      retirados.push(`${ruta} (eliminado: gestionado e intacto)`);
+      if (!opciones.dry) rmSync(absoluta, { force: true });
+    } else {
+      retirados.push(`${ruta} (preservado: contiene cambios locales)`);
+      omitidos.push(ruta);
+    }
+    delete registroNuevo[ruta];
+  }
 }
 
 function cargarRegistro() {
@@ -333,6 +357,7 @@ function instalarProyecto() {
 
   fusionarSemillas(registroNuevo);
   fusionarGitignore(registroNuevo);
+  migrarRutasRetiradas(registroNuevo, previos);
 
   const rutas = listar(ORIGEN).filter((ruta) => debeCopiar(ruta, { conBaseline: opciones.conBaseline }));
   for (const ruta of rutas) {
@@ -413,8 +438,14 @@ function instalarGlobal() {
       : [join(homedir(), '.config/Code/User/settings.json'), join(homedir(), '.config/Code - OSS/User/settings.json')];
   const settings = candidatasVsCode.find(existsSync);
   const ubicaciones = {
-    'chat.agentSkillsLocations': { [norm(join(homedir(), '.agents/skills'))]: true },
-    'chat.agentFilesLocations': { [norm(join(homedir(), '.github/agents'))]: true },
+    'chat.agentSkillsLocations': {
+      [norm(join(homedir(), '.agents/skills'))]: true,
+      [norm(join(homedir(), '.claude/skills'))]: false,
+    },
+    'chat.agentFilesLocations': {
+      [norm(join(homedir(), '.github/agents'))]: true,
+      [norm(join(homedir(), '.claude/agents'))]: false,
+    },
   };
   if (!settings) {
     console.log(`  ⚠ VS Code: añade manualmente ${JSON.stringify(ubicaciones)}`);
@@ -438,8 +469,15 @@ function informar(modo) {
     console.log('\nConflictos conservados fuera de los ficheros del proyecto:');
     for (const conflicto of conflictos) console.log(`  ! ${conflicto}`);
   }
+  if (retirados.length) {
+    console.log('\nArtefactos retirados de versiones anteriores:');
+    for (const ruta of retirados) console.log(`  - ${ruta}`);
+  }
   if (opciones.dry) console.log('\nSimulación: no se ha creado ni modificado ningún fichero.');
-  else console.log('\nSiguiente paso: /sdd-init para greenfield o /onboard para brownfield.');
+  else {
+    console.log('\nVS Code: confía en el workspace y ejecuta `Developer: Reload Window` para aplicar una sola superficie de agentes y skills.');
+    console.log('Siguiente paso: /sdd-init para greenfield o /onboard para brownfield.');
+  }
 }
 
 try {
