@@ -10,13 +10,14 @@
 
 ## Trazabilidad
 
-| RF | CA | Tareas |
-|---|---|---|
-| RF-01 | CA-01 | T-NNN-01 |
+| OBJ | PRD-RF | UC | RF | CA | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | T-NNN-01 | `tests/...` | `evidence.md#T-NNN-01` |
 
 - [ ] Todo RF tiene al menos una tarea
 - [ ] Todo CA tiene un test en alguna tarea
 - [ ] Ninguna tarea sin RF ni justificación transversal
+- [ ] Ningún OBJ, PRD-RF o UC referenciado es huérfano
 
 ---
 
@@ -27,23 +28,29 @@
 
 ### T-NNN-01 · <título imperativo>
 - **Estado**: pendiente
+- **Terreno**: `<middle / front / bbdd / contratos / test / docs / tooling>`
+- **Skill**: `</middle / /front / /bbdd / /tdd / otra aplicable>`
 - **Capa**: domain
-- **Cubre**: RF-01, CA-01
+- **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
 - **Test que la define**: `tests/domain/<...>.test.ts::debe_<comportamiento>_cuando_<condición>`
 - **Depende de**: ninguna
 - **Ficheros previstos**: `src/domain/<...>`
 - **Definición de hecho**: <condición observable>
+- **Evidencia prevista**: `evidence.md#T-NNN-01`
 - **Estimación**: S
 - **Paralelizable**: no
 
 ### T-NNN-02 · <título>
 - **Estado**: pendiente
+- **Terreno**: `<...>`
+- **Skill**: `<...>`
 - **Capa**: application
-- **Cubre**: RF-01
+- **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01
 - **Test que la define**: `…`
 - **Depende de**: T-NNN-01
 - **Ficheros previstos**: `…`
 - **Definición de hecho**: <…>
+- **Evidencia prevista**: `evidence.md#T-NNN-02`
 - **Estimación**: M
 - **Paralelizable**: `[P]`
 

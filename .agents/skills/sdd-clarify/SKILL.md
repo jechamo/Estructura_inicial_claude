@@ -14,6 +14,11 @@ Resolverla aquí cuesta una pregunta; en implementación cuesta una semana.
 
 Localiza todos los `[NEEDS CLARIFICATION]` de `docs/specs/NNN-slug/spec.md`.
 
+Relee también `docs/product/SOURCES.md`, `docs/product/FEATURE-MAP.md` y
+`docs/design/INTAKE-REVIEW.md` si existe. Incluye las `DISC-*` abiertas que afecten al corte
+vertical o a la cadena `OBJ → PRD-RF → UC → RF → CA`; una discrepancia de producto/diseño no
+desaparece porque la spec no tenga marcador.
+
 Además, busca ambigüedades **no marcadas** en estas categorías, que casi siempre faltan:
 
 - Permisos: ¿quién puede hacerlo? ¿ve datos de otros?
@@ -39,8 +44,10 @@ Además, busca ambigüedades **no marcadas** en estas categorías, que casi siem
    👉 Recomendación: <a/b/c> porque <motivo>
 ```
 
-Prioriza las que más cambian el alcance. Si el usuario dice "lo que veas tú", aplica tu
-recomendación y **regístrala como decisión**, no como pregunta pendiente.
+Prioriza las que más cambian el alcance. La confirmación humana es obligatoria antes de cerrar una
+respuesta que cambie requisitos, cobertura, discrepancias o alcance. Si el usuario dice
+explícitamente "lo que veas tú", aplica la recomendación, registra esa delegación como decisión y
+su alcance; una recomendación del agente por sí sola nunca equivale a aprobación.
 
 ## Paso 3 — Registrar
 
@@ -54,6 +61,8 @@ En `docs/specs/NNN-slug/clarifications.md`:
 - **Respuesta**: <la del usuario>
 - Impacto en la spec: <qué RF/CA cambia>
 - Decidido por: usuario | agente (por defecto aceptado)
+- Evidencia de confirmación: <respuesta o delegación explícita del usuario>
+- Trazabilidad afectada: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-*>
 ```
 
 ## Paso 4 — Actualizar la spec
@@ -62,13 +71,17 @@ En `docs/specs/NNN-slug/clarifications.md`:
 - Añade los `CA` nuevos que salgan de la respuesta.
 - Si la respuesta amplía el alcance, dilo explícitamente y confirma antes de incorporarla.
 - Si la respuesta cambia el "fuera de alcance", actualízalo.
+- Si cambia el baseline de producto o el corte vertical, **no** edites esos artefactos desde esta
+  fase: vuelve a `/sdd-intake`, resuelve allí la discrepancia y repite el gate humano de producto.
 
 ## Puerta de salida
 
-**La spec no sale de esta fase con marcadores pendientes.** Si quedan, o se responden,
-o se mueven a "fuera de alcance" de esta iteración con acuerdo explícito.
+**La spec no sale de esta fase con marcadores pendientes, `DISC-*` materiales abiertas ni cambios
+sin confirmación humana.** Si quedan, o se responden, o se mueven a "fuera de alcance" de esta
+iteración con acuerdo explícito.
 
-Cambia el estado de la spec a `aprobada`.
+Cambia el estado de la spec a `aprobada` solo después de registrar quién confirmó, cuándo y qué
+alcance aprobó. Un especialista no puede autoaprobarla.
 
 ## Cierre
 
@@ -78,6 +91,9 @@ Cambia el estado de la spec a `aprobada`.
 - Fase completada: clarify
 - Rondas: <n> · Preguntas resueltas: <n>
 - Cambios de alcance: <lista o "ninguno">
+- Cobertura confirmada: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-*>
+- Confirmación humana: <actor · fecha · alcance>
+- Discrepancias abiertas: 0
 - Marcadores pendientes: 0
 - Estado de la spec: aprobada
 - Siguiente agente sugerido: planner — comando: /sdd-plan

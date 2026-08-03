@@ -7,6 +7,18 @@ Reglas del proyecto: @AGENTS.md · Arquitectura: @docs/architecture/constitution
 
 ---
 
+## 0. Intake cuando la entrada es global
+
+Si el usuario aporta un PRD global, una ruta/carpeta/URL de requisitos o quiere arrancar desde
+Figma, Stitch, un boceto o una descripción visual, vuelve al `orchestrator` y ejecuta
+`/sdd-intake` según @.agents/skills/sdd-intake/SKILL.md antes de especificar. El diseño es
+opcional. Tras aprobar el baseline, crea una spec vertical del `FEATURE-MAP.md`, no una spec
+gigante.
+
+Si el proyecto brownfield está `legacy-pending` y la petición es una funcionalidad concreta,
+avisa pero no bloquees ni reescribas producto existente. Si el host no delega, indica el perfil y
+comando exactos y reanuda desde `docs/product/` y `docs/design/INTAKE-REVIEW.md`.
+
 ## 1. Especificar
 
 Adopta el perfil de @.claude/agents/spec-analyst.md.
@@ -56,6 +68,8 @@ tema sea de su terreno.
 Si el plan viola la constitución → para y adopta el perfil de @.claude/agents/architect.md
 para escribir el ADR correspondiente.
 
+Presenta el plan técnico y espera aprobación humana antes de trocear tareas.
+
 ## 5. Trocear
 
 Mismo perfil. `tasks.md` con tareas atómicas, **separadas por middle / front / BBDD**, ordenadas
@@ -101,4 +115,6 @@ registra en `docs/bitacora/DECISIONS.md` y escribe el plan de reversión.
 
 ---
 
-Al terminar cada paso, cierra con el bloque `### HANDOFF` de AGENTS.md §10.
+Al terminar cada paso, cierra con el bloque `### HANDOFF` ampliado de AGENTS.md. Respeta los seis
+gates humanos de `docs/sdd/OPERATING-MODEL.md`: producto, arquitectura greenfield, spec, diseño,
+plan y entrega.

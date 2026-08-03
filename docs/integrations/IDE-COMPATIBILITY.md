@@ -18,7 +18,7 @@ El ecosistema tiene cuatro capas con **portabilidad muy distinta**:
 | Capa | Qué es | Portabilidad |
 |---|---|---|
 | **Reglas** | `AGENTS.md` y sus adaptadores | ✅ **Universal.** Es texto que el modelo lee |
-| **Skills** | Los 23 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
+| **Skills** | Los 24 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
 | **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo con adaptadores en 4 hosts, por referencia en el resto |
 | **Handoff** | El bloque `### HANDOFF` | ✅ **Universal como contrato**, ⚠️ la ejecución no |
 | **Hooks** | Las garantías deterministas | 🔴 **Lo menos portable.** Aquí están las diferencias reales |
@@ -48,7 +48,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
-| Comandos `/` | ✅ 23 skills | ✅ 23 skills | ✅ skills | ✅ 23 skills | 🟡 workflows | ❌ |
+| Comandos `/` | ✅ 24 skills | ✅ 24 skills | ✅ skills | ✅ 24 skills | 🟡 workflows | 🟡 skills por nombre/prompt |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
@@ -91,8 +91,9 @@ El protocolo de handoff es un **contrato de trabajo escrito**, y por eso es univ
 
 ```
 ### HANDOFF
-- Agente origen · Fase completada · Artefactos · Decisiones
-- Bloqueos / supuestos · Siguiente agente sugerido · Contexto que necesita
+- Agente origen · Fase completada · Fuentes consultadas · Artefactos
+- Requisitos/casos cubiertos · Discrepancias · Decisiones · Supuestos · Bloqueos
+- Siguiente agente sugerido · Comando/contexto durable
 ```
 
 Cualquier modelo en cualquier IDE puede producirlo y consumirlo. No requiere API.
@@ -104,6 +105,11 @@ Cualquier modelo en cualquier IDE puede producirlo y consumirlo. No requiere API
 | El modelo invoca la herramienta de subagente | Claude Code, VS Code, Cursor, Codex | Que se creó un contexto nuevo |
 | Botón de handoff en el chat | VS Code | Que **cambió el agente activo** |
 | Traspaso por prompt | Antigravity, cualquiera | Nada automático: lo continúa el usuario |
+
+Cuando el host no delega, el handoff debe indicar el perfil y comando exactos y la siguiente fase
+relee los artefactos del repositorio. En intake son `docs/product/*.md` y, si existe,
+`docs/design/INTAKE-REVIEW.md`; nunca se confía en la memoria del chat. Así el flujo PRD/diseño
+opcional conserva continuidad aunque cambie de agente o de IDE.
 
 > **Un botón de handoff cambia de agente. No prueba que ese agente ejecutara nada.**
 > Y la narración del chat —*"ahora el `backend-expert` implementa el caso de uso…"*—
@@ -241,7 +247,16 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 /sdd-start
 ```
-Los 20 agentes con `@nombre`, 23 skills, 7 hooks y trazabilidad `observed`.
+Los 20 agentes con `@nombre`, 24 skills, 7 hooks y trazabilidad `observed`.
+
+### Intake sin superficies duplicadas
+
+`/sdd-intake` vive solo en `.agents/skills/sdd-intake/SKILL.md`, con el adaptador requerido en
+`.claude/skills/`. No se crea `.github/prompts/sdd-intake.prompt.md` ni
+`.cursor/commands/sdd-intake.md`: VS Code y Cursor ya descubren la skill canónica y una segunda
+superficie mostraría dos comandos. Tampoco se añade un agente ni se activa MCP; se reutilizan
+`orchestrator`, `spec-analyst` y `ux-designer`, y cualquier Figma/Stitch inaccesible se trata como
+fuente pendiente o diseño ausente solo con permiso del usuario.
 
 ### VS Code sí tiene hooks, y con el mismo protocolo
 

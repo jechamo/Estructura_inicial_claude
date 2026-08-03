@@ -7,6 +7,8 @@
 | **Autor** | |
 | **Fecha** | YYYY-MM-DD |
 | **Diseño de referencia** | <enlace Figma/Stitch con el nodo exacto, o "ninguno"> |
+| **Fuentes de intake** | `<SRC-... / ninguna>` |
+| **Discrepancias relacionadas** | `<DISC-... / ninguna>` |
 
 > ⚠️ Este documento describe **cómo se ve y cómo se recorre**. Sin decisiones técnicas: ni
 > framework, ni librería de componentes, ni estructura de carpetas. Eso va en `plan.md`.
@@ -148,9 +150,9 @@ Qué se degrada o se oculta en pantalla estrecha, y por qué **eso** y no otra c
 
 ## 8. Trazabilidad
 
-| CA de la spec | Pantalla / paso que lo cubre |
-|---|---|
-| CA-01 | |
+| OBJ | PRD-RF | UC | RF | CA | Pantalla / paso que lo cubre |
+|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | |
 
 > Cada `CA` necesita recorrido; cada pantalla, un `CA` que la justifique. Una pantalla que no
 > responde a ningún criterio es alcance que nadie pidió.
@@ -160,3 +162,16 @@ Qué se degrada o se oculta en pantalla estrecha, y por qué **eso** y no otra c
 - `[NEEDS CLARIFICATION: <pregunta>]`
 
 > Con marcadores aquí, `/sdd-plan` no arranca.
+
+## 10. Gate humano de diseño
+
+| Campo | Valor |
+|---|---|
+| **Estado** | `pending` \| `approved` \| `rejected` \| `skipped-no-ui` |
+| **Persona** | `<quién aprueba u omite>` |
+| **Fecha** | `<YYYY-MM-DD>` |
+| **Alcance** | `<pantallas, flujos y discrepancias cubiertas>` |
+| **Condiciones** | `<ninguna / lista>` |
+
+> `/sdd-plan` solo continúa con `approved` o con `skipped-no-ui` justificado. Una fuente de diseño
+> inaccesible queda en `SOURCES.md`; no se interpreta como aprobación ni como ausencia implícita.

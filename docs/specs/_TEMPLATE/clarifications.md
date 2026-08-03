@@ -10,6 +10,10 @@ Registro de las ambigüedades resueltas con el usuario. Cada respuesta actualiza
 
 **Marcador origen**: `spec.md` §<sección>
 
+**Trazabilidad afectada**: `<OBJ-...> → <PRD-RF-...> → <UC-...> → <RF-...>/<CA-...>`
+
+**Fuentes / discrepancias**: `<SRC-...> · <DISC-... o ninguna>`
+
 **Opciones planteadas**:
 - a) <opción> — consecuencia: <…>
 - b) <opción> — consecuencia: <…>
@@ -38,3 +42,14 @@ Registro de las ambigüedades resueltas con el usuario. Cada respuesta actualiza
 - Marcadores iniciales: <n>
 - Resueltos: <n>
 - **Pendientes: 0** ← requisito para pasar a `/sdd-plan`
+
+## Gate humano de clarificaciones
+
+| Campo | Valor |
+|---|---|
+| Estado | `pending` \| `approved` \| `rejected` |
+| Persona | `<quién valida las respuestas>` |
+| Fecha | `<YYYY-MM-DD>` |
+| Discrepancias abiertas | `<0 para continuar>` |
+
+Este gate alimenta el gate de `spec.md`; no lo sustituye.

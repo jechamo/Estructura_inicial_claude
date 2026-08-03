@@ -133,6 +133,21 @@ function fusionarJson(base, nuevo, cambios = [], prefijo = '') {
   return cambios;
 }
 
+// Estas tres claves son un selector excluyente, no preferencias acumulables. Si el proyecto
+// conserva las dos superficies activas, VS Code muestra agentes, skills o hooks duplicados.
+function normalizarSuperficiesVsCode(base, deseado, cambios = []) {
+  for (const clave of ['chat.agentFilesLocations', 'chat.agentSkillsLocations', 'chat.hookFilesLocations']) {
+    if (!deseado[clave] || typeof deseado[clave] !== 'object') continue;
+    if (!base[clave] || typeof base[clave] !== 'object' || Array.isArray(base[clave])) base[clave] = {};
+    for (const [ubicacion, activa] of Object.entries(deseado[clave])) {
+      if (base[clave][ubicacion] === activa) continue;
+      base[clave][ubicacion] = activa;
+      cambios.push(`${clave}.${ubicacion}=${activa}`);
+    }
+  }
+  return cambios;
+}
+
 function bloqueGestionado(contenido, cuerpo) {
   const inicio = '<!-- sdd:start -->';
   const fin = '<!-- sdd:end -->';
@@ -304,7 +319,9 @@ function instalarFichero(ruta, contenido, registroNuevo, previos) {
   if (JSON_FUSIONABLES.includes(ruta) && actual !== null) {
     try {
       const base = parseJsonc(actual);
-      const cambios = fusionarJson(base, parseJsonc(contenido));
+      const deseado = parseJsonc(contenido);
+      const cambios = fusionarJson(base, deseado);
+      if (ruta === '.vscode/settings.json') normalizarSuperficiesVsCode(base, deseado, cambios);
       const nuevo = `${JSON.stringify(base, null, 2)}\n`;
       if (cambios.length) {
         escribir(ruta, nuevo);
@@ -354,6 +371,16 @@ function instalarProyecto() {
   );
   const registroNuevo = { ...previos };
   const modo = opciones.comando === 'update' ? (anterior.mode || 'brownfield') : detectarModo();
+  const product = anterior.product || {
+    schemaVersion: 1,
+    status: opciones.comando === 'update' && anterior.version
+      ? 'legacy-pending'
+      : modo === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+    approvedAt: null,
+    approvedBy: null,
+    enforceFromSpec: null,
+    hashes: {},
+  };
 
   fusionarSemillas(registroNuevo);
   fusionarGitignore(registroNuevo);
@@ -383,6 +410,7 @@ function instalarProyecto() {
       installedAt: anterior.installedAt || anterior.fecha || ahora,
       updatedAt: ahora,
       source: 'jechamo/Estructura_inicial_claude',
+      product,
       files: registroNuevo,
       ficheros,
     }, null, 2)}\n`, 'utf8');
@@ -455,6 +483,7 @@ function instalarGlobal() {
     try {
       const base = parseJsonc(leer(settings) || '{}');
       const cambios = fusionarJson(base, ubicaciones);
+      normalizarSuperficiesVsCode(base, ubicaciones, cambios);
       if (cambios.length) writeFileSync(settings, `${JSON.stringify(base, null, 2)}\n`, 'utf8');
     } catch (error) {
       console.log(`  ⚠ VS Code: no se pudo fusionar ${settings}: ${error.message}`);
@@ -476,7 +505,8 @@ function informar(modo) {
   if (opciones.dry) console.log('\nSimulación: no se ha creado ni modificado ningún fichero.');
   else {
     console.log('\nVS Code: confía en el workspace y ejecuta `Developer: Reload Window` para aplicar una sola superficie de agentes y skills.');
-    console.log('Siguiente paso: /sdd-init para greenfield o /onboard para brownfield.');
+    if (modo === 'greenfield') console.log('Siguiente paso: /sdd-intake; tras aprobar producto, /sdd-init.');
+    else console.log('Siguiente paso: /sdd-intake para cerrar legacy-pending o /onboard para documentar la arquitectura existente.');
   }
 }
 

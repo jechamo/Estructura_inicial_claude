@@ -8,8 +8,8 @@ versionado dentro del repositorio. Requiere Node 18 o posterior y no instala dep
 Usa una versión etiquetada; evita instalar directamente desde una rama móvil:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 El destino puede no existir y puede contener espacios. `--dry-run` no crea el directorio.
@@ -63,7 +63,7 @@ La instalación normal no crea `.mcp.json`, `.vscode/mcp.json` ni entradas MCP d
 solo los servidores que hayas elegido:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" `
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" `
   --mode auto --with-mcp context7,playwright
 ```
 
@@ -72,9 +72,10 @@ host las solicita o las lee del entorno. Revisa [MCP-SECURITY.md](../security/MC
 
 ## Después de instalar
 
-En un proyecto nuevo ejecuta `/sdd-init`. En uno existente ejecuta `/onboard`. Esos pasos son los
-que pueden proponer arquitectura, territorios y comandos de calidad a partir de la realidad del
-proyecto; el instalador no los inventa.
+En un proyecto nuevo ejecuta `/sdd-intake`: normaliza el PRD —pegado, local, URL o ya presente— y
+el diseño opcional antes de decidir arquitectura. Tras la aprobación humana, ejecuta `/sdd-init`.
+En uno existente usa `/sdd-intake` para cerrar `legacy-pending` y `/onboard` si falta documentar la
+arquitectura. El instalador nunca inventa producto, stack, territorios ni comandos de calidad.
 
 Comandos deterministas disponibles:
 
@@ -83,6 +84,8 @@ node scripts/check-sdd.mjs --virgin       # justo después de un greenfield
 node scripts/check-sdd.mjs                # estructura y coherencia
 node scripts/test-hooks.mjs               # guardas y contratos
 node scripts/sdd-project.mjs detect --json
+node scripts/sdd-project.mjs product-status --json
+node scripts/sdd-project.mjs approve-product --approved-by "<persona>" --json
 node scripts/sdd-project.mjs configure --accept-detected
 node scripts/sdd-project.mjs run --ci
 ```
@@ -93,8 +96,8 @@ los comandos encontrados a `.sdd/checks.json`.
 ## Actualizar
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 check "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 update "C:\ruta\proyecto"
 ```
 
 Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y recibe una propuesta
@@ -107,7 +110,7 @@ y nunca se reinician.
 necesario para que un repositorio instalado funcione y no instala hooks globales:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 global --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 global --dry-run
 ```
 
 Codex y Antigravity se mantienen por proyecto para no alterar configuración personal.

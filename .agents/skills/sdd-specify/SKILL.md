@@ -9,6 +9,15 @@ Agente responsable: `@spec-analyst`.
 
 ## Paso 0 — Contexto
 
+Lee primero `docs/product/PRD.md`, `docs/product/USE-CASES.md`,
+`docs/product/FEATURE-MAP.md` y `docs/product/SOURCES.md` cuando existan. Si el baseline está
+`approved`, selecciona con el usuario un corte vertical aprobado de `FEATURE-MAP.md` y conserva
+sus IDs de origen. No conviertas todo el PRD en una sola spec.
+
+Si producto está en `bootstrap`, `intake` o `pending-approval`, para y vuelve a `/sdd-intake`.
+En brownfield `legacy-pending`, avisa de la cobertura incompleta y permite documentar la spec sin
+inventar IDs; el gate seguirá pendiente hasta normalizar producto.
+
 Lee `docs/architecture/constitution.md` (si existe) solo para conocer el dominio y el
 vocabulario. **No** la uses para meter decisiones técnicas en la spec.
 
@@ -26,6 +35,7 @@ Si se trabaja con git, propón crear la rama `feature/NNN-slug` (no la crees sin
 Secciones obligatorias:
 
 1. **Metadatos** — id, título, autor, fecha, estado (`borrador`), dependencias con otras specs.
+   Añade el corte de `FEATURE-MAP.md` y los IDs `OBJ-*`, `PRD-RF-*` y `UC-*` de procedencia.
 2. **Problema** — qué duele hoy, a quién, con qué frecuencia, qué coste tiene no arreglarlo.
 3. **Objetivo y métrica de éxito** — cómo sabremos que funcionó (número, no adjetivo).
 4. **Usuarios y contexto de uso** — perfiles, escenario real, frecuencia.
@@ -48,6 +58,16 @@ Secciones obligatorias:
 12. **Supuestos** — lo que has decidido tú y el usuario debe validar.
 13. **Glosario** — lenguaje ubicuo del dominio.
 14. **Preguntas abiertas** — cada una como `[NEEDS CLARIFICATION: ...]` en su sitio.
+
+Incluye una tabla de trazabilidad funcional con esta cadena y sin saltos:
+
+| Objetivo | Requisito de producto | Caso de uso | Requisito de spec | Criterio de aceptación |
+|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 |
+
+Si la idea solicitada contradice el baseline o no cabe en el mapa aprobado, no actualices
+`PRD.md` ni `FEATURE-MAP.md` de forma silenciosa: registra la discrepancia y vuelve al gate de
+`/sdd-intake`.
 
 ## Paso 2 bis — Priorizar con MoSCoW, y hacerlo bien
 
@@ -105,10 +125,12 @@ donde está el trabajo real.
 - Si no sabes escribir el test de un requisito, el requisito no está claro. Márcalo.
 - Un requisito con "y" suele ser dos requisitos.
 - No inventes: lo que no sepas y cambie el resultado, va como `[NEEDS CLARIFICATION]`.
+- Los IDs de producto se copian del baseline; nunca se renumeran dentro de una spec.
 
 ## Paso 3 — Autorrevisión antes de entregar
 
 - [ ] Cada `RF` tiene al menos un `CA`
+- [ ] Cada `RF` traza a `OBJ-*`, `PRD-RF-*` y `UC-*`, o el estado `legacy-pending` explica el hueco
 - [ ] Cada `RF` tiene prioridad MoSCoW **y** esfuerzo relativo
 - [ ] El reparto está calculado sobre esfuerzo, y los must no pasan del 60 % (o está justificado)
 - [ ] Hay sección de *won't have this time*, aunque sea para decir que no hay nada
@@ -126,6 +148,7 @@ donde está el trabajo real.
 - Agente origen: spec-analyst
 - Fase completada: specify
 - Artefacto: docs/specs/NNN-slug/spec.md
+- Corte vertical y cobertura de producto: <FEATURE-MAP · OBJ-* · PRD-RF-* · UC-*>
 - Requisitos: <n> RF · <n> RNF · <n> CA
 - Reparto MoSCoW: must <n>% · should <n>% · could <n>% · won't <n> requisitos
 - Preguntas hechas al usuario: <n> · confirmadas: <n>

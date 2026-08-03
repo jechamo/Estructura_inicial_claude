@@ -9,6 +9,31 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 Sin cambios todavía.
 
+## [0.4.0] — 2026-08-03
+
+### Added
+- **`/sdd-intake` universal antes de arquitectura.** El `orchestrator` acepta PRD pegado, ruta,
+  carpeta, URL o documento del repo y un diseño opcional de Stitch/Figma/boceto. Normaliza
+  `PRD.md`, `USE-CASES.md`, `FEATURE-MAP.md` y `SOURCES.md` sin generar código.
+- **Gate durable de producto.** `sdd-project product-status` y `approve-product` validan IDs,
+  cadenas completas, discrepancias, fuentes inaccesibles, URLs públicas saneadas y hashes. Greenfield nace
+  `bootstrap`; brownfield o actualizaciones previas, `legacy-pending` no bloqueante.
+- **Trazabilidad integral.** Las plantillas enlazan
+  `OBJ → PRD-RF → UC → RF → CA → tarea → test → evidencia`, con persona, fecha y alcance en cada
+  gate humano.
+
+### Changed
+- Los perfiles `orchestrator`, `spec-analyst` y `ux-designer`, sus adaptadores y los workflows de
+  los cinco hosts reconocen intake, delegación con retorno y handoff guiado desde documentos.
+- El catálogo pasa a 24 skills manteniendo 20 agentes y una sola entrada visible por skill; no se
+  añaden prompts de Copilot ni commands de Cursor.
+- `/sdd-init` exige producto aprobado antes de decidir arquitectura. `/onboard` preserva todo el
+  contexto brownfield y recomienda intake sin reescribir su historia.
+
+### Security
+- PRD, diseño y fuentes externas se tratan como datos no confiables. La instalación no activa MCP
+  ni copia credenciales; el intake niega destinos no públicos y persiste URLs sin query ni fragmento.
+
 ## [0.3.1] — 2026-08-03
 
 ### Fixed

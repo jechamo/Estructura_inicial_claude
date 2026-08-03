@@ -8,6 +8,8 @@ contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y hand
 
 1. **Sin spec no hay código.** Si la petición no tiene spec en `docs/specs/`, propón crearla
    antes de escribir nada (agente `spec-analyst`, skill `/sdd-specify`).
+   Si llega un PRD global, requisitos por ruta/URL o un diseño opcional, usa `/sdd-intake`
+   primero; en greenfield el producto se aprueba antes de arquitectura.
 2. **TDD estricto.** Test que falla primero, luego el código mínimo, luego refactor.
 3. **Arquitectura vigente**: la que diga `docs/architecture/constitution.md`. No la cambies
    sin un ADR nuevo en `docs/architecture/adr/`.
@@ -21,14 +23,19 @@ contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y hand
 Los agentes viven en `.github/agents/*.agent.md` (Copilot y VS Code) y en `.claude/agents/*.md`
 (Claude Code y también VS Code). Selecciónalos desde el picker de agentes del chat.
 
-Empieza por **`orchestrator`** si no sabes qué agente usar.
+Empieza por **`orchestrator`** si no sabes qué agente usar. El contrato mantiene 20 agentes;
+durante intake solo el orquestador coordina `spec-analyst`, `ux-designer` y `spec-analyst`.
 
 ## Skills reutilizables
 
-Las skills canónicas viven en `.agents/skills/*/SKILL.md`. Invócalas con `/nombre` en el chat.
-El circuito SDD son: `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-design`, `/sdd-plan`,
+Las 24 skills canónicas viven en `.agents/skills/*/SKILL.md`. Invócalas con `/nombre` en el chat;
+no crees `.github/prompts/` equivalentes porque aparecerían como comandos duplicados.
+El circuito SDD son: `/sdd-intake`, `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-design`, `/sdd-plan`,
 `/sdd-tasks`, `/sdd-implement`, `/sdd-verify`, `/sdd-ship`.
 `/sdd-design` se salta si la funcionalidad no tiene interfaz.
+
+Si el host no completa una delegación, muestra el agente/comando exacto y reanuda leyendo
+`docs/product/`, `docs/design/` o la spec indicada por el handoff; nunca desde memoria del chat.
 
 Para implementar, entra por la skill del terreno de la tarea: **`/middle`** (dominio, casos de
 uso, integraciones), **`/front`** (interfaz) o **`/bbdd`** (esquema, migraciones, consultas). Cada

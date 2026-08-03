@@ -44,6 +44,13 @@ function decisionDe(hook, payload, host = null) {
   }
 }
 
+function salidaDe(hook, payload) {
+  return spawnSync(process.execPath, [join('.sdd/hooks', hook)], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+  }).stdout || '';
+}
+
 function comprueba(titulo, real, esperado) {
   if (real === esperado) {
     ok++;
@@ -67,6 +74,8 @@ const ejecutar = (comando) => ({
   tool_name: 'Bash',
   tool_input: { command: comando },
 });
+
+const preguntar = (prompt) => ({ session_id: SESION, cwd: ROOT, prompt });
 
 /** Fija quién está escribiendo, sin depender del hook de subagente. */
 function agenteActivo(nombre) {
@@ -219,6 +228,45 @@ comprueba('Antigravity usa hooks nombrados con event',
 const codexHooks = readFileSync(join(ROOT, '.codex/hooks.json'), 'utf8');
 comprueba('Codex separa la guarda de shell de la guarda de escritura',
   /guard-bash\.mjs/.test(codexHooks) && /guard-write\.mjs/.test(codexHooks) ? 'ok' : 'fail', 'ok');
+
+console.log('\nsdd-router · intake de producto antes de arquitectura');
+comprueba('un PRD local enruta a sdd-intake',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Tengo el PRD en docs/entrada/prd.md y quiero arrancar el proyecto'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('un PRD con diseño Stitch enruta a intake y no directamente a design',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Usa este PRD y este enlace de Stitch para iniciar el producto'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('un PRD pegado enruta a intake',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('PRD: el producto debe permitir a un invitado completar su compra'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('una carpeta de requisitos de producto enruta a intake',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Los requisitos de producto estan en docs/entrada y quiero empezar'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('una URL de PRD enruta a intake',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Toma el PRD de https://example.test/producto y arranca'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('un proyecto nuevo sin diseño empieza por intake',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Quiero empezar un proyecto nuevo y no tengo diseño'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('Figma como fuente global no salta directamente a design',
+  /sdd-intake/.test(salidaDe('sdd-router.mjs', preguntar('Arranca el producto con este Figma y estos requisitos'))) ? 'ok' : 'fail',
+  'ok');
+comprueba('una tarea de spec aprobada no sobreactiva intake', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('La spec 042 esta aprobada. Implementa la tarea T-042-03 con TDD'));
+  return !/sdd-intake/.test(salida) && /sdd-implement/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('un requisito PRD-RF de una spec aprobada no se confunde con un PRD global', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('La spec 042 está aprobada. Implementa PRD-RF-001 con TDD'));
+  return !/sdd-intake/.test(salida) && /sdd-implement/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('una spec aprobada tiene prioridad aunque cite el PRD de origen', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('La spec 042 está aprobada. Implementa PRD-RF-001 según el PRD aprobado con TDD'));
+  return !/sdd-intake/.test(salida) && /sdd-implement/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('Figma de una feature existente sigue en design y no en intake', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Sincroniza este componente de Figma con la pantalla de la spec 042 aprobada'));
+  return !/sdd-intake/.test(salida) && /sdd-design/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
 
 // ─── SDD_GATES=off ───────────────────────────────────────────────────────────
 // Documentado como escape; si no funciona, la gente edita los hooks y ahí se pierde todo.

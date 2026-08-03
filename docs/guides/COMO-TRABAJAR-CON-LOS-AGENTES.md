@@ -167,14 +167,22 @@ formato del host obliga —los agentes—, y siempre como envoltorio fino que re
 
 | Situación | Comando | Agente |
 |---|---|---|
-| **Proyecto nuevo desde cero** | `/sdd-init` | `architect` |
+| **PRD global o proyecto nuevo** | `/sdd-intake` | `orchestrator` → `spec-analyst` / `ux-designer` |
+| **Proyecto nuevo con producto aprobado** | `/sdd-init` | `architect` |
 | **Modificación / funcionalidad nueva** | `/sdd-specify` | `spec-analyst` |
 | Repo existente sin documentar | `/onboard` | `research-analyst` → `architect` |
 | No sé en qué punto estoy | `/sdd-status` | — |
 | Algo se ha caído en producción | `/respond-incident` | — |
 | Revalidar formatos y estándares | `/sdd-refresh` | `research-analyst` |
 
-### Proyecto nuevo → `/sdd-init`
+### PRD o proyecto nuevo → `/sdd-intake`
+
+Indica al `orchestrator` dónde está el PRD y, si existe, el diseño de Stitch/Figma o un boceto.
+El intake crea `PRD.md`, `USE-CASES.md`, `FEATURE-MAP.md` y `SOURCES.md`; reconcilia diferencias y
+pausa para aprobación humana. No elige arquitectura ni genera código. En un host sin subagentes,
+te indica el perfil exacto y reanuda desde esos documentos, no desde la memoria del chat.
+
+### Producto aprobado → `/sdd-init`
 
 El `architect` fija los principios, **elige la arquitectura** por ejes y crea
 `docs/architecture/constitution.md` + el ADR-0001. A partir de ahí esa constitución es
@@ -205,8 +213,8 @@ es fácil si las fronteras existen; crearlas después no lo es.
 
 ### El circuito completo
 
-```
-/sdd-specify → /sdd-clarify → /sdd-design → /sdd-plan → /sdd-tasks → /sdd-implement → /sdd-verify → /sdd-ship
+```text
+[/sdd-intake] → /sdd-init u /onboard → /sdd-specify → /sdd-clarify → /sdd-design → /sdd-plan → /sdd-tasks → /sdd-implement → /sdd-verify → /sdd-ship
 ```
 
 | Fase | Produce | Puerta de salida |
@@ -379,7 +387,8 @@ SDD_GATES=off                         # desactiva los gates temporalmente
 
 | Quiero… | Comando |
 |---|---|
-| Empezar un proyecto | `/sdd-init` |
+| Empezar desde un PRD o un proyecto nuevo | `/sdd-intake` |
+| Elegir arquitectura con producto aprobado | `/sdd-init` |
 | Añadir una funcionalidad | `/sdd-specify` |
 | Diseñar las pantallas | `/sdd-design` |
 | Implementar backend | `/middle` |

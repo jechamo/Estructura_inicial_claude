@@ -1,7 +1,7 @@
 # Ecosistema de agentes SDD
 
 Estructura inicial lista para **copiar y pegar** en cualquier proyecto. Trae un circuito de
-Spec-Driven Development completo, 20 agentes especializados, skills, hooks y un validador
+Spec-Driven Development completo, 20 agentes especializados, 24 skills, hooks y un validador
 determinista, con soporte para **Claude Code, GitHub Copilot, VS Code, Cursor, Antigravity
 y Codex**.
 
@@ -21,8 +21,8 @@ Instálalo por proyecto desde una versión etiquetada. El mismo comando vale par
 brownfield, y el destino puede no existir:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#v0.3.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -33,9 +33,12 @@ Guía completa: [`docs/guides/INSTALACION.md`](docs/guides/INSTALACION.md).
 
 ## Y después
 
-1. En un proyecto nuevo ejecuta `/sdd-init`; en uno existente, `/onboard`.
-2. Revisa las propuestas antes de aprobar arquitectura, territorios y checks del stack.
-3. Abre el proyecto en cualquiera de los hosts soportados y entra por `orchestrator`.
+1. Entrega el PRD —texto, ruta, carpeta o URL— y, si existe, el diseño al `orchestrator`;
+   ejecutará `/sdd-intake`. Si aún no hay documentación de producto, el intake es conversacional.
+2. Aprueba producto antes de arquitectura; después usa `/sdd-init` en greenfield o `/onboard`
+   en un repositorio existente sin documentar.
+3. Revisa las propuestas antes de aprobar arquitectura, territorios y checks del stack.
+4. Abre el proyecto en cualquiera de los hosts soportados y entra por `orchestrator`.
 
 ```bash
 /sdd-start
@@ -45,7 +48,8 @@ Si prefieres saltarte el router:
 
 | Tu situación | Comando |
 |---|---|
-| Proyecto nuevo, carpeta vacía | `/sdd-init` |
+| Tengo un PRD, requisitos o diseño opcional | `/sdd-intake` |
+| Proyecto nuevo, carpeta vacía | `/sdd-intake` → `/sdd-init` |
 | Repositorio existente sin documentar | `/onboard` |
 | Funcionalidad nueva sobre proyecto ya montado | `/sdd-specify` |
 | No sé en qué punto estoy | `/sdd-status` |
@@ -57,6 +61,7 @@ Si prefieres saltarte el router:
 ```mermaid
 flowchart LR
     subgraph A["Circuito A · Proyecto nuevo"]
+        IN["/sdd-intake<br/>🎯 orchestrator"]
         I["/sdd-init<br/>📐 architect"]
     end
 
@@ -71,13 +76,14 @@ flowchart LR
         SH["/sdd-ship<br/>🚀 release-manager"]
     end
 
-    I --> S --> C --> D --> P --> T --> M --> V --> SH
+    IN --> I --> S --> C --> D --> P --> T --> M --> V --> SH
     C -->|sin interfaz| P
     V -.rojo.-> M
     C -.dudas.-> S
     D -.requisito nuevo.-> S
     P -.viola arquitectura.-> I
 
+    style IN fill:#805ad5,color:#fff
     style I fill:#553c9a,color:#fff
     style M fill:#276749,color:#fff
     style V fill:#9b2c2c,color:#fff
@@ -89,6 +95,7 @@ no depende del chat, vive en el repositorio.
 
 | Fase | Produce | Puerta de salida |
 |---|---|---|
+| `/sdd-intake` | `PRD.md`, `USE-CASES.md`, `FEATURE-MAP.md`, `SOURCES.md` | Producto, casos, discrepancias y mapa de specs aprobados |
 | `/sdd-init` | `constitution.md` + ADR-0001 | Arquitectura elegida y justificada |
 | `/sdd-specify` | `spec.md` | Requisitos EARS con **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios testables, **cero tecnología** |
 | `/sdd-clarify` | `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
@@ -99,29 +106,43 @@ no depende del chat, vive en el repositorio.
 | `/sdd-verify` | Informes de calidad y seguridad | Todos los gates en verde |
 | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana |
 
+El diseño de Stitch/Figma, boceto o descripción es **opcional**. Si una fuente no es accesible,
+se pide acceso/exportación o permiso para tratarla como ausente; no se activa MCP por defecto.
+El circuito pausa en seis gates humanos: producto; arquitectura/stack solo greenfield; spec sin
+ambigüedades; dirección visual/diseño; plan técnico; y entrega final.
+
 ---
 
 ## Supuesto 1 · Proyecto nuevo desde cero
 
-**Empiezas con `/sdd-init`** (agente `architect`).
+**Empiezas con `/sdd-intake`** coordinado por `orchestrator`; solo tras aprobar producto pasa al
+agente `architect` con `/sdd-init`.
 
 ```mermaid
 sequenceDiagram
     actor U as Tú
     participant O as 🎯 orchestrator
-    participant A as 📐 architect
     participant S as 📝 spec-analyst
+    participant UX as 🎨 ux-designer
+    participant A as 📐 architect
     participant P as 🗂️ planner
     participant I as ⚙️ implementer
     participant R as 🔍 reviewer
     participant Sec as 🛡️ security
     participant RM as 🚀 release
 
-    U->>O: "Quiero una app de reservas"
-    O->>O: No hay constitution.md → proyecto nuevo
+    U->>O: "Tengo este PRD y este diseño opcional"
+    O->>S: /sdd-intake · normalizar producto
+    S-->>O: HANDOFF con documentos y cobertura
+    O->>UX: revisar diseño o proponer alternativas
+    UX-->>O: HANDOFF durable
+    O->>S: integrar discrepancias
+    S-->>U: Gate humano de producto
+    U-->>O: apruebo
+    O->>O: Producto aprobado y sin constitution.md → proyecto nuevo
     O->>A: /sdd-init
 
-    A->>U: 8 preguntas (producto, escala, equipo, restricciones…)
+    A->>U: preguntas de arquitectura (escala, equipo, restricciones…)
     U-->>A: respuestas
     A->>U: Recomendación + 1 alternativa, con coste
     U-->>A: confirmo
@@ -174,6 +195,10 @@ sequenceDiagram
 **Empiezas con `/sdd-specify`** (agente `spec-analyst`). El `architect` **no interviene**:
 la arquitectura ya está decidida en `constitution.md`.
 
+Si la entrada es un PRD global o un diseño del que deben salir varias funcionalidades, empieza
+antes por `/sdd-intake` y crea después una spec vertical del `FEATURE-MAP.md`. Un brownfield
+`legacy-pending` recibe un aviso, pero conserva su producto, specs, arquitectura y diseño.
+
 ```mermaid
 flowchart TD
     U(["Tú: 'quiero añadir checkout como invitado'"]) --> Q{¿Existe<br/>constitution.md?}
@@ -211,7 +236,8 @@ flowchart TD
 
 | Situación | Quién entra |
 |---|---|
-| Hay diseño en Figma o Stitch | `ux-designer` en `/sdd-design` → `/design-sync` → `frontend-expert` con `/front` |
+| Hay diseño en Figma o Stitch para una spec activa | `ux-designer` en `/sdd-design` → `/design-sync` → `frontend-expert` con `/front` |
+| El diseño o PRD define producto global | `orchestrator` en `/sdd-intake`; el diseño es opcional y no activa MCP por defecto |
 | Hay que implementar dominio o casos de uso | `backend-expert` con `/middle` |
 | Cambia el esquema de datos | `database-expert` con `/bbdd` (migración reversible, expand→migrate→contract) |
 | Se toca la API pública | `api-designer` (contract-first, versionado, tests de contrato) |
@@ -264,12 +290,19 @@ Catálogo completo con handoffs: [`docs/agents/CATALOG.md`](docs/agents/CATALOG.
 ### HANDOFF
 - Agente origen: <nombre>
 - Fase completada: <fase SDD>
+- Fuentes consultadas: <SRC-NNN + accesibilidad, o "ninguna">
 - Artefactos: <rutas>
+- Requisitos / casos cubiertos: <IDs, o "ninguno">
+- Discrepancias: <DISC-NNN, o "ninguna">
 - Decisiones tomadas: <lista, o "ninguna">
-- Bloqueos / supuestos: <lista, o "ninguno">
+- Supuestos: <lista, o "ninguno">
+- Bloqueos: <lista, o "ninguno">
 - Siguiente agente sugerido: <nombre> — motivo: <por qué>
-- Contexto que necesita: <mínimo imprescindible>
+- Comando / contexto durable: <comando y rutas a releer>
 ```
+
+Si el host no delega, muestra el perfil/comando exactos y reanuda desde esos documentos. El chat
+no es la memoria del proceso.
 
 ---
 
@@ -386,7 +419,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
 │   └── hooks.json                Contrato de hooks de Codex
 ├── .agents/
-│   ├── skills/                   23 skills canónicas portables
+│   ├── skills/                   24 skills canónicas portables
 │   └── rules/ · workflows/       Adaptadores de Antigravity
 ├── .sdd/
 │   ├── hooks/                    Implementaciones Node compartidas por host
@@ -397,6 +430,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ├── .mcp.json · .vscode/mcp.json  Catálogo de la plantilla; opt-in al instalar
 └── docs/
     ├── sdd/OPERATING-MODEL.md    Política completa SDD/TDD y handoffs
+    ├── product/                  PRD · casos de uso · mapa de features · fuentes
     ├── specs/_TEMPLATE/          spec · plan · tasks · data-model · test-plan · evidence
     ├── architecture/             Constitución, ADR, guía de decisión, patrones
     ├── quality/ · security/      Estrategia de test, DoD, checklists OWASP

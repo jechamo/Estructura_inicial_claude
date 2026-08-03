@@ -52,6 +52,45 @@ function walk(dir, filtro, out = []) {
   return out;
 }
 
+function parseJsonc(texto) {
+  return JSON.parse(texto
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/,(\s*[}\]])/g, '$1'));
+}
+
+function primerId(texto, patron) {
+  return String(texto || '').match(patron)?.[1] || null;
+}
+
+function cadenaTrazable(linea) {
+  const cadena = {
+    objetivo: primerId(linea, /\b(OBJ-\d{3})\b/),
+    requisitoProducto: primerId(linea, /\b(PRD-RF-\d{3})\b/),
+    caso: primerId(linea, /\b(UC-\d{3})\b/),
+    requisitoSpec: primerId(linea, /(?:^|[^\w-])(RF-\d+)\b/),
+    criterio: primerId(linea, /\b(CA-\d+)\b/),
+  };
+  return Object.values(cadena).every(Boolean) ? cadena : null;
+}
+
+function tieneTestConcreto(texto) {
+  const valor = String(texto || '').match(/Test que la define\**:\s*([^\n]+)/i)?.[1]?.trim();
+  if (!valor || /^(?:`?<|pendiente|por definir|ningun[oa]|n\/?a|no aplica|[-—…])/i.test(valor)) return false;
+  return !/<[^>\n]+>/.test(valor);
+}
+
+function tieneResultadoConcreto(texto) {
+  return /[🟢🔴✅❌]|\b(?:pass(?:ed)?|verde|rojo|fall[óa]|error esperado|no ejecutado|bloquead[oa]|\d+\/\d+)\b/i
+    .test(String(texto || ''));
+}
+
+function coincideCadena(texto, cadena, { conTarea = false, conTest = false, conResultado = false } = {}) {
+  const contiene = Object.values(cadena).every((id) => String(texto || '').includes(id));
+  return contiene && (!conTarea || /\bT-\d{3}-\d+\b/.test(texto)) &&
+    (!conTest || tieneTestConcreto(texto)) && (!conResultado || tieneResultadoConcreto(texto));
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1 · Ecosistema de agentes: frontmatter válido y sin deriva entre superficies
 // ─────────────────────────────────────────────────────────────────────────────
@@ -204,8 +243,8 @@ const skillsCanonicas = dirs(SKILLS_DIR);
 const skillsClaude = dirs(join(ROOT, '.claude/skills'));
 if (nombresAgentes.size !== 20)
   err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
-if (skillsCanonicas.length !== 23)
-  err('paridad/skills', `se esperaban 23 skills canónicas y hay ${skillsCanonicas.length}`);
+if (skillsCanonicas.length !== 24)
+  err('paridad/skills', `se esperaban 24 skills canónicas y hay ${skillsCanonicas.length}`);
 const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
 if (adaptersFaltantes.length)
   err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
@@ -236,6 +275,46 @@ for (const [superficie, nombres] of comandosPorHost) {
   const duplicados = nombres.filter((nombre) => skillsCanonicas.includes(nombre));
   if (duplicados.length)
     err('superficie/comando-duplicado', `${superficie} duplica skills canónicas: ${duplicados.join(', ')}`);
+}
+
+const vscodeSettingsRaw = leer(join(ROOT, '.vscode/settings.json'));
+if (vscodeSettingsRaw) {
+  try {
+    const settings = parseJsonc(vscodeSettingsRaw);
+    const esperadas = [
+      ['chat.agentFilesLocations', '.github/agents', true],
+      ['chat.agentFilesLocations', '.claude/agents', false],
+      ['chat.agentSkillsLocations', '.agents/skills', true],
+      ['chat.agentSkillsLocations', '.claude/skills', false],
+      ['chat.hookFilesLocations', '.github/hooks', true],
+      ['chat.hookFilesLocations', '.claude/settings.json', false],
+    ];
+    for (const [grupo, ruta, valor] of esperadas)
+      if (settings[grupo]?.[ruta] !== valor)
+        err('superficie/vscode-duplicada', `.vscode/settings.json debe fijar ${grupo}.${ruta} = ${valor}`);
+  } catch (error) {
+    err('superficie/vscode-json', `.vscode/settings.json no es JSONC vÃ¡lido: ${error.message}`);
+  }
+}
+
+const contratoIntake = [
+  '.agents/skills/sdd-intake/SKILL.md',
+  '.claude/skills/sdd-intake/SKILL.md',
+  'docs/product/PRD.md',
+  'docs/product/USE-CASES.md',
+  'docs/product/FEATURE-MAP.md',
+  'docs/product/SOURCES.md',
+];
+for (const ruta of contratoIntake) {
+  if (!existsSync(join(ROOT, ruta))) err('intake/estructura', `falta ${ruta}`);
+}
+for (const ruta of [
+  '.claude/agents/orchestrator.md', '.claude/agents/spec-analyst.md', '.claude/agents/ux-designer.md',
+  '.github/agents/orchestrator.agent.md', '.cursor/agents/orchestrator.md', '.codex/agents/orchestrator.toml',
+  '.agents/workflows/sdd-proyecto-nuevo.md', '.agents/workflows/sdd-nueva-funcionalidad.md',
+]) {
+  if (!/sdd-intake|\bintake\b/i.test(leer(join(ROOT, ruta)) || ''))
+    err('intake/routing', `${ruta} no reconoce la fase intake`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -317,6 +396,20 @@ const SPECS = join(ROOT, process.env.SDD_SPECS_DIR || 'docs/specs');
 const specs = dirs(SPECS).filter((s) => !soloSpec || s.startsWith(soloSpec));
 const ficherosTest = walk(ROOT, (n) => /\.(test|spec)\.[jt]sx?$/.test(n) || /^test_.*\.py$/.test(n));
 const textoTests = ficherosTest.map((p) => leer(p) || '').join('\n');
+let contratoProducto = null;
+try {
+  const registro = JSON.parse(leer(join(ROOT, '.sdd/installed.json')) || 'null');
+  if (registro?.product?.status === 'approved') contratoProducto = registro.product;
+} catch {
+  // El error de JSON se informa una sola vez en la seccion de instalacion.
+}
+const idsProducto = {
+  objetivos: new Set([...(leer(join(ROOT, 'docs/product/PRD.md')) || '').matchAll(/\bOBJ-\d{3}\b/g)].map((m) => m[0])),
+  requisitos: new Set([...(leer(join(ROOT, 'docs/product/PRD.md')) || '').matchAll(/\bPRD-RF-\d{3}\b/g)].map((m) => m[0])),
+  casos: new Set([...(leer(join(ROOT, 'docs/product/USE-CASES.md')) || '').matchAll(/\bUC-\d{3}\b/g)].map((m) => m[0])),
+};
+const filasFeatureProducto = (leer(join(ROOT, 'docs/product/FEATURE-MAP.md')) || '')
+  .split('\n').filter((linea) => /^\|\s*FEAT-\d{3}\s*\|/.test(linea));
 
 let tareasHechas = 0;
 
@@ -326,6 +419,60 @@ for (const s of specs) {
   if (!spec) {
     err('spec/estructura', `${s}: falta spec.md`);
     continue;
+  }
+
+  const numeroSpec = Number((s.match(/^(\d{3})-/) || [])[1]);
+  let referenciasProductoSpec = null;
+  if (contratoProducto && Number.isFinite(numeroSpec) && numeroSpec >= contratoProducto.enforceFromSpec) {
+    referenciasProductoSpec = {
+      objetivos: new Set([...spec.matchAll(/\bOBJ-\d{3}\b/g)].map((m) => m[0])),
+      requisitos: new Set([...spec.matchAll(/\bPRD-RF-\d{3}\b/g)].map((m) => m[0])),
+      casos: new Set([...spec.matchAll(/\bUC-\d{3}\b/g)].map((m) => m[0])),
+    };
+    for (const [tipo, conjunto] of Object.entries(referenciasProductoSpec)) {
+      if (!conjunto.size) {
+        const mensaje = `${s}: falta trazabilidad de producto (${tipo})`;
+        STRICT ? err('producto/trazabilidad', mensaje) : warn('producto/trazabilidad', mensaje);
+      }
+      const huerfanos = [...conjunto].filter((id) => !idsProducto[tipo].has(id));
+      if (huerfanos.length) {
+        const mensaje = `${s}: referencias de producto huerfanas: ${huerfanos.join(', ')}`;
+        STRICT ? err('producto/trazabilidad', mensaje) : warn('producto/trazabilidad', mensaje);
+      }
+    }
+    const cadenasSpec = spec.split('\n').map(cadenaTrazable).filter(Boolean);
+    if (!cadenasSpec.length) {
+      const mensaje = `${s}: ninguna fila enlaza OBJ → PRD-RF → UC → RF → CA`;
+      STRICT ? err('producto/cadena-spec', mensaje) : warn('producto/cadena-spec', mensaje);
+    }
+    for (const [tipo, campo] of [['objetivos', 'objetivo'], ['requisitos', 'requisitoProducto'], ['casos', 'caso']]) {
+      const fueraDeCadena = [...referenciasProductoSpec[tipo]]
+        .filter((id) => !cadenasSpec.some((cadena) => cadena[campo] === id));
+      if (fueraDeCadena.length) {
+        const mensaje = `${s}: referencias fuera de una cadena completa: ${fueraDeCadena.join(', ')}`;
+        STRICT ? err('producto/cadena-spec', mensaje) : warn('producto/cadena-spec', mensaje);
+      }
+    }
+    const requisitosLocales = new Set([...spec.matchAll(/(?<!PRD-)\bRF-\d+\b/g)].map((m) => m[0]));
+    const criteriosLocales = new Set([...spec.matchAll(/\bCA-\d+\b/g)].map((m) => m[0]));
+    for (const [nombre, conjunto, campo] of [
+      ['RF', requisitosLocales, 'requisitoSpec'],
+      ['CA', criteriosLocales, 'criterio'],
+    ]) {
+      const fueraDeCadena = [...conjunto].filter((id) => !cadenasSpec.some((cadena) => cadena[campo] === id));
+      if (fueraDeCadena.length) {
+        const mensaje = `${s}: ${nombre} sin cadena completa de producto: ${fueraDeCadena.join(', ')}`;
+        STRICT ? err('producto/cadena-spec', mensaje) : warn('producto/cadena-spec', mensaje);
+      }
+    }
+    for (const cadena of cadenasSpec) {
+      if (!filasFeatureProducto.some((fila) =>
+        fila.includes(cadena.objetivo) && fila.includes(cadena.requisitoProducto) && fila.includes(cadena.caso))) {
+        const mensaje = `${s}: la cadena ${cadena.objetivo}/${cadena.requisitoProducto}/${cadena.caso} no existe unida en FEATURE-MAP.md`;
+        STRICT ? err('producto/cadena-feature', mensaje) : warn('producto/cadena-feature', mensaje);
+      }
+    }
+    referenciasProductoSpec.cadenas = cadenasSpec;
   }
 
   // 3.1 · La spec no avanza con ambigüedades sin resolver
@@ -389,6 +536,22 @@ for (const s of specs) {
   const tasks = leer(join(dir, 'tasks.md'));
   if (tienePlan && !tasks) warn('spec/estructura', `${s}: hay plan.md pero no tasks.md`);
   if (!tasks) continue;
+  if (referenciasProductoSpec) {
+    const noPropagadas = Object.entries(referenciasProductoSpec).filter(([tipo]) => tipo !== 'cadenas')
+      .map(([, conjunto]) => conjunto)
+      .flatMap((conjunto) => [...conjunto].filter((id) => !tasks.includes(id)));
+    if (noPropagadas.length) {
+      const mensaje = `${s}: tasks.md no propaga la trazabilidad de producto: ${noPropagadas.join(', ')}`;
+      STRICT ? err('producto/tareas', mensaje) : warn('producto/tareas', mensaje);
+    }
+    const bloquesTarea = tasks.split(/^### /m).slice(1);
+    for (const cadena of referenciasProductoSpec.cadenas || []) {
+      if (!bloquesTarea.some((bloque) => coincideCadena(bloque, cadena, { conTarea: true, conTest: true }))) {
+        const mensaje = `${s}: ninguna tarea enlaza completa la cadena de ${cadena.requisitoProducto}/${cadena.criterio} con su test`;
+        STRICT ? err('producto/cadena-tarea', mensaje) : warn('producto/cadena-tarea', mensaje);
+      }
+    }
+  }
 
   // 3.2 · Todo criterio de aceptación necesita un test que lo referencie
   const criterios = [...spec.matchAll(/\bCA-(\d+)\b/g)].map((m) => `CA-${m[1]}`);
@@ -434,6 +597,15 @@ for (const s of specs) {
           'tarea/ejecucion',
           `${s}/${id}: marcada hecho sin evento observado, declared-direct ni unverified con motivo para la tarea`,
         );
+      if (referenciasProductoSpec) {
+        const cadenasDeTarea = (referenciasProductoSpec.cadenas || []).filter((cadena) => coincideCadena(b, cadena));
+        for (const cadena of cadenasDeTarea) {
+          const filaEvidencia = evidence.split('\n').some((linea) =>
+            linea.includes(id) && coincideCadena(linea, cadena, { conResultado: true }));
+          if (!filaEvidencia)
+            err('producto/cadena-evidencia', `${s}/${id}: evidence.md no enlaza la tarea con ${cadena.objetivo} → ${cadena.criterio}`);
+        }
+      }
     }
   }
 
@@ -466,6 +638,39 @@ const instalado = leer(join(ROOT, '.sdd/installed.json'));
 if (instalado) {
   try {
     const reg = JSON.parse(instalado);
+    const product = reg.product || {
+      schemaVersion: 1,
+      status: reg.mode === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+      approvedAt: null,
+      approvedBy: null,
+      enforceFromSpec: null,
+      hashes: {},
+    };
+    if (product.schemaVersion !== 1 || !['bootstrap', 'legacy-pending', 'approved'].includes(product.status))
+      err('producto/estado', 'el contrato product de .sdd/installed.json no tiene una version o estado validos');
+    else if (product.status === 'legacy-pending')
+      warn('producto/legacy-pending', 'el proyecto conserva su contexto, pero debe ejecutar /sdd-intake antes de exigir trazabilidad de producto nueva');
+    else if (product.status === 'bootstrap') {
+      const mensaje = 'el baseline de producto aun no esta aprobado; el siguiente paso es /sdd-intake';
+      if (STRICT && specs.length) err('producto/bootstrap', `${mensaje}; no puede haber specs activas en un greenfield bootstrap`);
+      else warn('producto/bootstrap', mensaje);
+    }
+    else {
+      if (!product.approvedAt || !product.approvedBy || !Number.isInteger(product.enforceFromSpec))
+        err('producto/aprobacion', 'un producto approved necesita fecha, persona y enforceFromSpec');
+      const drift = [];
+      for (const ruta of contratoIntake.slice(2)) {
+        const contenido = leer(join(ROOT, ruta));
+        const esperado = product.hashes?.[ruta];
+        const actual = contenido === null ? null : createHash('sha256').update(contenido).digest('hex').slice(0, 16);
+        if (!esperado || actual !== esperado) drift.push(ruta);
+      }
+      if (drift.length) {
+        const mensaje = `baseline de producto aprobado con drift/hash distinto: ${drift.join(', ')}`;
+        if (STRICT) err('producto/drift', mensaje);
+        else warn('producto/drift', mensaje);
+      }
+    }
     const modificados = Object.entries(reg.ficheros || {}).filter(([r, h]) => {
       const t = leer(join(ROOT, r));
       return t !== null && h !== createHash('sha256').update(t).digest('hex').slice(0, 16);

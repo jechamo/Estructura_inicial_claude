@@ -18,8 +18,15 @@ Saltarla es legítimo; lo que no vale es saltarla y luego improvisar pantallas e
 
 - [ ] `spec.md` existe, con criterios de aceptación y prioridades MoSCoW
 - [ ] Cero `[NEEDS CLARIFICATION]` pendientes: si quedan, primero `/sdd-clarify`
+- [ ] `docs/design/INTAKE-REVIEW.md`, si existe, se ha leído como análisis de fuentes, no como
+      diseño aprobado
 - [ ] Si hay Figma, Stitch o bocetos, están a mano (MCP `figma` / `stitch`)
 - [ ] `docs/design/design-system.md`, si el proyecto ya tiene design system
+
+`INTAKE-REVIEW.md` registra lo observado durante producto: accesibilidad de fuentes, flujos,
+cobertura, supuestos y discrepancias. **No** sustituye `design.md`, no aprueba una dirección visual
+y no convierte un Figma/Stitch en decisión del proyecto. Revalida contra la spec aprobada y lleva
+cualquier `DISC-*` material a confirmación humana antes de diseñar.
 
 ## Paso 0 bis — Dirección visual: sin esto no se dibuja
 
@@ -80,6 +87,10 @@ de esta fase, que casi nunca están en el PRD:
 **Si el diseño de entrada contradice la spec, no elijas en silencio.** Ponlo delante del usuario:
 esa contradicción es información, y resolverla ahora cuesta una pregunta.
 
+Si resolverla cambia `OBJ-*`, `PRD-RF-*`, `UC-*`, el mapa de features o el alcance de producto,
+vuelve a `/sdd-intake`. Si solo aclara una spec, vuelve a `/sdd-clarify`. En ambos casos reanuda
+leyendo los artefactos durables, no la memoria del chat.
+
 ## Paso 2 — Flujo antes que pantalla
 
 Mapa del recorrido completo en mermaid: pasos, decisiones, **puntos de fricción** y **salidas de
@@ -139,6 +150,8 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - [ ] Flujo completo con caminos de error, no solo el feliz
 - [ ] Los seis estados definidos en **cada** pantalla
 - [ ] Cada `CA` de la spec tiene su recorrido en el diseño; y cada pantalla, su `CA`
+- [ ] Cada recorrido conserva la cadena de origen `OBJ → PRD-RF → UC → RF → CA`
+- [ ] Toda `DISC-*` de `INTAKE-REVIEW.md` está resuelta o bloquea explícitamente la salida
 - [ ] Componentes clasificados en reutiliza / extiende / nuevo, con los nuevos justificados
 - [ ] Accesibilidad verificada sobre el diseño
 - [ ] Cero decisiones técnicas: ni framework, ni librería de componentes, ni estructura de
@@ -152,6 +165,8 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - Agente origen: ux-designer
 - Fase completada: design
 - Artefactos: docs/specs/NNN-slug/design.md · docs/design/flows/NNN-<flujo>.md
+- Intake de diseño: <no existe | revisado · DISC-* resueltas>
+- Cobertura de producto/spec: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-*>
 - Dirección visual: <aprobada el YYYY-MM-DD | creada en esta fase y pendiente de aprobación>
 - Pantallas: <n> · con los seis estados: <n/n> · con elemento con carácter: <n/n>
 - Componentes: <n> reutilizados · <n> extendidos · <n> nuevos

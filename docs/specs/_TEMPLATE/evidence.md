@@ -20,12 +20,23 @@ trabajó él mismo) · `unverified` (delegación afirmada pero no observada — 
 
 ## 2. Trazabilidad requisito → test
 
-| RF | CA | Implementación | Test | Resultado |
-|---|---|---|---|---|
-| RF-01 | CA-01 | `src/domain/Order.ts:42` | `tests/unit/order.spec.ts::debe_rechazar_cuando_stock_insuficiente` | 🟢 |
+| OBJ | PRD-RF | UC | RF | CA | Tarea | Implementación | Test | Resultado |
+|---|---|---|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | T-NNN-01 | `src/domain/Order.ts:42` | `tests/unit/order.spec.ts::debe_rechazar_cuando_stock_insuficiente` | 🟢 |
 
 - [ ] Todo `CA` de la spec aparece en esta tabla
 - [ ] Cada test citado se ha ejecutado y su salida está arriba
+- [ ] Ningún OBJ, PRD-RF, UC, RF, CA o tarea referenciado es huérfano
+
+### Gates humanos verificados
+
+| Gate | Estado | Persona | Fecha | Alcance / evidencia |
+|---|---|---|---|---|
+| Producto | `<approved/legacy-pending>` | | | `docs/product/PRD.md` |
+| Spec | `<approved>` | | | `spec.md` |
+| Diseño | `<approved/skipped-no-ui>` | | | `design.md` |
+| Plan técnico | `<approved>` | | | `plan.md` |
+| Entrega | `<pending/approved>` | | | §5 |
 
 ## 3. Controles NO ejecutados
 
@@ -45,6 +56,7 @@ trabajó él mismo) · `unverified` (delegación afirmada pero no observada — 
 - [ ] Seguridad, privacidad, datos y accesibilidad revisados
 - [ ] ADR, documentación, runbooks y CHANGELOG actualizados donde aplica
 - [ ] Cada tarea `hecho` tiene ejecución registrada, checks y evidencia
+- [ ] No quedan discrepancias de intake abiertas que afecten al alcance entregado
 - [ ] Las delegaciones se observaron por hooks, o su limitación está documentada arriba
 - [ ] Los riesgos abiertos tienen propietario y decisión
 

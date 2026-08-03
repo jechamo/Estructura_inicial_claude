@@ -8,9 +8,9 @@ Qué se prueba en esta spec y qué **no** (y por qué).
 
 ## 2. Mapa criterio → test
 
-| CA | Comportamiento | Nivel | Test |
-|---|---|---|---|
-| CA-01 | | unitario | `ruta::debe_<...>_cuando_<...>` |
+| OBJ | PRD-RF | UC | RF | CA | Tarea | Comportamiento | Nivel | Test |
+|---|---|---|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | T-NNN-01 | | unitario | `ruta::debe_<...>_cuando_<...>` |
 
 **Regla**: ningún CA sin test. Ningún test sin CA (salvo tests técnicos justificados).
 
@@ -70,3 +70,13 @@ Solo flujos críticos de negocio. Selectores por rol y texto accesible.
 ## 8. Qué NO se automatiza
 
 <Y cómo se verifica entonces: revisión manual, checklist, exploratorio.>
+
+Los gates humanos de producto, spec, diseño, plan y entrega no se infieren de tests: su estado,
+persona, fecha y alcance se comprueban como evidencia documental.
+
+## 9. Fuentes y discrepancias
+
+| Riesgo de intake | Fuente / discrepancia | Test o revisión | Resultado esperado |
+|---|---|---|---|
+| Fuente inaccesible | `<SRC-...>` | `<test/revisión>` | No se inventa contenido y el bloqueo queda visible |
+| Contradicción producto-diseño | `<DISC-...>` | `<test/revisión>` | No avanza el gate hasta decisión humana |

@@ -10,6 +10,8 @@ Agente responsable: `@planner`.
 ## Puerta de entrada
 
 `plan.md`, `data-model.md`, `contracts/` y `test-plan.md` existen y son coherentes con `spec.md`.
+El gate humano del plan consta como `approved`, con actor, fecha y alcance. Sin esa confirmación,
+no se crea `tasks.md`.
 
 ## Formato de tarea
 
@@ -17,9 +19,9 @@ Agente responsable: `@planner`.
 ### T-NNN-XX · <título imperativo>
 - Estado: pendiente
 - Terreno: middle | front | bbdd | contratos | test | infra | docs
-- Skill: /middle | /front | /bbdd | —
+- Skill: /middle | /front | /bbdd | <otra skill aplicable> | — (justificado)
 - Capa: domain | application | infrastructure | interfaces | test | infra | docs
-- Cubre: RF-03, CA-05
+- Cubre: OBJ-001 → PRD-RF-003 → UC-002 → RF-03 → CA-05
 - Test que la define: `tests/domain/order/place_order.test.ts::debe_rechazar_cuando_stock_insuficiente`
 - Depende de: T-NNN-YY  (o "ninguna")
 - Ficheros previstos: `src/domain/order/Order.ts`
@@ -60,18 +62,25 @@ Agente responsable: `@planner`.
    - documentación de usuario o de API
    - eliminación del feature flag tras la estabilización
    - actualización de la bitácora
+8. **Toda tarea declara Terreno y Skill.** Usa `—` solo para una tarea transversal que no tenga
+   una skill aplicable y explica el motivo. La trazabilidad no se infiere por el título.
+9. **Cadena total**: una tarea de producto enlaza `OBJ-*`, `PRD-RF-*`, `UC-*`, `RF-*` y `CA-*`.
+   Una tarea transversal sin `CA` necesita una justificación y debe enlazar el riesgo, gate o
+   artefacto que la exige.
 
 ## Verificación de cobertura
 
 Construye la tabla de trazabilidad y comprueba que **no queda hueco**:
 
-| RF | CA | Tareas |
-|---|---|---|
-| RF-01 | CA-01, CA-02 | T-042-01, T-042-03 |
+| OBJ | PRD-RF | UC | RF | CA | Tareas | Test / evidencia esperada |
+|---|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01, CA-02 | T-042-01, T-042-03 | `<id o ruta>` |
 
 - [ ] Todo `RF` tiene al menos una tarea
 - [ ] Todo `CA` tiene un test en alguna tarea
-- [ ] Toda tarea apunta a un `RF` o es transversal justificada
+- [ ] Toda tarea de producto cubre la cadena `OBJ → PRD-RF → UC → RF → CA`
+- [ ] Toda tarea declara Terreno y Skill, o justifica `—`
+- [ ] Toda tarea apunta a un `RF` y `CA`, o es transversal justificada
 - [ ] No hay tareas que la spec no pida
 
 ## Salida
@@ -87,7 +96,8 @@ la tabla de trazabilidad, y las tareas en orden de ejecución.
 - Fase completada: tasks
 - Artefacto: docs/specs/NNN-slug/tasks.md
 - Tareas: <n> (S:<n> M:<n> L:<n>) · paralelizables: <n>
-- Cobertura: <n>/<n> RF · <n>/<n> CA
+- Cobertura: <n>/<n> OBJ · <n>/<n> PRD-RF · <n>/<n> UC · <n>/<n> RF · <n>/<n> CA
+- Terrenos / skills: <resumen y excepciones justificadas>
 - Primera tarea a ejecutar: T-NNN-01
 - Siguiente agente sugerido: implementer — comando: /sdd-implement
 ```

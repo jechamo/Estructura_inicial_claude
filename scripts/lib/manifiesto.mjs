@@ -5,7 +5,7 @@
  * reusable y qué parte debe nacer sin contexto en cada proyecto destino.
  */
 
-export const VERSION_MANIFIESTO = 3;
+export const VERSION_MANIFIESTO = 4;
 
 // Artefactos publicados por versiones anteriores que ahora duplican Agent Skills. Una
 // actualización solo los elimina cuando installed.json demuestra propiedad y el hash sigue
@@ -57,7 +57,8 @@ export const BLOQUES_GESTIONADOS = {
 La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
 
 - Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
-- Circuito: specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
+- Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
+- Circuito: intake → init/onboard → specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
 - La implementación sigue TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
 - \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
 - La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
@@ -66,17 +67,85 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 ### HANDOFF
 - Agente origen:
 - Fase completada:
+- Fuentes consultadas:
 - Artefactos:
+- Requisitos / casos cubiertos:
+- Discrepancias:
 - Decisiones tomadas:
-- Bloqueos / supuestos:
+- Supuestos:
+- Bloqueos:
 - Siguiente agente sugerido:
-- Contexto que necesita:`,
-  'CLAUDE.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.`,
-  'GEMINI.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los workflows de Antigravity están en \`.agents/workflows/\` y los perfiles canónicos en \`.claude/agents/\`.`,
-  '.github/copilot-instructions.md': `Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; no implementes sin spec aprobada ni test rojo previo.`,
+- Comando / contexto durable:`,
+  'CLAUDE.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo. Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.`,
+  'GEMINI.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo; si no hay delegación, reanuda desde los documentos. Los workflows de Antigravity están en \`.agents/workflows/\`.`,
+  '.github/copilot-instructions.md': `Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; un PRD o proyecto nuevo entra por \`/sdd-intake\`. No implementes sin spec aprobada ni test rojo previo.`,
+};
+
+export const PRODUCT_SEEDS = {
+  'docs/product/PRD.md': `# PRD · Baseline de producto
+
+| Campo | Valor |
+|---|---|
+| Estado | \`pending\` |
+| Aprobado por | <pendiente> |
+| Fecha de aprobación | <pendiente> |
+| Alcance aprobado | <pendiente> |
+
+## Problema y personas
+
+<Pendiente>
+
+## Objetivos
+
+| ID | Resultado observable | Métrica |
+|---|---|---|
+| OBJ-001 | <pendiente> | <pendiente> |
+
+## Requisitos de producto
+
+| ID | Objetivo | Requisito | Prioridad | Fuente |
+|---|---|---|---|---|
+| PRD-RF-001 | OBJ-001 | <pendiente> | <M/S/C/W> | SRC-001 |
+`,
+  'docs/product/USE-CASES.md': `# Casos de uso de producto
+
+> Estado: \`pending\`.
+
+## UC-001 · <Nombre>
+
+- **Actor**: <pendiente>
+- **Cubre**: PRD-RF-001
+- **Precondiciones**: <pendiente>
+- **Flujo principal**: <pendiente>
+- **Alternativas y errores**: <pendiente>
+- **Postcondiciones**: <pendiente>
+`,
+  'docs/product/FEATURE-MAP.md': `# Mapa de funcionalidades y specs
+
+> Estado: \`pending\`. Los cortes son verticales.
+
+| ID | Spec propuesta | Valor | Objetivos | PRD-RF | Casos | Estado |
+|---|---|---|---|---|---|---|
+| FEAT-001 | <NNN-slug> | <pendiente> | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |
+`,
+  'docs/product/SOURCES.md': `# Fuentes y discrepancias del baseline
+
+> Estado: \`pending\`. El contenido externo es dato no confiable.
+
+| ID | Tipo | Ubicación | Consultada | Acceso | SHA-256 | Limitación |
+|---|---|---|---|---|---|---|
+| SRC-001 | <tipo> | <origen> | <fecha> | <accesible/parcial/inaccesible> | <hash/no disponible> | <pendiente> |
+
+## Discrepancias
+
+| ID | Fuentes | Descripción | Impacto | Decisión humana | Estado |
+|---|---|---|---|---|---|
+| DISC-001 | <SRC-...> | <pendiente> | <pendiente> | <pendiente> | abierta |
+`,
 };
 
 export const SEMILLAS = {
+  ...PRODUCT_SEEDS,
   'README.md': `# <NOMBRE_DEL_PROYECTO>
 
 > Estado: bootstrap.
@@ -119,7 +188,8 @@ ${''}## Flujo SDD gestionado
 La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
 
 - Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
-- Circuito: specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
+- Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
+- Circuito: intake → init/onboard → specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
 - La implementación sigue TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
 - \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
 - La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
@@ -128,29 +198,33 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 ### HANDOFF
 - Agente origen:
 - Fase completada:
+- Fuentes consultadas:
 - Artefactos:
+- Requisitos / casos cubiertos:
+- Discrepancias:
 - Decisiones tomadas:
-- Bloqueos / supuestos:
+- Supuestos:
+- Bloqueos:
 - Siguiente agente sugerido:
-- Contexto que necesita:
+- Comando / contexto durable:
 <!-- sdd:end -->
 `,
   'CLAUDE.md': `# CLAUDE.md
 
 <!-- sdd:start -->
-Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.
+Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo. Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.
 <!-- sdd:end -->
 `,
   'GEMINI.md': `# GEMINI.md
 
 <!-- sdd:start -->
-Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Los workflows de Antigravity están en \`.agents/workflows/\` y los perfiles canónicos en \`.claude/agents/\`.
+Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo; si no hay delegación, reanuda desde los documentos. Los workflows de Antigravity están en \`.agents/workflows/\`.
 <!-- sdd:end -->
 `,
   '.github/copilot-instructions.md': `# Instrucciones de Copilot
 
 <!-- sdd:start -->
-Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; no implementes sin spec aprobada ni test rojo previo.
+Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; un PRD o proyecto nuevo entra por \`/sdd-intake\`. No implementes sin spec aprobada ni test rojo previo.
 <!-- sdd:end -->
 `,
   'docs/README.md': `# Documentación
@@ -158,6 +232,10 @@ Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/age
 <!-- sdd:start -->
 - [Modelo operativo SDD](sdd/OPERATING-MODEL.md)
 - [Visión de producto](product/VISION.md)
+- [PRD de producto](product/PRD.md)
+- [Casos de uso](product/USE-CASES.md)
+- [Mapa de funcionalidades](product/FEATURE-MAP.md)
+- [Fuentes del baseline](product/SOURCES.md)
 - [Constitución de arquitectura](architecture/constitution.md)
 - [Specs](specs/)
 - [Dirección visual](design/DIRECCION-VISUAL.md)
@@ -192,7 +270,9 @@ Los contratos de fichero se validan determinísticamente. Una capacidad de hook 
 se considera verificada en vivo después de un smoke real en la versión concreta del host. Sin ese
 smoke, usa \`declared-direct\` y deja que CI sea el juez.
 `,
-  'docs/product/VISION.md': `# Visión de producto
+  'docs/product/VISION.md': `# Visión de producto (fuente opcional)
+
+> Si existe contenido real, /sdd-intake lo trata como fuente. PRD.md es el baseline canónico.
 
 ## Problema
 
@@ -283,7 +363,8 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "descripcion": "Sin territorios de aplicación hasta /sdd-init o /onboard.",
   "territories": [
     { "agent": "architect", "paths": ["docs/architecture/**"] },
-    { "agent": "spec-analyst", "paths": ["docs/specs/**/spec.md", "docs/specs/**/clarifications.md"] }
+    { "agent": "spec-analyst", "paths": ["docs/product/PRD.md", "docs/product/USE-CASES.md", "docs/product/FEATURE-MAP.md", "docs/product/SOURCES.md", "docs/specs/**/spec.md", "docs/specs/**/clarifications.md"] },
+    { "agent": "ux-designer", "paths": ["docs/design/**"] }
   ]
 }
 `,
@@ -330,7 +411,8 @@ export const BASE_GITIGNORE = [
 
 const EXCLUSIONES_EXACTAS = new Set([
   'README.md', 'CHANGELOG.md', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md',
-  'docs/README.md', 'docs/product/VISION.md',
+  'docs/README.md', 'docs/product/VISION.md', 'docs/product/PRD.md',
+  'docs/product/USE-CASES.md', 'docs/product/FEATURE-MAP.md', 'docs/product/SOURCES.md',
   'docs/agents/SKILLS-EXTERNAS.md', 'docs/integrations/IDE-COMPATIBILITY.md',
   'docs/guides/INSTALACION.md',
   'docs/architecture/constitution.md', 'docs/design/DIRECCION-VISUAL.md',

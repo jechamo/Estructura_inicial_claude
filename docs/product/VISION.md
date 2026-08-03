@@ -1,7 +1,9 @@
 # Visión de producto
 
-> **PLANTILLA.** La rellena el usuario, con ayuda del `spec-analyst`, durante `/sdd-init`.
-> Es el contexto que da sentido a todas las specs. Sin esto, los agentes optimizan en el vacío.
+> **PLANTILLA OPCIONAL.** Puede aportarla el usuario como fuente durante `/sdd-intake`.
+> La visión orienta la estrategia, pero el baseline canónico y aprobable es
+> [`PRD.md`](./PRD.md). Si se usa, se registra en [`SOURCES.md`](./SOURCES.md) con un ID `SRC-*`;
+> no sustituye requisitos, casos de uso ni decisiones del PRD.
 
 ---
 
@@ -63,5 +65,8 @@ todavía no está claro.>
 
 ## Relación con las specs
 
-Cada spec de `docs/specs/` debe poder responder: **¿a qué parte de esta visión sirve?**
-Si no puede, o falta contexto en la visión, o la spec no debería construirse.
+La visión puede inspirar objetivos `OBJ-*`, pero la cadena vinculante nace en el PRD aprobado:
+`OBJ → PRD-RF → UC → spec/RF → CA → tarea → test → evidencia`.
+
+Cada spec debe apuntar a IDs existentes del baseline. Si la visión contradice el PRD o un diseño,
+la diferencia se registra como `DISC-*` en `SOURCES.md` y requiere decisión humana.

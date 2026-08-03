@@ -10,6 +10,8 @@ Agente responsable: `@planner`, con consulta a los especialistas.
 ## Paso 0 — Puerta de entrada
 
 - `spec.md` en estado `aprobada` y **sin marcadores**. Si no, → `/sdd-clarify`.
+- La spec conserva la trazabilidad `OBJ → PRD-RF → UC → RF → CA`; en brownfield
+  `legacy-pending`, registra el aviso y los huecos sin inventar IDs.
 - Si la funcionalidad tiene interfaz: `design.md` existe y **sin marcadores**. Si no,
   → `/sdd-design`. Planificar antes de saber cuántas pantallas hay es planificar dos veces.
 - Lee `docs/architecture/constitution.md` y los ADR vigentes.
@@ -101,6 +103,7 @@ Recorre esta matriz y anota cada discrepancia:
 | Casos límite ↔ `test-plan.md` | Cada caso límite de la spec tiene test o justificación de por qué no |
 | `research.md` ↔ dependencias | Toda dependencia nueva del plan está justificada |
 | Todo ↔ "fuera de alcance" | Nada del plan implementa algo declarado fuera de alcance |
+| Producto ↔ spec ↔ plan | La cadena `OBJ → PRD-RF → UC → RF → CA` llega a componentes y tests |
 
 **Corrige los huecos antes de trocear.** Si un hueco revela que la spec era incompleta,
 vuelve a `spec-analyst`: no lo rellenes tú desde el plan, porque entonces habrás decidido
@@ -118,9 +121,20 @@ Checklist de conformidad:
 - [ ] Cada patrón aplicado tiene un problema real detrás (no decoración)
 - [ ] Nada implementado que la spec no pida (YAGNI)
 - [ ] Toda dependencia nueva justificada en `research.md`
+- [ ] La cobertura total desde `OBJ-*` hasta cada test previsto está visible, o los huecos
+      `legacy-pending` están advertidos
 
 **Si el plan viola la constitución → para y llama a `@architect`.** O se ajusta el plan, o
 se escribe el ADR que cambia la regla. Nunca se viola en silencio.
+
+## Paso 6 — Gate humano del plan
+
+Presenta al usuario el enfoque, componentes afectados, decisiones no triviales, dependencias,
+migraciones, riesgos, coste relativo y reversión. Pide `aprobado`, `rechazado` o cambios y **pausa**.
+
+Registra en `plan.md` el estado, fecha, actor y alcance de la aprobación. No marques el plan como
+aprobado, no generes `tasks.md` y no delegues implementación hasta recibir confirmación humana
+explícita. Una recomendación técnica del `planner` no sustituye este gate.
 
 ## Cierre
 
@@ -132,5 +146,7 @@ se escribe el ADR que cambia la regla. Nunca se viola en silencio.
 - Patrones aplicados: <lista>
 - Dependencias nuevas: <lista o "ninguna">
 - Conformidad: OK | requiere ADR-XXXX
+- Cobertura: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-* → test previsto>
+- Gate humano del plan: approved · <actor · fecha · alcance>
 - Siguiente agente sugerido: planner — comando: /sdd-tasks
 ```

@@ -8,11 +8,24 @@
 | **Fecha** | YYYY-MM-DD |
 | **Rama** | `feature/NNN-slug` |
 | **Depende de** | <otras specs, o "ninguna"> |
+| **Baseline de producto** | [`docs/product/PRD.md`](../../product/PRD.md) · estado `<pending/approved/legacy-pending>` |
+| **Fuentes** | [`docs/product/SOURCES.md`](../../product/SOURCES.md) · `<SRC-...>` |
 
 > ⚠️ Esta spec describe **QUÉ** y **POR QUÉ**. Cero tecnología: ni tablas, ni endpoints,
 > ni frameworks, ni nombres de clase. Eso va en `plan.md`.
 
 ---
+
+## 0. Origen y trazabilidad de producto
+
+> `docs/product/PRD.md` es la fuente canónica. La visión, un PRD original, un diseño o una URL
+> son fuentes de intake y se citan mediante `SRC-*`; no sustituyen al baseline aprobado.
+
+| Objetivo | Requisito de producto | Caso de uso | Requisito de esta spec | Fuente |
+|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | SRC-001 |
+
+**Discrepancias que afectan a esta spec**: `<ninguna / DISC-...>`.
 
 ## 1. Problema
 
@@ -93,6 +106,12 @@ Escenario: <nombre>
   Entonces <resultado observable>
 ```
 
+### Matriz RF → CA
+
+| OBJ | PRD-RF | UC | RF | CA |
+|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 |
+
 ## 7. Casos límite
 
 | Situación | Comportamiento esperado |
@@ -139,3 +158,16 @@ Escenario: <nombre>
 ## 13. Preguntas abiertas
 
 - `[NEEDS CLARIFICATION: <pregunta>]`
+
+## 14. Gate humano de especificación
+
+| Campo | Valor |
+|---|---|
+| **Estado** | `pending` \| `approved` \| `rejected` |
+| **Aprobado / rechazado por** | `<persona>` |
+| **Fecha** | `<YYYY-MM-DD>` |
+| **Alcance de la decisión** | `<RF/CA y discrepancias incluidas>` |
+| **Condiciones** | `<ninguna / lista>` |
+
+> `/sdd-plan` no comienza mientras haya marcadores, discrepancias abiertas o este gate no esté
+> en `approved`. La aprobación del PRD no sustituye la aprobación funcional de esta spec.

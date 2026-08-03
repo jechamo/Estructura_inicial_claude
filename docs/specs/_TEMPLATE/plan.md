@@ -7,12 +7,25 @@
 | **Fecha** | YYYY-MM-DD |
 | **Arquitectura vigente** | <de `docs/architecture/constitution.md`> |
 | **ADR relacionados** | |
+| **Gate de producto** | `<approved/legacy-pending>` · `docs/product/PRD.md` |
+| **Gate funcional** | `<approved>` · [`spec.md`](./spec.md) |
+| **Gate de diseño** | `<approved/skipped-no-ui>` · [`design.md`](./design.md) |
 
 ---
 
 ## 1. Resumen de la solución
 
 <5 líneas. Si no cabe en 5 líneas, la solución es demasiado compleja o no está clara.>
+
+### Trazabilidad y fuentes de entrada
+
+| OBJ | PRD-RF | UC | RF | CA | Componente previsto | Test previsto |
+|---|---|---|---|---|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | `<componente>` | `<test>` |
+
+- Fuentes consideradas: `<SRC-...>`.
+- Discrepancias resueltas: `<DISC-... / ninguna>`.
+- Discrepancias abiertas: `<0 para aprobar>`.
 
 ## 2. Aplicación de la arquitectura
 
@@ -134,3 +147,16 @@ Consultas críticas: <…> · Estrategia de caché e **invalidación**: <…>
 - [ ] Cada patrón tiene un problema real detrás
 - [ ] Nada implementado que la spec no pida (YAGNI)
 - [ ] Toda dependencia nueva justificada en `research.md`
+
+## 16. Gate humano del plan técnico
+
+| Campo | Valor |
+|---|---|
+| **Estado** | `pending` \| `approved` \| `rejected` |
+| **Persona** | `<quién decide>` |
+| **Fecha** | `<YYYY-MM-DD>` |
+| **Alcance aprobado** | `<componentes, contratos, datos y despliegue>` |
+| **Condiciones / riesgos aceptados** | `<ninguno / lista>` |
+
+> `/sdd-tasks` no comienza con este gate pendiente, con discrepancias abiertas o con un gate de
+> producto, spec o diseño incompatible.

@@ -79,7 +79,13 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala AGENTS.md', existsSync(join(d, 'AGENTS.md')));
   comprueba('instala los agentes', existsSync(join(d, '.claude/agents/implementer.md')));
   comprueba('instala las skills canónicas portables', existsSync(join(d, '.agents/skills/middle/SKILL.md')));
+  comprueba('instala la skill canónica de intake sin prompt paralelo',
+    existsSync(join(d, '.agents/skills/sdd-intake/SKILL.md')) &&
+    !existsSync(join(d, '.github/prompts/sdd-intake.prompt.md')) &&
+    !existsSync(join(d, '.cursor/commands/sdd-intake.md')));
   comprueba('instala los adaptadores de skill de Claude', existsSync(join(d, '.claude/skills/middle/SKILL.md')));
+  comprueba('instala el adaptador Claude de intake',
+    (leer(join(d, '.claude/skills/sdd-intake/SKILL.md')) || '').includes('.agents/skills/sdd-intake/SKILL.md'));
   comprueba('instala skill-creator completa y con licencia',
     existsSync(join(d, '.agents/skills/skill-creator/scripts/quick_validate.py')) &&
     existsSync(join(d, '.agents/skills/skill-creator/LICENSE.txt')));
@@ -110,6 +116,135 @@ console.log('\n1 · init sobre un directorio vacío');
     /trust|confiar|conf[ií]a/i.test(r.stdout || '') && /reload|recargar/i.test(r.stdout || '') && /VS Code/i.test(r.stdout || ''));
   comprueba('crea docs/specs', existsSync(join(d, 'docs/specs')));
   comprueba('deja registro de instalación', existsSync(join(d, '.sdd/installed.json')));
+  comprueba('greenfield nace con baseline de producto pendiente', (() => {
+    const registro = JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}');
+    return registro.product?.status === 'bootstrap' &&
+      ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md']
+        .every((nombre) => existsSync(join(d, 'docs/product', nombre)));
+  })());
+  const productStatus = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'product-status', '--json'], {
+    cwd: d, encoding: 'utf8',
+  });
+  let estadoProducto = null;
+  try { estadoProducto = JSON.parse(productStatus.stdout || 'null'); } catch { /* aserción inferior */ }
+  comprueba('product-status expone el gate bootstrap',
+    productStatus.status === 0 && estadoProducto?.status === 'bootstrap');
+  const specPrematura = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'new-spec', 'no-debe-crearse', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('new-spec bloquea greenfield mientras producto siga bootstrap',
+    specPrematura.status === 1 && /sdd-intake|bootstrap/i.test(`${specPrematura.stdout}${specPrematura.stderr}`) &&
+    !existsSync(join(d, 'docs/specs/001-no-debe-crearse')));
+  const aprobacionInvalida = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza todos los placeholders estructurales de la plantilla',
+    aprobacionInvalida.status === 1 && /placeholder|pendiente|aclaraciones/i.test(`${aprobacionInvalida.stdout}${aprobacionInvalida.stderr}`));
+  const actorInvalido = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'persona|inyectada', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza una identidad que rompa el documento', actorInvalido.status === 1);
+  const GATE_PRD = `# PRD
+| Campo | Valor |
+|---|---|
+| Estado | pending |
+| Aprobado por | |
+| Fecha de aprobación | |
+| Alcance aprobado | baseline funcional completo |
+`;
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD.replace('baseline funcional completo', '')}| OBJ-001 | objetivo |\n| PRD-RF-001 | OBJ-001 | requisito |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | spec | valor | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 accesible\n`, 'utf8');
+  const aprobacionSinAlcance = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product exige un alcance humano no vacío',
+    aprobacionSinAlcance.status === 1 && /alcance/i.test(`${aprobacionSinAlcance.stdout}${aprobacionSinAlcance.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD}| OBJ-001 | objetivo |\n| PRD-RF-001 | OBJ-001 | requisito |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-999\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | spec | valor | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 accesible\n`, 'utf8');
+  const aprobacionHuerfana = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza IDs huerfanos',
+    aprobacionHuerfana.status === 1 && /hu.rfan/i.test(`${aprobacionHuerfana.stdout}${aprobacionHuerfana.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD}| OBJ-001 | objetivo principal |\n| OBJ-002 | objetivo secundario |\n| PRD-RF-001 | OBJ-001 | requisito |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | spec | valor | OBJ-002 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  const aprobacionInconexa = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza IDs válidos que no formen la misma cadena',
+    aprobacionInconexa.status === 1 && /cadena inconexa/i.test(`${aprobacionInconexa.stdout}${aprobacionInconexa.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD}| OBJ-001 | objetivo |\n| PRD-RF-001 | OBJ-001 | requisito A |\n| PRD-RF-001 | OBJ-001 | requisito B |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  const aprobacionDuplicada = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza IDs declarados por duplicado',
+    aprobacionDuplicada.status === 1 && /duplicad/i.test(`${aprobacionDuplicada.stdout}${aprobacionDuplicada.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD}| OBJ-001 | objetivo |\n| PRD-RF-001 | OBJ-001 | requisito |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | spec | valor | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\n| SRC-001 | URL | inaccesible |\n| DISC-001 | PRD-diseño | abierta |\n`, 'utf8');
+  const aprobacionBloqueada = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product bloquea fuentes inaccesibles o discrepancias abiertas',
+    aprobacionBloqueada.status === 1 && /inaccesible|discrepancias/i.test(`${aprobacionBloqueada.stdout}${aprobacionBloqueada.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 https://example.test/prd?api_key=secreto\n`, 'utf8');
+  const aprobacionUrlSensible = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza secretos en query o fragmento de una URL',
+    aprobacionUrlSensible.status === 1 && /credenciales|sensibles|query|fragmento|saneada/i.test(`${aprobacionUrlSensible.stdout}${aprobacionUrlSensible.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 http://169.254.169.254/latest/meta-data\n`, 'utf8');
+  const aprobacionUrlPrivada = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza loopback, redes privadas y link-local',
+    aprobacionUrlPrivada.status === 1 && /público|publico|http/i.test(`${aprobacionUrlPrivada.stdout}${aprobacionUrlPrivada.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 http://[::ffff:7f00:1]/metadata\n`, 'utf8');
+  const aprobacionIpv6Mapeada = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  comprueba('approve-product rechaza IPv6 especial que represente loopback o multicast',
+    aprobacionIpv6Mapeada.status === 1 && /público|publico|http/i.test(`${aprobacionIpv6Mapeada.stdout}${aprobacionIpv6Mapeada.stderr}`));
+
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${GATE_PRD}| OBJ-001 | objetivo |\n| PRD-RF-001 | OBJ-001 | requisito |\nSRC-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | spec | valor | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 accesible; sin discrepancias abiertas\n`, 'utf8');
+  const aprobacion = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  let productoAprobado = null;
+  try { productoAprobado = JSON.parse(aprobacion.stdout || 'null'); } catch { /* aserción inferior */ }
+  comprueba('approve-product registra aprobación, hashes y umbral de specs',
+    aprobacion.status === 0 && productoAprobado?.status === 'approved' &&
+    productoAprobado?.approvedBy === 'test-user' && productoAprobado?.enforceFromSpec === 1 &&
+    Object.keys(productoAprobado?.hashes || {}).length === 4 &&
+    /\|\s*Aprobado por\s*\|\s*test-user\s*\|/i.test(leer(join(d, 'docs/product/PRD.md')) || '') &&
+    /\|\s*Fecha de aprobación\s*\|\s*\d{4}-\d{2}-\d{2}T/i.test(leer(join(d, 'docs/product/PRD.md')) || ''));
+  const prdAprobado = leer(join(d, 'docs/product/PRD.md'));
+  writeFileSync(join(d, 'docs/product/PRD.md'), `${prdAprobado}\nCambio posterior no aprobado\n`, 'utf8');
+  const drift = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--strict'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd estricto detecta drift tras aprobar producto',
+    drift.status === 1 && /drift|cambi.*aproba|hash/i.test(drift.stdout || ''));
+  writeFileSync(join(d, 'docs/product/PRD.md'), prdAprobado, 'utf8');
+  sdd(d, 'update');
+  comprueba('update conserva el estado de producto aprobado',
+    JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').product?.status === 'approved');
   comprueba('instala el comando determinista de proyecto', existsSync(join(d, 'scripts/sdd-project.mjs')));
   comprueba('crea README virgen',
     existsSync(join(d, 'README.md')) &&
@@ -179,7 +314,9 @@ console.log('\n1 · init sobre un directorio vacío');
   const contaminados = ficherosTexto(d).filter((ruta) => {
     const normalizada = ruta.replaceAll('\\', '/');
     if (['.sdd/installed.json', 'scripts/check-sdd.mjs'].includes(normalizada)) return false;
-    return /001-agentes-codex|Estructura_inicial_claude|2026-0[78]-/i.test(leer(join(d, ruta)) || '');
+    const contenido = (leer(join(d, ruta)) || '')
+      .replace(/^\|\s*Fecha de aprobación\s*\|[^\n]*$/gim, '');
+    return /001-agentes-codex|Estructura_inicial_claude|2026-0[78]-/i.test(contenido);
   });
   comprueba('ningun artefacto instalado filtra nombres, specs o fechas de la plantilla',
     contaminados.length === 0, contaminados.join(', '));
@@ -218,7 +355,7 @@ console.log('\n1 · init sobre un directorio vacío');
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('inventory cuenta agentes y skills canónicos',
-    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 23);
+    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 24);
 
   const nuevaSpec = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'new-spec', 'checkout-invitado', '--json'], { cwd: d, encoding: 'utf8' });
   comprueba('new-spec crea el siguiente scaffold sin execution-log',
@@ -237,6 +374,7 @@ console.log('\n1 · init sobre un directorio vacío');
 console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 {
   const d = nuevoDestino();
+  writeFileSync(join(d, 'package.json'), '{"name":"brownfield-evidence"}\n', 'utf8');
   sdd(d, 'init');
   const specDir = join(d, 'docs/specs/900-directa');
   mkdirSync(specDir, { recursive: true });
@@ -286,6 +424,84 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 }
 
 // ─── 1 bis · La paridad de Codex es obligatoria ─────────────────────────────────────────────
+console.log('\n1 quater · cadena completa y evidencia concreta');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  writeFileSync(join(d, 'docs/product/PRD.md'), `# PRD
+| Campo | Valor |
+|---|---|
+| Estado | pending |
+| Aprobado por | |
+| Fecha de aprobación | |
+| Alcance aprobado | producto de prueba |
+| OBJ-001 | objetivo |
+| PRD-RF-001 | OBJ-001 | requisito | SRC-001 |
+`, 'utf8');
+  writeFileSync(join(d, 'docs/product/USE-CASES.md'), `# Casos\n## UC-001\nCubre PRD-RF-001\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/FEATURE-MAP.md'), `# Mapa\n| FEAT-001 | 001-bypass | valor | OBJ-001 | PRD-RF-001 | UC-001 | propuesta |\n`, 'utf8');
+  writeFileSync(join(d, 'docs/product/SOURCES.md'), `# Fuentes\nSRC-001 accesible\n`, 'utf8');
+  const aprobado = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-product', '--approved-by', 'test-user', '--json'],
+    { cwd: d, encoding: 'utf8' });
+  const specDir = join(d, 'docs/specs/001-bypass');
+  mkdirSync(specDir, { recursive: true });
+  writeFileSync(join(specDir, 'spec.md'), `# Spec
+| Estado | aprobada |
+|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 |
+| RF-01 | comportamiento trazado | M | 1 |
+| RF-02 | comportamiento sin origen | S | 1 |
+### CA-01 · trazado
+### CA-02 · sin origen
+`, 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+### T-001-01 · tarea trazada
+- **Estado**: pendiente
+- **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
+- **Test que la define**: tests/product.test.mjs::cadena
+`, 'utf8');
+  const rfCaSinCadena = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '001'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd exige cadena completa para cada RF y cada CA',
+    aprobado.status === 0 && rfCaSinCadena.status === 1 && /RF.*CA|cadena completa/i.test(rfCaSinCadena.stdout || ''));
+
+  writeFileSync(join(specDir, 'spec.md'), `# Spec
+| Estado | aprobada |
+|---|---|
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 |
+| RF-01 | comportamiento trazado | M | 1 |
+### CA-01 · trazado
+`, 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+### T-001-01 · test ficticio
+- **Estado**: pendiente
+- **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
+- **Test que la define**: pendiente
+`, 'utf8');
+  const testPendiente = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '001'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd no acepta Test que la define: pendiente',
+    testPendiente.status === 1 && /test|cadena.*tarea/i.test(testPendiente.stdout || ''));
+
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+### T-001-01 · evidencia ficticia
+- **Estado**: hecho
+- **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
+- **Test que la define**: tests/product.test.mjs::cadena
+`, 'utf8');
+  writeFileSync(join(specDir, 'evidence.md'), `# Evidencia
+| T-001-01 | declared-direct | OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | pendiente |
+## 3. Controles NO ejecutados
+| control | motivo | riesgo | dueño | paso |
+`, 'utf8');
+  const evidenciaPendiente = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '001'], { cwd: d, encoding: 'utf8' });
+  comprueba('check-sdd no acepta una fila de evidencia sin resultado concreto',
+    evidenciaPendiente.status === 1 && /cadena-evidencia|evidence\.md no enlaza/i.test(evidenciaPendiente.stdout || ''));
+}
+
+// ─── 1 bis · La paridad de Codex es obligatoria ─────────────────────────────────────────────
 console.log('\n1 bis · detección de deriva en la superficie Codex');
 {
   const d = nuevoDestino();
@@ -314,12 +530,17 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
   writeFileSync(join(d, 'docs/specs/777-existente/spec.md'), SENTINELA, 'utf8');
   mkdirSync(join(d, 'docs/architecture/adr'), { recursive: true });
   writeFileSync(join(d, 'docs/architecture/adr/ADR-0042-existente.md'), SENTINELA, 'utf8');
+  mkdirSync(join(d, 'docs/product'), { recursive: true });
+  for (const nombre of ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md'])
+    writeFileSync(join(d, 'docs/product', nombre), `# Producto existente\n${SENTINELA}\n`, 'utf8');
   writeFileSync(join(d, '.mcp.json'), `{"mcpServers":{"propio":{"url":"https://example.invalid/mcp"}},"nota":"${SENTINELA}"}\n`, 'utf8');
   mkdirSync(join(d, '.github/workflows'), { recursive: true });
   writeFileSync(join(d, '.github/workflows/sdd-gates.yml'), `name: propio # ${SENTINELA}\n`, 'utf8');
   mkdirSync(join(d, '.vscode'), { recursive: true });
   writeFileSync(join(d, '.vscode/settings.json'),
-    '{\n  "editor.tabSize": 4,\n  "files.associations": { "*.foo": "json" }\n}\n', 'utf8');
+    '{\n  "editor.tabSize": 4,\n  "files.associations": { "*.foo": "json" },\n' +
+    '  "chat.agentFilesLocations": { ".claude/agents": true, ".github/agents": false },\n' +
+    '  "chat.agentSkillsLocations": { ".claude/skills": true, ".agents/skills": false }\n}\n', 'utf8');
 
   sdd(d, 'init');
 
@@ -333,6 +554,11 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
   comprueba('preserva specs y ADR brownfield',
     leer(join(d, 'docs/specs/777-existente/spec.md')) === SENTINELA &&
     leer(join(d, 'docs/architecture/adr/ADR-0042-existente.md')) === SENTINELA);
+  comprueba('preserva íntegramente el baseline de producto brownfield',
+    ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md']
+      .every((nombre) => leer(join(d, 'docs/product', nombre)).includes(SENTINELA)));
+  comprueba('brownfield sin aprobación explícita queda legacy-pending sin romper la instalación',
+    JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').product?.status === 'legacy-pending');
   comprueba('MCP queda intacto sin --with-mcp', leer(join(d, '.mcp.json')).includes(SENTINELA));
   comprueba('CI existente queda intacto', leer(join(d, '.github/workflows/sdd-gates.yml')).includes(SENTINELA));
 
@@ -340,6 +566,11 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
   comprueba('respeta tus claves de settings.json', ajustes['editor.tabSize'] === 4);
   comprueba('respeta tus valores anidados', ajustes['files.associations']['*.foo'] === 'json');
   comprueba('añade las claves de SDD', !!ajustes['chat.agentFilesLocations']);
+  comprueba('normaliza selectores VS Code aunque el brownfield tuviera ambas superficies activas',
+    ajustes['chat.agentFilesLocations']['.github/agents'] === true &&
+    ajustes['chat.agentFilesLocations']['.claude/agents'] === false &&
+    ajustes['chat.agentSkillsLocations']['.agents/skills'] === true &&
+    ajustes['chat.agentSkillsLocations']['.claude/skills'] === false);
 
   const gitignore = leer(join(d, '.gitignore'));
   comprueba('.gitignore conserva lo tuyo', gitignore.includes('dist/') && gitignore.includes('*.log'));
@@ -469,6 +700,25 @@ console.log('\n4 · update con un fichero modificado a mano');
 }
 
 // ─── 4 bis · contrato explícito de empaquetado ───────────────────────────────
+console.log('\n4 ter · migración de estado de producto previo a v0.4.0');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const registroRuta = join(d, '.sdd/installed.json');
+  const anterior = JSON.parse(leer(registroRuta));
+  delete anterior.product;
+  anterior.version = '0.3.1';
+  writeFileSync(registroRuta, `${JSON.stringify(anterior, null, 2)}\n`, 'utf8');
+
+  const actualizacion = sdd(d, 'update');
+  const migrado = JSON.parse(leer(registroRuta));
+  comprueba('update desde v0.3.1 crea legacy-pending sin asumir aprobación',
+    actualizacion.status === 0 && migrado.product?.status === 'legacy-pending');
+  const estricto = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--strict'], { cwd: d, encoding: 'utf8' });
+  comprueba('legacy-pending avisa pero no rompe el gate estricto',
+    estricto.status === 0 && /legacy-pending/i.test(estricto.stdout || ''));
+}
+
 console.log('\n4 bis · allowlist de distribución npm');
 {
   const paquete = JSON.parse(leer(join(ORIGEN, 'package.json')) || '{}');
@@ -481,7 +731,7 @@ console.log('\n4 bis · allowlist de distribución npm');
   comprueba('existe .npmignore defensivo', existsSync(join(ORIGEN, '.npmignore')));
   const serializada = JSON.stringify(allowlist);
   comprueba('la allowlist no publica globs locales ni historia activa',
-    !/\.claude\/\*\*|\.sdd\/\*\*|docs\/specs\/\*\*/.test(serializada));
+    !/\.claude\/\*\*|\.sdd\/\*\*|docs\/specs\/\*\*|scripts\/test-install\.mjs/.test(serializada));
 }
 
 // ─── 5 · check y dry-run ─────────────────────────────────────────────────────

@@ -11,7 +11,19 @@
     {
       "name": "especificacion-sdd",
       "agent": "spec-analyst",
-      "paths": ["docs/specs/**/spec.md", "docs/specs/**/clarifications.md"]
+      "paths": [
+        "docs/specs/**/spec.md",
+        "docs/specs/**/clarifications.md",
+        "docs/product/PRD.md",
+        "docs/product/USE-CASES.md",
+        "docs/product/FEATURE-MAP.md",
+        "docs/product/SOURCES.md"
+      ]
+    },
+    {
+      "name": "diseno-sdd",
+      "agent": "ux-designer",
+      "paths": ["docs/design/**"]
     }
   ]
 }

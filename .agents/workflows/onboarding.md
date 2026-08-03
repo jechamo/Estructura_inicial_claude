@@ -7,6 +7,16 @@ Reglas del proyecto: @AGENTS.md · Detalle: @.agents/skills/onboard/SKILL.md
 
 ---
 
+## 0. Preservar y clasificar producto
+
+No sobrescribas PRD, visión, casos, arquitectura, diseño ni specs existentes. Si el usuario aporta
+un PRD global o diseño opcional, el `orchestrator` ejecuta `/sdd-intake` primero y después reanuda
+`/onboard` leyendo `docs/product/`. Si no hay baseline, conserva el estado `legacy-pending` como
+aviso no bloqueante: onboarding documenta la realidad técnica, no inventa producto.
+
+Si el host no delega, muestra perfil/comando exactos y usa el handoff durable; no dependas del
+contexto del chat.
+
 ## 1. Investigar
 
 Adopta el perfil de @.claude/agents/research-analyst.md. **Solo lectura.**
@@ -51,3 +61,5 @@ Especifica solo lo que vayas a tocar, cuando lo vayas a tocar.
 ---
 
 Siguiente paso: @.agents/workflows/sdd-nueva-funcionalidad.md
+
+Cierra cada fase con el HANDOFF ampliado de AGENTS.md y respeta los gates humanos aplicables.

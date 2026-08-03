@@ -19,19 +19,22 @@ Antigravity y Codex. La política completa y vinculante está en
 ## Reglas duras
 
 1. Ningún código se implementa sin una spec aprobada en `docs/specs/NNN-slug/`.
-2. Circuito: specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
-3. Implementación con TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
-4. No se modifican artefactos de una fase anterior sin avisar y registrar la decisión.
-5. Toda tarea terminada enlaza spec, criterio, tarea, test y evidencia ejecutada.
-6. “Pasa” sin ejecución real no es un resultado; “no ejecutado” sí, con riesgo y siguiente paso.
-7. Nunca se leen, copian ni escriben secretos, `.env`, credenciales o configuración local.
-8. No se usa `git push --force`, no se toca producción y no se borra contexto ajeno.
+2. Un proyecto nuevo define y aprueba producto antes de decidir arquitectura. Si llega un PRD
+   global o un diseño opcional, entra por `/sdd-intake` antes de crear specs verticales.
+3. Circuito de funcionalidad: specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
+4. Implementación con TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
+5. No se modifican artefactos de una fase anterior sin avisar y registrar la decisión.
+6. Toda tarea terminada enlaza spec, criterio, tarea, test y evidencia ejecutada.
+7. “Pasa” sin ejecución real no es un resultado; “no ejecutado” sí, con riesgo y siguiente paso.
+8. Nunca se leen, copian ni escriben secretos, `.env`, credenciales o configuración local.
+9. No se usa `git push --force`, no se toca producción y no se borra contexto ajeno.
 
 ## Entrada por situación
 
 | Situación | Entrada |
 |---|---|
-| Proyecto nuevo | `/sdd-init` |
+| PRD global, ruta/URL de requisitos o diseño opcional | `/sdd-intake` |
+| Proyecto nuevo | `/sdd-intake` → `/sdd-init` |
 | Repositorio existente sin documentar | `/onboard` |
 | Nueva funcionalidad | `/sdd-specify` |
 | Implementación de tarea | `/sdd-implement` → `/middle`, `/front` o `/bbdd` |
@@ -43,12 +46,17 @@ Antigravity y Codex. La política completa y vinculante está en
 
 - Perfiles canónicos: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` contiene adaptadores.
+- El contrato instalado mantiene **20 agentes** y **24 skills**; no se crean prompts o commands
+  paralelos para representar una skill.
 - `orchestrator` es la puerta de entrada por defecto.
 - Solo `orchestrator`, `planner` e `implementer` delegan.
 - Profundidad máxima: dos saltos de delegación.
 - Los especialistas devuelven el control; nunca encadenan otro especialista.
 - `orchestrator`, `code-reviewer`, `security-auditor` y `research-analyst` son auditores sin escritura.
 - Los territorios se aplican donde el host lo permite y siempre se verifican en CI.
+- Durante intake, solo `orchestrator` encadena `spec-analyst` → retorno → `ux-designer` →
+  retorno → `spec-analyst`. Si el host no delega, indica perfil y comando exactos y reanuda
+  leyendo los documentos durables del repositorio.
 
 ## Trazabilidad
 
@@ -60,6 +68,10 @@ Antigravity y Codex. La política completa y vinculante está en
 - Los JSONL son append-only y no se editan a mano.
 
 ## Gates
+
+El circuito pausa para aprobación humana en: (1) producto, casos, discrepancias y mapa de specs;
+(2) arquitectura y stack, solo greenfield; (3) spec sin ambigüedades; (4) dirección visual y
+diseño; (5) plan técnico; y (6) entrega final.
 
 ```text
 node scripts/check-sdd.mjs
@@ -76,10 +88,14 @@ Los checks de cada aplicación se declaran en `.sdd/checks.json` después de `/s
 ### HANDOFF
 - Agente origen:
 - Fase completada:
+- Fuentes consultadas:
 - Artefactos:
+- Requisitos / casos cubiertos:
+- Discrepancias:
 - Decisiones tomadas:
-- Bloqueos / supuestos:
+- Supuestos:
+- Bloqueos:
 - Siguiente agente sugerido:
-- Contexto que necesita:
+- Comando / contexto durable:
 ```
 <!-- sdd:end -->

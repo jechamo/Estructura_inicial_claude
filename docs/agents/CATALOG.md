@@ -65,8 +65,8 @@ por su cuenta: hacen su trabajo y devuelven el control.
 
 | Agente | Fase | Modelo | Produce | Handoff natural |
 |---|---|---|---|---|
-| [`spec-analyst`](../../.claude/agents/spec-analyst.md) | specify · clarify | `opus` | `spec.md` (EARS + MoSCoW), `clarifications.md` | → `ux-designer` o `planner` |
-| [`ux-designer`](../../.claude/agents/ux-designer.md) | **design** | `inherit` | `design.md`, flujos, estados | → `planner` |
+| [`spec-analyst`](../../.claude/agents/spec-analyst.md) | intake · specify · clarify | `opus` | baseline de producto, `spec.md`, `clarifications.md` | → `orchestrator` durante intake; después `ux-designer` o `planner` |
+| [`ux-designer`](../../.claude/agents/ux-designer.md) | consulta de intake · **design** | `inherit` | `INTAKE-REVIEW.md`, `design.md`, flujos, estados | → `orchestrator` durante intake; después `planner` |
 | [`architect`](../../.claude/agents/architect.md) | init · decisiones estructurales | `opus` | `constitution.md`, ADR | → `spec-analyst` o `planner` |
 | [`planner`](../../.claude/agents/planner.md) | plan · tasks | `opus` | `plan.md`, `data-model.md`, `contracts/`, `tasks.md` | → `implementer` |
 | [`implementer`](../../.claude/agents/implementer.md) | implement | `inherit` | Código + tests | → `code-reviewer` |

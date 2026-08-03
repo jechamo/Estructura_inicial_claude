@@ -7,18 +7,32 @@ Reglas del proyecto: @AGENTS.md
 
 ---
 
-## 1. Init — decidir la arquitectura
+## 1. Intake — aprobar el producto
+
+Coordina con el perfil @.claude/agents/orchestrator.md y ejecuta `/sdd-intake` siguiendo
+@.agents/skills/sdd-intake/SKILL.md. Acepta PRD en texto, fichero, carpeta, URL o dentro del repo;
+el diseño de Stitch/Figma, un boceto o una descripción es opcional.
+
+El orquestador coordina `spec-analyst` → retorno → `ux-designer` → retorno → `spec-analyst`.
+Los especialistas no se delegan entre sí. Produce `docs/product/PRD.md`, `USE-CASES.md`,
+`FEATURE-MAP.md` y `SOURCES.md`, registra discrepancias y pausa en el gate humano de producto.
+No genera código, arquitectura ni MCP. Si no hay delegación automática, muestra perfil y comando
+exactos y reanuda desde esos documentos y `docs/design/INTAKE-REVIEW.md`, si existe.
+
+Sin aprobación explícita del producto no se entra en el paso 2.
+
+## 2. Init — decidir la arquitectura
 
 Adopta el perfil de @.claude/agents/architect.md.
 Procedimiento detallado: @.agents/skills/sdd-init/SKILL.md
 
-### 1.1 Entrevista (máximo 8 preguntas, con opciones y recomendación)
+### 2.1 Entrevista (máximo 8 preguntas, con opciones y recomendación)
 
-Producto y problema · usuarios · tipo (web/API/móvil/CLI/data/librería) · escala al año 1 ·
-equipo (tamaño y experiencia) · restricciones (cloud, presupuesto, normativa) · datos
-sensibles (determina el nivel ASVS) · horizonte (MVP vs. años) · integraciones y diseño.
+Parte del baseline de producto aprobado. Pregunta solo por decisiones arquitectónicas: tipo
+(web/API/móvil/CLI/data/librería) · escala al año 1 · equipo (tamaño y experiencia) · restricciones
+(cloud, presupuesto, normativa) · datos sensibles (nivel ASVS) · horizonte · integraciones.
 
-### 1.2 Decisión
+### 2.2 Decisión
 
 Recorre el árbol de decisión. Presenta **la opción recomendada + 1 alternativa seria**, con
 coste y consecuencias. **Espera confirmación antes de escribir nada.**
@@ -26,7 +40,7 @@ coste y consecuencias. **Espera confirmación antes de escribir nada.**
 Ley del proyecto: **monolito modular con fronteras hexagonales** por defecto.
 Microservicios prohibidos sin CI/CD, observabilidad y ownership por equipo.
 
-### 1.3 Artefactos
+### 2.3 Artefactos
 
 - `docs/architecture/constitution.md` — estilo, C4 nivel 1 y 2 en mermaid, contextos acotados,
   reglas de dependencia, estructura de carpetas, stack con versiones, estándares transversales,
@@ -40,14 +54,14 @@ Microservicios prohibidos sin CI/CD, observabilidad y ownership por equipo.
 - CI con los gates de AGENTS.md §7
 - Primera entrada en `docs/bitacora/DECISIONS.md`
 
-### 1.4 Test de humo
+### 2.4 Test de humo
 
 Un test trivial que pase. **Ejecuta y pega la salida real.** Verifica el andamiaje antes de
 escribir nada de negocio.
 
 ---
 
-## 2. Primera funcionalidad
+## 3. Primera funcionalidad
 
 A partir de aquí, sigue @.agents/workflows/sdd-nueva-funcionalidad.md desde el paso 1.
 
@@ -55,4 +69,5 @@ El `architect` **ya no interviene** salvo que un cambio toque fronteras.
 
 ---
 
-Cierra cada paso con el bloque `### HANDOFF`.
+Cierra cada paso con el bloque `### HANDOFF` ampliado de AGENTS.md. El circuito completo pausa
+en los seis gates humanos definidos en `docs/sdd/OPERATING-MODEL.md`.

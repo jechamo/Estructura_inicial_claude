@@ -44,12 +44,16 @@ toca. Perderlo sería perder el aislamiento en VS Code.
 **Consecuencia**: a partir de este ajuste, un agente sin envoltorio **no existe** en VS Code.
 Por eso `scripts/check-sdd.mjs` falla si falta alguno.
 
-Su procedimiento de trabajo vive en las skills, que **sí son portables sin duplicar**:
-`/middle`, `/front` y `/bbdd` valen igual aquí que en Claude Code, Cursor o Codex.
+Su procedimiento de trabajo vive en las 24 skills, que **sí son portables sin duplicar**:
+`/sdd-intake`, `/middle`, `/front` y `/bbdd` valen igual aquí que en Claude Code, Cursor o Codex.
 
 Las skills canónicas están en `.agents/skills/*/SKILL.md` y aparecen directamente como
 comandos `/` en VS Code y Copilot. No se mantienen prompts paralelos con el mismo nombre,
 porque ambas entradas aparecerían duplicadas en el selector.
+
+`/sdd-intake` no tiene prompt propio: cuando llega un PRD en texto/ruta/carpeta/URL o un diseño
+opcional, el `orchestrator` coordina los perfiles existentes `spec-analyst`, `ux-designer` y de
+nuevo `spec-analyst`. Se mantienen 20 agentes; intake es una fase, no un agente número 21.
 
 ## Handoffs
 
@@ -59,6 +63,11 @@ envía: te da oportunidad de revisarlo antes.
 
 Es la implementación de VS Code del protocolo de handoff descrito en
 [`AGENTS.md`](../../AGENTS.md) §10.
+
+El bloque durable incluye fuentes, artefactos, requisitos/casos cubiertos, discrepancias,
+decisiones, supuestos, bloqueos y el siguiente comando/contexto. Si un botón o la delegación no
+están disponibles, se muestra el agente/comando exacto y la siguiente fase relee los documentos
+del repositorio. El contexto efímero del chat no es un mecanismo de continuidad.
 
 ## Otros ficheros de esta carpeta
 

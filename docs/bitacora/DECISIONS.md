@@ -9,6 +9,30 @@
 
 ---
 
+## 2026-08-03 · Producto durable antes de arquitectura y specs derivadas
+
+- **Tipo**: decisión de proceso y compatibilidad
+- **Contexto**: el circuito podía crear specs funcionales y arquitectura, pero no convertía de
+  forma explícita un PRD global y un diseño opcional en una base de producto durable. En hosts sin
+  delegación, parte del handoff podía quedar únicamente en el chat.
+- **Decisión / hecho**: añadir `/sdd-intake` como skill canónica, sin agente nuevo ni formatos de
+  comando paralelos. `orchestrator` coordina `spec-analyst → retorno → ux-designer → retorno →
+  spec-analyst`; los resultados viven en cuatro documentos de producto y, cuando aplica,
+  `docs/design/INTAKE-REVIEW.md`. La aprobación se materializa mediante estado, hashes y umbral de
+  nuevas specs en `.sdd/installed.json`.
+- **Alternativas descartadas**: convertir el PRD completo en una spec gigante perdería cortes
+  verticales; guardar el análisis UX solo en el chat rompería el handoff guiado; exigir trazabilidad
+  retroactiva a brownfields bloquearía adopciones legítimas; crear un agente `intake` aumentaría
+  duplicación sin una responsabilidad nueva.
+- **Impacto**: 20 agentes, 24 skills, seis gates humanos y cadena
+  `OBJ → PRD-RF → UC → RF → CA → tarea → test → evidencia`. Greenfield no decide arquitectura sin
+  producto aprobado; brownfield conserva contexto con `legacy-pending` no bloqueante.
+- **Seguridad**: fuentes externas son datos no confiables; no activan MCP ni autorizan acciones.
+  Solo se consultan destinos HTTP(S) públicos revalidados en cada redirección, y se guarda la URL
+  saneada sin query, fragmento ni credenciales.
+- **Referencias**: spec `005-intake-prd-diseno-universal` · versión `v0.4.0`
+- **Quién**: usuario + Codex con implementación y revisiones delegadas
+
 ## 2026-08-03 · Una skill canónica por comando y adaptadores solo para agentes
 
 - **Tipo**: decisión
