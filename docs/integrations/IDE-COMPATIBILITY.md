@@ -48,7 +48,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
-| Comandos `/` | ✅ 24 skills | ✅ 24 skills | ✅ skills | ✅ 24 skills | 🟡 workflows | 🟡 skills por nombre/prompt |
+| Comandos `/` | ✅ 25 skills | ✅ 25 skills | ✅ skills | ✅ 25 skills | 🟡 workflows | 🟡 skills por nombre/prompt |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
@@ -247,7 +247,7 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 /sdd-start
 ```
-Los 20 agentes con `@nombre`, 24 skills, 7 hooks y trazabilidad `observed`.
+Los 20 agentes con `@nombre`, 25 skills, 7 hooks y trazabilidad `observed`.
 
 ### Intake sin superficies duplicadas
 

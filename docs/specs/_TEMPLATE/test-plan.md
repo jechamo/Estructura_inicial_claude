@@ -61,7 +61,15 @@ Solo flujos críticos de negocio. Selectores por rol y texto accesible.
 
 ## 7. Criterio de suficiencia
 
-- Cobertura dominio/aplicación ≥ 80 %
+**Cobertura por tier**, no global — el tier lo declara `plan.md` §8.1:
+
+| Módulo / ruta | Tier | Umbral | Alcanzado |
+|---|---|---:|---:|
+| `<ruta>` | CORE | 100 % | |
+| `<ruta>` | IMPORTANT | 80 % | |
+| `<ruta>` | INFRASTRUCTURE | excluido | — |
+| `<ruta sin tier declarado>` | — | **100 %** | |
+
 - Mutation score en el core ≥ <n> % (si está configurado)
 - Todos los CA con test verde
 - Suite completa < <n> minutos en CI

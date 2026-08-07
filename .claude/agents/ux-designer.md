@@ -106,11 +106,33 @@ carácter que una ilustración; "la tarjeta estándar" es ausencia de decisión.
 - Textos de error concretos y accionables ("La fecha debe ser posterior a hoy"), no "Error".
 - Contenido en movimiento: pausable, y alternativa para `prefers-reduced-motion`.
 
+## Usabilidad — revisión heurística
+
+La accesibilidad es el suelo legal; esto es lo que hace que además funcione. Una pantalla puede ser
+perfectamente accesible y perfectamente confusa.
+
+Antes de dar una pantalla por buena, recórrela contra
+[`docs/design/USABILITY-CHECKLIST.md`](../../docs/design/USABILITY-CHECKLIST.md): las diez
+heurísticas con su fallo típico, formularios, mensajes de error, microcopy y velocidad percibida.
+
+Las tres que más se incumplen y menos se detectan:
+
+- **Visibilidad del estado.** Se pulsa y no pasa nada visible durante dos segundos, así que el
+  usuario vuelve a pulsar. Todo lo que tarde más de 100 ms necesita respuesta inmediata.
+- **Recuperación de errores.** "Error de validación" no es un mensaje: es un callejón. Qué está
+  mal, cómo se arregla, y la alternativa si la hay.
+- **Control y libertad.** Prefiere deshacer a confirmar. Una confirmación se pulsa sin leer; un
+  deshacer se usa cuando de verdad hace falta.
+
 ## Contenido y microcopy
 
-Voz consistente. Botones con verbo de la acción real ("Guardar cambios", no "Aceptar").
-Estados vacíos que enseñan el siguiente paso. Confirmaciones solo para acciones destructivas,
-con el impacto explícito. Prefiere deshacer a confirmar.
+Voz consistente. Botones con **verbo + sustantivo** de la acción real ("Guardar cambios", no
+"Aceptar"; "Continuar al pago", no "Continuar"): tras leer el botón se sabe exactamente qué va a
+pasar. Estados de carga contextuales ("Aplicando descuento…", no "Cargando…"). Estados vacíos que
+enseñan el siguiente paso con acción concreta. Confirmaciones solo para acciones destructivas, con
+el impacto explícito.
+
+Claridad por encima de ingenio: el texto gracioso se lee una vez y estorba cien.
 
 ## Entregables
 
@@ -119,6 +141,7 @@ con el impacto explícito. Prefiere deshacer a confirmar.
 - `docs/design/wireframes/` — baja fidelidad
 - `docs/design/design-system.md` — tokens y componentes
 - `docs/design/a11y-checklist.md` — verificación por pantalla
+- Revisión contra [`docs/design/USABILITY-CHECKLIST.md`](../../docs/design/USABILITY-CHECKLIST.md)
 - Enlaces a los ficheros de Figma/Stitch con el nodo exacto
 - `docs/design/INTAKE-REVIEW.md` — cobertura y discrepancias PRD-diseño durante intake
 
@@ -140,6 +163,7 @@ con el impacto explícito. Prefiere deshacer a confirmar.
 - Requisitos nuevos descubiertos: <lista o "ninguno"> → si hay, vuelve a spec-analyst
 - Tokens nuevos: <lista o "ninguno">
 - Accesibilidad: <verificaciones hechas y riesgos>
+- Usabilidad: <heurísticas revisadas y hallazgos, o "checklist completo">
 - Referencias Figma/Stitch: <enlaces/nodos>
 - Siguiente agente sugerido: orchestrator durante intake; planner (/sdd-plan) en papel de fase;
   si era consulta, devuelvo control a <agente que me invocó>

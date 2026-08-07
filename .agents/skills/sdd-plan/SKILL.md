@@ -74,10 +74,14 @@ qué se automatiza en CI, criterio de "suficiente".
 5. Flujo principal (diagrama de secuencia en mermaid)
 6. Modelo de datos y migraciones
 7. Contratos y versionado
-8. Estrategia de test
+8. Estrategia de test **y calibración de verificación**: tier de cobertura por módulo
+   (CORE 100 % · IMPORTANT 80 % · INFRASTRUCTURE excluido). Lo que no clasifiques se exigirá
+   al 100 %; bajarlo de tier se justifica **aquí**. Cuando la profundidad no sea obvia, resuélvela
+   con las cuatro preguntas de `TEST-STRATEGY.md` §0 y anota la respuesta
 9. Seguridad: entradas, autorización, datos sensibles, amenazas STRIDE
-10. Rendimiento: objetivos, consultas críticas, caché
-11. Observabilidad: logs, métricas, trazas, alertas
+10. Rendimiento: objetivos, presupuesto declarado, consultas críticas, caché
+11. Observabilidad: logs, métricas, trazas, **clasificación de errores, salud por versión y
+    alertas con umbral y playbook**
 12. Feature flags y plan de despliegue
 13. Riesgos y mitigaciones
 14. Plan de reversión

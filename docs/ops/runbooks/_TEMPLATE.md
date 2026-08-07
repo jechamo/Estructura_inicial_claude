@@ -6,10 +6,14 @@
 | Campo | Valor |
 |---|---|
 | **Severidad** | SEV1 (caído) · SEV2 (degradado) · SEV3 (molesto) |
-| **Alerta que lo dispara** | `<nombre de la alerta>` |
+| **Alerta que lo dispara** | `<nombre>` — condición exacta: `<métrica> <operador> <umbral>` durante `<ventana>` |
+| **Objetivo de recuperación** | `<MTTR objetivo>` · escalar si se supera |
 | **Dueño** | `<equipo>` |
 | **Última revisión** | YYYY-MM-DD |
 | **Última vez que se probó** | YYYY-MM-DD |
+
+> El disparador lleva **umbral numérico**, no adjetivo. "Cuando haya muchos errores" no es un
+> disparador: nadie sabe cuándo empieza a aplicarse este documento.
 
 ---
 
@@ -53,20 +57,30 @@ Ejecuta **en este orden** y anota el resultado:
 **Tiempo estimado**: <…>
 **Qué pasa con los datos ya migrados**: <…>
 
-## 5. Resolución
+## 5. Comunicación
+
+Mientras se mitiga, no después. Quien está esperando sin noticias asume lo peor.
+
+| Cuándo | A quién | Canal | Qué se dice |
+|---|---|---|---|
+| Al confirmar el incidente | `<equipo>` | `<canal>` | Qué falla y que se está trabajando |
+| Si hay impacto visible | Usuarios | `<página de estado>` | Qué no funciona y estimación, sin causa técnica |
+| Al resolver | Ambos | | Qué pasó, qué se hizo, qué se va a hacer para que no repita |
+
+## 6. Resolución
 
 <Arreglo de fondo, una vez el sistema está estable. Suele ser una tarea de backlog,
 no algo que se hace a las 3 AM.>
 
-## 6. Escalado
+## 7. Escalado
 
 | Cuándo | A quién | Cómo |
 |---|---|---|
-| No se mitiga en 15 min | `<rol>` | `<canal>` |
+| Se supera el MTTR objetivo de la cabecera | `<rol>` | `<canal>` |
 | Hay pérdida de datos | `<rol>` | `<canal>` |
 | Afecta a datos personales | Responsable de privacidad | `<canal>` |
 
-## 7. Cierre
+## 8. Cierre
 
 - [ ] Sistema estable y confirmado con métricas
 - [ ] Comunicación enviada, si procedía

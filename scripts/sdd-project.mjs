@@ -4,7 +4,8 @@
  *
  *   node scripts/sdd-project.mjs detect [--json]
  *   node scripts/sdd-project.mjs configure --accept-detected [--dry-run]
- *   node scripts/sdd-project.mjs run [--ci]
+ *   node scripts/sdd-project.mjs run [--ci] [--fast|--slow]
+ *   node scripts/sdd-project.mjs debt [--json]
  *   node scripts/sdd-project.mjs status [--json]
  *   node scripts/sdd-project.mjs product-status [--json]
  *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
@@ -25,6 +26,31 @@ const operando = argv.slice(indiceComando + 1).find((a) => !a.startsWith('-')) |
 const JSON_OUT = argv.includes('--json');
 const DRY = argv.includes('--dry-run');
 const CHECKS_PATH = join(ROOT, '.sdd', 'checks.json');
+
+/**
+ * Vocabulario cerrado de gates. Un identificador libre convierte `checks.json` en un cajón de
+ * sastre donde cada proyecto inventa el suyo y ninguna herramienta puede razonar sobre el
+ * conjunto. `check-sdd.mjs` valida contra esta lista.
+ */
+const GATES = {
+  sdd: 'fast', // el gate propio del circuito; siempre presente
+  lint: 'fast',
+  test: 'fast',
+  typecheck: 'fast',
+  build: 'fast',
+  smells: 'fast',
+  coverage: 'slow',
+  e2e: 'slow',
+  visual: 'slow',
+  a11y: 'slow',
+  'deps-audit': 'slow',
+  docs: 'slow',
+  mutation: 'slow',
+};
+const GATE_IDS = Object.keys(GATES);
+/** El sufijo `:lenguaje` permite `test:python` sin abrir el vocabulario. */
+const gateBase = (id) => String(id).split(':')[0];
+const velocidadDe = (check, id) => check?.speed || GATES[gateBase(id)] || 'slow';
 const INSTALLED_PATH = join(ROOT, '.sdd', 'installed.json');
 const PRODUCT_FILES = [
   'docs/product/PRD.md',
@@ -54,12 +80,53 @@ function detectar() {
     try {
       const pkg = JSON.parse(pkgText);
       const gestor = packageManager();
-      for (const id of ['lint', 'test', 'typecheck', 'build']) {
-        if (pkg.scripts?.[id]) suggestions[id] = { command: `${gestor} run ${id}`, required: true, detectedFrom: `package.json#scripts.${id}` };
+      const scripts = pkg.scripts || {};
+      const sugerirScript = (id, nombreScript) => {
+        if (!scripts[nombreScript]) return;
+        suggestions[id] = {
+          command: `${gestor} run ${nombreScript}`,
+          required: true,
+          speed: GATES[gateBase(id)],
+          detectedFrom: `package.json#scripts.${nombreScript}`,
+        };
+      };
+      for (const id of ['lint', 'test', 'typecheck', 'build']) sugerirScript(id, id);
+      // Solo se sugiere un gate cuando existe un comando real que ejecutar. Un gate sin comando
+      // no es un control: es una casilla que alguien dará por buena.
+      for (const [id, candidatos] of Object.entries({
+        coverage: ['test:coverage', 'coverage'],
+        e2e: ['test:e2e', 'e2e'],
+        visual: ['test:visual', 'visual'],
+        a11y: ['test:a11y', 'a11y'],
+        docs: ['docs:check', 'docs:lint'],
+        mutation: ['test:mutation', 'mutation'],
+      })) {
+        const encontrado = candidatos.find((nombre) => scripts[nombre]);
+        if (encontrado) sugerirScript(id, encontrado);
+      }
+      // Solo con lockfile real: auditar sin árbol de dependencias fijado da un resultado que
+      // cambia entre ejecuciones, y `detectedFrom` tiene que poder señalar el fichero.
+      const lockfile = ['pnpm-lock.yaml', 'yarn.lock', 'package-lock.json'].find((f) => existsSync(join(ROOT, f)));
+      if (lockfile) {
+        suggestions['deps-audit'] = {
+          command: `${gestor} audit --audit-level=high`,
+          required: true,
+          speed: GATES['deps-audit'],
+          detectedFrom: lockfile,
+        };
       }
     } catch (error) {
       evidence.node.push(`package.json inválido: ${error.message}`);
     }
+  }
+
+  // Complejidad y duplicación: solo si la configuración de lint declara ya una regla. Activar el
+  // gate sin regla configurada produce un check que siempre pasa, que es peor que no tenerlo.
+  const configsLint = ['eslint.config.js', 'eslint.config.mjs', 'eslint.config.cjs', '.eslintrc.json', '.eslintrc.cjs', '.eslintrc.js', '.eslintrc.yml']
+    .filter((f) => existsSync(join(ROOT, f)));
+  const textoLint = configsLint.map((f) => leer(join(ROOT, f)) || '').join('\n');
+  if (configsLint.length && /sonarjs|cognitive-complexity|["']complexity["']/i.test(textoLint) && suggestions.lint) {
+    suggestions.smells = { ...suggestions.lint, speed: GATES.smells, detectedFrom: `${configsLint[0]} declara umbral de complejidad` };
   }
 
   const pythonFiles = ['pyproject.toml', 'setup.cfg', 'requirements.txt'].filter((f) => existsSync(join(ROOT, f)));
@@ -67,30 +134,33 @@ function detectar() {
     stacks.push('python');
     evidence.python = pythonFiles;
     const config = pythonFiles.map((f) => leer(join(ROOT, f)) || '').join('\n');
-    if (/\bpytest\b/i.test(config)) suggestions['test:python'] = { command: 'python -m pytest', required: true, detectedFrom: pythonFiles.join(', ') };
-    if (/\bruff\b/i.test(config)) suggestions['lint:python'] = { command: 'python -m ruff check .', required: true, detectedFrom: pythonFiles.join(', ') };
-    if (/\bmypy\b/i.test(config)) suggestions['typecheck:python'] = { command: 'python -m mypy .', required: true, detectedFrom: pythonFiles.join(', ') };
+    if (/\bpytest\b/i.test(config)) suggestions['test:python'] = { command: 'python -m pytest', required: true, speed: 'fast', detectedFrom: pythonFiles.join(', ') };
+    if (/\bruff\b/i.test(config)) suggestions['lint:python'] = { command: 'python -m ruff check .', required: true, speed: 'fast', detectedFrom: pythonFiles.join(', ') };
+    if (/\bmypy\b/i.test(config)) suggestions['typecheck:python'] = { command: 'python -m mypy .', required: true, speed: 'fast', detectedFrom: pythonFiles.join(', ') };
+    if (/\bpip-audit\b/i.test(config)) suggestions['deps-audit:python'] = { command: 'python -m pip_audit', required: true, speed: 'slow', detectedFrom: pythonFiles.join(', ') };
   }
 
   if (existsSync(join(ROOT, 'Cargo.toml'))) {
     stacks.push('rust');
     evidence.rust = ['Cargo.toml'];
-    suggestions['test:rust'] = { command: 'cargo test', required: true, detectedFrom: 'Cargo.toml' };
+    suggestions['test:rust'] = { command: 'cargo test', required: true, speed: 'fast', detectedFrom: 'Cargo.toml' };
+    suggestions['deps-audit:rust'] = { command: 'cargo audit', required: true, speed: 'slow', detectedFrom: 'Cargo.toml' };
   }
   if (existsSync(join(ROOT, 'go.mod'))) {
     stacks.push('go');
     evidence.go = ['go.mod'];
-    suggestions['test:go'] = { command: 'go test ./...', required: true, detectedFrom: 'go.mod' };
+    suggestions['test:go'] = { command: 'go test ./...', required: true, speed: 'fast', detectedFrom: 'go.mod' };
+    suggestions['deps-audit:go'] = { command: 'govulncheck ./...', required: true, speed: 'slow', detectedFrom: 'go.mod' };
   }
   if (existsSync(join(ROOT, 'pom.xml'))) {
     stacks.push('java-maven');
     evidence['java-maven'] = ['pom.xml'];
-    suggestions['test:java'] = { command: 'mvn test', required: true, detectedFrom: 'pom.xml' };
+    suggestions['test:java'] = { command: 'mvn test', required: true, speed: 'fast', detectedFrom: 'pom.xml' };
   }
   if (existsSync(join(ROOT, 'gradlew')) || existsSync(join(ROOT, 'gradlew.bat'))) {
     stacks.push('java-gradle');
     evidence['java-gradle'] = [existsSync(join(ROOT, 'gradlew')) ? 'gradlew' : 'gradlew.bat'];
-    suggestions['test:java'] = { command: process.platform === 'win32' ? 'gradlew.bat test' : './gradlew test', required: true, detectedFrom: evidence['java-gradle'][0] };
+    suggestions['test:java'] = { command: process.platform === 'win32' ? 'gradlew.bat test' : './gradlew test', required: true, speed: 'fast', detectedFrom: evidence['java-gradle'][0] };
   }
 
   return { stacks, suggestions, evidence, writes: false };
@@ -431,20 +501,90 @@ function configurar() {
 
 function ejecutarChecks() {
   const config = cargarChecks();
+  // Sin bandera se ejecuta todo: el comportamiento anterior no cambia. `--fast` y `--slow`
+  // existen para partir el coste entre el commit y el push.
+  const filtro = argv.includes('--fast') ? 'fast' : argv.includes('--slow') ? 'slow' : null;
   const resultados = [];
+  const omitidos = [];
   let fallo = false;
   for (const [id, check] of Object.entries(config.checks || {})) {
     if (!check?.command || check.enabled === false) continue;
+    const velocidad = velocidadDe(check, id);
+    if (filtro && velocidad !== filtro) { omitidos.push(id); continue; }
     const inicio = Date.now();
     const resultado = spawnSync(check.command, { cwd: ROOT, shell: true, encoding: 'utf8', stdio: 'inherit' });
-    resultados.push({ id, command: check.command, status: resultado.status, durationMs: Date.now() - inicio });
+    resultados.push({ id, command: check.command, speed: velocidad, status: resultado.status, durationMs: Date.now() - inicio });
     if (resultado.status !== 0 && check.required !== false) fallo = true;
   }
   if (!JSON_OUT) {
-    console.log(`\n${resultados.length} check(s) ejecutado(s): ${fallo ? 'FAIL' : 'PASS'}`);
+    const alcance = filtro ? ` (${filtro})` : '';
+    console.log(`\n${resultados.length} check(s) ejecutado(s)${alcance}: ${fallo ? 'FAIL' : 'PASS'}`);
     for (const r of resultados) console.log(`  ${r.status === 0 ? '✓' : '✗'} ${r.id} — ${r.command}`);
-  } else console.log(JSON.stringify({ ok: !fallo, results: resultados }));
+    if (omitidos.length) console.log(`  · omitidos por velocidad: ${omitidos.join(', ')}`);
+  } else console.log(JSON.stringify({ ok: !fallo, speed: filtro, results: resultados, skipped: omitidos }));
   if (fallo) process.exitCode = 1;
+}
+
+/**
+ * Conteo de marcadores de deuda sobre ficheros versionados.
+ *
+ * Determinista y agnóstico de lenguaje a propósito: la deuda con adjetivo no se prioriza nunca,
+ * y una estimación del modelo no es una medida. Lo opinable es cuánto cuesta saldarla; el conteo
+ * no lo es.
+ */
+function medirDeuda() {
+  const listado = spawnSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  // Sin git no se inventa un recorrido del sistema de ficheros: acabaría contando dependencias
+  // y artefactos de build como deuda propia. Se dice que no se pudo medir, que es un resultado.
+  if (listado.status !== 0) {
+    return { available: false, reason: 'no es un repositorio git o git no está disponible', total: null, byMarker: null, byDirectory: [], filesScanned: 0 };
+  }
+  const ficheros = listado.stdout.split('\0').filter(Boolean);
+  // El marcador cuenta solo si abre un comentario. Sin esa condición, una variable llamada
+  // `TODO` o la propia expresión de este fichero se cuentan como deuda, y una métrica que
+  // empieza midiendo ruido se ignora el primer día. Preferimos quedarnos cortos.
+  const patron = /(?:\/\/|#|--|\/\*|\*|<!--)[ \t]*(TODO|FIXME|HACK|XXX)\b/g;
+  const porDirectorio = new Map();
+  const porMarcador = { TODO: 0, FIXME: 0, HACK: 0, XXX: 0 };
+  let total = 0;
+  let revisados = 0;
+
+  for (const relativo of ficheros) {
+    let contenido;
+    try { contenido = readFileSync(join(ROOT, relativo), 'utf8'); } catch { continue; }
+    if (contenido.includes('\0')) continue; // binario
+    revisados += 1;
+    const coincidencias = [...contenido.matchAll(patron)];
+    if (!coincidencias.length) continue;
+    const directorio = relativo.includes('/') ? relativo.slice(0, relativo.lastIndexOf('/')) : '.';
+    porDirectorio.set(directorio, (porDirectorio.get(directorio) || 0) + coincidencias.length);
+    for (const coincidencia of coincidencias) porMarcador[coincidencia[1]] += 1;
+    total += coincidencias.length;
+  }
+
+  const directorios = [...porDirectorio.entries()]
+    .map(([path, markers]) => ({ path, markers }))
+    .sort((a, b) => b.markers - a.markers || a.path.localeCompare(b.path));
+
+  return { available: true, total, byMarker: porMarcador, byDirectory: directorios, filesScanned: revisados };
+}
+
+function informeDeuda() {
+  const deuda = medirDeuda();
+  if (JSON_OUT) { console.log(JSON.stringify(deuda)); return; }
+  if (!deuda.available) {
+    console.log(`No se pudo medir la deuda: ${deuda.reason}.`);
+    console.log('"No medido" es un resultado válido y se escribe; "cero" sin medir, no.');
+    return;
+  }
+  console.log(`Marcadores de deuda: ${deuda.total} en ${deuda.filesScanned} fichero(s) versionado(s)`);
+  console.log(`  TODO ${deuda.byMarker.TODO} · FIXME ${deuda.byMarker.FIXME} · HACK ${deuda.byMarker.HACK} · XXX ${deuda.byMarker.XXX}`);
+  if (!deuda.total) return;
+  console.log('\nPor directorio:');
+  for (const { path, markers } of deuda.byDirectory.slice(0, 15)) console.log(`  ${String(markers).padStart(4)}  ${path}`);
+  if (deuda.byDirectory.length > 15) console.log(`  … y ${deuda.byDirectory.length - 15} directorio(s) más`);
+  console.log('\nEl conteo es el dato; el esfuerzo para saldarlo es una estimación humana.');
+  console.log('Ratio y banderas: docs/quality/TECH-DEBT.md');
 }
 
 try {
@@ -457,7 +597,8 @@ try {
   else if (comando === 'verify') verificar();
   else if (comando === 'configure') configurar();
   else if (comando === 'run') ejecutarChecks();
-  else if (comando === 'status') imprimir({ detection: detectar(), checks: cargarChecks(), product: estadoProducto() });
+  else if (comando === 'debt') informeDeuda();
+  else if (comando === 'status') imprimir({ detection: detectar(), checks: cargarChecks(), product: estadoProducto(), debt: medirDeuda() });
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {
   console.error(error.message);

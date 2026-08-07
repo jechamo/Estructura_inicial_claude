@@ -9,6 +9,38 @@
 
 ---
 
+## 2026-08-07 · Calibración de verificación y observabilidad de producto
+
+- **Tipo**: decisión de proceso y calidad
+- **Contexto**: el sistema aplicaba rigor máximo a todo por igual y terminaba en el despliegue. Le
+  faltaban dos cosas: criterio para repartir el esfuerzo de verificación, y la mitad de runtime del
+  ciclo —qué se observa, se clasifica y se alerta después de desplegar—. Origen: análisis de 30
+  lecciones de un material de calidad externo, contrastadas una a una contra lo ya existente.
+- **Decisión / hecho**: (1) la cobertura pasa a clasificarse por riesgo de negocio —CORE 100 % ·
+  IMPORTANT 80 % · INFRASTRUCTURE excluido— y **desaparece el umbral global**; lo no clasificado se
+  exige al 100 %. (2) `/observability` entra como skill canónica ejecutada por `devops-expert`, con
+  `docs/ops/OBSERVABILITY.md` como artefacto durable. (3) `.sdd/checks.json` gana vocabulario
+  cerrado de doce gates y campo `speed`; `sdd-project` gana `run --fast|--slow` y el comando `debt`.
+  (4) Git hooks portables en `.sdd/githooks/`, **opt-in**. (5) Documentos nuevos: `METRICS.md`,
+  `TECH-DEBT.md`, `USABILITY-CHECKLIST.md` y plantilla de resumen ejecutivo.
+- **Alternativas descartadas**: mantener el ≥80 % global como suelo bajo el sistema de tiers —era
+  exactamente el *coverage ciego* que el material denuncia, y la DoD ya reconocía que el criterio
+  que manda es "cero zonas críticas sin probar"; el agujero de sustituirlo, el módulo sin
+  clasificar, se cierra mejor con defecto estricto que con un número que despista—. Absorber la
+  observabilidad dentro de `devops-expert` sin skill: no habría comando para montarla desde cero.
+  Crear un agente número 21: es un procedimiento para un rol que ya existe, igual que intake.
+  Usar un gestor de hooks del ecosistema Node: ataría la plantilla a un stack.
+- **Impacto**: 20 agentes y **25 skills**. Doce perfiles y diez skills enriquecidos.
+  `implementer` gana dos filas de delegación —instrumentación y refactor estructural—; la segunda
+  cierra un hueco previo: `refactor-specialist` solo aparecía en `/sdd-verify`, con el código ya
+  escrito. Los pasos nuevos de `/sdd-verify` son de **solo lectura**, porque quien coordina esa fase
+  es un auditor sin escritura ni delegación.
+- **Seguridad**: el rastro de eventos de negocio prohíbe datos personales sin excepción por
+  comodidad de depuración, y `security-auditor` lo verifica. Los mapas de símbolos se generan en el
+  pipeline y no se publican al cliente. El error de configuración en arranque nombra la variable y
+  el motivo, nunca el valor.
+- **Referencias**: spec `006-calidad-integrada`
+
 ## 2026-08-03 · Producto durable antes de arquitectura y specs derivadas
 
 - **Tipo**: decisión de proceso y compatibilidad

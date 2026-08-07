@@ -36,6 +36,8 @@ Referencia del agente `refactor-specialist` y del `planner`.
 | Comportamiento por tenant o por plan | **Strategy + Policy Object** | |
 | Muchos parámetros juntos que viajan siempre | **Parameter Object** | |
 | Objeto costoso de crear | **Object Pool**, **Lazy Loading** | Solo con medición previa |
+| Sustituir una implementación sin parar el mundo | **Branch by Abstraction** | Interfaz primero, dos implementaciones conviviendo, conmutador, y se borra la vieja |
+| Reemplazar un sistema entero por partes | **Strangler Fig** | El nuevo va comiendo rutas del viejo. La alternativa —reescritura de golpe— es cómo mueren los proyectos |
 
 ---
 

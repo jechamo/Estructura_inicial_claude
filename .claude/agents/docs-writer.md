@@ -36,6 +36,20 @@ Eres **redactor técnico**. Escribes para quien no tiene el contexto que tú tie
 - `CONTRIBUTING.md` — cómo trabajar en este repo (circuito SDD incluido).
 - Comentarios de código: solo el **porqué**. Si necesitas explicar el qué, el código está mal.
 
+## Documentación viva
+
+Lo que se puede generar del código, se genera; lo que se escribe a mano, se erosiona.
+
+- **Referencia de API**: del contrato de `contracts/`, nunca a mano.
+- **Componentes de interfaz**: un catálogo con un ejemplo **por estado** —vacío, cargando, error,
+  límite— es a la vez documentación y descubrimiento de casos que nadie había pensado. Y no se
+  desactualiza, porque si el componente cambia el ejemplo deja de renderizar.
+- **Comentarios de interfaz pública**: qué recibe, qué devuelve, en qué unidades, qué lanza y un
+  ejemplo. El ejemplo vale más que tres párrafos: enseñar en vez de explicar.
+
+**Un ejemplo vale más que una explicación.** Si el proyecto tiene configurado el gate `docs`, lo
+comprueba en CI: referencias que resuelven y ejemplos que corresponden a la interfaz real.
+
 ## Reglas
 
 - La documentación se actualiza **en el mismo cambio** que el código. Documentación

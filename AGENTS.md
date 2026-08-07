@@ -46,7 +46,7 @@ Antigravity y Codex. La política completa y vinculante está en
 
 - Perfiles canónicos: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` contiene adaptadores.
-- El contrato instalado mantiene **20 agentes** y **24 skills**; no se crean prompts o commands
+- El contrato instalado mantiene **20 agentes** y **25 skills**; no se crean prompts o commands
   paralelos para representar una skill.
 - `orchestrator` es la puerta de entrada por defecto.
 - Solo `orchestrator`, `planner` e `implementer` delegan.

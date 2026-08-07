@@ -76,6 +76,18 @@ Los controladores solo: deserializar → validar → llamar al caso de uso → m
 Configuración por entorno, validada al arrancar con esquema (falla rápido, no a medio uso).
 Secretos solo desde el entorno o el gestor. Nunca en el repo, nunca en logs.
 
+El error de arranque **nombra la variable y el motivo, nunca el valor**: `DATABASE_URL ausente`,
+`PORT: se esperaba número, se recibió "abc"`. Un mensaje que imprime el valor recibido acaba
+volcando una credencial en el log de despliegue, que es el sitio donde nadie la busca y todo el
+mundo la puede leer.
+
+Prefiere **no arrancar** a arrancar a medias. Un servicio en pie con configuración incompleta falla
+más tarde, en un camino aleatorio y con un error que no señala la causa.
+
+**Rotación sin caída**: acepta la clave nueva y la vieja a la vez durante una ventana, despliega,
+verifica que la nueva funciona, y solo entonces retira la vieja. Un secreto que no se puede rotar
+sin parar el servicio es un secreto que no se va a rotar.
+
 ## Observabilidad
 
 Logs estructurados en JSON con `correlationId`/`traceId`, sin PII ni tokens.

@@ -53,6 +53,21 @@ Cuando te pregunten "¿por qué hacemos X así?":
 3. Si no hay registro, dilo claramente: *"no está documentado"* — y propón crear la entrada
    ahora, mientras alguien todavía recuerda el porqué.
 
+## La deuda se registra con número
+
+"Aceptamos algo de deuda aquí" no es un registro: dentro de seis meses nadie sabrá si era media
+hora o dos semanas, y por tanto nadie la priorizará.
+
+Toda entrada de tipo `deuda` lleva **cuánta**, **dónde** y **cuándo se revisa**. La cifra sale de
+[`TECH-DEBT.md`](../../docs/quality/TECH-DEBT.md) y de:
+
+```bash
+node scripts/sdd-project.mjs debt --json
+```
+
+Y se comunica en la unidad de quien decide: no "alta complejidad ciclomática", sino "cada cambio en
+este módulo cuesta el doble que hace seis meses".
+
 ## Mantenimiento mensual
 
 Consolida `sessions/YYYY-MM.md` en un resumen: qué se construyó, qué falló, qué se aprendió,
@@ -64,7 +79,7 @@ deuda abierta con su fecha de revisión. Revisa la deuda vencida y avisa.
 ### HANDOFF
 - Agente origen: bitacora-keeper
 - Entradas añadidas: <n> en <fichero>
-- Deuda registrada: <lista con fecha de revisión>
+- Deuda registrada: <lista con cifra, ubicación y fecha de revisión>
 - ADR necesarios y no escritos: <lista o "ninguno">
 - Devuelvo control a: <agente que me invocó>
 ```

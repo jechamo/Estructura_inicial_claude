@@ -92,6 +92,48 @@ campo, asociados con `aria-describedby`. Botón de envío deshabilitado **solo**
 nunca por validación pendiente. Protección contra doble envío. Estado sucio recuperable: perder
 lo escrito es imperdonable.
 
+Y lo que decide si la gente termina el formulario o lo abandona:
+
+- **Etiqueta siempre visible.** El texto de ejemplo dentro del campo desaparece al escribir y deja
+  al usuario sin saber qué estaba rellenando. El ejemplo muestra el **formato**, no repite la
+  etiqueta.
+- **Tipo de campo semántico** —correo, teléfono, número, fecha—: en móvil cambia el teclado.
+- **Validar al salir del campo** y al enviar. No mientras se escribe: marcar un correo como
+  inválido cuando el usuario va por la tercera letra es hostigarlo. El error **desaparece al volver
+  a enfocar**, para no corregir con un rojo encima.
+- **Ancho proporcional** al contenido esperado: un código postal y una dirección no miden igual, y
+  el ancho es información.
+- **Autocompletado del navegador** habilitado con el tipo correcto en cada campo.
+- **Revelación progresiva**: los campos que dependen de una elección aparecen tras esa elección.
+- **Móvil**: objetivo táctil ≥ 44 px, tamaño de fuente que no provoque zoom al enfocar, acción
+  principal alcanzable con el teclado abierto.
+
+Mensajes de error: **qué está mal → cómo se arregla → alternativa**. "Cantidad no válida" no
+ayuda; "máximo 99 unidades, ¿compra al por mayor? escríbenos" sí. Y el tono describe la regla, no
+acusa al usuario. Menos de quince palabras.
+
+## Velocidad percibida
+
+Lo que se recuerda no son los milisegundos, es la sensación — y la sensación se implementa.
+
+| Espera | Qué necesita |
+|---|---|
+| < 100 ms | Nada. Se percibe instantáneo |
+| 100 ms – 1 s | Cambio de estado visible en el elemento pulsado |
+| 1 – 3 s | Indicador de progreso |
+| > 3 s | Progreso con estimación y opción de cancelar |
+
+- **Toda acción responde en menos de 100 ms**, aunque sea solo cambiando el estado del botón.
+- **Esqueleto con la forma del contenido real**, no un giro centrado: enseñar la estructura de
+  inmediato se percibe como el doble de rápido aunque tarde lo mismo.
+- **Carga progresiva**: lo crítico primero, lo secundario después, lo terciario bajo demanda.
+- **Actualización optimista** solo si es fácil de revertir y el fallo es raro —marcar favorito,
+  cambiar cantidad—, y **con la reversión escrita**, no prevista. **Nunca** en pagos, alta de
+  cuenta, cambio de contraseña ni borrados irreversibles: ahí se espera la confirmación real y esa
+  espera se comunica.
+
+Detalle completo en [`docs/design/USABILITY-CHECKLIST.md`](../../../docs/design/USABILITY-CHECKLIST.md).
+
 ## Accesibilidad — WCAG 2.2 AA, en el código
 
 - HTML semántico primero. `role` es un parche, no un punto de partida. Un `div` con `onClick` no
@@ -140,6 +182,8 @@ Sin medición previa no se optimiza. Objetivo declarado o no hay tarea.
 - [ ] Fiel al diseño; toda desviación **acordada y anotada**, no silenciosa
 - [ ] Lint, formato y tipado estricto sin warnings
 - [ ] Presupuesto de rendimiento respetado
+- [ ] Formularios, mensajes de error y microcopy contra el checklist de usabilidad
+- [ ] Toda acción responde en menos de 100 ms
 - [ ] Sin lógica de negocio ni secretos en el cliente
 
 ## Stack concreto
@@ -163,6 +207,7 @@ de una librería de memoria.
 - Estados implementados: vacío / cargando / parcial / error / sin permiso / éxito
 - Dirección visual: <respetada | desviaciones acordadas> · elemento con carácter: <cuál>
 - Accesibilidad: <qué se verificó y con qué>
+- Usabilidad: <heurísticas revisadas> · velocidad percibida: <esqueleto | optimista | progresiva>
 - Rendimiento: <medición, si aplica>
 - Desviaciones del diseño: <lista y motivo, o "ninguna">
 - Bloqueos / supuestos: <lista, o "ninguno">

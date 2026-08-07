@@ -62,20 +62,34 @@ Usa la plantilla de `@release-manager`: Qué · Por qué (spec) · Cómo (patron
 Tabla de cobertura RF→CA→test · Verificación con salida real · Seguridad · Riesgos y
 reversión · Checklist.
 
-## Paso 5 — Bitácora
+## Paso 5 — Resumen ejecutivo
+
+El PR y el CHANGELOG los leen desarrolladores. Quien decide sobre presupuesto y prioridad, no.
+
+Plantilla: [`docs/quality/_TEMPLATE.executive-summary.md`](../../../docs/quality/_TEMPLATE.executive-summary.md).
+Qué hicimos en una frase sin jerga · por qué importa · resultados con números · qué sigue.
+Máximo 300 palabras.
+
+**Toda cifra está verificada y se rastrea hasta `evidence.md`.** Sin medición se escribe "sin
+medición todavía" y cuándo la habrá. Una proyección inventada quema la credibilidad de todos los
+resúmenes siguientes.
+
+## Paso 6 — Bitácora
 
 Pide a `@bitacora-keeper` la entrada de cierre: qué se entregó, decisiones tomadas,
-alternativas descartadas, deuda aceptada con fecha de revisión.
+alternativas descartadas, deuda aceptada **con cifra** y fecha de revisión.
 
-## Paso 6 — Post-despliegue
+## Paso 7 — Post-despliegue
 
 Deja escrito:
 - Qué métrica se vigila y durante cuánto tiempo.
 - Umbral que dispara la reversión.
 - Comando exacto de reversión.
 - Cuándo se retira el feature flag.
+- **Salud de la nueva versión**: tasa de fallo de sesión, errores por hora y usuarios afectados,
+  comparados con la versión anterior. Es lo que convierte "creo que va bien" en un dato.
 
-## Paso 7 — Estado
+## Paso 8 — Estado
 
 - `tasks.md`: todas las tareas del alcance en `hecho`.
 - `spec.md`: estado → `entregada`.
@@ -88,6 +102,7 @@ Deja escrito:
 - Spec: NNN-slug → entregada
 - Gates: <todos verdes | bloqueado por X>
 - Versión propuesta: vX.Y.Z
+- Resumen ejecutivo: <ruta> · cifras verificadas: sí | "sin medición todavía"
 - PR preparado (NO enviado): <título>
 - Comandos para el humano:
     git push -u origin feature/NNN-slug

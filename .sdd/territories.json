@@ -24,6 +24,11 @@
       "name": "diseno-sdd",
       "agent": "ux-designer",
       "paths": ["docs/design/**"]
+    },
+    {
+      "name": "operacion-sdd",
+      "agent": "devops-expert",
+      "paths": ["docs/ops/**"]
     }
   ]
 }

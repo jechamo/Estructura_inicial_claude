@@ -22,8 +22,10 @@ Lo verifica `/sdd-verify` y lo exige `release-manager` antes de `/sdd-ship`.
 - [ ] `evidence.md` completo: ejecuciones con su comando y resultado, trazabilidad
       requisito → test, y **la lista de controles que NO se ejecutaron** con su riesgo y dueño
 - [ ] Cada tarea `hecho` tiene ejecución registrada en `execution-log.jsonl`
-- [ ] Cobertura dominio/aplicación ≥ 80 % **y cero zonas críticas sin probar** ← este segundo
-      criterio es el que manda; el porcentaje es solo un punto de partida ajustable por riesgo
+- [ ] **Cada módulo cumple el umbral de su tier** (CORE 100 % · IMPORTANT 80 % · INFRASTRUCTURE
+      excluido) y **todo módulo sin tier declarado se ha verificado al 100 %**. No hay umbral
+      global: un porcentaje único deja pasar el 6 % que hunde el producto
+- [ ] Ningún módulo que maneje dinero, datos críticos o permisos está clasificado por debajo de CORE
 - [ ] *Mutation score* del core medido y reportado como **número** en `evidence.md`, no como
       adjetivo. Cobertura alta con *mutation score* bajo = suite decorativa
 - [ ] Si la funcionalidad tenía interfaz: `design.md` existe, con los seis estados por pantalla y
@@ -33,14 +35,20 @@ Lo verifica `/sdd-verify` y lo exige `release-manager` antes de `/sdd-ship`.
 - [ ] `code-reviewer` → veredicto ✅
 - [ ] `refactor-specialist` → sin violaciones SOLID sin justificar
 - [ ] `security-auditor` → sin hallazgos CRÍTICO ni ALTO
+- [ ] Sin nuevas violaciones del umbral de complejidad cognitiva declarado por el proyecto
 - [ ] Contratos de `contracts/` actualizados y tipos regenerados
 - [ ] Documentación actualizada en el mismo cambio
 - [ ] Migraciones reversibles y compatibles con la versión anterior desplegada
 - [ ] Observabilidad: logs estructurados, métricas y trazas en los caminos nuevos
+- [ ] Los caminos nuevos capturan y **clasifican** sus errores, y su salud es visible por versión.
+      Un error que solo existe en la consola del usuario no existe
+- [ ] Toda alerta añadida tiene umbral de aviso, umbral crítico y playbook. Sin playbook, se borra
 - [ ] Feature flag donde el plan lo pedía, con condición de retirada escrita
 - [ ] Plan de reversión escrito, con comando exacto
 - [ ] Entrada en `docs/bitacora/DECISIONS.md` si hubo decisión relevante
 - [ ] Trazabilidad completa: código ↔ tarea ↔ criterio de aceptación ↔ spec
+- [ ] Resumen ejecutivo escrito con cifras **verificadas**, o con la declaración explícita de que no
+      hay cifras que reportar. Una proyección inventada es peor que ningún resumen
 
 ---
 
@@ -52,8 +60,10 @@ voluntad, se olvida.
 | Gate | Automatizado en | Bloquea merge |
 |---|---|---|
 | Tests | CI | Sí |
-| Cobertura mínima | CI | Sí |
+| Cobertura por tier (umbral **por ruta**) | CI | Sí |
+| Complejidad cognitiva y duplicación | CI (gate `smells`) | Sí |
 | Lint / formato / tipos | CI + hook `PostToolUse` | Sí |
+| Gates rápidos antes del commit, lentos antes del push | `.sdd/githooks/` (opt-in) | No: el que bloquea es CI |
 | Escaneo de secretos | CI + hook `PreToolUse` | Sí |
 | Auditoría de dependencias | CI | Sí (CRÍTICO/ALTO) |
 | Tests de contrato | CI | Sí |

@@ -355,7 +355,41 @@ console.log('\n1 · init sobre un directorio vacío');
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('inventory cuenta agentes y skills canónicos',
-    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 24);
+    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 25);
+
+  comprueba('la skill observability se instala con su adaptador Claude',
+    existsSync(join(d, '.agents/skills/observability/SKILL.md')) &&
+    existsSync(join(d, '.claude/skills/observability/SKILL.md')));
+
+  // Los git hooks viajan con la plantilla pero no se activan solos: reconfigurar el git de
+  // alguien durante una instalación es la clase de sorpresa que hace desinstalar la herramienta.
+  const hooksPath = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: d, encoding: 'utf8' });
+  comprueba('los git hooks se copian pero no se activan sin opt-in',
+    existsSync(join(d, '.sdd/githooks/pre-commit')) && existsSync(join(d, '.sdd/githooks/pre-push')) &&
+    (hooksPath.stdout || '').trim() !== '.sdd/githooks');
+
+  const checksInstalados = JSON.parse(leer(join(d, '.sdd/checks.json')));
+  comprueba('checks.json nace sin comandos de stack y con el vocabulario ampliado',
+    Object.keys(checksInstalados.checks).length === 1 && checksInstalados.checks.sdd &&
+    ['coverage', 'e2e', 'smells', 'a11y', 'deps-audit', 'docs'].every((g) => checksInstalados.unconfigured.includes(g)));
+
+  const rapidos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--fast', '--json'], { cwd: d, encoding: 'utf8' });
+  const lentos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow', '--json'], { cwd: d, encoding: 'utf8' });
+  let salidaRapidos = null;
+  let salidaLentos = null;
+  try { salidaRapidos = JSON.parse((rapidos.stdout || '').trim().split('\n').pop() || 'null'); } catch { /* lo informa la aserción */ }
+  try { salidaLentos = JSON.parse((lentos.stdout || '').trim().split('\n').pop() || 'null'); } catch { /* lo informa la aserción */ }
+  comprueba('run --fast y --slow reparten los gates por velocidad',
+    salidaRapidos?.results?.some((r) => r.id === 'sdd') === true &&
+    salidaLentos?.results?.length === 0 && salidaLentos?.skipped?.includes('sdd'));
+
+  const deuda = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'debt', '--json'], { cwd: d, encoding: 'utf8' });
+  let salidaDeuda = null;
+  try { salidaDeuda = JSON.parse(deuda.stdout || 'null'); } catch { /* lo informa la aserción */ }
+  // Fuera de un repositorio git no se inventa un recorrido del disco: se declara que no se pudo
+  // medir. "No medido" es un resultado; "cero" sin medir, no.
+  comprueba('debt declara que no puede medir fuera de un repositorio git',
+    deuda.status === 0 && salidaDeuda?.available === false && typeof salidaDeuda?.reason === 'string');
 
   const nuevaSpec = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'new-spec', 'checkout-invitado', '--json'], { cwd: d, encoding: 'utf8' });
   comprueba('new-spec crea el siguiente scaffold sin execution-log',
@@ -729,6 +763,33 @@ console.log('\n4 bis · allowlist de distribución npm');
     allowlist.some((ruta) => /scripts\/lib\/manifiesto\.mjs/.test(ruta)) &&
     allowlist.includes('.gitignore'));
   comprueba('existe .npmignore defensivo', existsSync(join(ORIGEN, '.npmignore')));
+
+  // Una allowlist incompleta no rompe nada aquí: rompe en el `npx` de otra persona, con la
+  // skill instalada y el documento que enlaza ausente. Se comprueba fichero a fichero.
+  const cubierto = (ruta) => allowlist.some((entrada) => ruta === entrada || ruta.startsWith(`${entrada}/`));
+  const imprescindibles = [
+    'docs/quality/DEFINITION-OF-DONE.md', 'docs/quality/TEST-STRATEGY.md',
+    'docs/quality/METRICS.md', 'docs/quality/TECH-DEBT.md',
+    'docs/quality/_TEMPLATE.executive-summary.md',
+    'docs/ops/OBSERVABILITY.md', 'docs/ops/runbooks/_TEMPLATE.md',
+    'docs/design/USABILITY-CHECKLIST.md',
+    'docs/architecture/PATTERNS.md', 'docs/sdd/OPERATING-MODEL.md',
+    '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push',
+    '.agents/skills/observability/SKILL.md', '.claude/skills/observability/SKILL.md',
+    'scripts/sdd-project.mjs', 'scripts/check-sdd.mjs',
+  ];
+  const ausentes = imprescindibles.filter((ruta) => !cubierto(ruta));
+  comprueba(`la allowlist publica toda la doctrina vinculante${ausentes.length ? ` (falta: ${ausentes.join(', ')})` : ''}`,
+    ausentes.length === 0);
+
+  // Toda skill canónica viaja con su adaptador: si una de las dos se queda fuera, el host
+  // descubre un comando que no existe o pierde el procedimiento entero.
+  const skillsCanonicas = readdirSync(join(ORIGEN, '.agents/skills'), { withFileTypes: true })
+    .filter((entrada) => entrada.isDirectory() && !entrada.name.startsWith('_'))
+    .map((entrada) => entrada.name);
+  comprueba('la allowlist cubre las skills canónicas y sus adaptadores',
+    skillsCanonicas.length > 0 &&
+    skillsCanonicas.every((skill) => cubierto(`.agents/skills/${skill}/SKILL.md`) && cubierto(`.claude/skills/${skill}/SKILL.md`)));
   const serializada = JSON.stringify(allowlist);
   comprueba('la allowlist no publica globs locales ni historia activa',
     !/\.claude\/\*\*|\.sdd\/\*\*|docs\/specs\/\*\*|scripts\/test-install\.mjs/.test(serializada));

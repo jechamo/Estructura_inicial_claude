@@ -66,6 +66,35 @@ Informe en `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
 - ¿Casos límite cubiertos, no solo el camino feliz?
 - ¿Sin `.only`, `.skip` ni tests flaky?
 - Mutation testing en el core, si está configurado.
+- ¿Hay tests que mockean justo lo que dicen probar? Esos pasan siempre y no prueban nada.
+
+## Paso 6 bis — Calibración de la verificación
+
+Comprobaciones **de solo lectura** contra `plan.md` y la configuración del runner. Quien coordina
+esta fase es un auditor sin escritura ni delegación: aquí no se llama a nadie, se comprueba.
+
+- [ ] Cada módulo nuevo o modificado tiene **tier declarado** en `plan.md`
+- [ ] **Lista los que no lo tienen**: esos debían verificarse al 100 %. Si no lo están, es un
+      bloqueo, no una observación
+- [ ] Ningún módulo que maneje **dinero, datos críticos o permisos** está clasificado por debajo de
+      CORE. Esta es la vía de escape obvia del sistema de tiers y hay que buscarla a propósito:
+      bajar de tier es más barato que escribir tests
+- [ ] Cada módulo cumple el umbral de su tier. Si el runner solo admite umbral global, la
+      limitación está declarada en `evidence.md`, no disimulada
+- [ ] Gate `smells` en verde, o declarado como no configurado en este proyecto
+
+## Paso 6 ter — Observabilidad, métricas y deuda
+
+- [ ] Los caminos nuevos capturan y **clasifican** sus errores
+- [ ] Salud por versión visible y regla de reversión escrita
+- [ ] Rastro de eventos de negocio **sin datos personales** — lo cruza `@security-auditor`
+- [ ] Toda alerta añadida tiene umbral de aviso, umbral crítico y playbook
+- [ ] Métricas de nivel 1 recogidas ([`METRICS.md`](../../../docs/quality/METRICS.md))
+- [ ] Ratio de deuda medido, no estimado:
+
+```bash
+node scripts/sdd-project.mjs debt --json
+```
 
 ## Paso 7 — Evidencia y trazabilidad de ejecución
 
@@ -100,6 +129,9 @@ salida real de las herramientas.
 - Trazabilidad: <n>/<n> CA cubiertos
 - Revisión: ✅ | ⚠️ | ❌  (bloqueantes: <n>)
 - Diseño: <n> violaciones sin justificar
+- Cobertura: CORE <n/n> · IMPORTANT <n/n> · sin tier declarado <n> (deben estar al 100 %)
+- Observabilidad: <instrumentada | huecos> · alertas sin playbook: <n>
+- Deuda: <ratio> · marcadores <n>
 - Seguridad: CRÍTICO <n> · ALTO <n> · MEDIO <n>
 - Veredicto: APTO PARA ENTREGA | REQUIERE CAMBIOS
 - Siguiente agente sugerido: implementer (arreglar) | release-manager — comando: /sdd-ship

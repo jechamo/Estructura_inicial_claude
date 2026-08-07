@@ -7,7 +7,34 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
-Sin cambios todavía.
+### Added
+- **`/observability`, la mitad que faltaba del ciclo.** El circuito terminaba en el despliegue.
+  Ahora hay un procedimiento para enterarte de que algo se rompió antes que el usuario: clasificar
+  errores por tipo, ver la salud de cada versión, dejar rastro de lo que el usuario intentaba
+  hacer, y definir alertas con umbral y playbook. Sin datos personales, y probando que el aviso
+  llega de verdad.
+- **Métricas y deuda con número.** `docs/quality/METRICS.md` fija tres niveles de métrica y rechaza
+  las que no llevan a una decisión. `node scripts/sdd-project.mjs debt` cuenta los marcadores de
+  deuda en ficheros versionados, para no discutir con adjetivos.
+- **Checklist de usabilidad** (`docs/design/USABILITY-CHECKLIST.md`): heurísticas, formularios,
+  mensajes de error, microcopy y velocidad percibida. La accesibilidad seguía siendo obligatoria;
+  esto es lo que además hace que se entienda.
+- **Gates locales opcionales** en `.sdd/githooks/`: rápidos antes del commit, lentos antes del
+  push. Se activan con una línea y no se tocan solos.
+- **Resumen ejecutivo en la entrega**, con la regla de que toda cifra está verificada.
+
+### Changed
+- **La cobertura se mide por riesgo, no por porcentaje global.** El código que maneja dinero, datos
+  críticos o permisos se verifica al 100 %; lo que ve el usuario, al 80 %; los tipos y constantes
+  quedan fuera. **Y lo que nadie clasifique se exige al 100 %**: un número único sobre todo el
+  repositorio dejaba pasar en verde justo lo que hunde un producto.
+- `.sdd/checks.json` reconoce doce gates —cobertura, E2E, olores, accesibilidad, dependencias,
+  documentación…— y cada uno declara si es rápido o lento. Sigue naciendo sin ningún comando: la
+  plantilla no presupone tu stack.
+- `sdd-project detect` propone esos gates solo cuando encuentra evidencia real en el repositorio.
+- CI separa gates rápidos y lentos, y sube los informes **también cuando falla**, que es cuando
+  hacen falta.
+- 25 skills (antes 24). Los 20 agentes no cambian.
 
 ## [0.4.0] — 2026-08-03
 
