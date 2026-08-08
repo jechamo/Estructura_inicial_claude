@@ -66,7 +66,7 @@ reversión · Checklist.
 
 El PR y el CHANGELOG los leen desarrolladores. Quien decide sobre presupuesto y prioridad, no.
 
-Plantilla: [`docs/quality/_TEMPLATE.executive-summary.md`](../../../docs/quality/_TEMPLATE.executive-summary.md).
+Plantilla: `docs/quality/_TEMPLATE.executive-summary.md`.
 Qué hicimos en una frase sin jerga · por qué importa · resultados con números · qué sigue.
 Máximo 300 palabras.
 

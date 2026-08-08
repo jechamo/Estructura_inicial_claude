@@ -9,6 +9,44 @@
 
 ---
 
+## 2026-08-07 · Skills autocontenidas y los dos gates que la DoD prometía sin tener
+
+- **Tipo**: decisión y corrección de defecto
+- **Contexto**: al comprobar si el sistema funciona en Lovable —constructor en el navegador, sin
+  terminal— aparecieron dos cosas. Una esperada: no hay perfiles de agente ni hooks. Otra no:
+  **Lovable sí tiene skills nativas** con el mismo `SKILL.md` del estándar Agent Skills,
+  invocables con `/` y por coincidencia de descripción. Al preparar la importación se vio que
+  9 de las 25 skills enlazaban con `../../../docs/…`, rutas que dejan de significar nada cuando
+  la skill se carga en un workspace fuera del árbol del repositorio.
+- **Y el defecto de fondo**: `DEFINITION-OF-DONE.md` prometía escaneo de secretos y auditoría de
+  dependencias **en CI y bloqueantes**. Ninguno existía. La protección contra secretos dependía
+  entera de `guard-write.mjs`, un hook local. En cualquier host sin hooks —o en un push desde la
+  web de GitHub— la protección real era **cero** mientras el documento afirmaba lo contrario.
+- **Decisión / hecho**: (1) las skills canónicas pasan a referenciar desde la raíz en backticks y
+  a otras skills por su comando, con gate en `check-sdd.mjs` que prohíbe `](../` en
+  `.agents/skills/*/SKILL.md`. (2) `scripts/scan-secrets.mjs` ejecuta en CI los mismos patrones
+  que el hook local, compartidos desde `.sdd/hooks/_lib.mjs` para que no puedan divergir.
+  (3) Auditoría de dependencias en el job lento, solo con lockfile. (4) `--strict` exige
+  CHANGELOG cuando el diff toca producción, entrada de bitácora cuando toca el contrato de
+  agentes o skills, e informes de seguridad y calidad de la spec que se entrega.
+  (5) `sdd-project skills-export` emite las URLs de importación con hash de versión.
+- **Alternativas descartadas**: duplicar los patrones de secreto en el escáner de CI —divergirían,
+  y el que mentiría sería siempre el que no se ejecuta en tu máquina—; una superficie `.lovable/`
+  —las skills son estándar, duplicarlas sería inventar un contrato—; degradar gates para que
+  "pasen" donde no se pueden ejecutar —un control no ejecutable se declara no ejecutado—.
+- **Impacto**: las 25 skills son ahora autocontenidas y funcionan importadas sueltas en cualquier
+  host que siga el estándar. La fila de la DoD deja de mentir. Los cuatro artefactos de entrega
+  —CHANGELOG, bitácora, informe de seguridad e informe de calidad— pasan a estar exigidos por
+  máquina y no por memoria, que es lo único que funciona igual en todos los hosts.
+- **Seguridad**: el escáner cubre claves de API, tokens, claves privadas, JWT con aspecto real y
+  credenciales literales, más los ficheros que nunca deben versionarse. Se probó en rojo antes de
+  fijarlo. Un secreto en el historial sigue comprometido aunque se borre del último commit: se
+  rota primero, se limpia después.
+- **Lo que queda sin verificar**: si el importador de Lovable acepta una URL con directorio oculto
+  (`.agents/…`) y si el disparo automático funciona con las descripciones actuales. Documentado en
+  `docs/integrations/IDE-COMPATIBILITY.md` §7.
+- **Referencias**: spec `006-calidad-integrada`
+
 ## 2026-08-07 · Calibración de verificación y observabilidad de producto
 
 - **Tipo**: decisión de proceso y calidad

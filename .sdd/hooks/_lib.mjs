@@ -22,6 +22,34 @@ export async function readHookInput() {
 /** Los gates se pueden desactivar temporalmente con SDD_GATES=off. */
 export const gatesEnabled = () => process.env.SDD_GATES !== 'off';
 
+/**
+ * Patrones de secreto y rutas prohibidas, compartidos por el hook local `guard-write.mjs` y por
+ * el escáner de CI `scripts/scan-secrets.mjs`.
+ *
+ * Viven aquí, en un solo sitio, porque si el hook y CI divergen uno de los dos miente — y el que
+ * miente siempre es el que no se ejecuta en tu máquina. En hosts sin hooks (Lovable y
+ * equivalentes) CI es la única protección que queda.
+ */
+export const PATRONES_SECRETO = [
+  { re: /\b(sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,})\b/, que: 'clave de API tipo OpenAI/Anthropic' },
+  { re: /\bghp_[A-Za-z0-9]{30,}\b/, que: 'token de GitHub' },
+  { re: /\bAKIA[0-9A-Z]{16}\b/, que: 'access key de AWS' },
+  { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, que: 'clave privada' },
+  { re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/, que: 'JWT con aspecto real' },
+  { re: /(password|passwd|secret|api[_-]?key|token)\s*[:=]\s*['"][^'"\s${}]{12,}['"]/i, que: 'credencial literal' },
+];
+
+/** Ficheros que nunca deben entrar al repositorio, por lo que son. */
+export const RUTAS_PROHIBIDAS = [
+  { re: /(^|\/)\.env($|\.)/, motivo: 'Los ficheros .env contienen secretos.' },
+  { re: /(^|\/)(secrets?|credentials?)\//i, motivo: 'Directorio de secretos.' },
+  { re: /\.(pem|key|p12|pfx|keystore|jks)$/i, motivo: 'Material criptográfico.' },
+  { re: /(^|\/)id_(rsa|dsa|ecdsa|ed25519)/, motivo: 'Clave SSH privada.' },
+];
+
+/** `.env.example` y compañía sí se versionan: documentan nombres, no valores. */
+export const esPlantillaEnv = (ruta) => /(^|\/)\.env\.(example|sample|template|dist)$/.test(ruta);
+
 export const projectRoot = (input = {}) => input.cwd || process.cwd();
 
 /**

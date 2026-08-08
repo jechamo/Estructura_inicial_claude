@@ -10,6 +10,7 @@
 import {
   readHookInput, decide, gatesEnabled, toolCall, rutasDe, hostDestino,
   projectRoot, readIfExists, agenteActivo, globARegExp,
+  PATRONES_SECRETO, RUTAS_PROHIBIDAS, esPlantillaEnv,
 } from './_lib.mjs';
 import { join } from 'node:path';
 
@@ -22,15 +23,11 @@ const contenido = entrada.content || entrada.new_string || '';
 
 if (!rutas.length) decide('allow', 'Sin ruta que evaluar.', host);
 
-// `.env.example` / `.sample` / `.template` sí se editan: documentan nombres, no valores.
-const esPlantillaEnv = (r) => /(^|\/)\.env\.(example|sample|template|dist)$/.test(r);
-
 // ── deny: nunca ──────────────────────────────────────────────────────────────
+// Las de secretos y material criptográfico vienen de `_lib.mjs`, compartidas con el escáner de
+// CI: si divergen, el que miente es el que no se ejecuta en tu máquina.
 const prohibidas = [
-  { re: /(^|\/)\.env($|\.)/, motivo: 'Los ficheros .env contienen secretos.' },
-  { re: /(^|\/)(secrets?|credentials?)\//i, motivo: 'Directorio de secretos.' },
-  { re: /\.(pem|key|p12|pfx|keystore|jks)$/i, motivo: 'Material criptográfico.' },
-  { re: /(^|\/)id_(rsa|dsa|ecdsa|ed25519)/, motivo: 'Clave SSH privada.' },
+  ...RUTAS_PROHIBIDAS,
   { re: /(^|\/)node_modules\//, motivo: 'Dependencias instaladas: edita el manifiesto.' },
   { re: /(^|\/)(dist|build|out|\.next|target|coverage)\//, motivo: 'Artefacto generado: edita la fuente.' },
   { re: /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|poetry\.lock|Cargo\.lock)$/,
@@ -49,17 +46,8 @@ for (const r of rutas) {
 }
 
 // ── deny: secretos en el contenido ───────────────────────────────────────────
-const secretos = [
-  { re: /\b(sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,})\b/, que: 'clave de API tipo OpenAI/Anthropic' },
-  { re: /\bghp_[A-Za-z0-9]{30,}\b/, que: 'token de GitHub' },
-  { re: /\bAKIA[0-9A-Z]{16}\b/, que: 'access key de AWS' },
-  { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/, que: 'clave privada' },
-  { re: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/, que: 'JWT con aspecto real' },
-  { re: /(password|passwd|secret|api[_-]?key|token)\s*[:=]\s*['"][^'"\s${}]{12,}['"]/i, que: 'credencial literal' },
-];
-
 if (gatesEnabled() && contenido) {
-  for (const s of secretos) {
+  for (const s of PATRONES_SECRETO) {
     if (s.re.test(contenido)) {
       decide(
         'deny',

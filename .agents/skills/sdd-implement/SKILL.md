@@ -56,9 +56,9 @@ comprobación. Delega con la skill, no con una instrucción genérica.
 
 | Terreno | Agente | Skill |
 |---|---|---|
-| UI, estado, accesibilidad | `@frontend-expert` | [`/front`](../front/SKILL.md) |
-| Dominio, casos de uso, integraciones | `@backend-expert` | [`/middle`](../middle/SKILL.md) |
-| Esquema, migraciones, consultas | `@database-expert` | [`/bbdd`](../bbdd/SKILL.md) |
+| UI, estado, accesibilidad | `@frontend-expert` | `/front` |
+| Dominio, casos de uso, integraciones | `@backend-expert` | `/middle` |
+| Esquema, migraciones, consultas | `@database-expert` | `/bbdd` |
 | Contratos | `@api-designer` | — |
 | Test difícil, fixtures, dobles | `@test-engineer` |
 | Lentitud medida | `@performance-optimizer` |

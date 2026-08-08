@@ -69,6 +69,7 @@
     "docs/specs/_TEMPLATE",
     "scripts/check-sdd.mjs",
     "scripts/install.mjs",
+    "scripts/scan-secrets.mjs",
     "scripts/lib/manifiesto.mjs",
     "scripts/sdd-project.mjs",
     "scripts/skills-sync.mjs",

@@ -64,8 +64,8 @@ voluntad, se olvida.
 | Complejidad cognitiva y duplicación | CI (gate `smells`) | Sí |
 | Lint / formato / tipos | CI + hook `PostToolUse` | Sí |
 | Gates rápidos antes del commit, lentos antes del push | `.sdd/githooks/` (opt-in) | No: el que bloquea es CI |
-| Escaneo de secretos | CI + hook `PreToolUse` | Sí |
-| Auditoría de dependencias | CI | Sí (CRÍTICO/ALTO) |
+| Escaneo de secretos | CI (`scripts/scan-secrets.mjs`) + hook `PreToolUse` | Sí |
+| Auditoría de dependencias | CI, si hay lockfile | Sí (CRÍTICO/ALTO) |
 | Tests de contrato | CI | Sí |
 | Revisión de código | `code-reviewer` + humano | Sí |
 | Auditoría de seguridad | `security-auditor` | Sí (CRÍTICO/ALTO) |

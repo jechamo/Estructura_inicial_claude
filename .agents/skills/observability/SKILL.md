@@ -9,7 +9,7 @@ Agente responsable: `@devops-expert`. Te invoca `implementer` cuando una tarea e
 **Devuelve el control a quien te invocó.** No encadenes otro especialista.
 
 Esta skill es la cara **proactiva**: instalar los sensores antes de que haya un incidente.
-[`/respond-incident`](../respond-incident/SKILL.md) es la reactiva, y depende de que esto exista.
+`/respond-incident` es la reactiva, y depende de que esto exista.
 
 > Los tests atrapan los fallos que ya sabes nombrar. La observabilidad encuentra los que no.
 > Un `catch` que escribe en la consola del navegador del usuario no es manejo de errores:
@@ -32,7 +32,7 @@ ruido tiene el mismo efecto que el silencio y además cuesta dinero.
 ### 1 · Delimitar
 
 Lista los caminos que esta spec introduce y que pueden fallar delante de un usuario. Solo esos.
-Escríbelos en la tabla §1 de [`docs/ops/OBSERVABILITY.md`](../../../docs/ops/OBSERVABILITY.md).
+Escríbelos en la tabla §1 de `docs/ops/OBSERVABILITY.md`.
 
 ### 2 · Capturar y clasificar
 
@@ -80,7 +80,7 @@ Por cada alerta, la fila completa de §8: umbral de aviso, umbral crítico, vent
 **Una alerta sin acción posible no se crea.** Si al recibirla no hay nada que hacer, es ruido, y el
 ruido acaba silenciando el canal entero — incluida la alerta que importaba.
 
-Crea el runbook desde [`docs/ops/runbooks/_TEMPLATE.md`](../../../docs/ops/runbooks/_TEMPLATE.md)
+Crea el runbook desde `docs/ops/runbooks/_TEMPLATE.md`
 con disparador numérico y objetivo de recuperación. Un umbral con adjetivo —"cuando haya muchos
 errores"— no es un disparador: nadie sabe cuándo aplica el documento.
 

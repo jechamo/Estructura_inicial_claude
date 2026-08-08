@@ -89,7 +89,7 @@ esta fase es un auditor sin escritura ni delegación: aquí no se llama a nadie,
 - [ ] Salud por versión visible y regla de reversión escrita
 - [ ] Rastro de eventos de negocio **sin datos personales** — lo cruza `@security-auditor`
 - [ ] Toda alerta añadida tiene umbral de aviso, umbral crítico y playbook
-- [ ] Métricas de nivel 1 recogidas ([`METRICS.md`](../../../docs/quality/METRICS.md))
+- [ ] Métricas de nivel 1 recogidas (`docs/quality/METRICS.md`)
 - [ ] Ratio de deuda medido, no estimado:
 
 ```bash

@@ -391,6 +391,35 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('debt declara que no puede medir fuera de un repositorio git',
     deuda.status === 0 && salidaDeuda?.available === false && typeof salidaDeuda?.reason === 'string');
 
+  // El escáner es la única protección contra secretos en hosts sin hooks. Se comprueba que
+  // detecta, no solo que existe: un gate que nunca ha fallado no demuestra nada.
+  //
+  // La credencial de prueba se compone en ejecución: escrita entera aquí, este mismo fichero
+  // daría positivo en el escaneo — que es exactamente la prueba de que el patrón funciona.
+  {
+    const caja = nuevoDestino();
+    spawnSync('git', ['init', '-q', '.'], { cwd: caja, encoding: 'utf8' });
+    mkdirSync(join(caja, '.sdd/hooks'), { recursive: true });
+    mkdirSync(join(caja, 'scripts'), { recursive: true });
+    writeFileSync(join(caja, '.sdd/hooks/_lib.mjs'), leer(join(ORIGEN, '.sdd/hooks/_lib.mjs')), 'utf8');
+    writeFileSync(join(caja, 'scripts/scan-secrets.mjs'), leer(join(ORIGEN, 'scripts/scan-secrets.mjs')), 'utf8');
+    writeFileSync(join(caja, 'limpio.js'), 'export const saludo = "hola";\n', 'utf8');
+    spawnSync('git', ['add', '-A'], { cwd: caja, encoding: 'utf8' });
+    const limpio = spawnSync(process.execPath, ['scripts/scan-secrets.mjs', '--json'], { cwd: caja, encoding: 'utf8' });
+    comprueba('scan-secrets pasa en un árbol sin secretos',
+      limpio.status === 0 && JSON.parse(limpio.stdout || '{}').ok === true);
+
+    const credencialFalsa = `${'AKIA'}${'1234567890ABCDEF'}`;
+    writeFileSync(join(caja, 'config.js'), `const k = "${credencialFalsa}";\n`, 'utf8');
+    spawnSync('git', ['add', '-A'], { cwd: caja, encoding: 'utf8' });
+    const sucio = spawnSync(process.execPath, ['scripts/scan-secrets.mjs', '--json'], { cwd: caja, encoding: 'utf8' });
+    let hallazgos = null;
+    try { hallazgos = JSON.parse(sucio.stdout || 'null'); } catch { /* lo informa la aserción */ }
+    comprueba('scan-secrets falla y localiza el secreto sembrado',
+      sucio.status === 1 && hallazgos?.ok === false &&
+      hallazgos.findings.some((f) => f.ruta === 'config.js' && f.linea === 1));
+  }
+
   const nuevaSpec = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'new-spec', 'checkout-invitado', '--json'], { cwd: d, encoding: 'utf8' });
   comprueba('new-spec crea el siguiente scaffold sin execution-log',
     nuevaSpec.status === 0 && existsSync(join(d, 'docs/specs/001-checkout-invitado/spec.md')) &&
@@ -776,7 +805,7 @@ console.log('\n4 bis · allowlist de distribución npm');
     'docs/architecture/PATTERNS.md', 'docs/sdd/OPERATING-MODEL.md',
     '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push',
     '.agents/skills/observability/SKILL.md', '.claude/skills/observability/SKILL.md',
-    'scripts/sdd-project.mjs', 'scripts/check-sdd.mjs',
+    'scripts/sdd-project.mjs', 'scripts/check-sdd.mjs', 'scripts/scan-secrets.mjs',
   ];
   const ausentes = imprescindibles.filter((ruta) => !cubierto(ruta));
   comprueba(`la allowlist publica toda la doctrina vinculante${ausentes.length ? ` (falta: ${ausentes.join(', ')})` : ''}`,
