@@ -18,7 +18,7 @@ jobs:
           # El historial completo permite escanear también lo que ya estaba dentro, no solo
           # lo que entra en este commit.
           fetch-depth: 0
-      - uses: actions/setup-node@v6.0.0
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
       # Va el primero de todo: un secreto filtrado no se arregla arreglando el build.
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.0
-      - uses: actions/setup-node@v6.0.0
+      - uses: actions/setup-node@v7.0.0
         with:
           node-version: 22
       - name: Run slow project gates
