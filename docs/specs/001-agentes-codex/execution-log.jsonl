@@ -2,3 +2,4 @@
 {"ts":"2026-08-07T20:20:35.878Z","evento":"subagent-stop","agente":"desconocido","sesion":"44424dcc","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
 {"ts":"2026-08-07T20:24:53.361Z","evento":"subagent-stop","agente":"desconocido","sesion":"44424dcc","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
 {"ts":"2026-08-08T10:31:17.282Z","evento":"subagent-stop","agente":"desconocido","sesion":"44424dcc","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}
+{"ts":"2026-08-08T10:36:17.086Z","evento":"subagent-stop","agente":"desconocido","sesion":"44424dcc","verificacion":"unverified","motivo":"el host no expuso el nombre del subagente en el payload del hook"}

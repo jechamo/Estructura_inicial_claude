@@ -9,6 +9,31 @@
 
 ---
 
+## 2026-08-07 · Cierre del circuito de la spec 006, con las desviaciones declaradas
+
+- **Tipo**: aprendizaje
+- **Contexto**: la 006 se implementó y se mergeó (PR #7 y #8) sin `plan.md`, `tasks.md`,
+  `evidence.md` ni informes. El plan aprobado en el chat hizo de plan técnico, pero el chat no es
+  un artefacto durable y el circuito exige esos ficheros antes de `/sdd-ship`.
+- **Decisión / hecho**: se completan los cuatro artefactos **reconstruyendo lo realmente
+  ejecutado**, no lo que habría quedado bonito. `evidence.md` §3 declara siete controles no
+  ejecutados con dueño y próximo paso, y tres desviaciones de proceso.
+- **Lo que enseñó el propio gate**: al ejecutar `--strict --spec 006` salieron 11 problemas. Cinco
+  tareas documentales estaban marcadas `hecho` sin fila de evidencia —las escribí solo para las
+  que tenían salida de comando— y una tarea no declaraba criterio. El gate `tarea/evidencia`
+  existe exactamente para eso y funcionó contra quien lo escribió. Corregido: 12/12 trazadas.
+- **Desviaciones que se registran en vez de disimularse**: (1) el backlog se escribió al cerrar,
+  así que no guio el troceo; (2) no hubo ciclo rojo-verde por tarea de producto —el trabajo fue
+  documental y de herramienta—, aunque **sí** lo hubo en los cinco gates nuevos, que es donde
+  había comportamiento verificable; (3) todo `declared-direct`, sin delegación a subagentes.
+- **Alternativas descartadas**: escribir un `tasks.md` fechado antes de los commits para que
+  pareciera planificado —sería falsear la evidencia, y la evidencia es lo único que separa este
+  sistema de una narración—; marcar `GO` yo mismo —un `GO` firmado por quien produjo el trabajo
+  no es una revisión—.
+- **Impacto**: la 006 queda en `NO-GO` a la espera de decisión humana. El riesgo con más impacto
+  es el importador de Lovable ante un directorio oculto, que solo el usuario puede probar.
+- **Referencias**: spec `006-calidad-integrada` · informes de calidad y seguridad del 2026-08-07
+
 ## 2026-08-07 · Skills autocontenidas y los dos gates que la DoD prometía sin tener
 
 - **Tipo**: decisión y corrección de defecto

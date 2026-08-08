@@ -2,10 +2,11 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | aprobada |
+| Estado | implementada · entrega pendiente de decisión humana |
 | Tipo | capacidad transversal de calidad |
 | Versión objetivo | v0.5.0 |
 | Aprobación | spec aprobada explícitamente por el usuario el 2026-08-07 |
+| Cierre | [`plan.md`](./plan.md) · [`tasks.md`](./tasks.md) 12/12 · [`evidence.md`](./evidence.md) · informes de [calidad](../../quality/reports/2026-08-07-006-calidad-integrada.md) y [seguridad](../../security/reports/2026-08-07-006-calidad-integrada.md) |
 
 ## Objetivo
 
