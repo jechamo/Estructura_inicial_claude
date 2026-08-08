@@ -8,11 +8,10 @@ description: Responde a un incidente en producción — contener, recuperar, com
 Agente responsable: `@devops-expert`, con `@research-analyst` para la causa y
 `@security-auditor` si hay sospecha de compromiso.
 
-Esta skill es la cara **reactiva**. Depende de que exista la proactiva:
-[`/observability`](../observability/SKILL.md) y
-[`docs/ops/OBSERVABILITY.md`](../../../docs/ops/OBSERVABILITY.md). Si al llegar aquí no hay
-clasificación de errores, salud por versión ni rastro de eventos, la Fase 3 va a ser mucho más
-larga — y esa es la lección que hay que llevarse al post-mortem.
+Esta skill es la cara **reactiva**. Depende de que exista la proactiva: `/observability` y su
+artefacto `docs/ops/OBSERVABILITY.md`. Si al llegar aquí no hay clasificación de errores, salud
+por versión ni rastro de eventos, la Fase 3 va a ser mucho más larga — y esa es la lección que
+hay que llevarse al post-mortem.
 
 > **Regla que gobierna todo lo demás: primero se para el dolor, después se entiende.**
 > Diagnosticar con usuarios cayéndose es el error clásico. Mitiga, y luego investiga con calma.
@@ -104,8 +103,8 @@ tienen; si el resultado fue malo, el sistema permitió que lo fuera.
 ```
 
 **Mide los dos tiempos, no los estimes**: del primer error a la alerta (detección) y de la alerta a
-la mitigación (recuperación). Van a [`METRICS.md`](../../../docs/quality/METRICS.md). Si la
-detección la hizo un usuario y no el sistema, la primera acción del post-mortem ya está escrita.
+la mitigación (recuperación). Van a `docs/quality/METRICS.md`. Si la detección
+la hizo un usuario y no el sistema, la primera acción del post-mortem ya está escrita.
 
 Cada acción se convierte en **tarea real**, no en una buena intención. Una acción sin dueño
 y sin fecha es una acción que no existe.

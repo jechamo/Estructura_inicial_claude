@@ -113,9 +113,9 @@ el dominio es rico · `utils.js` cajón de sastre · herencia de 3+ niveles.
 ## Stack concreto
 
 El método de arriba no depende del framework. Lo que sí depende: las prácticas del fabricante.
-Consulta [`docs/agents/SKILLS-EXTERNAS.md`](../../../docs/agents/SKILLS-EXTERNAS.md) — si el
+Consulta `docs/agents/SKILLS-EXTERNAS.md` — si el
 proyecto usa Cloudflare Workers, Netlify Functions o Stripe hay skills oficiales del equipo
-propietario declaradas en [`.sdd/external-skills.json`](../../../.sdd/external-skills.json).
+propietario declaradas en `.sdd/external-skills.json`.
 Para versiones y APIs actuales usa el MCP `context7` antes que la memoria.
 
 ## Salida

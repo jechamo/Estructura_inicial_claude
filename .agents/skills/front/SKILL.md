@@ -37,7 +37,7 @@ Igual que en el resto del circuito. Refactor con la suite verde.
 
 ## La dirección visual es vinculante
 
-[`docs/design/DIRECCION-VISUAL.md`](../../../docs/design/DIRECCION-VISUAL.md) manda sobre tu
+`docs/design/DIRECCION-VISUAL.md` manda sobre tu
 criterio y sobre los valores por defecto del framework. Aquí es donde un diseño con carácter se
 diluye en el MVP genérico, casi siempre sin querer:
 
@@ -132,7 +132,7 @@ Lo que se recuerda no son los milisegundos, es la sensación — y la sensación
   cuenta, cambio de contraseña ni borrados irreversibles: ahí se espera la confirmación real y esa
   espera se comunica.
 
-Detalle completo en [`docs/design/USABILITY-CHECKLIST.md`](../../../docs/design/USABILITY-CHECKLIST.md).
+Detalle completo en `docs/design/USABILITY-CHECKLIST.md`.
 
 ## Accesibilidad — WCAG 2.2 AA, en el código
 
@@ -189,7 +189,7 @@ Sin medición previa no se optimiza. Objetivo declarado o no hay tarea.
 ## Stack concreto
 
 El método no depende del framework; las prácticas del fabricante sí.
-[`docs/agents/SKILLS-EXTERNAS.md`](../../../docs/agents/SKILLS-EXTERNAS.md) recoge las skills
+`docs/agents/SKILLS-EXTERNAS.md` recoge las skills
 oficiales aplicables —`vercel-labs/next-best-practices`, `next-cache-components`, `next-upgrade`
 y la `frontend-design` de Anthropic para criterio visual—. Para versiones y APIs actuales, MCP
 `context7`; para leer tokens y componentes del diseño, MCP `figma` o `stitch`. No inventes la API

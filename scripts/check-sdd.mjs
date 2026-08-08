@@ -15,6 +15,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
@@ -237,6 +238,13 @@ for (const d of dirs(SKILLS_DIR)) {
     err('skill/frontmatter', `${d}/SKILL.md: claves no portables: ${[...new Set(noPortables)].sort().join(', ')}`);
   if (t.split(/\r?\n/).length > 500)
     warn('skill/progressive-disclosure', `${d}/SKILL.md supera 500 líneas; mueve detalle a references/`);
+
+  // Una skill canónica se importa suelta en hosts que las cargan al workspace (Lovable y
+  // equivalentes). Ahí `../../../docs/x.md` no significa nada: el fichero ya no vive en el árbol
+  // del repositorio. Se referencia desde la raíz, y a otra skill por su comando.
+  // Los adaptadores de .claude/skills/ están exentos: su enlace al canónico es obligatorio.
+  for (const enlace of t.matchAll(/\]\((\.\.\/[^)]*)\)/g))
+    err('skill/ruta-relativa', `.agents/skills/${d}/SKILL.md enlaza '${enlace[1]}': usa ruta desde la raíz en backticks, o \`/nombre-de-skill\``);
 }
 
 const skillsCanonicas = dirs(SKILLS_DIR);
@@ -803,6 +811,62 @@ if (VIRGIN) {
       try { decodificado = decodeURIComponent(enlace); } catch { /* se comprobará tal cual */ }
       if (!existsSync(resolve(dirname(absoluta), decodificado)))
         err('virgin/enlace', `${ruta}: el enlace interno '${enlace}' no existe`);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Artefactos de entrega, exigidos por el diff (solo --strict).
+//
+// "La documentación se actualiza en el mismo cambio" y "toda decisión relevante entra en la
+// bitácora" ya son reglas vinculantes; hasta ahora dependían de que alguien se acordara. Aquí se
+// traducen a máquina, que es lo único que funciona igual en todos los hosts — incluidos los que
+// no tienen hooks ni agentes.
+// ─────────────────────────────────────────────────────────────────────────────
+if (STRICT && !VIRGIN) {
+  const base = process.env.SDD_DIFF_BASE || 'origin/main';
+  const diff = spawnSync('git', ['diff', '--name-only', `${base}...HEAD`], { cwd: ROOT, encoding: 'utf8' });
+
+  if (diff.status !== 0) {
+    warn('entrega/diff', `no se pudo comparar contra '${base}': se omiten los gates de CHANGELOG y bitácora`);
+  } else {
+    const tocados = diff.stdout.split('\n').map((r) => r.trim()).filter(Boolean);
+
+    // Documentación, plantillas de spec y ficheros de prueba no obligan a tocar el CHANGELOG:
+    // exigirlo en cada corrección de una errata convierte el gate en ruido y se acaba esquivando.
+    const esProducto = (r) =>
+      !r.startsWith('docs/') && !r.endsWith('.md') &&
+      !/(^|\/)(test|tests|__tests__)\//.test(r) && !/\.(test|spec)\./.test(r);
+    const produccion = tocados.filter(esProducto);
+    if (produccion.length && !tocados.includes('CHANGELOG.md'))
+      err('entrega/changelog', `el cambio toca código (${produccion[0]}${produccion.length > 1 ? ` y ${produccion.length - 1} más` : ''}) y no actualiza CHANGELOG.md`);
+
+    // El contrato de agentes y skills gobierna todas las sesiones futuras: cambiarlo sin dejar
+    // constancia del porqué es exactamente lo que la bitácora existe para impedir.
+    const contrato = tocados.filter((r) =>
+      r.startsWith('.claude/agents/') || r.startsWith('.agents/skills/') ||
+      r === 'AGENTS.md' || r === 'docs/architecture/constitution.md');
+    if (contrato.length && !tocados.includes('docs/bitacora/DECISIONS.md'))
+      err('entrega/bitacora', `el cambio toca el contrato (${contrato[0]}) y no añade entrada en docs/bitacora/DECISIONS.md`);
+  }
+}
+
+// Informes de la spec que se entrega: existen los directorios y `/sdd-verify` los produce, pero
+// nada comprobaba que se hubieran escrito. Un veredicto de auditoría que solo vive en el chat no
+// es evidencia, y en hosts sin aislamiento el auditor puede además haber escrito el código.
+//
+// Solo se exigen cuando alguien ha declarado `GO` en evidence.md §5: `--strict --spec` también se
+// usa a media implementación, y pedir artefactos de entrega ahí convierte el gate en ruido.
+if (STRICT && soloSpec) {
+  const carpeta = dirs(SPECS).find((d) => d.startsWith(`${soloSpec}-`) || d === soloSpec);
+  const evidencia = carpeta ? leer(join(SPECS, carpeta, 'evidence.md')) || '' : '';
+  const decididoGo = /\|\s*\*\*Estado\*\*\s*\|\s*`?GO`?\s*\|/.test(evidencia);
+  if (carpeta && decididoGo) {
+    for (const [tipo, dir] of [['seguridad', 'docs/security/reports'], ['calidad', 'docs/quality/reports']]) {
+      let informes = [];
+      try { informes = readdirSync(join(ROOT, dir)); } catch { /* directorio ausente = sin informes */ }
+      if (!informes.some((f) => f.includes(carpeta)))
+        err('entrega/informe', `la spec ${carpeta} está en GO y no tiene informe de ${tipo} en ${dir}/`);
     }
   }
 }

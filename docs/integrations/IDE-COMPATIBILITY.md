@@ -18,7 +18,7 @@ El ecosistema tiene cuatro capas con **portabilidad muy distinta**:
 | Capa | Qué es | Portabilidad |
 |---|---|---|
 | **Reglas** | `AGENTS.md` y sus adaptadores | ✅ **Universal.** Es texto que el modelo lee |
-| **Skills** | Los 24 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies |
+| **Skills** | Los 25 `SKILL.md` de `.agents/skills/` | ✅ **Estándar abierto** desde 18/12/2025. El mismo fichero vale en 30+ superficies, incluidos hosts sin terminal |
 | **Perfiles de agente** | Los 20 ficheros de `.claude/agents/` | 🟡 Nativo con adaptadores en 4 hosts, por referencia en el resto |
 | **Handoff** | El bloque `### HANDOFF` | ✅ **Universal como contrato**, ⚠️ la ejecución no |
 | **Hooks** | Las garantías deterministas | 🔴 **Lo menos portable.** Aquí están las diferencias reales |
@@ -43,22 +43,22 @@ La consecuencia práctica, y es la más importante de este documento:
 Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limitación conocida ·
 ⚠️ formato inferido, sin verificar · ❌ no soportado
 
-| Capacidad | Claude Code | VS Code + Copilot | Copilot CLI/nube | Cursor | Antigravity | Codex |
-|---|---|---|---|---|---|---|
-| Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** |
-| Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ |
-| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` |
-| Comandos `/` | ✅ 25 skills | ✅ 25 skills | ✅ skills | ✅ 25 skills | 🟡 workflows | 🟡 skills por nombre/prompt |
-| Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes |
-| **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ |
-| **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` |
-| **Territorio por agente** | ✅ hook + `territories.json` | 🟡 contrato instalado, sin smoke en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ contrato sin smoke en vivo | ⚠️ contrato de hook; CI es el juez |
-| Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ |
-| Hooks de herramienta | ✅ 7 eventos, probados | 🟡 `.github/hooks/sdd.json`, sin smoke en vivo | ❌ | ✅ `.cursor/hooks.json` | ⚠️ contrato sin smoke en vivo | ⚠️ `.codex/hooks.json`, sin smoke en vivo |
-| Trazabilidad `observed` | ✅ `SubagentStart/Stop` | 🟡 eventos configurados, sin smoke | ❌ | ❌ | ❌ | ⚠️ eventos configurados, sin smoke |
-| `model:` por agente | ✅ | ✅ (`model:`, admite array) | ✅ | 🟡 | ❌ | ✅ |
-| MCP | ✅ `.mcp.json` | ✅ `.vscode/mcp.json` | ✅ | ✅ | ✅ | ✅ |
-| `check-sdd.mjs` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Capacidad | Claude Code | VS Code + Copilot | Copilot CLI/nube | Cursor | Antigravity | Codex | Lovable |
+|---|---|---|---|---|---|---|---|
+| Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** | ✅ nativo, cada sesión |
+| Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ | ❌ |
+| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` | ❌ sin formato |
+| Comandos `/` | ✅ 25 skills | ✅ 25 skills | ✅ skills | ✅ 25 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
+| Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes | ❌ un solo agente |
+| **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ | ❌ |
+| **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` | ❌ **el auditor puede escribir** |
+| **Territorio por agente** | ✅ hook + `territories.json` | 🟡 contrato instalado, sin smoke en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ contrato sin smoke en vivo | ⚠️ contrato de hook; CI es el juez | ❌ |
+| Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hooks de herramienta | ✅ 7 eventos, probados | 🟡 `.github/hooks/sdd.json`, sin smoke en vivo | ❌ | ✅ `.cursor/hooks.json` | ⚠️ contrato sin smoke en vivo | ⚠️ `.codex/hooks.json`, sin smoke en vivo | ❌ |
+| Trazabilidad `observed` | ✅ `SubagentStart/Stop` | 🟡 eventos configurados, sin smoke | ❌ | ❌ | ❌ | ⚠️ eventos configurados, sin smoke | ❌ siempre `unverified` |
+| `model:` por agente | ✅ | ✅ (`model:`, admite array) | ✅ | 🟡 | ❌ | ✅ | ❌ |
+| MCP | ✅ `.mcp.json` | ✅ `.vscode/mcp.json` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `check-sdd.mjs` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 solo en CI, no bajo demanda |
 
 ### Qué significa cada casilla incómoda
 
@@ -344,6 +344,44 @@ delegación. En CLI, `/agent` permite inspeccionar y cambiar entre hilos. Los au
 lectura; la lista blanca de delegación y los territorios continúan como reglas escritas, porque
 Codex no documenta un control nativo equivalente por agente. Ejecuta `check-sdd --strict` como gate.
 
+### Lovable y hosts sin terminal — soporte bajo, y honesto
+
+Constructor en el navegador: **sin terminal ni runner persistente**. Es el caso extremo de la
+regla de §1 —cuanta más garantía, menos portabilidad— y por eso merece apartado propio.
+
+**Lo que sí, y sorprende:**
+
+- **Lee `AGENTS.md` y `CLAUDE.md` de la raíz en cada sesión**, sin importar cuánto dure la
+  conversación.
+- **Skills nativas**, con el mismo `SKILL.md` del estándar Agent Skills: invocables con `/nombre`
+  y disparadas solas cuando la petición coincide con la descripción. Se importan **al workspace**,
+  no se leen del repositorio sincronizado:
+
+  ```bash
+  node scripts/sdd-project.mjs skills-export
+  ```
+
+  Emite las 25 URLs de importación y el hash de cada skill. La copia importada **no se actualiza
+  sola**: el hash es lo que permite saber si el workspace tiene la versión de hace tres meses.
+- **GitHub Actions se ejecuta con normalidad.** Es lo que salva el conjunto: los gates de CI valen
+  igual venga el commit de Lovable, de Claude Code o de un humano.
+
+**Lo que no:**
+
+- Sin perfiles de agente. Los roles se adoptan **por lectura** —*"adopta
+  `.claude/agents/spec-analyst.md`"*—, igual que en Antigravity: sin contexto aislado, sin límite
+  de herramientas, sin territorio, sin delegación.
+- Sin hooks: `guard-write.mjs` y `guard-bash.mjs` no corren. **La única protección contra
+  secretos es el job de CI**, y por eso existe `scripts/scan-secrets.mjs`.
+- Sin terminal: no puedes instalar con `npx` ni ejecutar `check-sdd.mjs` bajo demanda. Se instala
+  en local y se empuja; Lovable recoge los ficheros por sincronización.
+- Trazabilidad siempre `unverified`, con su motivo escrito. Nunca `observed`.
+
+> **Lo que hay que tener presente al usarlo:** los cuatro auditores son de solo lectura porque se
+> les retiran las herramientas de escritura. Ahí eso no existe — `security-auditor` **puede
+> escribir código**. Un agente que audita su propio trabajo y además puede arreglarlo no es un
+> auditor. Su veredicto vale lo que CI confirme, no lo que él afirme.
+
 ### Cualquier otro host compatible con AGENTS.md
 Zed, Windsurf, Gemini CLI, Aider y demás leen `AGENTS.md`. Tendrás las reglas y el circuito.
 Los perfiles, por referencia. Las garantías, por CI.
@@ -388,6 +426,12 @@ Honestidad explícita, para que nadie confíe de más:
   está verificado contra la documentación oficial y por tests estáticos, no mediante el selector.
 - Que una misma skill produzca la **misma salida** en Claude Code, Codex y Copilot: el formato es
   portable por estándar, pero **no he comparado el resultado real** en cada superficie.
+- **Lovable (consultado el 2026-08-07)**: la matriz sale de su documentación oficial, no de una
+  sesión real. Dos cosas concretas sin comprobar, y la primera puede invalidar el resto:
+  **si su importador acepta una URL con directorio oculto** (`.agents/skills/<nombre>`), y **si
+  el disparo automático por descripción funciona con las descripciones actuales**. Pruébalo con
+  **una** skill antes de importar las 25. Si el punto inicial falla, quedan el `.zip` o un
+  espejo sin punto.
 
 Lo verificado y su fuente está en
 [`docs/research/baseline-2026-07-30.md`](../research/baseline-2026-07-30.md) (vigente) y

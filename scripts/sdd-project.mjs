@@ -6,6 +6,7 @@
  *   node scripts/sdd-project.mjs configure --accept-detected [--dry-run]
  *   node scripts/sdd-project.mjs run [--ci] [--fast|--slow]
  *   node scripts/sdd-project.mjs debt [--json]
+ *   node scripts/sdd-project.mjs skills-export [--json]
  *   node scripts/sdd-project.mjs status [--json]
  *   node scripts/sdd-project.mjs product-status [--json]
  *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
@@ -569,6 +570,58 @@ function medirDeuda() {
   return { available: true, total, byMarker: porMarcador, byDirectory: directorios, filesScanned: revisados };
 }
 
+/**
+ * URLs de importación de skills para hosts que las cargan al workspace en vez de leerlas del
+ * repositorio sincronizado (Lovable y equivalentes).
+ *
+ * El hash corto existe por la deriva: la copia importada no se actualiza sola, y sin una forma
+ * de comparar versiones nadie sabe si el workspace tiene la skill de hace tres meses.
+ */
+function exportarSkills() {
+  const remoto = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: ROOT, encoding: 'utf8' });
+  const url = (remoto.stdout || '').trim().replace(/\.git$/, '').replace(/^git@github\.com:/, 'https://github.com/');
+  const rama = (spawnSync('git', ['branch', '--show-current'], { cwd: ROOT, encoding: 'utf8' }).stdout || 'main').trim() || 'main';
+
+  const skills = nombres('.agents/skills', (x) => x.isDirectory() && !x.name.startsWith('_'));
+  const entradas = [];
+  for (const skill of skills) {
+    const ruta = join(ROOT, '.agents/skills', skill, 'SKILL.md');
+    const contenido = leer(ruta);
+    if (contenido === null) continue;
+    const relativas = [...contenido.matchAll(/\]\((\.\.\/[^)]*)\)/g)].map((m) => m[1]);
+    entradas.push({
+      skill,
+      importUrl: url ? `${url}/tree/${rama}/.agents/skills/${skill}` : null,
+      sha: hash(contenido).slice(0, 8),
+      bytes: Buffer.byteLength(contenido, 'utf8'),
+      relativeLinks: relativas,
+    });
+  }
+
+  const conRelativas = entradas.filter((e) => e.relativeLinks.length);
+  const salida = { remote: url || null, branch: rama, count: entradas.length, skills: entradas };
+
+  if (JSON_OUT) { console.log(JSON.stringify(salida)); if (conRelativas.length) process.exitCode = 1; return; }
+
+  if (!url) {
+    console.log('Sin remoto `origin`: no se pueden generar URLs de importación.');
+    console.log('Alternativa: sube cada carpeta de .agents/skills/ como .zip al host.');
+    return;
+  }
+  console.log(`${entradas.length} skill(s) · rama ${rama}`);
+  console.log('\nImporta cada una en el host (en Lovable: Settings → Skills → Import from GitHub):\n');
+  for (const e of entradas) console.log(`  ${e.sha}  ${e.importUrl}`);
+
+  if (conRelativas.length) {
+    console.log('\n⚠ Estas skills enlazan con rutas relativas y se romperán al importarse sueltas:');
+    for (const e of conRelativas) console.log(`  ${e.skill}: ${e.relativeLinks.join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log('\nEl hash identifica la versión: compáralo para saber si el workspace está al día.');
+  console.log('La copia importada no se actualiza sola — reimporta tras cambiar una skill.');
+}
+
 function informeDeuda() {
   const deuda = medirDeuda();
   if (JSON_OUT) { console.log(JSON.stringify(deuda)); return; }
@@ -598,6 +651,7 @@ try {
   else if (comando === 'configure') configurar();
   else if (comando === 'run') ejecutarChecks();
   else if (comando === 'debt') informeDeuda();
+  else if (comando === 'skills-export') exportarSkills();
   else if (comando === 'status') imprimir({ detection: detectar(), checks: cargarChecks(), product: estadoProducto(), debt: medirDeuda() });
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {

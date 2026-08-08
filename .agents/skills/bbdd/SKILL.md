@@ -124,8 +124,7 @@ remoto de verdad.
 
 ## Stack concreto
 
-Prácticas oficiales del fabricante en
-[`docs/agents/SKILLS-EXTERNAS.md`](../../../docs/agents/SKILLS-EXTERNAS.md):
+Prácticas oficiales del fabricante en `docs/agents/SKILLS-EXTERNAS.md`:
 `supabase/postgres-best-practices`, `neondatabase/neon-postgres`, `netlify/netlify-db`.
 Para el esquema vivo, advisors y migraciones, MCP `supabase` en lectura.
 

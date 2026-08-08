@@ -7,6 +7,26 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+### Security
+- **Escaneo de secretos en CI, que era una promesa sin cumplir.** La Definition of Done decía que
+  este control bloqueaba el merge; en realidad solo existía como hook local, así que no protegía
+  nada en hosts sin hooks ni en un push desde la web de GitHub. Ahora se ejecuta en CI con los
+  mismos patrones que el hook, compartidos desde un solo sitio para que no puedan divergir.
+- **Auditoría de dependencias en CI**, cuando hay lockfile. Misma historia: prometida, ausente.
+
+### Added
+- **Las skills funcionan en Lovable y equivalentes.** Sus skills nativas usan el mismo formato
+  estándar, así que las 25 se importan tal cual. `node scripts/sdd-project.mjs skills-export`
+  emite las URLs listas y el hash de cada una, para saber si la copia del workspace se quedó
+  atrás.
+- **CHANGELOG, bitácora e informes exigidos por máquina.** `--strict` reclama el CHANGELOG cuando
+  el cambio toca código, una entrada de bitácora cuando toca el contrato de agentes o skills, y
+  los informes de seguridad y calidad de la spec que se entrega. Antes dependía de acordarse.
+
+### Fixed
+- **Nueve skills enlazaban con rutas que se rompían al importarlas fuera del repositorio.** Ahora
+  referencian desde la raíz, y a otras skills por su comando. Un gate impide que vuelva a pasar.
+
 ### Added
 - **`/observability`, la mitad que faltaba del ciclo.** El circuito terminaba en el despliegue.
   Ahora hay un procedimiento para enterarte de que algo se rompió antes que el usuario: clasificar

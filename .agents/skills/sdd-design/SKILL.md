@@ -30,8 +30,7 @@ cualquier `DISC-*` material a confirmación humana antes de diseñar.
 
 ## Paso 0 bis — Dirección visual: sin esto no se dibuja
 
-**Antes de la primera pantalla del proyecto**, comprueba
-[`docs/design/DIRECCION-VISUAL.md`](../../../docs/design/DIRECCION-VISUAL.md).
+**Antes de la primera pantalla del proyecto**, comprueba `docs/design/DIRECCION-VISUAL.md`.
 
 | Estado | Qué haces |
 |---|---|
@@ -61,7 +60,7 @@ Lo que hay que arrancarle al usuario, con tu propuesta encima de la mesa:
 Si el usuario no tiene criterio formado, **propón tú una dirección completa y defiéndela**. Lo que
 no vale es dejarla vacía y empezar a dibujar: eso garantiza el resultado genérico.
 
-Skills de apoyo si están aprobadas (ver [`SKILLS-EXTERNAS.md`](../../../docs/agents/SKILLS-EXTERNAS.md)):
+Skills de apoyo si están aprobadas (ver `docs/agents/SKILLS-EXTERNAS.md`):
 `anthropics/skills:frontend-design` para el criterio visual, `theme-factory` para sistemas de tema.
 
 ## Paso 1 — Preguntar antes de dibujar
@@ -140,8 +139,8 @@ rehacer la paleta y todo lo que la usa.
 
 ## Paso 5 bis — Usabilidad
 
-La accesibilidad es el suelo legal. Que además se entienda es otra revisión, y se hace aquí:
-[`docs/design/USABILITY-CHECKLIST.md`](../../../docs/design/USABILITY-CHECKLIST.md).
+La accesibilidad es el suelo legal. Que además se entienda es otra revisión, y se hace aquí,
+contra `docs/design/USABILITY-CHECKLIST.md`.
 
 Las diez heurísticas con su fallo típico, formularios, patrón de mensaje de error, microcopy y
 velocidad percibida. Lo que más se cuela hasta producción:
