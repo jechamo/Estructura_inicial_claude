@@ -371,9 +371,9 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   '.sdd/checks.json': `{
   "version": 1,
   "checks": {
-    "sdd": { "command": "node scripts/check-sdd.mjs", "required": true }
+    "sdd": { "command": "node scripts/check-sdd.mjs", "required": true, "speed": "fast" }
   },
-  "unconfigured": ["lint", "test", "typecheck", "build", "mutation"]
+  "unconfigured": ["lint", "test", "typecheck", "build", "smells", "coverage", "e2e", "visual", "a11y", "deps-audit", "docs", "mutation"]
 }
 `,
   '.env.example': `# Variables de aplicación

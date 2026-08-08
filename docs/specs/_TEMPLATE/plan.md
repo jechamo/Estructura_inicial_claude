@@ -97,6 +97,29 @@ Ver [`test-plan.md`](./test-plan.md).
 | Contrato | |
 | E2E | |
 
+### 8.1 · Calibración de verificación
+
+**Tier de cobertura por módulo.** Lo que no se declare aquí se exigirá al **100 %**: el defecto es
+el estricto a propósito, porque clasificar cuesta menos que justificar después por qué un módulo
+sin clasificar está al 40 %.
+
+| Módulo / ruta | Tier | Por qué |
+|---|---|---|
+| `<ruta>` | CORE \| IMPORTANT \| INFRASTRUCTURE | `<maneja dinero / lo ve el usuario / lo valida el compilador>` |
+
+Criterio en [`TEST-STRATEGY.md`](../../quality/TEST-STRATEGY.md) §8. Ningún módulo que maneje
+dinero, datos críticos o permisos puede quedar por debajo de CORE, y `/sdd-verify` lo comprueba.
+
+**Profundidad, cuando no es obvia.** Las cuatro preguntas de §0 —comportamiento conocido, coste de
+fallar, estabilidad del requisito, simulabilidad—:
+
+| Componente | Respuesta | Decisión |
+|---|---|---|
+| `<componente>` | `<n>` de 4 hacia verificar | `<suite exhaustiva / camino feliz + instrumentación>` |
+
+Calibra cuántos casos límite, si hay E2E y si se mide mutation score. **No** calibra si hay ciclo
+rojo-verde: eso no se negocia.
+
 ## 9. Seguridad
 
 | Aspecto | Decisión |
@@ -120,7 +143,14 @@ Consultas críticas: <…> · Estrategia de caché e **invalidación**: <…>
 - Logs (eventos, campos, sin PII): <…>
 - Métricas: <…>
 - Trazas: <…>
-- Alertas y su runbook: <…>
+- **Caminos que se instrumentan** y clases de error esperadas (red, negocio, recursos, terceros): <…>
+- **Salud por versión**: qué indicadores se vigilan y qué combinación dispara la reversión: <…>
+- **Eventos de negocio** del rastro, sin datos personales: <…>
+- Alertas: umbral de aviso, umbral crítico y **playbook** de cada una: <…>
+
+Procedimiento: [`/observability`](../../../.agents/skills/observability/SKILL.md).
+Si esta spec introduce caminos que pueden fallar delante de un usuario, aquí sale una tarea con
+terreno `observability`.
 
 ## 12. Despliegue
 

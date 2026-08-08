@@ -28,9 +28,15 @@ Nombre del test: `debe_<comportamiento>_cuando_<condición>`.
 ## 2 · 🟢 GREEN
 
 - El código **mínimo**. Está permitido devolver una constante si eso pone el test en verde:
-  el siguiente test te obligará a generalizar. Eso es la disciplina, no una trampa.
+  el siguiente test te obligará a generalizar. Eso es la disciplina, no una trampa —tiene nombre,
+  **fingirlo hasta lograrlo**, y sirve para separar "hacer pasar el test" de "diseñar la solución",
+  que son dos actividades distintas y se hacen mal a la vez.
 - Ejecuta el test → verde. Pega la salida.
 - Ejecuta la suite completa → verde.
+
+**Triangular**: cuando la constante ya no cuela, es que el segundo test ha hecho su trabajo. Un
+test permite fingir; dos obligan a generalizar; tres confirman la regla. Si te descubres adivinando
+la implementación en vez de derivarla, te falta un test que la fuerce.
 
 ## 3 · 🔵 REFACTOR
 

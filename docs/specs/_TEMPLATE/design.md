@@ -112,9 +112,11 @@ Wireframe de baja fidelidad:
 
 | Sitio | Texto | Nota |
 |---|---|---|
-| Botón principal | | Verbo de la acción real: "Guardar cambios", no "Aceptar" |
-| Estado vacío | | Debe enseñar el siguiente paso |
-| Error de validación | | Concreto y accionable: "La fecha debe ser posterior a hoy" |
+| Botón principal | | **Verbo + sustantivo** de la acción real: "Guardar cambios", no "Aceptar" |
+| Estado de carga | | Contextual: "Aplicando descuento…", no "Cargando…" |
+| Estado vacío | | Debe enseñar el siguiente paso, con acción concreta |
+| Error de validación | | **Qué está mal → cómo se arregla → alternativa.** Sin culpar: "la fecha debe ser posterior a hoy", no "has puesto mal la fecha" |
+| Confirmación de éxito | | Específica: "Pedido realizado, confirmación enviada", no "Éxito" |
 
 ## 5. Responsive
 
@@ -138,6 +140,26 @@ Qué se degrada o se oculta en pantalla estrecha, y por qué **eso** y no otra c
 | Jerarquía de encabezados coherente | | |
 | Errores concretos y asociados a su campo | | |
 | Alternativa para `prefers-reduced-motion` | | |
+
+## 6 bis. Usabilidad
+
+La accesibilidad es el suelo legal; esto es lo que hace que además se entienda. Checklist completo
+en [`docs/design/USABILITY-CHECKLIST.md`](../../design/USABILITY-CHECKLIST.md).
+
+| Comprobación | Estado | Nota |
+|---|---|---|
+| Diez heurísticas recorridas | | |
+| Formularios: etiqueta visible, tipo semántico, validación al salir del campo | | |
+| Mensajes de error: qué está mal → cómo se arregla | | |
+| Toda acción responde en menos de 100 ms | | |
+| Esqueleto con la forma del contenido real mientras carga | | |
+
+**Actualización optimista** — dónde se usa y, sobre todo, dónde **no**:
+
+| Acción | ¿Optimista? | Por qué |
+|---|---|---|
+| `<acción reversible>` | Sí, con reversión escrita | Fácil de revertir, fallo raro |
+| `<pago / alta / borrado>` | **No** | Espera confirmación real; el usuario debe poder afirmar que ocurrió |
 
 ## 7. Requisitos descubiertos en el diseño
 

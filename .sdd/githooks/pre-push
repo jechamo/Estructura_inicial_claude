@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Gates lentos antes del push: cobertura, E2E, auditoría de dependencias, documentación.
+# Se activan con:
+#   git config core.hooksPath .sdd/githooks
+#
+# Van aquí y no en pre-commit porque tardan minutos y el commit es frecuente. El reparto
+# es lo que hace que los gates locales se toleren en vez de esquivarse.
+#
+# Salida de emergencia: git push --no-verify
+
+set -e
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "SDD: node no está disponible; se omiten los gates locales." >&2
+  exit 0
+fi
+
+echo "SDD · gates lentos (pre-push)"
+node scripts/sdd-project.mjs run --slow

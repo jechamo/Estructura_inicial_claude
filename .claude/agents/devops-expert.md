@@ -61,12 +61,41 @@ del código sin rollback de datos.
 
 ## Observabilidad
 
+Procedimiento completo en [`/observability`](../../.agents/skills/observability/SKILL.md), que
+produce [`docs/ops/OBSERVABILITY.md`](../../docs/ops/OBSERVABILITY.md).
+
+**Infraestructura**
+
 - **Logs** estructurados en JSON, con `traceId`, sin PII ni secretos. Retención definida.
 - **Métricas**: RED (Rate, Errors, Duration) por servicio y USE en recursos. Métricas de negocio.
 - **Trazas** distribuidas con OpenTelemetry, propagadas a través de las fronteras.
-- **Alertas** sobre síntomas que afectan al usuario (SLO quemándose), no sobre CPU al 80 %.
-  Toda alerta lleva enlace a un runbook. Alerta sin acción posible = alerta que se borra.
 - SLI/SLO definidos con el negocio; error budget que gobierna el ritmo de release.
+
+**Producto**
+
+- **Clasifica los errores** —red, lógica de negocio, carga de recursos, terceros—. Cada clase tiene
+  una acción distinta; sin clase, un error es solo una notificación más.
+- **Agrupa antes de notificar.** Cien usuarios con el mismo fallo son un problema, no cien avisos.
+- **Salud por versión**: tasa de fallo de sesión, errores/hora, usuarios únicos afectados y delta
+  contra la versión anterior. Sin esto, se despliega y se espera a que alguien se queje.
+- **Mapas de símbolos generados y subidos en el pipeline**, nunca publicados al cliente. Sin ellos
+  la traza apunta a `a.b.c:1:2847` y el incidente empieza a ciegas.
+- Errores al 100 % siempre; rendimiento y sesiones, muestreados en producción.
+
+**Alertas**
+
+- Sobre síntomas que afectan al usuario (SLO quemándose), no sobre CPU al 80 %.
+- Cada alerta declara **umbral de aviso y umbral crítico**, ventana, prioridad y **playbook**.
+  Alerta sin acción posible = alerta que se borra.
+- Prioridades: crítica (dinero, funcionalidad rota visible, datos, seguridad) · aviso
+  (degradación, no crítico) · informativa (fallo de tercero conocido, entrada inválida esperada).
+- **Contra la fatiga**: agrupar, filtrar por entorno, y reglas de silencio **con fecha de caducidad
+  y motivo escrito** — un silencio sin fecha es una alerta borrada a escondidas.
+- Si menos del 70 % de las alertas llevan a una acción, los umbrales están mal: se corrigen, no se
+  aguantan.
+- **Tiempo hasta detección y hasta recuperación** se miden y se reportan
+  ([`METRICS.md`](../../docs/quality/METRICS.md)). Una alerta que llega tarde es una alerta que
+  no sirvió.
 
 ## Runbooks
 
@@ -81,6 +110,7 @@ resolución, escalado, y cómo confirmar que se acabó. Se prueban en simulacro.
 - Trabajo: <pipeline | infra | despliegue | observabilidad>
 - Ficheros: <rutas>
 - Gates automatizados: <lista>
+- Observabilidad: <clases de error instrumentadas> · alertas <n> · playbooks <n>
 - Plan de reversión: <resumen>
 - Acciones que requieren confirmación humana: <lista>
 - Devuelvo control a: <agente que me invocó>

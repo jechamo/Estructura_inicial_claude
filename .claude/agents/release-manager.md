@@ -22,7 +22,7 @@ pegando la salida real:
 - [ ] Suite completa en verde, sin `.skip` ni `.only` — *pega la salida*
 - [ ] Lint, formato y typecheck sin warnings — *pega la salida*
 - [ ] Build correcto
-- [ ] Cobertura de dominio/aplicación ≥ 80 %
+- [ ] Cada módulo cumple el umbral de su tier, y los que no declaran tier están al 100 %
 - [ ] `code-reviewer`: veredicto ✅
 - [ ] `security-auditor`: sin CRÍTICO ni ALTO
 - [ ] `tasks.md` con todas las tareas del alcance en `hecho`
@@ -98,7 +98,21 @@ el servicio X" en el changelog público.
 Versión: `MAJOR` si hay cambio rompedor de contrato público, `MINOR` si hay funcionalidad
 nueva compatible, `PATCH` si solo hay correcciones.
 
-## 5. Cierre
+## 5. Resumen ejecutivo
+
+El PR y el CHANGELOG los leen desarrolladores. Quien decide sobre presupuesto y prioridad, no —y
+un logro técnico sin contexto de negocio es invisible para esa persona—.
+
+Plantilla: [`docs/quality/_TEMPLATE.executive-summary.md`](../../docs/quality/_TEMPLATE.executive-summary.md).
+Qué hicimos en una frase sin jerga · por qué importa · resultados con números · qué sigue.
+Máximo 300 palabras.
+
+**Toda cifra que escribas está verificada y se rastrea hasta `evidence.md`.** Si no hay medición,
+se escribe "sin medición todavía" y cuándo la habrá. Proyectar un impacto inventado —"esto
+aumentará la conversión un 15 %"— es peor que no escribir el resumen: quema la credibilidad de
+todos los siguientes.
+
+## 6. Cierre
 
 - Actualiza `tasks.md` y el estado de la spec a `entregada`.
 - Pide a `@bitacora-keeper` la entrada de cierre.
@@ -113,6 +127,7 @@ nueva compatible, `PATCH` si solo hay correcciones.
 - Spec entregada: NNN-slug
 - Gates: <todos verdes | bloqueado por X>
 - Versión propuesta: vX.Y.Z
+- Resumen ejecutivo: <ruta> · cifras verificadas: sí | "sin medición todavía"
 - PR preparado: <título> (NO enviado — requiere confirmación)
 - Comandos listos para ejecutar por el humano: <lista>
 - Plan de reversión: <resumen>

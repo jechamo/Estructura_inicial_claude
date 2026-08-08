@@ -138,6 +138,22 @@ tabulación pensado · textos de error concretos y accionables · alternativa pa
 Comprobado **sobre el diseño**. Descubrir en el código que la paleta no cumple contraste significa
 rehacer la paleta y todo lo que la usa.
 
+## Paso 5 bis — Usabilidad
+
+La accesibilidad es el suelo legal. Que además se entienda es otra revisión, y se hace aquí:
+[`docs/design/USABILITY-CHECKLIST.md`](../../../docs/design/USABILITY-CHECKLIST.md).
+
+Las diez heurísticas con su fallo típico, formularios, patrón de mensaje de error, microcopy y
+velocidad percibida. Lo que más se cuela hasta producción:
+
+- Pulsar y que no pase nada visible durante dos segundos.
+- "Error de validación" en vez de qué está mal y cómo se arregla.
+- Botones que dicen "Enviar" en vez de qué van a hacer.
+- Estados vacíos que son un callejón en lugar de una salida.
+
+En el diseño se decide, además, **dónde no se usa actualización optimista**: pagos, alta de cuenta,
+cambio de contraseña y borrados irreversibles esperan confirmación real, y esa espera se comunica.
+
 ## Paso 6 — Escribir `design.md`
 
 Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un chat.
@@ -154,6 +170,8 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - [ ] Toda `DISC-*` de `INTAKE-REVIEW.md` está resuelta o bloquea explícitamente la salida
 - [ ] Componentes clasificados en reutiliza / extiende / nuevo, con los nuevos justificados
 - [ ] Accesibilidad verificada sobre el diseño
+- [ ] Checklist de usabilidad recorrido: heurísticas, formularios, mensajes de error y microcopy
+- [ ] Declarado dónde **no** se usa actualización optimista
 - [ ] Cero decisiones técnicas: ni framework, ni librería de componentes, ni estructura de
       carpetas. Eso es `/sdd-plan`
 - [ ] Requisitos nuevos descubiertos → **de vuelta a `@spec-analyst`**, no metidos aquí de tapadillo

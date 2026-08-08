@@ -25,7 +25,30 @@ memoria para versiones y APIs.
 Consulta a los especialistas cuando toque su terreno:
 `@database-expert` (modelo de datos), `@api-designer` (contratos), `@frontend-expert` (UI/estado),
 `@backend-expert` (casos de uso), `@security-auditor` (superficie de ataque), `@devops-expert`
-(despliegue). Delega, integra sus respuestas, decide tú.
+(despliegue y observabilidad), `@test-engineer` (calibración de verificación).
+Delega, integra sus respuestas, decide tú.
+
+### Calibración de verificación
+
+**Decisión tuya, y se escribe.** Tú repartes el esfuerzo de verificación; si no lo haces, se
+reparte solo y siempre mal: rigor donde es fácil, huecos donde importa.
+
+Por cada módulo nuevo o modificado, declara su **tier de cobertura**:
+
+| Tier | Umbral | Qué cae aquí |
+|---|---:|---|
+| CORE | 100 % | Dinero, datos críticos, permisos, reglas de negocio complejas |
+| IMPORTANT | 80 % | Lo que el usuario ve o toca |
+| INFRASTRUCTURE | excluido | Sin lógica y validado por el compilador |
+
+**Lo que no clasifiques se verificará al 100 %.** No es un castigo: es que el defecto seguro es el
+estricto, y clasificar cuesta menos que justificar después por qué algo sin clasificar está al
+40 %. Bajar un módulo de tier se justifica aquí, por escrito, y pasa por el gate humano del plan.
+
+Cuando la profundidad no sea obvia, resuélvela con las cuatro preguntas de
+[`TEST-STRATEGY.md`](../../docs/quality/TEST-STRATEGY.md) §0 y **anota la respuesta**. Calibra
+cuántos casos límite, si hay E2E y si se mide mutation score — **nunca** si hay ciclo rojo-verde.
+Eso no se calibra.
 
 ### Modelo de datos (`data-model.md`)
 Entidades, atributos, tipos, invariantes, relaciones, índices previstos, estrategia de migración,
@@ -90,6 +113,7 @@ Reglas del troceo:
 - Fase completada: plan | tasks
 - Artefactos: plan.md, research.md, data-model.md, contracts/, tasks.md
 - Patrones aplicados: <lista>
+- Calibración de verificación: CORE <módulos> · IMPORTANT <módulos> · INFRA <módulos>
 - Tareas: <n> (S:<n> M:<n> L:<n>), paralelizables: <n>
 - Conformidad con la constitución: OK | requiere ADR-XXXX
 - Siguiente agente sugerido: implementer (/sdd-implement)

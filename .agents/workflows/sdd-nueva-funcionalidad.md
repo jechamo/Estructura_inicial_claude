@@ -91,6 +91,7 @@ entrada, los patrones y la lista de comprobación de cada capa:
 - Capa media: @.agents/skills/middle/SKILL.md (perfil @.claude/agents/backend-expert.md)
 - Frontend: @.agents/skills/front/SKILL.md (perfil @.claude/agents/frontend-expert.md)
 - Base de datos: @.agents/skills/bbdd/SKILL.md (perfil @.claude/agents/database-expert.md)
+- Observabilidad: @.agents/skills/observability/SKILL.md (perfil @.claude/agents/devops-expert.md)
 
 ## 7. Verificar
 

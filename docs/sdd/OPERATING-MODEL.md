@@ -359,7 +359,7 @@ Modelo **híbrido**: un orquestador central + agentes con criterio propio de han
 
 Durante `/sdd-intake`, solo `orchestrator` coordina la secuencia `spec-analyst` → retorno →
 `ux-designer` → retorno → `spec-analyst`. Los especialistas escriben sus artefactos, cierran su
-handoff y devuelven el control; no se llaman entre sí. Se mantienen **20 agentes** y **24 skills**:
+handoff y devuelven el control; no se llaman entre sí. Se mantienen **20 agentes** y **25 skills**:
 intake es una skill nueva, no un agente nuevo ni un prompt/command paralelo.
 
 **Protocolo de handoff.** Al terminar, todo agente cierra con este bloque:

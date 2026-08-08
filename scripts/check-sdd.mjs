@@ -243,8 +243,8 @@ const skillsCanonicas = dirs(SKILLS_DIR);
 const skillsClaude = dirs(join(ROOT, '.claude/skills'));
 if (nombresAgentes.size !== 20)
   err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
-if (skillsCanonicas.length !== 24)
-  err('paridad/skills', `se esperaban 24 skills canónicas y hay ${skillsCanonicas.length}`);
+if (skillsCanonicas.length !== 25)
+  err('paridad/skills', `se esperaban 25 skills canónicas y hay ${skillsCanonicas.length}`);
 const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
 if (adaptersFaltantes.length)
   err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
@@ -323,6 +323,38 @@ for (const ruta of [
 // Es lo que impide que un agente haga el trabajo de otro. Si nombra agentes que ya no
 // existen, deja de proteger justo donde crees que protege.
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Vocabulario de gates. Un identificador libre convierte checks.json en un cajón de sastre
+// donde cada proyecto inventa el suyo y ninguna herramienta puede razonar sobre el conjunto:
+// ni CI sabe qué es lento, ni /sdd-verify sabe qué falta por configurar.
+// ─────────────────────────────────────────────────────────────────────────────
+const GATES_PERMITIDOS = new Set([
+  'sdd', 'lint', 'test', 'typecheck', 'build', 'smells',
+  'coverage', 'e2e', 'visual', 'a11y', 'deps-audit', 'docs', 'mutation',
+]);
+const checksRaw = leer(join(ROOT, '.sdd/checks.json'));
+if (checksRaw) {
+  let cfgChecks;
+  try {
+    cfgChecks = JSON.parse(checksRaw);
+  } catch (e) {
+    err('checks/json', `.sdd/checks.json no es JSON válido: ${e.message}`);
+  }
+  if (cfgChecks) {
+    // El sufijo `:lenguaje` permite `test:python` sin abrir el vocabulario.
+    const base = (id) => String(id).split(':')[0];
+    for (const id of Object.keys(cfgChecks.checks || {}))
+      if (!GATES_PERMITIDOS.has(base(id)))
+        err('checks/vocabulario', `gate '${id}' fuera del vocabulario permitido (${[...GATES_PERMITIDOS].join(', ')})`);
+    for (const id of cfgChecks.unconfigured || [])
+      if (!GATES_PERMITIDOS.has(base(id)))
+        err('checks/vocabulario', `'${id}' en unconfigured no es un gate reconocido`);
+    for (const [id, check] of Object.entries(cfgChecks.checks || {}))
+      if (check?.speed && !['fast', 'slow'].includes(check.speed))
+        err('checks/velocidad', `gate '${id}': speed '${check.speed}' no válido (fast | slow)`);
+  }
+}
+
 const territoriosRaw = leer(join(ROOT, '.sdd/territories.json'));
 if (territoriosRaw) {
   let cfg;

@@ -8,14 +8,42 @@ permissions:
   contents: read
 
 jobs:
-  sdd:
+  # Lo barato primero: si el lint falla, no tiene sentido gastar diez minutos en E2E.
+  fast:
+    name: Gates rápidos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.3.0
       - uses: actions/setup-node@v6.0.0
         with:
           node-version: 22
-      - name: Run configured project gates
-        run: node scripts/sdd-project.mjs run --ci
+      - name: Run fast project gates
+        run: node scripts/sdd-project.mjs run --fast
       - name: Validate hook contracts
         run: node scripts/test-hooks.mjs
+
+  slow:
+    name: Gates lentos
+    needs: fast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.3.0
+      - uses: actions/setup-node@v6.0.0
+        with:
+          node-version: 22
+      - name: Run slow project gates
+        run: node scripts/sdd-project.mjs run --slow
+      # Los informes se suben también cuando el job falla: es justo cuando hacen falta.
+      # Un fallo de E2E sin traza ni captura cuesta horas de reproducción a ciegas.
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdd-reports
+          path: |
+            docs/quality/reports/
+            playwright-report/
+            test-results/
+            coverage/
+          if-no-files-found: ignore
+          retention-days: 14

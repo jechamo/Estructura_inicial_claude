@@ -1,7 +1,7 @@
 # Ecosistema de agentes SDD
 
 Estructura inicial lista para **copiar y pegar** en cualquier proyecto. Trae un circuito de
-Spec-Driven Development completo, 20 agentes especializados, 24 skills, hooks y un validador
+Spec-Driven Development completo, 20 agentes especializados, 25 skills, hooks y un validador
 determinista, con soporte para **Claude Code, GitHub Copilot, VS Code, Cursor, Antigravity
 y Codex**.
 
@@ -419,7 +419,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
 │   └── hooks.json                Contrato de hooks de Codex
 ├── .agents/
-│   ├── skills/                   24 skills canónicas portables
+│   ├── skills/                   25 skills canónicas portables
 │   └── rules/ · workflows/       Adaptadores de Antigravity
 ├── .sdd/
 │   ├── hooks/                    Implementaciones Node compartidas por host

@@ -46,9 +46,10 @@ no se crea `tasks.md`.
    ```
    **Nunca** empieces por la pantalla ni por la tabla: empezar por fuera lleva a diseñar el
    dominio para encajar en la UI o en el ORM.
-4. **Separa por terreno y da a cada tarea su skill**: `middle`, `front` o `bbdd`. No es
-   burocracia: cada terreno tiene puertas de entrada y comprobaciones distintas, y la tarea entra
-   por la skill que las aplica. Una tarea que mezcla los tres está mal cortada.
+4. **Separa por terreno y da a cada tarea su skill**: `middle`, `front`, `bbdd` u
+   `observability`. No es burocracia: cada terreno tiene puertas de entrada y comprobaciones
+   distintas, y la tarea entra por la skill que las aplica. Una tarea que mezcla varios está mal
+   cortada.
    Orden entre terrenos: **bbdd antes que middle** cuando el esquema es prerrequisito, y
    **contratos antes que front** siempre —sin contrato, el front adivina la respuesta.
 5. Marca `[P]` las tareas que tocan ficheros disjuntos y pueden ir en paralelo. Con el contrato
@@ -59,6 +60,9 @@ no se crea `tasks.md`.
    - migración de datos existentes
    - actualización de contratos y regeneración de tipos
    - logs, métricas y trazas de los caminos nuevos
+   - **instrumentación de errores y alertas** de los caminos nuevos, con skill `observability`:
+     es la tarea que más se olvida, porque el circuito termina en el despliegue y el problema
+     empieza justo después
    - documentación de usuario o de API
    - eliminación del feature flag tras la estabilización
    - actualización de la bitácora

@@ -47,6 +47,35 @@ trabajó él mismo) · `unverified` (delegación afirmada pero no observada — 
 |---|---|---|---|---|
 | E2E en Safari | Sin runner de macOS en CI | Regresión no detectada en WebKit | | Añadir job antes de la v1.1 |
 
+## 3 bis. Cobertura, deuda y observabilidad
+
+**Cobertura por tier.** No se reporta cifra global: un porcentaje único deja pasar el 6 % que
+hunde el producto.
+
+| Módulo / ruta | Tier declarado en `plan.md` | Umbral | Real | ✓ |
+|---|---|---:|---:|---|
+| | | | | |
+
+**Módulos sin tier declarado** — el defecto estricto los exige al 100 %:
+
+| Módulo / ruta | Cobertura real | ✓ |
+|---|---:|---|
+| | | |
+
+| Medida | Valor | Comando |
+|---|---|---|
+| Mutation score en el core | `<n> %` \| n/a | |
+| Marcadores de deuda | `<n>` | `node scripts/sdd-project.mjs debt` |
+| Ratio de deuda | `<n> %` (estimación humana del esfuerzo) | |
+
+**Observabilidad de los caminos nuevos**
+
+- [ ] Errores capturados y **clasificados** por tipo
+- [ ] Salud por versión visible, con regla de reversión escrita
+- [ ] Rastro de eventos de negocio **sin datos personales**
+- [ ] Toda alerta con umbral de aviso, umbral crítico y playbook
+- [ ] Error de prueba disparado y visto llegar — salida en §1
+
 ## 4. Convergencia
 
 - [ ] La spec refleja el comportamiento realmente construido (si divergen, se clasifica como

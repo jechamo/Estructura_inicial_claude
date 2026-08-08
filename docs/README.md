@@ -80,7 +80,7 @@ Estos **obligan**, no son sugerencias:
 - Una sola fuente de verdad por hecho. **No dupliques: enlaza.**
 - `/sdd-intake` acepta PRD en texto/ruta/carpeta/URL y diseño opcional. Si no hay delegación,
   cada handoff indica perfil, comando y rutas a releer; nunca depende solo del chat.
-- La plantilla conserva 20 agentes y 24 skills. No añadas prompts/commands paralelos ni actives
+- La plantilla conserva 20 agentes y 25 skills. No añadas prompts/commands paralelos ni actives
   MCP para representar el intake.
 - No crees documentos que nadie ha pedido ni que nadie va a mantener.
 - Español para la documentación, inglés para el código y los identificadores.

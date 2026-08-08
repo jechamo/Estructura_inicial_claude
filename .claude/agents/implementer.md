@@ -54,6 +54,8 @@ Delega y recupera el control (nunca encadenes tú los especialistas):
 | Test difícil de escribir, fixtures, dobles | `@test-engineer` |
 | Consulta lenta, memoria, bundle | `@performance-optimizer` |
 | Pipeline, contenedores, entornos | `@devops-expert` |
+| Instrumentación de errores, alertas, salud de versión | `@devops-expert` — skill `/observability` |
+| Refactor estructural que no cabe en un paso | `@refactor-specialist` |
 
 ## Reglas duras
 

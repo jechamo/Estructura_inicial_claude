@@ -4,6 +4,47 @@ Documento vinculante. Lo aplica `test-engineer` y lo exige `code-reviewer`.
 
 ---
 
+## 0. Cuánto verificar
+
+Antes de decidir *cómo* se prueba algo, decide *cuánto*. El sistema no aplica el mismo rigor a un
+cálculo de dinero que a un experimento con adopción desconocida, y fingir que sí lleva a lo mismo
+por dos caminos: o se subprueba lo crítico, o se gastan cuarenta horas blindando una función que
+nadie va a usar.
+
+### Las cuatro preguntas
+
+| Pregunta | Verificar | Observar |
+|---|---|---|
+| ¿Conoces el comportamiento esperado? | Sí: contrato definido, regla escrita | No: quieres descubrir cómo se usa |
+| ¿Cuál es el coste de fallar? | Alto: dinero, datos, seguridad | Bajo o medio: fricción, estética |
+| ¿Es estable el requisito? | Sí: regla consolidada | No: en exploración, cambia cada semana |
+| ¿Puedes simular el escenario real? | Sí: entrada → salida | No: depende de gente real, datos reales, red real |
+
+Tres o más *verificar* → suite exhaustiva. Tres o más *observar* → camino feliz cubierto más
+instrumentación que te diga qué pasa de verdad. Los tests predicen los fallos que ya sabes nombrar;
+la observabilidad descubre los que no.
+
+### Por etapa del proyecto
+
+| Etapa | Peso | Por qué |
+|---|---|---|
+| Producto sin validar | Observar > verificar | Todavía no sabes qué sobrevive |
+| Crecimiento | Equilibrio | Optimizas sin romper lo que ya funciona |
+| Escala | Verificar > observar | La estabilidad es la funcionalidad |
+
+### La restricción que no se negocia
+
+> Esto calibra la **profundidad** de la verificación: cuántos casos límite, si hay E2E, si se mide
+> mutation score. **Nunca** autoriza saltarse el ciclo rojo-verde de una tarea de la spec.
+>
+> "Es un experimento" no es una excepción al RED. Es un motivo para escribir tres tests en vez de
+> treinta.
+
+La decisión se escribe en `plan.md` cuando no es obvia. Una calibración que no se registra es una
+opinión que nadie podrá discutir en la revisión.
+
+---
+
 ## 1. TDD: el ciclo
 
 ```mermaid
@@ -92,21 +133,95 @@ productor lo verifica en su CI. Un cambio incompatible **debe romper el build**.
 - Un E2E intermitente se arregla o se borra. Un test flaky enseña al equipo a ignorar el rojo,
   y eso es peor que no tener test.
 
+### Selectores encapsulados por pantalla
+
+Los selectores y las acciones de una pantalla viven en **un solo sitio**, no repartidos por los
+tests. Cuando cambia la interfaz se toca ese sitio y los tests no se enteran.
+
+```
+class PaginaCarrito:
+    boton_pagar   → localizador por rol accesible
+    fijar_cantidad(n)
+    pagar()
+```
+
+El test queda escrito en lenguaje de negocio —`carrito.fijar_cantidad(2)`, `carrito.pagar()`— y no
+en lenguaje de DOM. Sin esto, el tercer cambio de maquetación rompe quince tests que no probaban
+la maquetación.
+
+### Regresión visual
+
+Para lo que un assert no ve: color, tamaño, posición, saltos de layout, rotura responsive.
+
+- Primera ejecución fija la **línea base**; las siguientes comparan contra ella.
+- Tolerancia declarada y justificada. Sin tolerancia, el antialiasing de otra máquina rompe el build.
+- La línea base se versiona y se revisa como código: aceptar un cambio visual es una decisión, no
+  un `--update-snapshots` a ciegas.
+- No sustituye a los tests funcionales. Detecta que algo cambió, no que algo esté bien.
+
+### La suite también se observa
+
+Un fallo que solo dice "3 tests rojos" cuesta horas. Un fallo con traza, captura y vídeo cuesta
+minutos. Configura el runner para conservarlos **solo en fallo** —en verde son basura que llena el
+disco— y súbelos como artefacto en CI, también cuando el job falla.
+
+**No construyas un panel propio para esto.** El informe navegable, el visor de trazas y la salida en
+JSON ya vienen con la herramienta, los mantiene otro y están mejor que lo que vas a escribir tú. Si
+necesitas una cifra agregada, sácala del JSON que el runner ya emite.
+
 ---
 
 ## 8. Criterios de suficiencia
 
+### Cobertura por riesgo de negocio
+
+**No hay umbral de cobertura global.** Un porcentaje único sobre todo el repositorio es la métrica
+que permite estar en verde al 94 % con los cálculos de dinero al 60 %: sube donde es barato subir
+—tipos, constantes, envoltorios— y no dice nada de lo que puede hundir el producto.
+
+La pregunta no es *cuánto está cubierto*, es **qué pasa si esto falla**:
+
+| Tier | Umbral | Criterio de clasificación |
+|---|---:|---|
+| **CORE** | 100 % | Maneja dinero, procesa datos críticos, decide permisos, o concentra reglas de negocio complejas. Si falla, se pierde dinero, datos o confianza |
+| **IMPORTANT** | 80 % | Lo ve o lo toca el usuario: interfaz, interacción, validación, navegación. Si falla, el usuario se frustra |
+| **INFRASTRUCTURE** | excluido | Sin lógica propia y validado por el compilador o el esquema: tipos, constantes, configuración estática. Testearlo es inflar la cifra |
+
+**Regla de defecto estricto:**
+
+> Todo módulo **sin tier declarado se verifica al 100 %**. Bajarlo a IMPORTANT o INFRASTRUCTURE es
+> una decisión que se escribe y se justifica en `plan.md`.
+
+Esto es deliberadamente incómodo. Con un suelo global, olvidarse de clasificar deja código
+desprotegido en silencio; con defecto estricto, deja un umbral molesto que obliga a clasificar.
+Clasificar cuesta menos que justificar por qué un módulo sin clasificar está al 40 %.
+
+El tier se declara en `plan.md` y se impone **por ruta** en la configuración del runner. Si el
+runner del proyecto solo admite umbral global, no se finge cumplimiento: se declara en
+`evidence.md` como control parcialmente ejecutado, con su riesgo y su dueño.
+
+### El resto de criterios
+
 | Métrica | Umbral |
 |---|---|
-| Cobertura dominio/aplicación | ≥ 80 % |
-| Cobertura total | ≥ `<...>` % |
 | Mutation score en el core | ≥ `<...>` % |
 | Duración de la suite en CI | < 10 min |
 | Tests flaky | 0 |
 | `.only` / `.skip` en la rama principal | 0 |
 
-La cobertura es un **termómetro, no el objetivo**. Un 95 % con asserts triviales vale menos
-que un 70 % con casos límite reales. Por eso existe el mutation testing.
+La cobertura, incluso por tier, es un **termómetro**. Un 100 % con asserts triviales vale menos que
+un 70 % con casos límite reales. Por eso existe el mutation testing.
+
+### Dos formas de mentir con la cobertura
+
+**Inflarla.** Tests que recorren código sin comprobar nada: construir un objeto y verificar que la
+propiedad que acabas de asignar vale lo que le asignaste. Sube la cifra, no atrapa ningún fallo, y
+hay que mantenerlo. Si el compilador ya lo valida, no lo pruebes: es INFRASTRUCTURE.
+
+**Mockearlo todo.** Sustituir por un doble la función que de verdad quieres probar. El test pasa
+siempre porque comprueba el doble, no el código. Cuando la implementación real se rompe, la suite
+sigue verde mintiendo. La regla de §4 —*no mockees lo que no controlas*— tiene su reverso: **no
+mockees lo que sí controlas y es lo que estás probando.**
 
 **Y por eso importa más que antes.** Los tests generados por un modelo tienen un patrón
 reconocible: cobertura presentable y *mutation score* bajo, porque no detectan los defectos que se
