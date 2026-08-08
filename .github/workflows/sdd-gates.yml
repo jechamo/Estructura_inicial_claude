@@ -13,7 +13,7 @@ jobs:
     name: Gates rápidos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@v7.0.1
         with:
           # El historial completo permite escanear también lo que ya estaba dentro, no solo
           # lo que entra en este commit.
@@ -35,7 +35,7 @@ jobs:
     needs: fast
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v6.0.0
         with:
           node-version: 22
