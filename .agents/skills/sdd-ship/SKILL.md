@@ -15,8 +15,15 @@ usuario lo pida explícitamente en este turno. Preparas todo y muestras los coma
 ## Paso 1 — Gates
 
 ```bash
+node scripts/sdd-project.mjs run --fast     # lint · test · typecheck · build · smells
+node scripts/sdd-project.mjs run --slow     # coverage · e2e · deps-audit · docs
 node scripts/check-sdd.mjs --strict
 ```
+
+**Los ejecutas tú, no los git hooks.** Los hooks solo existen donde hay git local; en un host sin
+ellos, esto es el único control antes del commit. Cada ejecución deja sello en
+`.sdd/state/last-gate-run.json` con el estado del árbol: si el sello no coincide, algo cambió
+después y hay que repetir.
 
 Recorre después la DoD de `AGENTS.md` §7 y ejecuta lo ejecutable, pegando la salida real.
 Si `/sdd-verify` no se ha pasado, ejecútalo antes. Cualquier gate en rojo → **para**.

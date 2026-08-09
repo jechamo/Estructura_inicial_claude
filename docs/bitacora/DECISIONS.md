@@ -9,6 +9,40 @@
 
 ---
 
+## 2026-08-09 · Gates antes de commit y push, y un hook que no era ejecutable
+
+- **Tipo**: decisión y corrección de defecto
+- **Contexto**: la pregunta era si teníamos Husky configurado. No lo teníamos, y la comprobación
+  destapó tres cosas: los git hooks estaban en el índice como `100644` —git **no los ejecuta** en
+  Linux ni macOS, y en Windows `core.fileMode=false` lo ocultaba, por eso la verificación anterior
+  pasó—; la activación era opt-in, y lo que hay que acordarse de activar no se activa; y sobre
+  todo, **nada obligaba al agente**: los git hooks solo existen donde hay git local, así que en un
+  host sin ellos se puede commitear sin haber pasado un solo control.
+- **Decisión / hecho**: tres capas, de menos a más portable. (1) **Husky en proyectos Node**,
+  montado por el instalador, y `core.hooksPath` en el resto — con `--no-hooks` para saltárselo.
+  Ambos **delegan en `sdd-project run`**, no duplican comandos. (2) **Sello de ejecución** en
+  `.sdd/state/last-gate-run.json` con la huella del árbol, que `guard-bash` comprueba al
+  interceptar `git commit` y `git push`. (3) **El agente ejecuta los gates por su cuenta**, escrito
+  en `AGENTS.md`, `release-manager`, `implementer`, `/sdd-ship` y `/sdd-implement` — la única capa
+  que llega a hosts sin git local.
+- **Alternativas descartadas**: Husky como dependencia de la plantilla —es Node-only y rompería la
+  instalación en Python, Go, Rust y Java, además de perder las cero dependencias—; escribir
+  `npm run lint` a fuego en los hooks —solo serviría en Node—; que `guard-bash` pasara a `deny`
+  —una guarda que impide lo razonable se desactiva el primer día, así que avisa y deja decidir—;
+  modificar el `package.json` del usuario para añadir `prepare` —es suyo, se propone y se explica—.
+- **Impacto**: `test-hooks` pasa de 51 a 56 comprobaciones y `test-install` de 137 a 141. El gate
+  de permisos se comprueba sobre el **índice de git**, no sobre el sistema de ficheros, que es lo
+  único agnóstico de sistema operativo.
+- **Detalle que enseñó un fallo de test**: el sello no funcionaba en un repositorio **sin commits
+  todavía**, porque `git rev-parse HEAD` falla y se renunciaba a la huella. El primer commit se
+  quedaba sin control. Corregido tomando el ref como cadena vacía.
+- **Seguridad**: los permisos no se cambian a escondidas. El instalador intenta el `chmod` en
+  POSIX y, si falla, **avisa con el comando exacto** en vez de callarse; el agente que detecte
+  hooks no ejecutables lo dice y pide permiso. Es regla dura nueva en `AGENTS.md`.
+- **Lo que queda sin verificar**: el bloqueo real en Linux o macOS. Es justamente el defecto que
+  motivó todo esto y no puedo reproducirlo desde Windows. Declarado en `evidence.md` §3 con dueño.
+- **Referencias**: spec `006-calidad-integrada` · tareas `T-006-13` y `T-006-14`
+
 ## 2026-08-07 · Cierre del circuito de la spec 006, con las desviaciones declaradas
 
 - **Tipo**: aprendizaje

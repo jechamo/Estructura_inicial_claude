@@ -8,8 +8,9 @@
  *   sdd global [--dry-run]
  */
 import {
-  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync,
+  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync, chmodSync,
 } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { join, dirname, relative, resolve, sep, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -27,13 +28,14 @@ const MODOS = new Set(['auto', 'greenfield', 'brownfield']);
 function parsearArgs(argv) {
   const out = {
     comando: 'check', destino: null, modo: 'auto', dry: false,
-    conBaseline: false, mcp: [], si: false,
+    conBaseline: false, mcp: [], si: false, sinHooks: false,
   };
   let i = 0;
   if (COMANDOS.has(argv[0])) out.comando = argv[i++];
   for (; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dry-run') out.dry = true;
+    else if (a === '--no-hooks') out.sinHooks = true;
     else if (a === '--con-baseline') out.conBaseline = true;
     else if (a === '--si' || a === '-y') out.si = true;
     else if (a === '--mode') out.modo = argv[++i];
@@ -417,6 +419,7 @@ function instalarProyecto() {
   }
 
   informar(modo);
+  activarGitHooks(DESTINO);
 }
 
 function comprobar() {
@@ -488,6 +491,92 @@ function instalarGlobal() {
     } catch (error) {
       console.log(`  ⚠ VS Code: no se pudo fusionar ${settings}: ${error.message}`);
     }
+  }
+}
+
+/**
+ * Deja los gates activos antes de commit y push, sin pasos manuales.
+ *
+ * En Node monta Husky —que se autoactiva con `npm install` y es lo que el equipo reconoce—;
+ * en el resto de stacks, `core.hooksPath`, que no depende de ningún gestor de paquetes.
+ *
+ * En ambos casos los hooks **delegan en `sdd-project run`**: si mañana el proyecto cambia de
+ * runner, se toca `.sdd/checks.json` y los hooks no se enteran.
+ *
+ * No ejecuta `npm install` ni instala nada: deja el comando escrito. Y no cambia permisos en
+ * silencio — si el `chmod` falla, lo dice y da el comando.
+ */
+function activarGitHooks(destino) {
+  if (opciones.sinHooks) {
+    console.log('\nGates locales: omitidos por --no-hooks. Actívalos cuando quieras:');
+    console.log('  git config core.hooksPath .sdd/githooks');
+    return;
+  }
+
+  const esGit = existsSync(join(destino, '.git'));
+  if (!esGit) {
+    console.log('\nGates locales: el destino no es un repositorio git todavía. Cuando lo sea:');
+    console.log('  git config core.hooksPath .sdd/githooks');
+    return;
+  }
+
+  const pkgPath = join(destino, 'package.json');
+  const esNode = existsSync(pkgPath);
+
+  if (esNode) {
+    // Husky: el proyecto destino ya tiene node_modules; la plantilla mantiene cero dependencias.
+    const husky = ['pre-commit', 'pre-push'];
+    if (!opciones.dry) {
+      mkdirSync(join(destino, '.husky'), { recursive: true });
+      for (const hook of husky) {
+        const ruta = join(destino, '.husky', hook);
+        if (existsSync(ruta)) continue; // nunca pisamos un hook que ya existe
+        const velocidad = hook === 'pre-commit' ? '--fast' : '--slow';
+        writeFileSync(ruta, `node scripts/sdd-project.mjs run ${velocidad}\n`, 'utf8');
+        fijarEjecutable(ruta);
+      }
+    }
+    let necesitaPrepare = true;
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
+      necesitaPrepare = pkg.scripts?.prepare !== 'husky';
+    } catch { /* package.json ilegible: se informa igual */ }
+
+    console.log('\nGates locales (Node): `.husky/pre-commit` y `.husky/pre-push` creados.');
+    console.log('Delegan en `sdd-project run`, así que siguen valiendo si cambias de runner.');
+    if (necesitaPrepare) {
+      console.log('\nPara que se activen solos en todo el equipo, añade a tu package.json y ejecuta:');
+      console.log('  "scripts": { "prepare": "husky" }');
+      console.log('  npm install --save-dev husky && npm run prepare');
+      console.log('No lo hago yo: tu package.json es tuyo, y `npm install` es una decisión tuya.');
+    }
+    return;
+  }
+
+  // Resto de stacks: no hay `npm install` donde engancharse, así que se configura git directamente.
+  const r = opciones.dry
+    ? { status: 0 }
+    : spawnSync('git', ['config', 'core.hooksPath', '.sdd/githooks'], { cwd: destino, encoding: 'utf8' });
+  if (r.status === 0) {
+    console.log('\nGates locales: `core.hooksPath` → `.sdd/githooks` (rápidos antes del commit, lentos antes del push).');
+    console.log('Para desactivarlos: git config --unset core.hooksPath');
+  } else {
+    console.log('\n⚠ Gates locales: no se pudo configurar `core.hooksPath`. Ejecútalo tú:');
+    console.log('  git config core.hooksPath .sdd/githooks');
+  }
+}
+
+/**
+ * Bit de ejecución en POSIX. Si falla, **no se calla**: git no ejecuta un hook no ejecutable, y
+ * en algunas versiones lo hace en silencio, que es peor que fallar.
+ */
+function fijarEjecutable(ruta) {
+  if (process.platform === 'win32') return; // el bit no aplica; git usa el índice
+  try {
+    chmodSync(ruta, 0o755);
+  } catch (error) {
+    console.log(`\n⚠ No se pudo dar permiso de ejecución a ${ruta}: ${error.message}`);
+    console.log(`  Sin él, git no lo ejecutará. Ejecuta:  chmod +x ${ruta}`);
   }
 }
 

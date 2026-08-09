@@ -13,7 +13,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -184,6 +184,44 @@ comprueba('git push escala al humano', decisionDe('guard-bash.mjs', ejecutar('gi
 comprueba('terraform apply escala', decisionDe('guard-bash.mjs', ejecutar('terraform apply')), 'ask');
 comprueba('instalar skill de terceros escala', decisionDe('guard-bash.mjs', ejecutar('npx skills add foo/bar')), 'ask');
 comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test')), 'allow');
+
+// El sello distingue "los gates pasaron" de "el agente dice que pasaron". Sin esta comprobación,
+// un host sin git hooks —Lovable y equivalentes— no tendría ningún control antes del commit.
+{
+  const sello = join(process.cwd(), '.sdd/state/last-gate-run.json');
+  const previo = existsSync(sello) ? readFileSync(sello, 'utf8') : null;
+  const avisoDe = (cmd) => salidaDe('guard-bash.mjs', ejecutar(cmd));
+
+  rmSync(sello, { force: true });
+  comprueba('sin sello, el commit avisa de que faltan los gates rápidos',
+    /no consta que hayan pasado los gates `fast`/.test(avisoDe('git commit -m x')), true);
+  comprueba('sin sello, el push avisa de que faltan los gates lentos',
+    /no consta que hayan pasado los gates `slow`/.test(avisoDe('git push origin main')), true);
+
+  // Sello con árbol imposible: simula gates pasados sobre otro estado del repositorio.
+  // Solo tiene sentido dentro de un repositorio git: sin él no hay huella con la que comparar,
+  // y no avisar es la respuesta correcta.
+  mkdirSync(dirname(sello), { recursive: true });
+  writeFileSync(sello, JSON.stringify({ fast: { ok: true, tree: '0'.repeat(16), at: new Date().toISOString() } }), 'utf8');
+  const enRepositorio = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { encoding: 'utf8' }).status === 0;
+  if (enRepositorio) {
+    comprueba('con sello de otro árbol, el commit lo señala',
+      /pasaron sobre otro estado del árbol/.test(avisoDe('git commit -m x')), true);
+  } else {
+    comprueba('fuera de un repositorio git, el sello no inventa un aviso',
+      /pasaron sobre otro estado del árbol/.test(avisoDe('git commit -m x')), false);
+  }
+
+  writeFileSync(sello, JSON.stringify({ fast: { ok: false, tree: '0'.repeat(16), at: new Date().toISOString() } }), 'utf8');
+  comprueba('con sello en rojo, el commit lo señala',
+    /salió en rojo/.test(avisoDe('git commit -m x')), true);
+
+  comprueba('el aviso de gates no convierte el ask en deny',
+    decisionDe('guard-bash.mjs', ejecutar('git commit -m x')), 'ask');
+
+  if (previo === null) rmSync(sello, { force: true });
+  else writeFileSync(sello, previo, 'utf8');
+}
 comprueba('git status se permite', decisionDe('guard-bash.mjs', ejecutar('git status')), 'allow');
 
 // ─── contratos por host ──────────────────────────────────────────────────────

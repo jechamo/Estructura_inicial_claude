@@ -40,6 +40,11 @@ Anuncia: *"T-042-03 · <título> — test: `<ruta>`"*.
 - Vuelve a ejecutar. Verde otra vez.
 
 ### 4 · Cerrar tarea
+- **Gates rápidos del proyecto**, y pega la salida:
+  ```bash
+  node scripts/sdd-project.mjs run --fast
+  ```
+  No lo dejes para los git hooks: solo existen donde hay git local, y hay hosts sin ninguno.
 - `tasks.md` → `hecho`.
 - **Registra la evidencia** en `evidence.md`: agente que ejecutó, comando exacto, resultado
   (🔴 y 🟢 con su salida) y artefacto. Si algún control previsto **no** se ejecutó, escríbelo

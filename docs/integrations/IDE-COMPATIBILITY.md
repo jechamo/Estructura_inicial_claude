@@ -55,6 +55,9 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | **Territorio por agente** | ✅ hook + `territories.json` | 🟡 contrato instalado, sin smoke en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ contrato sin smoke en vivo | ⚠️ contrato de hook; CI es el juez | ❌ |
 | Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hooks de herramienta | ✅ 7 eventos, probados | 🟡 `.github/hooks/sdd.json`, sin smoke en vivo | ❌ | ✅ `.cursor/hooks.json` | ⚠️ contrato sin smoke en vivo | ⚠️ `.codex/hooks.json`, sin smoke en vivo | ❌ |
+| Git hooks antes de commit/push | ✅ Husky o `core.hooksPath` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ sin git local |
+| Aviso si los gates no se han pasado | ✅ sello + `guard-bash` | 🟡 mismo contrato, sin smoke | ❌ | ✅ | ❌ | ⚠️ contrato declarado | ❌ |
+| **El agente ejecuta los gates** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ **la única capa que llega aquí** |
 | Trazabilidad `observed` | ✅ `SubagentStart/Stop` | 🟡 eventos configurados, sin smoke | ❌ | ❌ | ❌ | ⚠️ eventos configurados, sin smoke | ❌ siempre `unverified` |
 | `model:` por agente | ✅ | ✅ (`model:`, admite array) | ✅ | 🟡 | ❌ | ✅ | ❌ |
 | MCP | ✅ `.mcp.json` | ✅ `.vscode/mcp.json` | ✅ | ✅ | ✅ | ✅ | ❌ |

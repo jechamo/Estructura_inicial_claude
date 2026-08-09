@@ -63,7 +63,8 @@ voluntad, se olvida.
 | Cobertura por tier (umbral **por ruta**) | CI | Sí |
 | Complejidad cognitiva y duplicación | CI (gate `smells`) | Sí |
 | Lint / formato / tipos | CI + hook `PostToolUse` | Sí |
-| Gates rápidos antes del commit, lentos antes del push | `.sdd/githooks/` (opt-in) | No: el que bloquea es CI |
+| Gates rápidos antes del commit, lentos antes del push | Husky en Node · `core.hooksPath` en el resto · **y el propio agente** | No: el que bloquea es CI |
+| Que los gates se hayan pasado sobre **este** árbol | Sello en `.sdd/state/` + `guard-bash` | No: avisa antes de aprobar |
 | Escaneo de secretos | CI (`scripts/scan-secrets.mjs`) + hook `PreToolUse` | Sí |
 | Auditoría de dependencias | CI, si hay lockfile | Sí (CRÍTICO/ALTO) |
 | Tests de contrato | CI | Sí |

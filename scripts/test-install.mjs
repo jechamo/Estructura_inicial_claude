@@ -361,12 +361,40 @@ console.log('\n1 · init sobre un directorio vacío');
     existsSync(join(d, '.agents/skills/observability/SKILL.md')) &&
     existsSync(join(d, '.claude/skills/observability/SKILL.md')));
 
-  // Los git hooks viajan con la plantilla pero no se activan solos: reconfigurar el git de
-  // alguien durante una instalación es la clase de sorpresa que hace desinstalar la herramienta.
-  const hooksPath = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: d, encoding: 'utf8' });
-  comprueba('los git hooks se copian pero no se activan sin opt-in',
-    existsSync(join(d, '.sdd/githooks/pre-commit')) && existsSync(join(d, '.sdd/githooks/pre-push')) &&
-    (hooksPath.stdout || '').trim() !== '.sdd/githooks');
+  comprueba('los git hooks viajan con la plantilla',
+    existsSync(join(d, '.sdd/githooks/pre-commit')) && existsSync(join(d, '.sdd/githooks/pre-push')));
+
+  // Los gates antes de commit y push deben quedar activos sin pasos manuales, y el mecanismo
+  // cambia con el stack: Husky donde hay npm install donde engancharse, core.hooksPath donde no.
+  {
+    const nodo = nuevoDestino();
+    spawnSync('git', ['init', '-q', '.'], { cwd: nodo, encoding: 'utf8' });
+    writeFileSync(join(nodo, 'package.json'), '{"name":"n","version":"1.0.0"}\n', 'utf8');
+    sdd(nodo, 'init', nodo, '--mode', 'auto');
+    const preCommit = leer(join(nodo, '.husky/pre-commit')) || '';
+    comprueba('en Node monta Husky delegando en sdd-project run',
+      preCommit.includes('sdd-project.mjs run --fast') &&
+      (leer(join(nodo, '.husky/pre-push')) || '').includes('run --slow'));
+    // El package.json es del usuario: se propone el cambio, no se aplica.
+    comprueba('en Node no modifica el package.json del proyecto',
+      !JSON.parse(leer(join(nodo, 'package.json'))).scripts);
+
+    const py = nuevoDestino();
+    spawnSync('git', ['init', '-q', '.'], { cwd: py, encoding: 'utf8' });
+    writeFileSync(join(py, 'pyproject.toml'), '[project]\nname="x"\n', 'utf8');
+    sdd(py, 'init', py, '--mode', 'auto');
+    const rutaHooks = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: py, encoding: 'utf8' });
+    comprueba('sin Node configura core.hooksPath y no crea .husky',
+      (rutaHooks.stdout || '').trim() === '.sdd/githooks' && !existsSync(join(py, '.husky')));
+
+    const sin = nuevoDestino();
+    spawnSync('git', ['init', '-q', '.'], { cwd: sin, encoding: 'utf8' });
+    writeFileSync(join(sin, 'package.json'), '{"name":"s","version":"1.0.0"}\n', 'utf8');
+    sdd(sin, 'init', sin, '--mode', 'auto', '--no-hooks');
+    const sinRuta = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: sin, encoding: 'utf8' });
+    comprueba('--no-hooks no toca ni git ni el proyecto',
+      !existsSync(join(sin, '.husky')) && (sinRuta.stdout || '').trim() !== '.sdd/githooks');
+  }
 
   const checksInstalados = JSON.parse(leer(join(d, '.sdd/checks.json')));
   comprueba('checks.json nace sin comandos de stack y con el vocabulario ampliado',

@@ -500,6 +500,46 @@ function configurar() {
   imprimir({ dryRun: DRY, added: anadidos, stacks: deteccion.stacks, checks: actual });
 }
 
+/**
+ * Huella del árbol de trabajo: qué está a punto de commitearse.
+ *
+ * Se usa `git status --porcelain` además del HEAD porque lo que importa no es en qué commit
+ * estás, sino si el contenido cambió desde que corrieron los gates. Un sello que solo mirase
+ * HEAD daría por bueno un árbol modificado después de pasarlos.
+ */
+function huellaArbol() {
+  // Un repositorio recién creado no tiene HEAD, y su primer commit merece control igual que
+  // cualquier otro: se toma el HEAD como cadena vacía en vez de renunciar a la huella.
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' });
+  const sucio = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' });
+  if (sucio.status !== 0) return null; // esto sí significa que no hay repositorio
+  const ref = head.status === 0 ? (head.stdout || '').trim() : '';
+  return hash(`${ref}\n${(sucio.stdout || '').trim()}`);
+}
+
+const SELLO_PATH = join(ROOT, '.sdd', 'state', 'last-gate-run.json');
+
+/**
+ * Sello de la última ejecución de gates.
+ *
+ * Existe para distinguir "los gates pasaron" de "el agente dice que pasaron", que es la
+ * distinción sobre la que se sostiene todo este sistema. Lo lee `guard-bash.mjs` antes de dejar
+ * pasar un commit o un push.
+ */
+function escribirSello(velocidad, ok, resultados) {
+  const huella = huellaArbol();
+  if (huella === null) return; // fuera de un repositorio git no hay nada que sellar
+  const previo = (() => { try { return JSON.parse(leer(SELLO_PATH) || '{}'); } catch { return {}; } })();
+  const registro = {
+    ...previo,
+    [velocidad || 'all']: { ok, tree: huella, at: new Date().toISOString(), checks: resultados.map((r) => r.id) },
+  };
+  try {
+    mkdirSync(dirname(SELLO_PATH), { recursive: true });
+    writeFileSync(SELLO_PATH, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
+  } catch { /* el sello es una ayuda, no un requisito: si no se puede escribir, no se rompe el run */ }
+}
+
 function ejecutarChecks() {
   const config = cargarChecks();
   // Sin bandera se ejecuta todo: el comportamiento anterior no cambia. `--fast` y `--slow`
@@ -523,6 +563,7 @@ function ejecutarChecks() {
     for (const r of resultados) console.log(`  ${r.status === 0 ? '✓' : '✗'} ${r.id} — ${r.command}`);
     if (omitidos.length) console.log(`  · omitidos por velocidad: ${omitidos.join(', ')}`);
   } else console.log(JSON.stringify({ ok: !fallo, speed: filtro, results: resultados, skipped: omitidos }));
+  escribirSello(filtro, !fallo, resultados);
   if (fallo) process.exitCode = 1;
 }
 

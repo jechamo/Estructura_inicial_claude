@@ -816,6 +816,29 @@ if (VIRGIN) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Bit de ejecución de los git hooks.
+//
+// Se comprueba sobre el **índice de git**, no sobre el sistema de ficheros: en Windows
+// `core.fileMode = false` hace que el bit local sea irrelevante y un hook en 644 parece correcto.
+// El índice es lo único que viaja al clonar, y por tanto lo único agnóstico de sistema operativo.
+//
+// Un hook sin bit de ejecución no lo corre git en Linux ni en macOS —en algunas versiones, en
+// silencio—, así que el gate está donde no se puede ignorar.
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  const indice = spawnSync('git', ['ls-files', '-s', '.sdd/githooks'], { cwd: ROOT, encoding: 'utf8' });
+  if (indice.status === 0) {
+    for (const linea of indice.stdout.split('\n').filter(Boolean)) {
+      const [modo, , , ...resto] = linea.split(/\s+/);
+      const ruta = resto.join(' ');
+      if (ruta.endsWith('.md')) continue; // el README no se ejecuta
+      if (modo !== '100755')
+        err('githooks/permiso', `${ruta} está en el índice como ${modo}: git no lo ejecutará en Linux ni macOS. Corrige con \`git update-index --chmod=+x ${ruta}\``);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Artefactos de entrega, exigidos por el diff (solo --strict).
 //
 // "La documentación se actualiza en el mismo cambio" y "toda decisión relevante entra en la

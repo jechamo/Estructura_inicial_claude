@@ -1,27 +1,50 @@
 # .sdd/githooks/
 
-Gates locales de git. **Desactivados por defecto.**
+Gates locales de git para proyectos **sin Node**. En proyectos con `package.json`, el instalador
+monta Husky en `.husky/` — se autoactiva con `npm install` y llama a los mismos comandos.
 
 | Hook | Ejecuta | Cuándo |
 |---|---|---|
 | `pre-commit` | `sdd-project run --fast` | lint, tests rápidos, tipos, build, olores |
 | `pre-push` | `sdd-project run --slow` | cobertura, E2E, auditoría de dependencias, documentación |
 
-## Activar
+## Activación
 
-```bash
-git config core.hooksPath .sdd/githooks
-```
+`sdd init` lo deja listo. Según el stack:
 
-Es una línea, es local a tu copia, y se revierte con `git config --unset core.hooksPath`.
+| Proyecto | Mecanismo | Se activa |
+|---|---|---|
+| Con `package.json` | `.husky/pre-commit` y `pre-push` | Con `npm install`, para todo el equipo, si añades `"prepare": "husky"` |
+| Sin Node | `core.hooksPath` → `.sdd/githooks` | En el momento de instalar |
 
-**Por qué no se activa solo**: reconfigurar el git de alguien durante una instalación es la clase
-de sorpresa que hace que se desinstale la herramienta entera. Y por qué no se usa un gestor de
-hooks del ecosistema Node: ataría la plantilla a un stack, y aquí se instalan proyectos de Python,
-Go, Rust y Java.
+Para saltárselo: `sdd init … --no-hooks`. Para desactivarlo después:
+`git config --unset core.hooksPath`.
+
+**Por qué dos mecanismos y no uno.** Husky se autoactiva con `npm install`, que es su única
+ventaja real y no es pequeña: lo que hay que recordar activar, no se activa. Pero requiere Node, y
+aquí se instalan proyectos de Python, Go, Rust y Java. Así que Husky donde hay dónde engancharse,
+y `core.hooksPath` donde no.
+
+En ambos casos los hooks **delegan en `sdd-project run`**: si el proyecto cambia de runner, se
+toca `.sdd/checks.json` y los hooks no se enteran.
 
 Si `.sdd/checks.json` no tiene comandos configurados, los hooks no hacen nada. No fallan: no hay
 nada que ejecutar.
+
+## Permisos
+
+Un hook sin bit de ejecución **no lo corre git en Linux ni macOS**, y en algunas versiones lo hace
+en silencio. En Windows no se nota, porque `core.fileMode=false` ignora permisos.
+
+Por eso el control está sobre el **índice de git**, que es lo único que viaja al clonar:
+
+```bash
+git ls-files -s .sdd/githooks/     # debe decir 100755
+git update-index --chmod=+x .sdd/githooks/pre-commit
+```
+
+`check-sdd.mjs` falla si alguno está como `100644`. Y ningún agente cambia permisos por su cuenta:
+lo dice y te da el comando.
 
 ## Saltárselos
 

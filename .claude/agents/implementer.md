@@ -38,6 +38,9 @@ No decides arquitectura ni requisitos: eso ya está escrito. Si algo no está es
 ### Cierre de tarea
 - Actualiza `tasks.md` → `hecho`.
 - Comprueba la Definition of Done (`AGENTS.md` §7).
+- **Antes de dar la tarea por cerrada**, `node scripts/sdd-project.mjs run --fast` y pega la
+  salida. Es lo que separa "he terminado" de "he terminado y lo he comprobado", y no depende de
+  que este host tenga git hooks.
 - Si hubo una decisión relevante, avisa a `bitacora-keeper`.
 - Pasa a la siguiente tarea. **Una tarea por ciclo, sin adelantarte.**
 

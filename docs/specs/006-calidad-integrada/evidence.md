@@ -35,6 +35,13 @@
 | 2026-08-07 | Claude Code (directo) | `declared-direct` | T-006-06 | plantilla creada y referenciada desde `/sdd-ship` y `release-manager` | 🟢 existe, ≤300 palabras, con la regla de cifras verificadas |
 | 2026-08-07 | Claude Code (directo) | `declared-direct` | T-006-07 | `node scripts/check-sdd.mjs` + `node scripts/test-hooks.mjs` tras enriquecer 12 perfiles y 10 skills | 🟢 estructura válida · 51/51 guardas · `implementer` con las dos filas nuevas |
 
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-13 | `check-sdd` con `git update-index --chmod=-x` sembrado | 🔴 `pre-commit está en el índice como 100644: git no lo ejecutará en Linux ni macOS` |
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-13 | `git ls-files -s .sdd/githooks/` | 🟢 `100755` en ambos hooks |
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-14 | `guard-bash` sin sello / sello de otro árbol / sello en rojo / sello válido | 🟢 los cuatro casos con el mensaje correcto, y sin convertir el `ask` en `deny` |
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-14 | `sdd init` sobre proyecto Node, Python y con `--no-hooks` | 🟢 Husky · `core.hooksPath` · nada, respectivamente. El `package.json` del proyecto **no** se modifica |
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-14 | `node scripts/test-hooks.mjs` | 🟢 `56 correcta(s) · 0 fallo(s)` |
+| 2026-08-09 | Claude Code (directo) | `declared-direct` | T-006-14 | `node scripts/test-install.mjs` | 🟢 `141 correcta(s) · 0 fallo(s)` |
+
 > **Nota sobre las cinco filas anteriores.** Son tareas documentales: su verificación es
 > estructural (`check-sdd`) más revisión humana del texto, no una salida de test. Se registran
 > igual porque una tarea `hecho` sin evidencia no es una tarea hecha, y porque el gate
@@ -77,7 +84,8 @@ La tabla completa RF → CA → tarea → evidencia está en [`tasks.md`](./task
 | **Mutation testing** | Sin herramienta configurada, mismo motivo | No sabemos si los 137 checks de `test-install` detectan defectos inyectados más allá de los que probé en rojo | mantenedor | Evaluar Stryker si el repositorio incorpora suite unitaria |
 | **Job de CI ejecutado en GitHub** | Los workflows se verificaron localmente ejecutando sus comandos, no en un runner | Un error de sintaxis YAML o de permisos no se detectaría hasta el primer PR | usuario | Observar el primer PR que dispare `sdd-gates.yml` |
 | **Auditoría de dependencias real** | Este repositorio **no tiene lockfile**, y el job lo salta a propósito | Ninguno aquí: no hay dependencias de runtime | mantenedor | Se activará en proyectos con lockfile |
-| **Smoke de los git hooks en Windows nativo** | Probado en Git Bash | `pre-commit` es shell POSIX; en un Windows sin shell compatible no correría | mantenedor | Documentado: son opt-in y CI es quien bloquea |
+| **Smoke de los git hooks en Windows nativo** | Probado en Git Bash | `pre-commit` es shell POSIX; en un Windows sin shell compatible no correría | mantenedor | En Node se usa Husky, que Git for Windows ejecuta igual |
+| **Bloqueo real del hook en Linux o macOS** | Solo dispongo de Windows, donde `core.fileMode=false` oculta el bit de ejecución | Es **el defecto que motivó** el arreglo: no puedo demostrar que ya no ocurre, solo que el índice es correcto | usuario | Clonar en Linux o macOS, `git config core.hooksPath .sdd/githooks` y provocar un commit con lint en rojo |
 
 ### Desviaciones de proceso, declaradas
 

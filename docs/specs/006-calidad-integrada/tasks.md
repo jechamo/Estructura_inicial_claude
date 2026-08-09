@@ -29,6 +29,8 @@
 | RF-09 | CA-03 | T-006-10 | gate `skill/ruta-relativa` en rojo | `evidence.md#T-006-10` |
 | RF-06 (defecto de la DoD) | CA-05 | T-006-11 | `scan-secrets` en rojo y en verde | `evidence.md#T-006-11` |
 | RF-16 | CA-06 | T-006-12 | `--strict` en rojo y en verde | `evidence.md#T-006-12` |
+| RF-07, RF-14 | CA-05, CA-07 | T-006-13 | `check-sdd` gate de permisos en rojo | `evidence.md#T-006-13` |
+| RF-07, RF-14 | CA-05, CA-07 | T-006-14 | `test-hooks` sello en 4 escenarios | `evidence.md#T-006-14` |
 
 - [x] Todo RF tiene al menos una tarea
 - [x] Todo CA tiene verificación en alguna tarea
@@ -115,3 +117,21 @@
 - **Definición de hecho**: `--strict` bloquea sin CHANGELOG, sin bitácora, y sin informes cuando
   `evidence.md` declara `GO`
 - **Estimación**: S
+
+### T-006-13 · Bit de ejecución de los git hooks ← corrección de defecto
+- **Estado**: hecho · **Terreno**: tooling · **Cubre**: RF-07, RF-14 / CA-05, CA-07
+- **Justificación**: los hooks estaban en el índice como `100644`; git no los ejecuta en Linux ni
+  macOS, y en Windows `core.fileMode=false` lo ocultaba
+- **Ficheros**: índice de git, `scripts/check-sdd.mjs`, `scripts/install.mjs`
+- **Definición de hecho**: `100755` en el índice, gate que falla con `100644`, y `chmod` que avisa
+  con el comando cuando no puede aplicarse
+- **Estimación**: S
+
+### T-006-14 · Gates antes de commit y push, en todas las superficies
+- **Estado**: hecho · **Terreno**: tooling · **Cubre**: RF-07, RF-14 / CA-05, CA-07
+- **Ficheros**: `scripts/sdd-project.mjs`, `.sdd/hooks/guard-bash.mjs`, `scripts/install.mjs`,
+  `AGENTS.md`, `release-manager`, `implementer`, `/sdd-ship`, `/sdd-implement`
+- **Definición de hecho**: sello por velocidad y árbol; `guard-bash` avisa sin bloquear; Husky en
+  Node y `core.hooksPath` en el resto, sin pasos manuales; y el agente los ejecuta por su cuenta,
+  que es lo único que llega a hosts sin git local
+- **Estimación**: L

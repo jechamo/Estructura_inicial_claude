@@ -15,6 +15,12 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 - **Auditoría de dependencias en CI**, cuando hay lockfile. Misma historia: prometida, ausente.
 
 ### Added
+- **Los gates se ejecutan antes de commitear, sin que tengas que acordarte.** En proyectos Node el
+  instalador monta Husky; en el resto configura los hooks de git. Ambos llaman a los mismos
+  comandos, así que si cambias de runner solo tocas `.sdd/checks.json`.
+- **Y en los IDEs donde no hay hooks, los ejecuta el agente.** Es la diferencia entre "los tests
+  pasan" y "los tests pasan y lo he comprobado sobre este código". Cada ejecución deja constancia
+  de sobre qué estado del proyecto se hizo, y si algo cambió después, se avisa antes de commitear.
 - **Las skills funcionan en Lovable y equivalentes.** Sus skills nativas usan el mismo formato
   estándar, así que las 25 se importan tal cual. `node scripts/sdd-project.mjs skills-export`
   emite las URLs listas y el hash de cada una, para saber si la copia del workspace se quedó
@@ -26,6 +32,10 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ### Fixed
 - **Nueve skills enlazaban con rutas que se rompían al importarlas fuera del repositorio.** Ahora
   referencian desde la raíz, y a otras skills por su comando. Un gate impide que vuelva a pasar.
+- **Los hooks de git no eran ejecutables**, así que en Linux y macOS no se ejecutaban — en algunas
+  versiones, en silencio. En Windows no se notaba. Corregido, y con una comprobación que lo impide
+  a futuro. Si hiciera falta cambiar un permiso, el agente te lo dice y te da el comando: no lo
+  hace por su cuenta.
 
 ### Added
 - **`/observability`, la mitad que faltaba del ciclo.** El circuito terminaba en el despliegue.

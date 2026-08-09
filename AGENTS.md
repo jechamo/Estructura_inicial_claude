@@ -28,6 +28,13 @@ Antigravity y Codex. La política completa y vinculante está en
 7. “Pasa” sin ejecución real no es un resultado; “no ejecutado” sí, con riesgo y siguiente paso.
 8. Nunca se leen, copian ni escriben secretos, `.env`, credenciales o configuración local.
 9. No se usa `git push --force`, no se toca producción y no se borra contexto ajeno.
+10. **Antes de commitear, `node scripts/sdd-project.mjs run --fast`. Antes de empujar,
+    `run --slow`.** Y se pega la salida. No depende de que el host tenga git hooks: en los que no
+    los tienen, esto es el único control que existe. Si un gate falla, se arregla o se declara
+    como control no ejecutado con su riesgo — nunca se commitea "y ya lo miro luego".
+11. **Los permisos no se cambian a escondidas.** Si un hook no es ejecutable o falta una
+    autorización, se dice, se explica la consecuencia y se pide permiso o se entrega el comando
+    exacto para que lo ejecute la persona.
 
 ## Entrada por situación
 

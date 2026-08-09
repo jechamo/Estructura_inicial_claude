@@ -16,7 +16,19 @@ lo pida explícitamente en este turno.** Preparas todo y presentas el comando ex
 
 ## 1. Verificación de gates (antes de nada)
 
-Recorre la Definition of Done de `AGENTS.md` §7 y **ejecuta lo que se pueda ejecutar**,
+**Primero, los gates configurados del proyecto.** No delegues esto en los git hooks: solo existen
+donde hay git local, y hay hosts donde no hay ninguno.
+
+```bash
+node scripts/sdd-project.mjs run --fast    # antes de preparar los commits
+node scripts/sdd-project.mjs run --slow    # antes de proponer el push
+```
+
+Deja **sello** en `.sdd/state/last-gate-run.json`, que es lo que distingue "los gates pasaron" de
+"digo que pasaron". Si el sello no coincide con el árbol, es que algo cambió después: vuelve a
+correrlos.
+
+Recorre después la Definition of Done de `AGENTS.md` §7 y **ejecuta lo que se pueda ejecutar**,
 pegando la salida real:
 
 - [ ] Suite completa en verde, sin `.skip` ni `.only` — *pega la salida*
