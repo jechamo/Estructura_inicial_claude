@@ -32,6 +32,7 @@
 - **Skill**: `</middle / /front / /bbdd / /tdd / otra aplicable>`
 - **Capa**: domain
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
+- **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
 - **Test que la define**: `tests/domain/<...>.test.ts::debe_<comportamiento>_cuando_<condición>`
 - **Depende de**: ninguna
 - **Ficheros previstos**: `src/domain/<...>`
@@ -46,6 +47,7 @@
 - **Skill**: `<...>`
 - **Capa**: application
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01
+- **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
 - **Test que la define**: `…`
 - **Depende de**: T-NNN-01
 - **Ficheros previstos**: `…`
@@ -61,6 +63,8 @@
 - [ ] Migración de datos existentes
 - [ ] Actualización de contratos y regeneración de tipos
 - [ ] Logs, métricas y trazas de los caminos nuevos
+- [ ] Casos de abuso y controles de seguridad aplicables, cada uno con test y evidencia
+- [ ] Auditoría `/security-scan`; `security-auditor` devuelve HANDOFF y `docs-writer` materializa
 - [ ] Documentación de usuario o de API
 - [ ] Retirada del feature flag tras estabilizar
 - [ ] Entrada en `docs/bitacora/DECISIONS.md`

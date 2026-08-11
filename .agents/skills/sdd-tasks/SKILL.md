@@ -22,6 +22,7 @@ no se crea `tasks.md`.
 - Skill: /middle | /front | /bbdd | <otra skill aplicable> | — (justificado)
 - Capa: domain | application | infrastructure | interfaces | test | infra | docs
 - Cubre: OBJ-001 → PRD-RF-003 → UC-002 → RF-03 → CA-05
+- Controles de seguridad: SEC-<ID> | no aplica (<justificación material>)
 - Test que la define: `tests/domain/order/place_order.test.ts::debe_rechazar_cuando_stock_insuficiente`
 - Depende de: T-NNN-YY  (o "ninguna")
 - Ficheros previstos: `src/domain/order/Order.ts`
@@ -71,6 +72,12 @@ no se crea `tasks.md`.
 9. **Cadena total**: una tarea de producto enlaza `OBJ-*`, `PRD-RF-*`, `UC-*`, `RF-*` y `CA-*`.
    Una tarea transversal sin `CA` necesita una justificación y debe enlazar el riesgo, gate o
    artefacto que la exige.
+10. Si `Impacto de seguridad = sensible`, **cada tarea declara `Controles de seguridad`**. Todo
+    `SEC-*` aplicable de `plan.md` aparece al menos en una tarea y conserva test/evidencia. `no
+    aplica` repite la justificación material; no vale `n/a` sin motivo.
+11. Incluye casos de abuso y auditoría `/security-scan verify`. El `security-auditor` es solo
+    lectura y devuelve HANDOFF; el agente que lo invocó puede delegar en `docs-writer` la
+    materialización literal de `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
 
 ## Verificación de cobertura
 
@@ -86,6 +93,8 @@ Construye la tabla de trazabilidad y comprueba que **no queda hueco**:
 - [ ] Toda tarea declara Terreno y Skill, o justifica `—`
 - [ ] Toda tarea apunta a un `RF` y `CA`, o es transversal justificada
 - [ ] No hay tareas que la spec no pida
+- [ ] Todo control aplicable de seguridad tiene tarea, test y evidencia previstos
+- [ ] Todo control no aplicable conserva una justificación material
 
 ## Salida
 
@@ -102,6 +111,7 @@ la tabla de trazabilidad, y las tareas en orden de ejecución.
 - Tareas: <n> (S:<n> M:<n> L:<n>) · paralelizables: <n>
 - Cobertura: <n>/<n> OBJ · <n>/<n> PRD-RF · <n>/<n> UC · <n>/<n> RF · <n>/<n> CA
 - Terrenos / skills: <resumen y excepciones justificadas>
+- Seguridad: <sensible/no-sensible/security-pending> · <controles cubiertos/total>
 - Primera tarea a ejecutar: T-NNN-01
 - Siguiente agente sugerido: implementer — comando: /sdd-implement
 ```

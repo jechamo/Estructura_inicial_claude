@@ -35,6 +35,9 @@ Antigravity y Codex. La política completa y vinculante está en
 11. **Los permisos no se cambian a escondidas.** Si un hook no es ejecutable o falta una
     autorización, se dice, se explica la consecuencia y se pide permiso o se entrega el comando
     exacto para que lo ejecute la persona.
+12. Toda spec nueva declara `Impacto de seguridad`. Si es `sensible`, cada control aplicable enlaza
+    decisión, tarea, test y evidencia; el `security-auditor` sigue siendo de solo lectura y un
+    `GO` exige informe parseable sin CRÍTICO/ALTO ni controles no ejecutados.
 
 ## Entrada por situación
 

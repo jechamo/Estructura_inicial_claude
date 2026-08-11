@@ -122,13 +122,41 @@ rojo-verde: eso no se negocia.
 
 ## 9. Seguridad
 
-| Aspecto | Decisión |
+**Impacto de seguridad heredado de `spec.md`**: `sensible | no-sensible | security-pending`.
+
+Marco: **OWASP Top 10:2025** (riesgos) y **ASVS 5.0.0** nivel `<L1/L2/L3>` (requisitos
+verificables). Consulta [`AUTH-TOKENS.md`](../../security/AUTH-TOKENS.md) solo si el proyecto elige
+JWT o credenciales de navegador; JWT no es el valor por defecto.
+
+| Aspecto | Decisión dependiente del stack |
 |---|---|
-| Entradas externas y validación | |
-| Autorización (quién puede, comprobado dónde) | |
-| Datos sensibles y su tratamiento | |
-| Amenazas STRIDE relevantes | |
-| Controles añadidos | |
+| HTTPS y headers de seguridad | `<control, capa y test; no imponer una librería>` |
+| Entradas externas y validación | `<esquema en cada frontera>` |
+| Inyección y queries parametrizadas | `<adaptador y prueba negativa>` |
+| Autorización (quién puede, comprobado dónde) | `<caso de uso/servidor>` |
+| Rate limiting, límites e idempotencia | `<fronteras y política>` |
+| CSRF, CORS, cookies y almacenamiento | `<según transporte>` |
+| XSS, sanitización y CSP | `<según interfaz>` |
+| Secretos, dependencias y supply chain | `<gestión y comandos reales>` |
+| Datos sensibles y su tratamiento | `<minimización, retención, borrado, logs>` |
+| Amenazas y casos de abuso | `<threat model y test-plan>` |
+
+### 9.1 · Matriz de controles
+
+> Una fila por control. `Aplica = no` exige una justificación material. Si aplica, ninguna celda
+> desde decisión hasta evidencia puede quedar vacía o con marcador.
+
+| Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+| SEC-<ID> | ASVS 5.0.0 Vx | A0x:2025 | `<sí/no>` | `<decisión o motivo material>` | T-NNN-XX | `<ruta::caso>` | `evidence.md#T-NNN-XX` |
+
+### 9.2 · Auditoría prevista
+
+- Skill: `/security-scan` con alcance `plan`, `verify` o `complete` según la fase.
+- Auditor: `security-auditor` en solo lectura; devuelve un HANDOFF, no escribe el informe.
+- Escritor autorizado: `docs-writer`, que materializa literalmente el handoff sin reinterpretarlo.
+- Informe: `docs/security/reports/YYYY-MM-DD-NNN-slug.md` con
+  `<!-- sdd-security-report:v1 -->` y JSON canónico.
 
 ## 10. Rendimiento
 

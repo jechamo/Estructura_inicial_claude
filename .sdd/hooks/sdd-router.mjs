@@ -23,6 +23,9 @@ const solicitaIntake = !continuaSpecAprobada && (
   /\bprd\b(?!-rf-\d)|\b(product requirements document|documento funcional|brief de producto|requisitos de producto|casos de uso)\b/.test(prompt) ||
   /\b(proyecto nuevo|desde cero|empezar un proyecto|arrancar el proyecto)\b/.test(prompt) ||
   (/\b(figma|stitch|boceto|maqueta)\b/.test(prompt) && /\b(iniciar|arrancar|producto|prd|requisitos)\b/.test(prompt)));
+const solicitaAuditoriaSeguridad =
+  /\b(audita|auditar|auditor[ií]a|revisa|revisar|escanea|scan|eval[uú]a|comprueba)\b[^\n]{0,100}\b(seguridad|vulnerab|owasp|asvs|jwt|tokens?)\b/.test(prompt) ||
+  /\b(seguridad|vulnerab|owasp|asvs|jwt|tokens?)\b[^\n]{0,100}\b(audita|auditar|auditor[ií]a|revisa|revisar|escanea|scan|eval[uú]a|comprueba)\b/.test(prompt);
 
 if (solicitaIntake) {
   inject([
@@ -79,8 +82,14 @@ const patrones = [
     aviso: 'Rendimiento → `@performance-optimizer`. No optimices sin medición previa ni sin objetivo declarado.',
   },
   {
-    re: /\b(seguridad|vulnerab|owasp|inyecci[óo]n|autenticaci[óo]n|autorizaci[óo]n)\b/,
+    re: solicitaAuditoriaSeguridad ? /[\s\S]/ : /(?!) /,
     aviso: 'Seguridad → `/security-scan` (agente `security-auditor`).',
+  },
+  {
+    re: /\b(jwt|tokens?|login|autenticaci[óo]n|autorizaci[óo]n|permisos?|roles?|csrf|sesi[óo]n)\b/,
+    aviso:
+      'Cambio sensible: conserva la fase SDD actual, declara `Impacto de seguridad` y sus `SEC-*`, ' +
+      'y añade revisión del `security-auditor` en plan/verify. El auditor devuelve HANDOFF y no escribe.',
   },
   {
     re: /\b(despliega|deploy|producci[óo]n|release|publica)\b/,

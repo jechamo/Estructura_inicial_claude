@@ -1,9 +1,13 @@
 ---
 applyTo: "**/*.{ts,tsx,js,jsx,py,go,java,cs,rb,php,sql}"
-description: Reglas de seguridad OWASP aplicables a todo el código
+description: Reglas de seguridad OWASP Top 10:2025 y ASVS 5.0.0 aplicables a todo el código
 ---
 
 # Seguridad
+
+Contrato canónico: [`AUTH-TOKENS.md`](../../docs/security/AUTH-TOKENS.md) y
+[`SECURITY-CHECKLIST.md`](../../docs/security/SECURITY-CHECKLIST.md). OWASP Top 10:2025 sirve
+como mapa de riesgos; ASVS 5.0.0 aporta controles verificables.
 
 - **Nunca** concatenes SQL. Consultas parametrizadas o query builder, siempre.
 - Valida todo input externo en la frontera con esquema (zod, pydantic, DTO validado).
@@ -14,7 +18,11 @@ description: Reglas de seguridad OWASP aplicables a todo el código
 - Cero secretos en el código. Variables de entorno + gestor de secretos.
 - Contraseñas con Argon2id o bcrypt (coste ≥ 12). Nunca MD5/SHA1/SHA256 pelado.
 - Aleatoriedad criptográfica para tokens (`crypto.randomUUID`, `secrets`), nunca `Math.random`.
-- Cookies `httpOnly` + `Secure` + `SameSite`. JWT: verifica firma y `alg`, expiración corta.
+- JWT solo si la arquitectura lo decide: fija una allowlist de `alg`, rechaza `none`, verifica
+  firma, `iss`, `aud`, `exp`, `nbf`, `sub`, `iat`, tipo/scopes y `jti` cuando aplique. Separa
+  access/refresh, rota claves y refresh, detecta reutilización y prueba revocación/logout.
+- Cookies de autenticación: `httpOnly` + `Secure` + `SameSite`; si el navegador las envía
+  automáticamente, elige y prueba además una defensa CSRF. `SameSite` es defensa en profundidad.
 - Escapa por contexto en la salida. Sin `innerHTML` / `dangerouslySetInnerHTML` sin sanitizar.
   CSP estricta, sin `unsafe-inline`.
 - CORS explícito por origen. Nunca `*` con credenciales.

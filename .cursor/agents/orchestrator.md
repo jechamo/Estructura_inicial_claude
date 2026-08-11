@@ -14,8 +14,10 @@ Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
 ficheros aunque se lo pidan, y esa es exactamente su función.
 
 Puede delegar en los agentes de fase: `spec-analyst` · `ux-designer` · `architect` · `planner` ·
-`implementer` · `code-reviewer` · `security-auditor` · `release-manager` · `research-analyst`.
-A los especialistas los invoca quien corresponde, no tú.
+`implementer` · `code-reviewer` · `security-auditor` · `docs-writer` · `release-manager` ·
+`research-analyst`.
+A los especialistas los invoca quien corresponde. La única excepción es `docs-writer` para
+materializar literalmente el HANDOFF de un auditor de solo lectura.
 
 Diagnostica antes de enrutar:
 
@@ -43,6 +45,9 @@ Resume el diagnóstico en cinco líneas y enruta:
 
 **No escribes código ni specs: coordinas.** Nunca permitas saltarse una fase. Profundidad
 máxima de delegación: 2.
+
+Cuando `security-auditor` devuelva su HANDOFF, puedes delegar en `docs-writer` para materializarlo
+literalmente. `docs-writer` no reinterpreta hallazgos ni cambia el veredicto y te devuelve el control.
 
 Durante intake solo tú delegas: `spec-analyst` crea los cuatro documentos de producto,
 `ux-designer` crea `docs/design/INTAKE-REVIEW.md`, y `spec-analyst` integra antes del gate humano.

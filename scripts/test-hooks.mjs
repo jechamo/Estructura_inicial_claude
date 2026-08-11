@@ -12,8 +12,9 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, mkdtempSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -219,6 +220,54 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
   comprueba('el aviso de gates no convierte el ask en deny',
     decisionDe('guard-bash.mjs', ejecutar('git commit -m x')), 'ask');
 
+  const proyecto = mkdtempSync(join(tmpdir(), 'sdd-hook-security-'));
+  try {
+    spawnSync('git', ['init', '-q', '.'], { cwd: proyecto, encoding: 'utf8' });
+    mkdirSync(join(proyecto, '.sdd/state'), { recursive: true });
+    mkdirSync(join(proyecto, 'scripts'), { recursive: true });
+    writeFileSync(join(proyecto, '.gitignore'), '.sdd/state/\n', 'utf8');
+    writeFileSync(join(proyecto, 'scripts/sdd-project.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/sdd-project.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
+      version: 1,
+      checks: {
+        security: { command: 'node -e "process.exit(0)"', required: true, speed: 'slow' },
+      },
+      unconfigured: [],
+    }), 'utf8');
+    const payload = (command) => ({ session_id: SESION, cwd: proyecto, tool_name: 'Bash', tool_input: { command } });
+    spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
+    const selloReal = JSON.parse(readFileSync(join(proyecto, '.sdd/state/last-gate-run.json'), 'utf8'));
+    selloReal.slow.checks = [];
+    writeFileSync(join(proyecto, '.sdd/state/last-gate-run.json'), JSON.stringify(selloReal), 'utf8');
+    comprueba('un sello slow sin el gate security obligatorio avisa',
+      /no incluye gates obligatorios configurados: security/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+
+    spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
+    comprueba('un sello slow completo sobre el árbol actual no avisa de gates',
+      /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+
+    writeFileSync(join(proyecto, 'contenido.txt'), 'base\n', 'utf8');
+    spawnSync('git', ['add', 'contenido.txt'], { cwd: proyecto, encoding: 'utf8' });
+    writeFileSync(join(proyecto, 'contenido.txt'), 'primera versión\n', 'utf8');
+    spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
+    comprueba('el sello incluye los bytes del diff, no solo el estado M',
+      /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+    writeFileSync(join(proyecto, 'contenido.txt'), 'segunda versión\n', 'utf8');
+    comprueba('cambiar bytes manteniendo el mismo estado git invalida el sello',
+      /pasaron sobre otro estado del árbol/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+
+    writeFileSync(join(proyecto, 'nuevo-no-rastreado.txt'), 'primera versión\n', 'utf8');
+    spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
+    comprueba('el sello incluye bytes de ficheros no rastreados',
+      /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+    writeFileSync(join(proyecto, 'nuevo-no-rastreado.txt'), 'segunda versión\n', 'utf8');
+    comprueba('mutar un no rastreado también invalida el sello',
+      /pasaron sobre otro estado del árbol/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+  } finally {
+    rmSync(proyecto, { recursive: true, force: true });
+  }
+
   if (previo === null) rmSync(sello, { force: true });
   else writeFileSync(sello, previo, 'utf8');
 }
@@ -305,6 +354,18 @@ comprueba('Figma de una feature existente sigue en design y no en intake', (() =
   const salida = salidaDe('sdd-router.mjs', preguntar('Sincroniza este componente de Figma con la pantalla de la spec 042 aprobada'));
   return !/sdd-intake/.test(salida) && /sdd-design/.test(salida) ? 'ok' : 'fail';
 })(), 'ok');
+function auth_feature_vs_auditoria() {
+  comprueba('una feature de autenticación conserva el circuito SDD y no se convierte en auditoría', (() => {
+    const salida = salidaDe('sdd-router.mjs', preguntar('Implementa login con JWT en la spec 042 aprobada con TDD'));
+    return /sdd-implement/.test(salida) && !/\/security-scan/.test(salida) &&
+      /security-auditor|revisión.*seguridad|Impacto de seguridad/.test(salida) ? 'ok' : 'fail';
+  })(), 'ok');
+  comprueba('una petición explícita de auditoría JWT enruta a security-scan', (() => {
+    const salida = salidaDe('sdd-router.mjs', preguntar('Audita este JWT'));
+    return /\/security-scan/.test(salida) ? 'ok' : 'fail';
+  })(), 'ok');
+}
+auth_feature_vs_auditoria();
 
 // ─── SDD_GATES=off ───────────────────────────────────────────────────────────
 // Documentado como escape; si no funciona, la gente edita los hooks y ahí se pierde todo.

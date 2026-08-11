@@ -13,6 +13,7 @@ import { readHookInput, decide, gatesEnabled, toolCall, comandosDe, hostDestino,
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 const input = await readHookInput();
 const { entrada } = toolCall(input);
@@ -90,13 +91,51 @@ function estadoDeGates(velocidad, root) {
   // Mismo cálculo que `huellaArbol()` en sdd-project.mjs. Un repositorio sin commits todavía no
   // tiene HEAD, y su primer commit también se controla: el ref se toma vacío.
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' });
-  const sucio = spawnSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' });
+  const sucio = spawnSync('git', ['status', '--porcelain', '-z'], { cwd: root });
   if (sucio.status !== 0) return null; // sin repositorio no hay nada que comparar
   const ref = head.status === 0 ? (head.stdout || '').trim() : '';
-  const actual = createHash('sha256')
-    .update(`${ref}\n${(sucio.stdout || '').trim()}`)
-    .digest('hex').slice(0, 16);
+  const argumentosDiff = head.status === 0
+    ? ['diff', '--binary', '--no-ext-diff', 'HEAD', '--']
+    : ['diff', '--binary', '--no-ext-diff', '--'];
+  const diff = spawnSync('git', argumentosDiff, { cwd: root, maxBuffer: 64 * 1024 * 1024 });
+  const staged = head.status === 0 ? null :
+    spawnSync('git', ['diff', '--cached', '--binary', '--no-ext-diff', '--'], {
+      cwd: root, maxBuffer: 64 * 1024 * 1024,
+    });
+  const otros = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], {
+    cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  });
+  if (diff.status !== 0 || (staged && staged.status !== 0) || otros.status !== 0)
+    return 'no se pudo calcular la huella material del árbol';
+  const hasher = createHash('sha256')
+    .update(ref).update('\0').update(sucio.stdout || '').update('\0')
+    .update(diff.stdout || '').update('\0').update(staged?.stdout || '').update('\0');
+  for (const ruta of (otros.stdout || '').split('\0').filter(Boolean).sort()) {
+    hasher.update(ruta).update('\0');
+    try { hasher.update(readFileSync(join(root, ruta))); }
+    catch { return 'no se pudo leer un fichero no rastreado para validar la huella'; }
+    hasher.update('\0');
+  }
+  const actual = hasher.digest('hex').slice(0, 16);
   if (actual !== entrada.tree) return `los gates \`${velocidad}\` pasaron sobre otro estado del árbol`;
+
+  let configuracion;
+  try { configuracion = JSON.parse(readIfExists(join(root, '.sdd/checks.json')) || '{}'); }
+  catch { return 'no se puede validar el sello porque .sdd/checks.json no es JSON válido'; }
+  const lentos = new Set(['coverage', 'e2e', 'visual', 'a11y', 'security', 'deps-audit', 'docs', 'mutation']);
+  const requeridos = Object.entries(configuracion?.checks || {})
+    .filter(([id, check]) => {
+      if (check?.required !== true || check.enabled === false || typeof check?.command !== 'string' || !check.command.trim()) return false;
+      const base = String(id).split(':')[0];
+      const speed = check.speed || (lentos.has(base) ? 'slow' : 'fast');
+      return speed === velocidad;
+    })
+    .map(([id]) => id)
+    .sort();
+  const ejecutados = new Set(Array.isArray(entrada.checks) ? entrada.checks : []);
+  const ausentes = requeridos.filter((id) => !ejecutados.has(id));
+  if (ausentes.length)
+    return `el sello \`${velocidad}\` no incluye gates obligatorios configurados: ${ausentes.join(', ')}`;
   return null;
 }
 

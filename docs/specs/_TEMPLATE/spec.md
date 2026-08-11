@@ -10,6 +10,7 @@
 | **Depende de** | <otras specs, o "ninguna"> |
 | **Baseline de producto** | [`docs/product/PRD.md`](../../product/PRD.md) · estado `<pending/approved/legacy-pending>` |
 | **Fuentes** | [`docs/product/SOURCES.md`](../../product/SOURCES.md) · `<SRC-...>` |
+| **Impacto de seguridad** | `sensible` \| `no-sensible` \| `security-pending` |
 
 > ⚠️ Esta spec describe **QUÉ** y **POR QUÉ**. Cero tecnología: ni tablas, ni endpoints,
 > ni frameworks, ni nombres de clase. Eso va en `plan.md`.
@@ -93,6 +94,22 @@ justifica por escrito aquí (tecnología conocida, equipo estable, riesgo extern
 | Observabilidad | | |
 | Coste | | |
 | Retención de datos | | |
+
+### 5.1 · Clasificación de seguridad
+
+> Usa `sensible` cuando la spec toca autenticación, autorización, PII, pagos, ficheros,
+> administración, multi-tenant, integraciones externas o agentes/LLM. `security-pending` es una
+> transición brownfield para contexto histórico, no una excepción para una spec sensible nueva.
+
+| Señal | Aplica | Requisito / caso afectado | Fuente o motivo |
+|---|---|---|---|
+| Autenticación o sesión | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| Autorización, roles, IDOR o multi-tenant | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| PII, pagos, ficheros o administración | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| Integración externa, webhook o agente/LLM | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+
+La spec declara el impacto y el comportamiento esperado; las decisiones técnicas y la matriz de
+controles se completan en `plan.md`.
 
 ## 6. Criterios de aceptación
 

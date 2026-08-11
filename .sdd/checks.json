@@ -1,7 +1,8 @@
 {
   "version": 1,
   "checks": {
-    "sdd": { "command": "node scripts/check-sdd.mjs", "required": true, "speed": "fast" }
+    "sdd": { "command": "node scripts/check-sdd.mjs", "required": true, "speed": "fast" },
+    "security": { "command": "node scripts/scan-secrets.mjs --json", "required": true, "speed": "slow" }
   },
   "unconfigured": ["lint", "test", "typecheck", "build", "smells", "coverage", "e2e", "visual", "a11y", "deps-audit", "docs", "mutation"]
 }

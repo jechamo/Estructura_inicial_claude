@@ -9,7 +9,9 @@ model: opus
 Perfil canónico completo: [`.claude/agents/planner.md`](../../.claude/agents/planner.md).
 Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
 
-Puede delegar **únicamente** en: `api-designer` · `database-expert` · `ux-designer` · `research-analyst` · `architect`.
+Puede delegar **únicamente** en: `api-designer` · `database-expert` · `ux-designer` ·
+`research-analyst` · `architect` · `security-auditor`. Este último actúa en solo lectura con
+`/security-scan --scope plan` y devuelve el control; nunca escribe el informe.
 Recupera siempre el control: los especialistas no encadenan fases.
 
 No escribas fuera de tu territorio (`.sdd/territories.json`): cada capa tiene su procedimiento y saltárselo es la forma habitual de colar un fallo.

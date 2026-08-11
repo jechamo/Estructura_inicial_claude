@@ -5,7 +5,7 @@
  * reusable y qué parte debe nacer sin contexto en cada proyecto destino.
  */
 
-export const VERSION_MANIFIESTO = 4;
+export const VERSION_MANIFIESTO = 5;
 
 // Artefactos publicados por versiones anteriores que ahora duplican Agent Skills. Una
 // actualización solo los elimina cuando installed.json demuestra propiedad y el hash sigue
@@ -60,6 +60,8 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 - Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
 - Circuito: intake → init/onboard → specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
 - La implementación sigue TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
+- Toda spec nueva declara \`Impacto de seguridad\`; si es sensible, cada \`SEC-*\` enlaza decisión, tarea, test y evidencia.
+- \`security-auditor\` es de solo lectura. Un \`GO\` exige informe parseable sin CRÍTICO/ALTO ni controles no ejecutados.
 - \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
 - La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
 - Las decisiones viven en la bitácora o en un ADR, nunca únicamente en el chat.
@@ -191,6 +193,8 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 - Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
 - Circuito: intake → init/onboard → specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
 - La implementación sigue TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
+- Toda spec nueva declara \`Impacto de seguridad\`; si es sensible, cada \`SEC-*\` enlaza decisión, tarea, test y evidencia.
+- \`security-auditor\` es de solo lectura. Un \`GO\` exige informe parseable sin CRÍTICO/ALTO ni controles no ejecutados.
 - \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
 - La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
 - Las decisiones viven en la bitácora o en un ADR, nunca únicamente en el chat.
@@ -241,6 +245,8 @@ Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/age
 - [Dirección visual](design/DIRECCION-VISUAL.md)
 - [Estrategia de pruebas](quality/TEST-STRATEGY.md)
 - [Modelo de amenazas](security/THREAT-MODEL.md)
+- [Checklist de seguridad](security/SECURITY-CHECKLIST.md)
+- [Autenticación y tokens](security/AUTH-TOKENS.md)
 - [Bitácora](bitacora/DECISIONS.md)
 <!-- sdd:end -->
 `,
@@ -373,7 +379,7 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "checks": {
     "sdd": { "command": "node scripts/check-sdd.mjs", "required": true, "speed": "fast" }
   },
-  "unconfigured": ["lint", "test", "typecheck", "build", "smells", "coverage", "e2e", "visual", "a11y", "deps-audit", "docs", "mutation"]
+  "unconfigured": ["lint", "test", "typecheck", "build", "smells", "coverage", "e2e", "visual", "a11y", "security", "deps-audit", "docs", "mutation"]
 }
 `,
   '.env.example': `# Variables de aplicación

@@ -13,18 +13,18 @@ jobs:
     name: Gates rápidos
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.3.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # El historial completo permite escanear también lo que ya estaba dentro, no solo
-          # lo que entra en este commit.
-          fetch-depth: 0
-      - uses: actions/setup-node@v6.0.0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
       # Va el primero de todo: un secreto filtrado no se arregla arreglando el build.
       # En hosts sin hooks (Lovable y equivalentes) este job es la única protección que existe.
       - name: Scan for secrets
         run: node scripts/scan-secrets.mjs
+      # Este escáner revisa el árbol versionado actual. Si el proyecto necesita inspeccionar
+      # todo el historial, debe declarar un gate real y verificable en `.sdd/checks.json`.
       - name: Run fast project gates
         run: node scripts/sdd-project.mjs run --fast
       - name: Validate hook contracts
@@ -35,35 +35,14 @@ jobs:
     needs: fast
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.3.0
-      - uses: actions/setup-node@v6.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
       - name: Run slow project gates
         run: node scripts/sdd-project.mjs run --slow
-      # La DoD promete auditoría de dependencias en CI, bloqueante en CRÍTICO y ALTO.
-      # Solo se ejecuta si el proyecto tiene lockfile: sin árbol fijado, el resultado cambia
-      # entre ejecuciones y un gate que va y viene se acaba ignorando.
-      - name: Audit dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm audit --audit-level=high
-          elif [ -f pnpm-lock.yaml ] || [ -f yarn.lock ]; then
-            echo "Lockfile no-npm detectado: configura el gate deps-audit en .sdd/checks.json"
-          else
-            echo "Sin lockfile: auditoría no ejecutada. Declárelo en evidence.md si aplica."
-          fi
-      # Los informes se suben también cuando el job falla: es justo cuando hacen falta.
-      # Un fallo de E2E sin traza ni captura cuesta horas de reproducción a ciegas.
-      - name: Upload reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: sdd-reports
-          path: |
-            docs/quality/reports/
-            playwright-report/
-            test-results/
-            coverage/
-          if-no-files-found: ignore
-          retention-days: 14
+      # `deps-audit` y `security` solo se ejecutan si el proyecto declaró un comando real en
+      # `.sdd/checks.json`. Un gate sin configurar queda visible como tal; nunca se imprime como
+      # auditoría superada ni se presupone npm, pnpm, yarn, Python u otro stack.

@@ -69,6 +69,78 @@ function ficherosTexto(raiz, relativa = '') {
   });
 }
 
+function seguridad_versionada(destino) {
+  const checklist = leer(join(destino, 'docs/security/SECURITY-CHECKLIST.md')) || '';
+  return /OWASP Top 10:2025/.test(checklist) && /ASVS 5\.0\.0/.test(checklist) &&
+    Array.from({ length: 10 }, (_, i) => `A${String(i + 1).padStart(2, '0')}:2025`)
+      .every((categoria) => checklist.includes(categoria));
+}
+
+function contrato_jwt(destino) {
+  const tokens = leer(join(destino, 'docs/security/AUTH-TOKENS.md')) || '';
+  return /alg\s*:\s*none/i.test(tokens) &&
+    ['iss', 'aud', 'sub', 'iat', 'exp', 'nbf', 'jti'].every((claim) => new RegExp(`\\b${claim}\\b`).test(tokens)) &&
+    /firma|signature/i.test(tokens) && /rotaci[oó]n de claves|key rotation/i.test(tokens) &&
+    /refresh token rotation/i.test(tokens) && /reuse detection/i.test(tokens) &&
+    /revocaci[oó]n|revocation/i.test(tokens) && /logout/i.test(tokens) &&
+    /roles|scopes/i.test(tokens) && /401/.test(tokens) && /403/.test(tokens) && /IDOR/.test(tokens) &&
+    /URL|query/i.test(tokens) && /logs?/i.test(tokens) &&
+    /no (?:se )?(?:impone|presupone|activa).*JWT/i.test(tokens);
+}
+
+function csrf_no_samesite_solo(destino) {
+  const tokens = leer(join(destino, 'docs/security/AUTH-TOKENS.md')) || '';
+  return /SameSite[\s\S]{0,220}(?:no sustituye|no reemplaza|defensa en profundidad)/i.test(tokens) &&
+    /HttpOnly/i.test(tokens) && /Secure/i.test(tokens) && /CSRF/i.test(tokens) &&
+    /GET[\s\S]{0,100}(?:no muta|no debe mutar|sin mutaci[oó]n|no cambia(?:n)? estado)/i.test(tokens) &&
+    /Bearer[\s\S]{0,220}(?:cookie|CSRF)/i.test(tokens);
+}
+
+function matriz_seguridad(destino) {
+  const spec = leer(join(destino, 'docs/specs/_TEMPLATE/spec.md')) || '';
+  const plan = leer(join(destino, 'docs/specs/_TEMPLATE/plan.md')) || '';
+  const tasks = leer(join(destino, 'docs/specs/_TEMPLATE/tasks.md')) || '';
+  const tests = leer(join(destino, 'docs/specs/_TEMPLATE/test-plan.md')) || '';
+  const evidence = leer(join(destino, 'docs/specs/_TEMPLATE/evidence.md')) || '';
+  return /Impacto de seguridad/.test(spec) &&
+    /Control\s*\|\s*ASVS\s*\|\s*OWASP\s*\|\s*Aplica\s*\|\s*Decisión \/ justificación\s*\|\s*Tarea\s*\|\s*Test\s*\|\s*Evidencia/.test(plan) &&
+    /Controles de seguridad/.test(tasks) && /abuso|negativ/i.test(tests) &&
+    /Informe de seguridad/.test(evidence) && /Controles de seguridad ejecutados/.test(evidence);
+}
+
+function workflow_supply_chain(destino) {
+  const ci = leer(join(destino, '.github/workflows/sdd-gates.yml')) || '';
+  const referencias = [...ci.matchAll(/uses:\s*[^@\s]+@([^\s#]+)/g)].map((m) => m[1]);
+  return !!ci && referencias.length > 0 && referencias.every((ref) => /^[0-9a-f]{40}$/.test(ref)) &&
+    (ci.match(/persist-credentials:\s*false/g) || []).length === 2 &&
+    /scan-secrets\.mjs/.test(ci) && /run --fast/.test(ci) && /run --slow/.test(ci) &&
+    !/test-install\.mjs|\b(?:npm|pnpm|yarn)\s+(?:ci|run|audit)\b|upload-artifact@v\d/.test(ci);
+}
+
+function portabilidad_seguridad(destino) {
+  const indice = leer(join(destino, 'docs/README.md')) || '';
+  return /security\/AUTH-TOKENS\.md/.test(indice) &&
+    /security\/SECURITY-CHECKLIST\.md/.test(indice) &&
+    existsSync(join(destino, '.codex/agents/security-auditor.toml')) &&
+    existsSync(join(destino, '.cursor/agents/security-auditor.md')) &&
+    existsSync(join(destino, '.github/agents/security-auditor.agent.md'));
+}
+
+function contrato_auditor_solo_lectura(destino) {
+  const perfil = leer(join(destino, '.claude/agents/security-auditor.md')) || '';
+  const cabecera = perfil.match(/^---\s*\n([\s\S]*?)\n---/)?.[1] || '';
+  const tools = cabecera.match(/^tools:\s*(.+)$/m)?.[1] || '';
+  const camposHandoff = [
+    'Agente origen', 'Fase completada', 'Fuentes consultadas', 'Estándares', 'Alcance',
+    'Controles evaluados', 'Evidencias y comandos', 'Hallazgos', 'Riesgos aceptados',
+    'Controles no ejecutados', 'Veredicto', 'Informe a materializar', 'Siguiente agente sugerido',
+    'Comando / contexto durable',
+  ];
+  return /\bRead\b/.test(tools) && !/\b(?:Write|Edit|Agent)\b/.test(tools) &&
+    /auditor de seguridad de solo lectura/i.test(perfil) && /### HANDOFF/.test(perfil) &&
+    camposHandoff.every((campo) => perfil.includes(`- ${campo}:`));
+}
+
 // ─── 1 · Instalación limpia ──────────────────────────────────────────────────
 console.log('\n1 · init sobre un directorio vacío');
 {
@@ -101,6 +173,23 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los hooks de Copilot', existsSync(join(d, '.github/hooks/sdd.json')));
   comprueba('instala los 20 agentes de Codex',
     existsSync(join(d, '.codex/agents')) && readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20);
+  comprueba('mantiene paridad exacta de 20 agentes y 25 skills sin duplicados',
+    readdirSync(join(d, '.github/agents')).filter((f) => f.endsWith('.agent.md')).length === 20 &&
+    readdirSync(join(d, '.cursor/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
+    readdirSync(join(d, '.agents/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 25 &&
+    readdirSync(join(d, '.claude/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 25);
+  comprueba('los adaptadores permiten planificar seguridad y materializar el handoff sin escribir desde el auditor', (() => {
+    const plannerGithub = leer(join(d, '.github/agents/planner.agent.md')) || '';
+    const orchestratorGithub = leer(join(d, '.github/agents/orchestrator.agent.md')) || '';
+    const plannerCursor = leer(join(d, '.cursor/agents/planner.md')) || '';
+    const orchestratorCursor = leer(join(d, '.cursor/agents/orchestrator.md')) || '';
+    return /agents:[^\n]*security-auditor/.test(plannerGithub) &&
+      /agents:[^\n]*docs-writer/.test(orchestratorGithub) &&
+      /security-auditor/.test(plannerCursor) && /docs-writer/.test(orchestratorCursor) &&
+      /solo lectura|read-only/i.test(leer(join(d, '.github/agents/security-auditor.agent.md')) || '');
+  })());
+  comprueba('el auditor canónico no puede escribir, editar ni delegar y conserva HANDOFF material',
+    contrato_auditor_solo_lectura(d));
   comprueba('no instala prompts que duplican las skills de VS Code',
     !existsSync(join(d, '.github/prompts/sdd-init.prompt.md')));
   comprueba('no instala commands que duplican las skills de Cursor',
@@ -121,6 +210,12 @@ console.log('\n1 · init sobre un directorio vacío');
     return registro.product?.status === 'bootstrap' &&
       ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md']
         .every((nombre) => existsSync(join(d, 'docs/product', nombre)));
+  })());
+  comprueba('greenfield registra contrato de seguridad desde la primera spec', (() => {
+    const security = JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').security;
+    return security?.schemaVersion === 1 && security.status === 'bootstrap' &&
+      security.enforceFromSpec === '001' && security.standards?.owaspTop10 === '2025' &&
+      security.standards?.asvs === '5.0.0' && security.standards?.level === 'L2';
   })());
   const productStatus = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'product-status', '--json'], {
     cwd: d, encoding: 'utf8',
@@ -272,6 +367,7 @@ console.log('\n1 · init sobre un directorio vacío');
     try {
       const c = JSON.parse(leer(join(d, '.sdd/checks.json')) || '{}');
       return c.checks?.sdd?.command === 'node scripts/check-sdd.mjs' &&
+        c.unconfigured?.includes('security') &&
         !Object.values(c.checks || {}).some((x) => /npm |pytest|gradle|mvn /.test(x?.command || ''));
     } catch { return false; }
   })());
@@ -286,16 +382,18 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala threat model mínimo y conserva la plantilla aparte',
     existsSync(join(d, 'docs/security/_TEMPLATE.threat-model.md')) &&
     !/T-01|Suplantación|POST \/\.\.\./.test(leer(join(d, 'docs/security/THREAT-MODEL.md')) || ''));
+  comprueba('instala doctrina versionada OWASP y ASVS sin decidir el stack', seguridad_versionada(d));
+  comprueba('instala contrato completo JWT, refresh y autorización', contrato_jwt(d));
+  comprueba('CSRF no descansa únicamente en SameSite', csrf_no_samesite_solo(d));
+  comprueba('las plantillas propagan impacto, controles y abuso hasta la evidencia', matriz_seguridad(d));
+  comprueba('la doctrina de seguridad es descubrible y portable entre hosts', portabilidad_seguridad(d));
   comprueba('instala dirección visual mínima y conserva la guía aparte',
     existsSync(join(d, 'docs/design/DIRECTION-GUIDE.md')) &&
     !/frontend-design|theme-factory|canvas-design/.test(leer(join(d, 'docs/design/DIRECCION-VISUAL.md')) || ''));
   comprueba('solo instala la plantilla de ADR',
     existsSync(join(d, 'docs/architecture/adr/_TEMPLATE.md')) &&
     !existsSync(join(d, 'docs/architecture/adr/ADR-0000-plantilla.md')));
-  comprueba('el CI instalado es universal y no prueba la plantilla', (() => {
-    const ci = leer(join(d, '.github/workflows/sdd-gates.yml')) || '';
-    return !!ci && !/npm ci|test-install\.mjs|npm run/.test(ci);
-  })());
+  comprueba('el CI instalado es universal y no prueba la plantilla', workflow_supply_chain(d));
 
   // Lo que NO debe viajar: el historial de la plantilla
   comprueba('NO copia el contenido del README de la plantilla',
@@ -351,6 +449,18 @@ console.log('\n1 · init sobre un directorio vacío');
     multi.status === 0 && deteccionMulti?.stacks?.includes('node') && deteccionMulti?.stacks?.includes('python') &&
     JSON.parse(leer(join(d, '.sdd/checks.json'))).unconfigured.includes('test'));
 
+  const sinAuditoriaInventada = nuevoDestino();
+  writeFileSync(join(sinAuditoriaInventada, 'package.json'), '{"name":"yarn-app"}\n', 'utf8');
+  writeFileSync(join(sinAuditoriaInventada, 'yarn.lock'), '# lockfile v1\n', 'utf8');
+  writeFileSync(join(sinAuditoriaInventada, 'Cargo.toml'), '[package]\nname="rust-app"\nversion="0.1.0"\n', 'utf8');
+  sdd(sinAuditoriaInventada, 'init');
+  const detectSinHerramienta = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'detect', '--json'], { cwd: sinAuditoriaInventada, encoding: 'utf8' });
+  const sinHerramienta = JSON.parse(detectSinHerramienta.stdout || '{}');
+  comprueba('detect no inventa yarn audit ni cargo audit sin herramienta declarada',
+    detectSinHerramienta.status === 0 &&
+    !Object.values(sinHerramienta.suggestions || {}).some((s) => /yarn audit|cargo audit/.test(s.command || '')));
+
   const inventory = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'inventory', '--json'], { cwd: d, encoding: 'utf8' });
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
@@ -399,7 +509,7 @@ console.log('\n1 · init sobre un directorio vacío');
   const checksInstalados = JSON.parse(leer(join(d, '.sdd/checks.json')));
   comprueba('checks.json nace sin comandos de stack y con el vocabulario ampliado',
     Object.keys(checksInstalados.checks).length === 1 && checksInstalados.checks.sdd &&
-    ['coverage', 'e2e', 'smells', 'a11y', 'deps-audit', 'docs'].every((g) => checksInstalados.unconfigured.includes(g)));
+    ['coverage', 'e2e', 'smells', 'a11y', 'deps-audit', 'docs', 'security'].every((g) => checksInstalados.unconfigured.includes(g)));
 
   const rapidos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--fast', '--json'], { cwd: d, encoding: 'utf8' });
   const lentos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow', '--json'], { cwd: d, encoding: 'utf8' });
@@ -409,7 +519,12 @@ console.log('\n1 · init sobre un directorio vacío');
   try { salidaLentos = JSON.parse((lentos.stdout || '').trim().split('\n').pop() || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('run --fast y --slow reparten los gates por velocidad',
     salidaRapidos?.results?.some((r) => r.id === 'sdd') === true &&
-    salidaLentos?.results?.length === 0 && salidaLentos?.skipped?.includes('sdd'));
+    salidaLentos?.results?.length === 0 && salidaLentos?.skipped?.includes('sdd') &&
+    salidaLentos?.status === 'unconfigured' && salidaLentos?.unconfigured?.includes('security'));
+  const lentosHumanos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: d, encoding: 'utf8' });
+  comprueba('cero gates lentos se declara NO EJECUTADO, nunca PASS',
+    lentosHumanos.status === 0 && /NO EJECUTADO/.test(lentosHumanos.stdout || '') &&
+    !/: PASS/.test(lentosHumanos.stdout || ''));
 
   const deuda = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'debt', '--json'], { cwd: d, encoding: 'utf8' });
   let salidaDeuda = null;
@@ -462,6 +577,311 @@ console.log('\n1 · init sobre un directorio vacío');
 }
 
 // ─── 1 ter · Codex registra ejecución directa sin inventar eventos de hook ───────────────────
+console.log('\n1 quinquies · gate de seguridad determinista');
+function gate_security_e_informe() {
+  const d = nuevoDestino();
+  writeFileSync(join(d, 'package.json'), JSON.stringify({
+    name: 'brownfield-security',
+    scripts: {
+      security: 'node -e "process.exit(7)"',
+      'security:scan': 'node -e "process.exit(8)"',
+      'test:security': 'node -e "process.exit(9)"',
+    },
+  }, null, 2), 'utf8');
+  sdd(d, 'init');
+
+  const detect = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'detect', '--json'], { cwd: d, encoding: 'utf8' });
+  let detectado = null;
+  try { detectado = JSON.parse(detect.stdout || 'null'); } catch { /* lo informa la aserción */ }
+  comprueba('detect propone security solo cuando existe y con precedencia estable',
+    detect.status === 0 && detectado?.suggestions?.security?.command === 'npm run security' &&
+    detectado?.suggestions?.security?.required === true && detectado?.suggestions?.security?.speed === 'slow');
+
+  const configured = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'configure', '--accept-detected', '--json'], { cwd: d, encoding: 'utf8' });
+  const checks = JSON.parse(leer(join(d, '.sdd/checks.json')) || '{}');
+  comprueba('configure activa el gate security real como lento y obligatorio',
+    configured.status === 0 && checks.checks?.security?.required === true && checks.checks?.security?.speed === 'slow' &&
+    !checks.unconfigured?.includes('security'));
+  const slow = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow', '--json'], { cwd: d, encoding: 'utf8' });
+  comprueba('run --slow ejecuta security y propaga su fallo',
+    slow.status === 1 && /"id":"security"/.test((slow.stdout || '').replace(/\s/g, '')));
+
+  const specDir = join(d, 'docs/specs/901-security-report');
+  mkdirSync(specDir, { recursive: true });
+  writeFileSync(join(specDir, 'spec.md'), `# Spec
+| Estado | aprobada |
+|---|---|
+| Impacto de seguridad | sensible |
+| RF-01 | El sistema DEBE verificar el gate. | M | 1 |
+### CA-01 · Gate bloqueante
+`, 'utf8');
+  writeFileSync(join(specDir, 'plan.md'), `# Plan
+| Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+| SEC-GATE-001 | v5.0.0-1.1.1 | A02:2025 | sí | Validar informe estructurado | T-901-01 | tests/security.test.mjs::report | evidence.md#SEC-GATE-001 |
+`, 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+### T-901-01 · Validar informe
+- **Estado**: pendiente
+- **Cubre**: RF-01, CA-01
+- **Controles de seguridad**: SEC-GATE-001
+- **Test que la define**: tests/security.test.mjs::report
+`, 'utf8');
+  writeFileSync(join(specDir, 'test-plan.md'), `# Plan de pruebas
+| SEC-GATE-001 | CA-01 | tests/security.test.mjs::report | informe con ALTO abierto bloquea |
+`, 'utf8');
+  mkdirSync(join(d, 'tests'), { recursive: true });
+  writeFileSync(join(d, 'tests/security.test.mjs'), 'export function report() { return "PASS"; }\n', 'utf8');
+  writeFileSync(join(specDir, 'evidence.md'), `# Evidencia
+| Estado | GO |
+|---|---|
+**Informe de seguridad**: \`docs/security/reports/2026-08-11-901-security-report.md\`
+## Controles de seguridad ejecutados
+| SEC-GATE-001 | T-901-01 | declared-direct | tests/security.test.mjs::report | verde |
+## 3. Controles NO ejecutados
+| Control | Motivo | Riesgo | Dueño | Paso |
+|---|---|---|---|---|
+| ninguno | todos ejecutados | ninguno | equipo | ninguno |
+`, 'utf8');
+  const qualityReport = join(d, 'docs/quality/reports/2026-08-11-901-security-report.md');
+  writeFileSync(qualityReport, '# Calidad\nPASS\n', 'utf8');
+  const securityReport = join(d, 'docs/security/reports/2026-08-11-901-security-report.md');
+  const informe = ({
+    high = 0, medium = 0, verdict = 'PASS', acceptedRisks = [], controlsNotExecuted = [],
+    spec = '901-security-report', scope = 'diff', schemaVersion = 1,
+    standards = { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
+    controlsEvaluated = ['SEC-GATE-001'], openFindings = null,
+  } = {}) => `# Informe de seguridad
+<!-- sdd-security-report:v1 -->
+\`\`\`json
+${JSON.stringify({
+  schemaVersion,
+  spec,
+  standards,
+  scope,
+  controlsEvaluated,
+  openFindings: openFindings || { critical: 0, high, medium, low: 0 },
+  verdict,
+  acceptedRisks,
+  controlsNotExecuted,
+}, null, 2)}
+\`\`\`
+`;
+  writeFileSync(securityReport, informe({ high: 1 }), 'utf8');
+  const altoAbierto = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('GO se bloquea ante un ALTO abierto aunque el informe diga PASS',
+    altoAbierto.status === 1 && /security|seguridad|ALTO|high|informe/i.test(altoAbierto.stdout || ''));
+
+  writeFileSync(securityReport, informe(), 'utf8');
+  const tareaPendiente = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('GO se bloquea mientras una tarea de seguridad siga pendiente',
+    tareaPendiente.status === 1 && /tarea.*no está hecha|seguridad\/trazabilidad/i.test(tareaPendiente.stdout || ''));
+  writeFileSync(join(specDir, 'tasks.md'), (leer(join(specDir, 'tasks.md')) || '')
+    .replace('- **Estado**: pendiente', '- **Estado**: hecho'), 'utf8');
+  const valido = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('informe estructurado válido permite verificar una spec sensible',
+    valido.status === 0, (valido.stdout || '').slice(-260));
+
+  const checksValidos = leer(join(d, '.sdd/checks.json')) || '';
+  const checksDesactivados = JSON.parse(checksValidos);
+  checksDesactivados.checks.security.enabled = false;
+  writeFileSync(join(d, '.sdd/checks.json'), `${JSON.stringify(checksDesactivados, null, 2)}\n`, 'utf8');
+  const gateDesactivado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un gate security desactivado no satisface GO',
+    gateDesactivado.status === 1 && /gate security configurado|required|slow/i.test(gateDesactivado.stdout || ''));
+  writeFileSync(join(d, '.sdd/checks.json'), checksValidos, 'utf8');
+
+  const evidenceValida = leer(join(specDir, 'evidence.md')) || '';
+  writeFileSync(join(specDir, 'evidence.md'), evidenceValida.replace('| verde |', '| no ejecutado |'), 'utf8');
+  const resultadoNoEjecutado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('evidence no acepta no ejecutado como resultado verde',
+    resultadoNoEjecutado.status === 1 && /resultado verde ejecutado|trazabilidad/i.test(resultadoNoEjecutado.stdout || ''));
+  writeFileSync(join(specDir, 'evidence.md'), evidenceValida, 'utf8');
+
+  writeFileSync(join(specDir, 'evidence.md'), evidenceValida.replace('| Estado | GO |', '| Estado | NO-GO |'), 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), (leer(join(specDir, 'tasks.md')) || '')
+    .replace('tests/security.test.mjs::report', 'tests/security.test.mjs::otro'), 'utf8');
+  const cadenaAntesDeGo = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('la cadena exacta control-tarea-test-evidencia se exige antes de GO',
+    cadenaAntesDeGo.status === 1 && /seguridad\/trazabilidad|no enlaza/i.test(cadenaAntesDeGo.stdout || ''));
+  writeFileSync(join(specDir, 'tasks.md'), (leer(join(specDir, 'tasks.md')) || '')
+    .replace('tests/security.test.mjs::otro', 'tests/security.test.mjs::report'), 'utf8');
+  writeFileSync(join(specDir, 'evidence.md'), evidenceValida, 'utf8');
+
+  const specValida = leer(join(specDir, 'spec.md')) || '';
+  writeFileSync(join(specDir, 'spec.md'), specValida.replace(/^\| Impacto de seguridad[^\n]*\n/m, ''), 'utf8');
+  const sinImpacto = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('una spec posterior al umbral no puede omitir Impacto de seguridad',
+    sinImpacto.status === 1 && /Impacto de seguridad|seguridad\/impacto/i.test(sinImpacto.stdout || ''));
+  writeFileSync(join(specDir, 'spec.md'), specValida, 'utf8');
+
+  const planValido = leer(join(specDir, 'plan.md')) || '';
+  writeFileSync(join(specDir, 'plan.md'), planValido.replace('evidence.md#SEC-GATE-001', 'pendiente'), 'utf8');
+  const matrizIncompleta = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('una matriz sensible con evidencia pendiente bloquea',
+    matrizIncompleta.status === 1 && /matriz|evidencia|seguridad/i.test(matrizIncompleta.stdout || ''));
+  writeFileSync(join(specDir, 'plan.md'), planValido, 'utf8');
+
+  writeFileSync(securityReport, '# Informe\n<!-- sdd-security-report:v1 -->\n```json\n{ roto }\n```\n', 'utf8');
+  const jsonRoto = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un informe con JSON inválido bloquea GO',
+    jsonRoto.status === 1 && /JSON.*inválido|informe/i.test(jsonRoto.stdout || ''));
+
+  const rechazaInforme = (titulo, opciones, patron) => {
+    writeFileSync(securityReport, informe(opciones), 'utf8');
+    const salida = spawnSync(process.execPath,
+      ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+    comprueba(titulo, salida.status === 1 && patron.test(salida.stdout || ''), (salida.stdout || '').slice(-180));
+  };
+  rechazaInforme('schemaVersion del informe es vinculante', { schemaVersion: 2 }, /schemaVersion|informe/i);
+  rechazaInforme('estándar y nivel inválidos bloquean',
+    { standards: { owaspTop10: '2021', asvs: '4.0.3', level: 'L4' } }, /estándar|estandar|ASVS|nivel/i);
+  rechazaInforme('controlsEvaluated debe cubrir el control aplicable',
+    { controlsEvaluated: [] }, /no evaluados|controlsEvaluated|informe/i);
+  rechazaInforme('controlsEvaluated no admite duplicados',
+    { controlsEvaluated: ['SEC-GATE-001', 'SEC-GATE-001'] }, /duplicados|controlsEvaluated/i);
+  rechazaInforme('controlsEvaluated debe ser un array',
+    { controlsEvaluated: 'SEC-GATE-001' }, /array|controlsEvaluated/i);
+  rechazaInforme('controlsNotExecuted debe ser un array',
+    { controlsNotExecuted: 'ninguno' }, /array|controlsNotExecuted/i);
+  rechazaInforme('openFindings exige enteros no negativos',
+    { openFindings: { critical: 0, high: -1, medium: 0.5, low: 0 } }, /entero no negativo|openFindings/i);
+  rechazaInforme('un veredicto fuera del vocabulario bloquea', { verdict: 'UNKNOWN' }, /veredicto inválido|veredicto/i);
+  rechazaInforme('PASS no admite hallazgos MEDIO abiertos', { medium: 1 }, /PASS.*MEDIO|veredicto/i);
+  rechazaInforme('CONDITIONAL exige al menos un MEDIO real',
+    { verdict: 'CONDITIONAL', acceptedRisks: [] }, /CONDITIONAL|riesgo|MEDIO/i);
+
+  writeFileSync(securityReport, informe({ verdict: 'BLOCKED' }), 'utf8');
+  const bloqueado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('BLOCKED bloquea incluso con conteos abiertos a cero',
+    bloqueado.status === 1 && /BLOCKED|veredicto/i.test(bloqueado.stdout || ''));
+
+  writeFileSync(securityReport, informe({ controlsNotExecuted: [{ control: 'SEC-GATE-001' }] }), 'utf8');
+  const noEjecutado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un control no ejecutado incompleto falla esquema y bloquea GO',
+    noEjecutado.status === 1 && /reason.*risk.*owner.*nextStep|cada control no ejecutado/i.test(noEjecutado.stdout || '') &&
+    /no ejecutados|veredicto/i.test(noEjecutado.stdout || ''));
+  const controlNoEjecutadoCompleto = [{
+    control: 'SEC-GATE-001', reason: 'runner no disponible', risk: 'cambio sensible sin validar',
+    owner: 'security-owner', nextStep: 'habilitar runner antes de release',
+  }];
+  writeFileSync(securityReport, informe({ controlsNotExecuted: controlNoEjecutadoCompleto }), 'utf8');
+  const noEjecutadoCompleto = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un control no ejecutado completo sigue bloqueando sin falso error de esquema',
+    noEjecutadoCompleto.status === 1 && /controles de seguridad no ejecutados|veredicto/i.test(noEjecutadoCompleto.stdout || '') &&
+    !/cada control no ejecutado necesita/i.test(noEjecutadoCompleto.stdout || ''));
+
+  writeFileSync(securityReport, informe({ scope: 'TBD' }), 'utf8');
+  const alcancePendiente = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('los placeholders no cuentan como alcance material',
+    alcancePendiente.status === 1 && /alcance|pendiente|informe/i.test(alcancePendiente.stdout || ''));
+  writeFileSync(securityReport, informe({ scope: 'tbd' }), 'utf8');
+  const alcancePendienteMinusculas = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('tbd minúsculo tampoco cuenta como alcance material',
+    alcancePendienteMinusculas.status === 1 && /alcance|pendiente|informe/i.test(alcancePendienteMinusculas.stdout || ''));
+
+  writeFileSync(securityReport, informe({ medium: 1, verdict: 'CONDITIONAL', acceptedRisks: [{ id: 'RISK-001' }] }), 'utf8');
+  const riesgoIncompleto = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un MEDIO aceptado sin owner, fecha y decisión bloquea',
+    riesgoIncompleto.status === 1 && /riesgo|owner|reviewDate|decisionRef/i.test(riesgoIncompleto.stdout || ''));
+
+  const riesgoCompleto = [{
+    id: 'RISK-001', owner: 'security-owner', justification: 'Impacto acotado y mitigación temporal activa',
+    reviewDate: '2026-09-30', decisionRef: 'DEC-2026-08-11-SEC-001',
+  }];
+  writeFileSync(securityReport, informe({ medium: 1, verdict: 'CONDITIONAL', acceptedRisks: riesgoCompleto }), 'utf8');
+  const decisionInventada = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('una decisionRef inexistente no acepta un riesgo',
+    decisionInventada.status === 1 && /riesgo|decisionRef|decisi/i.test(decisionInventada.stdout || ''));
+
+  const fechaImposible = [{ ...riesgoCompleto[0], reviewDate: '2026-02-30' }];
+  writeFileSync(securityReport, informe({ medium: 1, verdict: 'CONDITIONAL', acceptedRisks: fechaImposible }), 'utf8');
+  const fechaInvalida = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('reviewDate debe ser una fecha calendario válida',
+    fechaInvalida.status === 1 && /riesgo|reviewDate/i.test(fechaInvalida.stdout || ''));
+
+  writeFileSync(join(d, 'docs/bitacora/DECISIONS.md'),
+    `${leer(join(d, 'docs/bitacora/DECISIONS.md')) || ''}\nDEC-2026-08-11-SEC-001 · Riesgo temporal aceptado por security-owner.\n`, 'utf8');
+  const riesgosDuplicados = [riesgoCompleto[0], { ...riesgoCompleto[0] }];
+  writeFileSync(securityReport, informe({ medium: 2, verdict: 'CONDITIONAL', acceptedRisks: riesgosDuplicados }), 'utf8');
+  const idsDuplicados = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('los riesgos aceptados tienen IDs únicos y cardinalidad exacta',
+    idsDuplicados.status === 1 && /IDs.*únicos|riesgo/i.test(idsDuplicados.stdout || ''));
+  writeFileSync(securityReport, `${informe({ medium: 1, verdict: 'CONDITIONAL', acceptedRisks: riesgoCompleto })}\n[ALTO] Hallazgo histórico corregido.\n`, 'utf8');
+  const condicional = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un MEDIO materialmente aceptado pasa y un ALTO histórico corregido no bloquea',
+    condicional.status === 0, (condicional.stdout || '').slice(-220));
+
+  writeFileSync(join(d, 'tests/security.test.mjs'), 'export function otro() { return "PASS"; }\n', 'utf8');
+  const testInexistente = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('GO exige que la referencia ruta::caso exista realmente',
+    testInexistente.status === 1 && /no se resuelve el test|trazabilidad/i.test(testInexistente.stdout || ''));
+  writeFileSync(join(d, 'tests/security.test.mjs'), 'export function report() { return "PASS"; }\n', 'utf8');
+
+  const artefactosTraza = ['plan.md', 'tasks.md', 'test-plan.md', 'evidence.md'];
+  const contenidosTraza = Object.fromEntries(artefactosTraza.map((nombre) => [nombre, leer(join(specDir, nombre)) || '']));
+  for (const nombre of artefactosTraza)
+    writeFileSync(join(specDir, nombre), contenidosTraza[nombre]
+      .replaceAll('tests/security.test.mjs::report', '../fuera.test.mjs::report'), 'utf8');
+  const testTraversal = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('la referencia de test no puede escapar de la raíz del proyecto',
+    testTraversal.status === 1 && /no se resuelve el test|trazabilidad/i.test(testTraversal.stdout || ''));
+  for (const nombre of artefactosTraza)
+    writeFileSync(join(specDir, nombre), contenidosTraza[nombre], 'utf8');
+
+  rmSync(qualityReport, { force: true });
+  const sinCalidad = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('GO exige informe de calidad material',
+    sinCalidad.status === 1 && /informe de calidad|entrega\/informe/i.test(sinCalidad.stdout || ''));
+  writeFileSync(qualityReport, '# Calidad\nPASS\n', 'utf8');
+
+  rmSync(securityReport, { force: true });
+  const sinSeguridad = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('GO exige el informe de seguridad declarado',
+    sinSeguridad.status === 1 && /no existe|informe de seguridad|seguridad\/informe/i.test(sinSeguridad.stdout || ''));
+  writeFileSync(securityReport, informe(), 'utf8');
+
+  writeFileSync(securityReport, informe({ spec: 'otra-spec' }), 'utf8');
+  const specIncorrecta = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('un informe de otra spec no satisface la entrega actual',
+    specIncorrecta.status === 1 && /declara spec|otra-spec/i.test(specIncorrecta.stdout || ''));
+
+  writeFileSync(securityReport, informe(), 'utf8');
+
+  writeFileSync(join(specDir, 'evidence.md'), (leer(join(specDir, 'evidence.md')) || '')
+    .replace('docs/security/reports/2026-08-11-901-security-report.md', '../security/reports/2026-08-11-901-security-report.md'), 'utf8');
+  const traversal = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '901'], { cwd: d, encoding: 'utf8' });
+  comprueba('el informe se resuelve por ruta exacta y rechaza traversal',
+    traversal.status === 1 && /ruta|report|informe|security|seguridad/i.test(traversal.stdout || ''));
+}
+gate_security_e_informe();
+
 console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 {
   const d = nuevoDestino();
@@ -473,6 +893,7 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 
 | **Estado** | aprobada |
 |---|---|
+| **Impacto de seguridad** | no-sensible |
 
 | Id | Requisito | Prioridad | Esfuerzo |
 |---|---|---|---|
@@ -621,6 +1042,10 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
   writeFileSync(join(d, 'docs/specs/777-existente/spec.md'), SENTINELA, 'utf8');
   mkdirSync(join(d, 'docs/architecture/adr'), { recursive: true });
   writeFileSync(join(d, 'docs/architecture/adr/ADR-0042-existente.md'), SENTINELA, 'utf8');
+  mkdirSync(join(d, 'docs/security/reports'), { recursive: true });
+  writeFileSync(join(d, 'docs/security/AUTH-TOKENS.md'), `# Auth propia\n${SENTINELA}\n`, 'utf8');
+  writeFileSync(join(d, 'docs/security/SECURITY-CHECKLIST.md'), `# Checklist propia\n${SENTINELA}\n`, 'utf8');
+  writeFileSync(join(d, 'docs/security/reports/auditoria-existente.md'), SENTINELA, 'utf8');
   mkdirSync(join(d, 'docs/product'), { recursive: true });
   for (const nombre of ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md'])
     writeFileSync(join(d, 'docs/product', nombre), `# Producto existente\n${SENTINELA}\n`, 'utf8');
@@ -645,6 +1070,10 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
   comprueba('preserva specs y ADR brownfield',
     leer(join(d, 'docs/specs/777-existente/spec.md')) === SENTINELA &&
     leer(join(d, 'docs/architecture/adr/ADR-0042-existente.md')) === SENTINELA);
+  comprueba('preserva doctrina e informes de seguridad brownfield',
+    leer(join(d, 'docs/security/AUTH-TOKENS.md')).includes(SENTINELA) &&
+    leer(join(d, 'docs/security/SECURITY-CHECKLIST.md')).includes(SENTINELA) &&
+    leer(join(d, 'docs/security/reports/auditoria-existente.md')) === SENTINELA);
   comprueba('preserva íntegramente el baseline de producto brownfield',
     ['PRD.md', 'USE-CASES.md', 'FEATURE-MAP.md', 'SOURCES.md']
       .every((nombre) => leer(join(d, 'docs/product', nombre)).includes(SENTINELA)));
@@ -810,6 +1239,80 @@ console.log('\n4 ter · migración de estado de producto previo a v0.4.0');
     estricto.status === 0 && /legacy-pending/i.test(estricto.stdout || ''));
 }
 
+console.log('\n4 quater · migración conservadora de seguridad');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'brownfield');
+  mkdirSync(join(d, 'docs/specs/001-previa'), { recursive: true });
+  mkdirSync(join(d, 'docs/specs/007-previa'), { recursive: true });
+
+  const registroRuta = join(d, '.sdd/installed.json');
+  const anterior = JSON.parse(leer(registroRuta));
+  delete anterior.security;
+  anterior.version = '0.4.0';
+  writeFileSync(registroRuta, `${JSON.stringify(anterior, null, 2)}\n`, 'utf8');
+
+  const checksRuta = join(d, '.sdd/checks.json');
+  writeFileSync(checksRuta, `${JSON.stringify({
+    version: 1,
+    checks: {
+      sdd: { command: 'node scripts/check-sdd.mjs', required: true, speed: 'fast' },
+      custom: { command: 'node custom-check.mjs', required: false, speed: 'slow' },
+    },
+    unconfigured: ['test'],
+    extensionPropia: { sentinel: true },
+  }, null, 2)}\n`, 'utf8');
+
+  const actualizacion = sdd(d, 'update');
+  const migrado = JSON.parse(leer(registroRuta));
+  const checks = JSON.parse(leer(checksRuta));
+  comprueba('brownfield registra security-pending y empieza en la siguiente spec',
+    actualizacion.status === 0 && migrado.security?.status === 'legacy-pending' &&
+    migrado.security?.enforceFromSpec === '008' && migrado.security?.standards?.owaspTop10 === '2025' &&
+    migrado.security?.standards?.asvs === '5.0.0' && migrado.security?.standards?.level === 'L2');
+  comprueba('migrar checks añade solo security sin configurar y conserva extensiones',
+    checks.checks?.custom?.command === 'node custom-check.mjs' && checks.extensionPropia?.sentinel === true &&
+    checks.unconfigured.filter((id) => id === 'security').length === 1);
+
+  const repetida = sdd(d, 'update');
+  const checksRepetidos = JSON.parse(leer(checksRuta));
+  comprueba('la migración de security-pending es idempotente',
+    repetida.status === 0 && checksRepetidos.unconfigured.filter((id) => id === 'security').length === 1 &&
+    JSON.parse(leer(registroRuta)).security?.enforceFromSpec === '008');
+}
+
+{
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'brownfield');
+  const checksRuta = join(d, '.sdd/checks.json');
+  const propio = {
+    version: 1,
+    checks: {
+      sdd: { command: 'node scripts/check-sdd.mjs', required: true, speed: 'fast' },
+      'security:scan': { command: 'mi-scanner --fail-high', required: true, speed: 'slow' },
+    },
+    unconfigured: ['test'],
+  };
+  writeFileSync(checksRuta, `${JSON.stringify(propio, null, 2)}\n`, 'utf8');
+  const update = sdd(d, 'update');
+  const conservado = JSON.parse(leer(checksRuta));
+  comprueba('un gate security:* existente se conserva y no recibe pendiente duplicado',
+    update.status === 0 && conservado.checks?.['security:scan']?.command === 'mi-scanner --fail-high' &&
+    !conservado.unconfigured.includes('security'));
+}
+
+{
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'brownfield');
+  const checksRuta = join(d, '.sdd/checks.json');
+  const invalido = '{ "checks": { "sdd": ';
+  writeFileSync(checksRuta, invalido, 'utf8');
+  const update = sdd(d, 'update');
+  comprueba('checks JSON inválido se preserva y la propuesta queda en conflicts',
+    update.status === 0 && leer(checksRuta) === invalido &&
+    existsSync(join(d, `.sdd/conflicts/${VERSION}/.sdd/checks.json`)));
+}
+
 console.log('\n4 bis · allowlist de distribución npm');
 {
   const paquete = JSON.parse(leer(join(ORIGEN, 'package.json')) || '{}');
@@ -831,6 +1334,7 @@ console.log('\n4 bis · allowlist de distribución npm');
     'docs/ops/OBSERVABILITY.md', 'docs/ops/runbooks/_TEMPLATE.md',
     'docs/design/USABILITY-CHECKLIST.md',
     'docs/architecture/PATTERNS.md', 'docs/sdd/OPERATING-MODEL.md',
+    'docs/security/AUTH-TOKENS.md', 'docs/security/SECURITY-CHECKLIST.md',
     '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push',
     '.agents/skills/observability/SKILL.md', '.claude/skills/observability/SKILL.md',
     'scripts/sdd-project.mjs', 'scripts/check-sdd.mjs', 'scripts/scan-secrets.mjs',

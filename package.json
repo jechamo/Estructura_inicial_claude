@@ -1,6 +1,6 @@
 {
   "name": "sdd-agents",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Ecosistema portable de agentes SDD con intake universal de PRD y diseno, TDD, hooks y gates deterministas para Claude, Cursor, VS Code, Antigravity y Codex.",
   "bin": {
     "sdd": "scripts/install.mjs"
@@ -64,6 +64,7 @@
     "docs/research/baseline-2026-08-02.md",
     "docs/sdd/OPERATING-MODEL.md",
     "docs/security/_TEMPLATE.threat-model.md",
+    "docs/security/AUTH-TOKENS.md",
     "docs/security/MCP-SECURITY.md",
     "docs/security/SECURITY-CHECKLIST.md",
     "docs/specs/_TEMPLATE",

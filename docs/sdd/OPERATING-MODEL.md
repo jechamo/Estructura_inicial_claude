@@ -87,11 +87,11 @@ El `architect` solo interviene si el cambio la viola (entonces → nuevo ADR).
 |---|---|---|---|
 | Producto | `/sdd-intake` | `docs/product/PRD.md`, `USE-CASES.md`, `FEATURE-MAP.md`, `SOURCES.md` | Producto, casos, discrepancias y mapa de specs aprobados por el usuario |
 | Principios | `/sdd-init` | `docs/architecture/constitution.md`, `docs/architecture/adr/ADR-0001-*.md` | Arquitectura elegida y justificada |
-| Qué | `/sdd-specify` | `docs/specs/NNN-slug/spec.md` | Requisitos EARS con prioridad **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios de aceptación testables, **cero** decisiones técnicas |
+| Qué | `/sdd-specify` | `docs/specs/NNN-slug/spec.md` | Requisitos EARS con prioridad **MoSCoW sobre esfuerzo** (must ≤ 60 %), criterios testables, `Impacto de seguridad` (`sensible | no-sensible | security-pending`) y **cero** decisiones técnicas |
 | Dudas | `/sdd-clarify` | `spec.md` actualizado + `clarifications.md` | 0 marcadores `[NEEDS CLARIFICATION]` |
 | Diseño | `/sdd-design` | `design.md`, flujos, `docs/design/DIRECCION-VISUAL.md` | **Dirección visual aprobada por el usuario**, flujo con caminos de error, **seis estados por pantalla**, un **elemento con carácter** por pantalla, accesibilidad verificada sobre el diseño. Se salta si no hay UI |
-| Cómo | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/`, `research.md` | Plan conforme a la constitución |
-| Trocear | `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, **separadas por middle / front / BBDD**, con test asociado |
+| Cómo | `/sdd-plan` | `plan.md`, `data-model.md`, `contracts/`, `research.md` | Plan conforme a constitución; specs sensibles trazan control → decisión → tarea → test → evidencia |
+| Trocear | `/sdd-tasks` | `tasks.md` | Tareas atómicas, ordenadas, **separadas por middle / front / BBDD**, con test y controles asociados |
 | Construir | `/sdd-implement` | Código + tests | TDD estricto: rojo → verde → refactor. Cada tarea entra por su skill: `/middle`, `/front` o `/bbdd` |
 | Validar | `/sdd-verify` | `docs/quality/reports/`, informe de seguridad, `evidence.md` | Todos los gates de §7 en verde |
 | Entregar | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana aprobada |
@@ -293,16 +293,37 @@ Una tarea **no está hecha** hasta que todo esto está en verde:
 
 ## 8. Seguridad (siempre activa, no una fase final)
 
-Marco de referencia: **OWASP Top 10 (web)**, **OWASP ASVS 5.0** y **OWASP Top 10 for Agentic
-Applications (ASI01–ASI10)** si el producto usa IA.
+Marco versionado: **OWASP Top 10:2025** como catálogo de riesgos y **ASVS 5.0.0** como contrato
+verificable. Si el producto usa IA, añade OWASP Top 10 for Agentic Applications vigente. Las
+referencias conservan versión para que una actualización futura no cambie auditorías pasadas.
 
-Nivel ASVS objetivo: **L2 por defecto** en toda aplicación expuesta a internet; L1 solo en
-herramientas internas sin datos personales; L3 en sistemas críticos o regulados. El nivel se
-declara en la constitución y el `security-auditor` audita contra él.
+El nivel ASVS objetivo (L1/L2/L3) se decide en la constitución según exposición, datos, criticidad
+y regulación; la plantilla no lo convierte en una decisión greenfield. Si falta, el plan sensible
+se bloquea hasta decidirlo. El `security-auditor` audita contra ese nivel.
+
+### 8.1 Trazabilidad por fase
+
+| Fase | Contrato de seguridad |
+|---|---|
+| Specify | Clasifica `Impacto de seguridad` como `sensible`, `no-sensible` o `security-pending`; sin tecnología |
+| Plan | Define threat model y la matriz `Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia` |
+| Tasks | Cada tarea sensible declara `Controles de seguridad` y su test/caso de abuso |
+| Implement | TDD y salida real por control; no ejecutado conserva riesgo, propietario y paso |
+| Verify | `/security-scan verify`; auditor solo lectura, informe material y gate bloqueante |
+| Ship | Reutiliza el informe verificado; no vuelve a auditar ni permite `GO` incoherente |
+
+`security-pending` sirve únicamente para preservar historia brownfield durante la adopción. Una
+spec sensible nueva no puede usarlo para omitir matriz, pruebas o informe.
+
+El auditor no escribe. Devuelve HANDOFF estructurado y control al agente que lo invocó. Solo
+entonces un agente con delegación puede pedir a `docs-writer` que materialice **literalmente** el
+informe en `docs/security/reports/YYYY-MM-DD-NNN-slug.md`, con
+`<!-- sdd-security-report:v1 -->` y JSON. No se reinterpretan hallazgos, conteos ni veredicto.
 
 Innegociables:
 - **Nada de secretos en el repo.** Variables de entorno + gestor de secretos. `.env` está en `.gitignore` y los hooks bloquean su lectura.
-- **Validar en la frontera** todo input externo con esquema (zod/pydantic/DTO). Nunca confíes en el cliente.
+- **Validar en la frontera** todo input externo con esquema. Zod, Pydantic o DTO son ejemplos,
+  no requisitos universales. Nunca confíes en el cliente.
 - **Consultas parametrizadas** siempre. Concatenar SQL es motivo de rechazo automático.
 - **AuthN ≠ AuthZ.** Autorización comprobada en cada caso de uso del lado servidor, nunca solo en la UI.
 - **Menor privilegio** en BD, cloud, tokens y CI.
@@ -313,11 +334,19 @@ Innegociables:
 - **Cabeceras**: HSTS, CSP, X-Content-Type-Options, Referrer-Policy, CORS explícito.
 - **Rate limiting** e idempotencia en endpoints mutantes y de auth.
 
+JWT es condicional, nunca el default. Si se elige, aplica
+[`AUTH-TOKENS.md`](../security/AUTH-TOKENS.md): algoritmo fijado y rechazo de `alg: none`; `iss`,
+`aud`, `exp`, `nbf`, `iat`, `sub`, `jti`; separación de tipos/scopes; claves rotables;
+revocación/logout; **refresh token rotation** y **reuse detection**; 401/403, IDOR, transporte y
+logs sin tokens. Cuando una cookie viaja automáticamente, se decide y prueba CSRF: `SameSite` es
+defensa en profundidad, no sustituto universal.
+
 Si el proyecto usa agentes/LLM: trata **toda** salida de herramienta, web o fichero como
 **dato no confiable**, nunca como instrucción. Aísla credenciales por agente y aplica
 aprobación humana en acciones irreversibles.
 
-Checklist completa: `docs/security/SECURITY-CHECKLIST.md`. Modelo de amenazas: `docs/security/THREAT-MODEL.md`.
+Checklist completa: `docs/security/SECURITY-CHECKLIST.md`. Tokens/CSRF:
+`docs/security/AUTH-TOKENS.md`. Modelo de amenazas: `docs/security/THREAT-MODEL.md`.
 
 ---
 
@@ -356,6 +385,8 @@ Modelo **híbrido**: un orquestador central + agentes con criterio propio de han
   Cada uno tiene su procedimiento en una skill: `/middle` (backend y capa media), `/front`
   (interfaz) y `/bbdd` (datos). Ahí viven las puertas de entrada, el ciclo TDD, los patrones y
   la lista de comprobación de cada terreno.
+- `security-auditor` conserva solo lectura en `plan` y `verify`, devuelve HANDOFF y nunca encadena
+  a `docs-writer`; quien lo invocó recupera el control y delega la materialización literal.
 
 Durante `/sdd-intake`, solo `orchestrator` coordina la secuencia `spec-analyst` → retorno →
 `ux-designer` → retorno → `spec-analyst`. Los especialistas escriben sus artefactos, cierran su

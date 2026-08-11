@@ -49,6 +49,11 @@ Secciones obligatorias:
    Ver paso 2 bis para el reparto.
 6. **Requisitos no funcionales** — rendimiento (p95), disponibilidad, escala, seguridad y
    privacidad, accesibilidad (WCAG 2.2 AA), i18n, observabilidad, coste, retención de datos.
+   Declara `Impacto de seguridad` con uno de estos valores exactos:
+   `sensible | no-sensible | security-pending`. Es `sensible` si toca autenticación,
+   autorización, PII, pagos, ficheros, administración, multi-tenant, integraciones o agentes/LLM.
+   `security-pending` solo preserva contexto brownfield histórico; nunca exime una spec sensible
+   nueva. En esta fase se declara impacto y comportamiento, no librerías ni controles técnicos.
 7. **Criterios de aceptación** — numerados `CA-01`…, en Gherkin, ligados a su `RF`.
 8. **Casos límite** — vacío, extremos, concurrencia, sin permisos, sistema externo caído,
    datos corruptos, reintentos.
@@ -137,6 +142,8 @@ donde está el trabajo real.
 - [ ] Cada `CA` es observable y automatizable
 - [ ] Hay sección de casos límite no vacía
 - [ ] Hay requisitos no funcionales (no los olvides: es el error más común)
+- [ ] `Impacto de seguridad` usa `sensible`, `no-sensible` o `security-pending`, con señales
+      trazadas a RF/CA; no se oculta una spec sensible nueva como `security-pending`
 - [ ] Hay "fuera de alcance"
 - [ ] No hay ninguna decisión técnica
 - [ ] Los marcadores `[NEEDS CLARIFICATION]` están donde deben
@@ -150,6 +157,7 @@ donde está el trabajo real.
 - Artefacto: docs/specs/NNN-slug/spec.md
 - Corte vertical y cobertura de producto: <FEATURE-MAP · OBJ-* · PRD-RF-* · UC-*>
 - Requisitos: <n> RF · <n> RNF · <n> CA
+- Impacto de seguridad: <sensible/no-sensible/security-pending> · señales: <RF/CA>
 - Reparto MoSCoW: must <n>% · should <n>% · could <n>% · won't <n> requisitos
 - Preguntas hechas al usuario: <n> · confirmadas: <n>
 - Marcadores pendientes: <n>

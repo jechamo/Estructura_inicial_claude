@@ -7,12 +7,31 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+## [0.5.0] — 2026-08-11
+
 ### Security
+- **OWASP Top 10:2025 y ASVS 5.0.0 ya forman parte verificable del circuito**, desde la
+  clasificación de cada spec hasta tarea, caso de abuso, evidencia e informe final.
+- **Contrato portable de JWT, sesiones y CSRF.** JWT no se activa ni se impone: si el proyecto lo
+  elige, debe fijar algoritmo, validar claims y tipos, rotar/revocar credenciales, detectar reuse
+  de refresh tokens y probar los casos adversos. `SameSite` cuenta como defensa en profundidad,
+  no como sustituto universal de CSRF.
+- **Un informe vacío ya no puede fingir un GO.** El gate valida un bloque JSON versionado,
+  estándar, nivel, alcance, controles, conteos y veredicto. CRÍTICO/ALTO bloquea; MEDIO requiere
+  aceptación con responsable, decisión y fecha de revisión.
+- **El auditor sigue siendo de solo lectura.** Devuelve un HANDOFF estructurado y `docs-writer`
+  materializa literalmente el informe; ningún adaptador amplía sus permisos para que pueda
+  corregir o certificarse a sí mismo.
+- **CI reproducible y honesto.** Las actions instaladas están fijadas por SHA, no conservan
+  credenciales y no presentan una auditoría npm/pnpm/yarn como superada si el proyecto no ha
+  configurado un gate real.
+
 - **Escaneo de secretos en CI, que era una promesa sin cumplir.** La Definition of Done decía que
   este control bloqueaba el merge; en realidad solo existía como hook local, así que no protegía
   nada en hosts sin hooks ni en un push desde la web de GitHub. Ahora se ejecuta en CI con los
   mismos patrones que el hook, compartidos desde un solo sitio para que no puedan divergir.
-- **Auditoría de dependencias en CI**, cuando hay lockfile. Misma historia: prometida, ausente.
+- **Auditoría de dependencias en CI**, cuando el proyecto acepta el comando real detectado desde
+  su lockfile. Sin gate configurado queda visible como no ejecutada; nunca como verde.
 
 ### Added
 - **Los gates se ejecutan antes de commitear, sin que tengas que acordarte.** En proyectos Node el
@@ -58,7 +77,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   críticos o permisos se verifica al 100 %; lo que ve el usuario, al 80 %; los tipos y constantes
   quedan fuera. **Y lo que nadie clasifique se exige al 100 %**: un número único sobre todo el
   repositorio dejaba pasar en verde justo lo que hunde un producto.
-- `.sdd/checks.json` reconoce doce gates —cobertura, E2E, olores, accesibilidad, dependencias,
+- `.sdd/checks.json` reconoce trece gates configurables —cobertura, E2E, olores, accesibilidad,
   documentación…— y cada uno declara si es rápido o lento. Sigue naciendo sin ningún comando: la
   plantilla no presupone tu stack.
 - `sdd-project detect` propone esos gates solo cuando encuentra evidencia real en el repositorio.

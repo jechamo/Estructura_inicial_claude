@@ -9,6 +9,31 @@
 
 ---
 
+## 2026-08-11 · Seguridad trazable con auditor de solo lectura e informe verificable
+
+- **Tipo**: decisión estructural y corrección de gate
+- **Contexto**: el circuito citaba OWASP/ASVS y exigía un informe al entregar, pero JWT solo
+  cubría firma/algoritmo/expiración y `check-sdd` aceptaba cualquier fichero cuyo nombre
+  contuviera la spec. Existir no demostraba ni alcance, ni controles, ni veredicto.
+- **Decisión / hecho**: se fija OWASP Top 10:2025 como catálogo y ASVS 5.0.0 como contrato
+  versionado. Cada spec declara `Impacto de seguridad`; si es sensible, el plan mantiene la
+  cadena `SEC-* → decisión → tarea → test → evidencia`. El informe contiene un bloque
+  `sdd-security-report:v1` parseable. CRÍTICO/ALTO bloquea y MEDIO exige aceptación material.
+- **Aislamiento**: `security-auditor` no obtiene escritura. Devuelve un HANDOFF estructurado;
+  `docs-writer` lo materializa literalmente y devuelve el control. Así quien audita no corrige
+  ni reinterpreta sus propios hallazgos.
+- **JWT y CSRF**: JWT permanece condicional. Si se elige, se validan algoritmo/claims/tipo,
+  ciclo de claves y tokens, revocación, rotación/reuse y pruebas negativas. Para credenciales que
+  el navegador adjunta automáticamente se decide una defensa CSRF; `SameSite` es profundidad,
+  no sustituto universal.
+- **Brownfield**: `.sdd/installed.json.security.enforceFromSpec` preserva la historia y empieza a
+  exigir el contrato en la siguiente spec. La migración añade `security` como no configurado sin
+  sobrescribir comandos propios; si el JSON es inválido, conserva el original y genera conflicto.
+- **Alternativas descartadas**: imponer Helmet/Zod/JWT/npm a todos los stacks; inferir sensibilidad
+  por palabras; dar escritura al auditor; reinterpretar todas las specs históricas; considerar
+  un fichero vacío o un `echo` como auditoría superada.
+- **Referencias**: spec `007-seguridad-jwt-owasp-2025` · `docs/security/AUTH-TOKENS.md`
+
 ## 2026-08-09 · Gates antes de commit y push, y un hook que no era ejecutable
 
 - **Tipo**: decisión y corrección de defecto

@@ -16,7 +16,7 @@ docs/
 ├── design/             Dirección visual, revisión de intake, flujos, wireframes, design system
 ├── quality/            Estrategia de test, Definition of Done, informes, deuda
 │   └── reports/        Informes de /sdd-verify
-├── security/           Checklist OWASP, modelo de amenazas, seguridad MCP
+├── security/           Checklist OWASP, contrato auth/JWT/CSRF, amenazas y seguridad MCP
 │   └── reports/        Informes de /security-scan
 ├── ops/                Runbooks, observabilidad, despliegue
 │   └── runbooks/
@@ -50,6 +50,7 @@ Estos **obligan**, no son sugerencias:
 | [`quality/TEST-STRATEGY.md`](./quality/TEST-STRATEGY.md) | Cómo se prueba |
 | [`design/DIRECCION-VISUAL.md`](./design/DIRECCION-VISUAL.md) | Referencias, personalidad, tipografía, color, densidad y movimiento. **Sin aprobar, `/sdd-design` no dibuja** |
 | [`security/SECURITY-CHECKLIST.md`](./security/SECURITY-CHECKLIST.md) | Qué se audita |
+| [`security/AUTH-TOKENS.md`](./security/AUTH-TOKENS.md) | Decidir y verificar sesiones, JWT, cookies y CSRF sin imponer stack |
 
 ## Documentos de referencia
 

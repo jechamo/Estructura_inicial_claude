@@ -19,6 +19,8 @@ Repite hasta agotar el alcance acordado. **Una tarea por ciclo.**
 ### 0 · Seleccionar
 Primera tarea `pendiente` sin dependencias abiertas. Márcala `en curso` en `tasks.md`.
 Anuncia: *"T-042-03 · <título> — test: `<ruta>`"*.
+Lee también `Controles de seguridad`. Si referencia `SEC-*`, conserva la cadena de `plan.md` y
+`test-plan.md`; si dice `no aplica`, verifica que incluya la justificación material aprobada.
 
 ### 1 · 🔴 RED
 - Escribe **solo** el test de esta tarea.
@@ -50,6 +52,9 @@ Anuncia: *"T-042-03 · <título> — test: `<ruta>`"*.
   (🔴 y 🟢 con su salida) y artefacto. Si algún control previsto **no** se ejecutó, escríbelo
   en la sección de controles no ejecutados con su riesgo y su dueño. "No ejecutado" es un
   resultado válido; "pasa" sin ejecución, no.
+- Para cada `SEC-*` aplicable registra comando/caso adverso, salida real y artefacto en la tabla
+  de seguridad. Un control no ejecutado conserva riesgo, propietario y siguiente paso; no se
+  convierte en aprobado. El `security-auditor` no corrige código ni escribe informes.
 - Verifica la DoD de `AGENTS.md` §7 aplicable a la tarea.
 - Si hubo decisión relevante → `@bitacora-keeper`.
 - Si el plan resultó incorrecto → **para** y vuelve a `@planner`. No parchees el plan sobre la marcha.
@@ -74,6 +79,7 @@ Los especialistas **devuelven el control**; no encadenan ellos la siguiente fase
 ## Prohibido
 
 - Código de producción sin test rojo previo.
+- Marcar un control de seguridad como verificado sin ejecutar su test/comando real.
 - Implementar lo que la spec no pide.
 - Tocar ficheros fuera del alcance de la tarea.
 - Decir "los tests pasan" sin pegar la salida.
@@ -89,6 +95,7 @@ Los especialistas **devuelven el control**; no encadenan ellos la siguiente fase
 - Tests: <n> nuevos · suite: <salida real resumida>
 - Cobertura dominio/aplicación: <%>
 - Ficheros tocados: <rutas>
+- Controles de seguridad: <SEC-* verificados · no ejecutados · no aplica>
 - Desviaciones del plan: <lista o "ninguna">
 - Deuda anotada: <lista o "ninguna">
 - Siguiente agente sugerido: implementer (siguiente tarea) | code-reviewer — comando: /sdd-verify

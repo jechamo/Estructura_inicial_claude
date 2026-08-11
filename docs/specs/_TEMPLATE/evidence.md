@@ -47,6 +47,43 @@ trabajó él mismo) · `unverified` (delegación afirmada pero no observada — 
 |---|---|---|---|---|
 | E2E en Safari | Sin runner de macOS en CI | Regresión no detectada en WebKit | | Añadir job antes de la v1.1 |
 
+### 3.1 · Controles de seguridad ejecutados
+
+| Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |
+|---|---|---|---|---|---|
+| SEC-<ID> | T-NNN-XX | `<comando exacto>` | `<salida real resumida>` | `<ruta, log o artefacto>` | `<verificado/no ejecutado/no aplica>` |
+
+**Informe de seguridad**: `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
+
+- Auditor: `security-auditor` (solo lectura) — `<observed/declared-direct/unverified>`.
+- Materialización: `docs-writer` copia literalmente el HANDOFF estructurado; no cambia hallazgos,
+  conteos ni veredicto.
+- Contrato mínimo del informe:
+
+<!-- sdd-security-report:v1 -->
+```json
+{
+  "schemaVersion": 1,
+  "spec": "NNN-slug",
+  "standards": {
+    "owaspTop10": "2025",
+    "asvs": "5.0.0",
+    "level": "L2"
+  },
+  "scope": "diff",
+  "controlsEvaluated": ["SEC-<ID>"],
+  "openFindings": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
+  "verdict": "PASS",
+  "acceptedRisks": [],
+  "controlsNotExecuted": []
+}
+```
+
+Valores JSON de `verdict`: `BLOCKED`, `CONDITIONAL` o `PASS`. Cada riesgo MEDIO aceptado usa
+`id`, `owner`, `justification`, `reviewDate` (`YYYY-MM-DD`) y un `decisionRef` durable `DEC-*` o
+`ADR-*`. Cada control no ejecutado usa `control`, `reason`, `risk`, `owner` y `nextStep`.
+`controlsNotExecuted` no vacío bloquea `GO`; no cuenta como control verificado.
+
 ## 3 bis. Cobertura, deuda y observabilidad
 
 **Cobertura por tier.** No se reporta cifra global: un porcentaje único deja pasar el 6 % que

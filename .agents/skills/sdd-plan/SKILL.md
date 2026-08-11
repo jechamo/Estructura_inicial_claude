@@ -17,6 +17,9 @@ Agente responsable: `@planner`, con consulta a los especialistas.
 - Lee `docs/architecture/constitution.md` y los ADR vigentes.
 - Las prioridades MoSCoW de la spec **ordenan el plan**: lo *must* va primero y completo. No se
   empieza un *could* con un *must* a medias.
+- Lee `Impacto de seguridad`: `sensible | no-sensible | security-pending`. Si falta o una spec
+  sensible nueva intenta usar `security-pending`, devuelve a `/sdd-specify`; no normalices el
+  hueco desde el plan.
 
 ## Paso 1 — Investigación (`research.md`)
 
@@ -49,6 +52,10 @@ Delega en paralelo cuando sean áreas independientes y **recupera el control**:
 | Estrategia de test | `@test-engineer` |
 | Despliegue y observabilidad | `@devops-expert` |
 
+Para una spec `sensible`, delega `security-scan plan` en `@security-auditor`. Es de solo lectura:
+debe devolver HANDOFF y control al `planner`. Si hace falta persistir su informe, `planner` delega
+en `@docs-writer` la materialización literal; el auditor nunca escribe ni encadena especialistas.
+
 Integra sus respuestas. **Tú decides**; ellos asesoran.
 
 ## Paso 3 — Artefactos
@@ -78,7 +85,8 @@ qué se automatiza en CI, criterio de "suficiente".
    (CORE 100 % · IMPORTANT 80 % · INFRASTRUCTURE excluido). Lo que no clasifiques se exigirá
    al 100 %; bajarlo de tier se justifica **aquí**. Cuando la profundidad no sea obvia, resuélvela
    con las cuatro preguntas de `TEST-STRATEGY.md` §0 y anota la respuesta
-9. Seguridad: entradas, autorización, datos sensibles, amenazas STRIDE
+9. Seguridad: impacto, nivel ASVS, amenazas y matriz
+   `control → decisión/justificación → tarea → test → evidencia`
 10. Rendimiento: objetivos, presupuesto declarado, consultas críticas, caché
 11. Observabilidad: logs, métricas, trazas, **clasificación de errores, salud por versión y
     alertas con umbral y playbook**
@@ -108,6 +116,7 @@ Recorre esta matriz y anota cada discrepancia:
 | `research.md` ↔ dependencias | Toda dependencia nueva del plan está justificada |
 | Todo ↔ "fuera de alcance" | Nada del plan implementa algo declarado fuera de alcance |
 | Producto ↔ spec ↔ plan | La cadena `OBJ → PRD-RF → UC → RF → CA` llega a componentes y tests |
+| Seguridad ↔ plan ↔ test | Cada control aplicable llega a tarea, caso de abuso y evidencia; cada `no aplica` tiene motivo material |
 
 **Corrige los huecos antes de trocear.** Si un hueco revela que la spec era incompleta,
 vuelve a `spec-analyst`: no lo rellenes tú desde el plan, porque entonces habrás decidido
@@ -127,6 +136,11 @@ Checklist de conformidad:
 - [ ] Toda dependencia nueva justificada en `research.md`
 - [ ] La cobertura total desde `OBJ-*` hasta cada test previsto está visible, o los huecos
       `legacy-pending` están advertidos
+- [ ] `Impacto de seguridad` está clasificado; si es `sensible`, la tabla usa exactamente
+      `Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia`
+- [ ] Cada control aplicable tiene cadena completa y cada `no aplica` tiene motivo material
+- [ ] Si aplica JWT/cookie/bearer, las decisiones siguen `docs/security/AUTH-TOKENS.md`; JWT no se
+      adopta por defecto ni se fija una librería universal
 
 **Si el plan viola la constitución → para y llama a `@architect`.** O se ajusta el plan, o
 se escribe el ADR que cambia la regla. Nunca se viola en silencio.
@@ -151,6 +165,7 @@ explícita. Una recomendación técnica del `planner` no sustituye este gate.
 - Dependencias nuevas: <lista o "ninguna">
 - Conformidad: OK | requiere ADR-XXXX
 - Cobertura: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-* → test previsto>
+- Seguridad: <sensible/no-sensible/security-pending> · <SEC-* y huecos>
 - Gate humano del plan: approved · <actor · fecha · alcance>
 - Siguiente agente sugerido: planner — comando: /sdd-tasks
 ```

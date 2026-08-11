@@ -34,6 +34,8 @@ Resume el diagnóstico en 5 líneas antes de enrutar.
 | Sin `constitution.md`, repo vacío y producto aprobado | Bootstrap | `architect` | `/sdd-init` |
 | Sin `constitution.md`, repo con código | Onboarding | `research-analyst` → `architect` | `/onboard` |
 | Idea o necesidad nueva sin spec | Especificar | `spec-analyst` | `/sdd-specify` |
+| Implementar login, sesión, autorización o JWT sin spec aprobada | Especificar, manteniendo revisión de seguridad | `spec-analyst` | `/sdd-specify` |
+| Auditar seguridad, auth o JWT | Auditoría defensiva | `security-auditor` | `/security-scan verify` |
 | Spec con marcadores `[NEEDS CLARIFICATION]` | Clarificar | `spec-analyst` | `/sdd-clarify` |
 | Spec aprobada sin `plan.md` | Planificar | `planner` | `/sdd-plan` |
 | `plan.md` sin `tasks.md` | Trocear | `planner` | `/sdd-tasks` |
@@ -55,6 +57,11 @@ Resume el diagnóstico en 5 líneas antes de enrutar.
 - Mantén una lista breve y visible con el estado del circuito para que el usuario vea dónde está.
 - Si dos agentes se contradicen, gana la constitución. Si la constitución no dice nada,
   escala al humano.
+- Una feature de auth/JWT mantiene su fase SDD (`/sdd-specify` o `/sdd-implement`); no se sustituye
+  por `/security-scan`. Solo una petición de auditoría usa esa skill como destino principal.
+- `security-auditor` es de solo lectura y devuelve HANDOFF. Tras recuperar el control, delega en
+  `docs-writer` la materialización literal del informe cuando corresponda; ninguno reinterpreta
+  hallazgos, conteos o veredicto y el auditor nunca encadena agentes.
 
 ## 3 bis. Intake universal de producto
 

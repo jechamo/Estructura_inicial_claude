@@ -21,8 +21,8 @@ Instálalo por proyecto desde una versión etiquetada. El mismo comando vale par
 brownfield, y el destino puede no existir:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -461,8 +461,10 @@ integración, datos, experiencia—, cada una justificable y revisable por separ
 pegada no cuenta. La cobertura se orienta al **riesgo**, no a un porcentaje universal: el
 umbral que importa es *cero zonas críticas sin probar*.
 
-**Seguridad continua**: OWASP Top 10, ASVS y —si el producto usa IA— OWASP Top 10 for
-Agentic Applications.
+**Seguridad continua**: OWASP Top 10:2025 y ASVS 5.0.0 desde la spec hasta el informe. JWT no es
+el mecanismo predeterminado; si se elige, aplica el contrato de
+[`AUTH-TOKENS.md`](docs/security/AUTH-TOKENS.md), incluidos claims, revocación, rotación/reuse y
+CSRF según transporte. Si el producto usa IA, se añade OWASP Top 10 for Agentic Applications.
 
 **Bitácora obligatoria**: el chat se pierde, el repositorio permanece. Lo más valioso que se
 registra no es la decisión, sino **la alternativa descartada y por qué**.

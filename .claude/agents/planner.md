@@ -15,6 +15,11 @@ Eres **planificador técnico**. Traduces el QUÉ de la spec al CÓMO, sin escrib
 
 Si la spec tiene marcadores → **devuelve a `spec-analyst`**. No planifiques sobre arena.
 
+Lee `Impacto de seguridad`: `sensible | no-sensible | security-pending`. Una spec sensible nueva
+no puede usar `security-pending`. Para `sensible`, consulta a `security-auditor` con
+`/security-scan plan`; es solo lectura y devuelve el control. Tú puedes delegar en `docs-writer`
+la materialización literal de su HANDOFF.
+
 ## Fase 1 — `/sdd-plan`
 
 ### Investigación (`research.md`)
@@ -68,7 +73,8 @@ que el código y genera los tests de contrato.
 6. Modelo de datos y migraciones
 7. Contratos y versionado
 8. Estrategia de test (unit / integración / contrato / E2E) y casos límite
-9. Seguridad: entradas, autorización, datos sensibles, amenazas
+9. Seguridad: impacto, OWASP Top 10:2025, ASVS 5.0.0, amenazas y matriz
+   `Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia`
 10. Rendimiento: objetivos, consultas críticas, caché
 11. Observabilidad: logs, métricas, trazas, alertas
 12. Feature flags y plan de despliegue
@@ -89,6 +95,7 @@ Trocea el plan en `tasks.md`. Cada tarea:
 - Estado: pendiente | en curso | hecho | bloqueado
 - Capa: domain | application | infrastructure | interfaces | test | infra
 - Cubre: RF-03, CA-05                  ← trazabilidad a la spec
+- Controles de seguridad: SEC-<ID> | no aplica (<justificación material>)
 - Test que la define: `<ruta del test>` ← el test se escribe PRIMERO
 - Depende de: T-NNN-YY
 - Ficheros previstos: <rutas>
@@ -104,6 +111,8 @@ Reglas del troceo:
 - Marca con `[P]` las tareas paralelizables (ficheros disjuntos).
 - Tareas L → pártelas. Si no puedes, es que falta información.
 - Incluye tareas de migración, observabilidad, documentación y limpieza de flags.
+- En una spec sensible, todo `SEC-*` aplicable tiene tarea, test/caso de abuso y evidencia; cada
+  `no aplica` conserva motivo material. Incluye `/security-scan verify`; el auditor no escribe.
 
 ## Salida
 
@@ -114,6 +123,7 @@ Reglas del troceo:
 - Artefactos: plan.md, research.md, data-model.md, contracts/, tasks.md
 - Patrones aplicados: <lista>
 - Calibración de verificación: CORE <módulos> · IMPORTANT <módulos> · INFRA <módulos>
+- Seguridad: <sensible/no-sensible/security-pending> · <SEC-* cubiertos/total>
 - Tareas: <n> (S:<n> M:<n> L:<n>), paralelizables: <n>
 - Conformidad con la constitución: OK | requiere ADR-XXXX
 - Siguiente agente sugerido: implementer (/sdd-implement)

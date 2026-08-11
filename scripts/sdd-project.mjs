@@ -44,6 +44,7 @@ const GATES = {
   e2e: 'slow',
   visual: 'slow',
   a11y: 'slow',
+  security: 'slow',
   'deps-audit': 'slow',
   docs: 'slow',
   mutation: 'slow',
@@ -99,6 +100,7 @@ function detectar() {
         e2e: ['test:e2e', 'e2e'],
         visual: ['test:visual', 'visual'],
         a11y: ['test:a11y', 'a11y'],
+        security: ['security', 'security:scan', 'test:security'],
         docs: ['docs:check', 'docs:lint'],
         mutation: ['test:mutation', 'mutation'],
       })) {
@@ -108,9 +110,11 @@ function detectar() {
       // Solo con lockfile real: auditar sin árbol de dependencias fijado da un resultado que
       // cambia entre ejecuciones, y `detectedFrom` tiene que poder señalar el fichero.
       const lockfile = ['pnpm-lock.yaml', 'yarn.lock', 'package-lock.json'].find((f) => existsSync(join(ROOT, f)));
-      if (lockfile) {
+      const comandoAudit = gestor === 'npm' ? 'npm audit --audit-level=high' :
+        gestor === 'pnpm' ? 'pnpm audit --audit-level high' : null;
+      if (lockfile && comandoAudit) {
         suggestions['deps-audit'] = {
-          command: `${gestor} audit --audit-level=high`,
+          command: comandoAudit,
           required: true,
           speed: GATES['deps-audit'],
           detectedFrom: lockfile,
@@ -145,13 +149,14 @@ function detectar() {
     stacks.push('rust');
     evidence.rust = ['Cargo.toml'];
     suggestions['test:rust'] = { command: 'cargo test', required: true, speed: 'fast', detectedFrom: 'Cargo.toml' };
-    suggestions['deps-audit:rust'] = { command: 'cargo audit', required: true, speed: 'slow', detectedFrom: 'Cargo.toml' };
   }
   if (existsSync(join(ROOT, 'go.mod'))) {
     stacks.push('go');
     evidence.go = ['go.mod'];
     suggestions['test:go'] = { command: 'go test ./...', required: true, speed: 'fast', detectedFrom: 'go.mod' };
-    suggestions['deps-audit:go'] = { command: 'govulncheck ./...', required: true, speed: 'slow', detectedFrom: 'go.mod' };
+    const goMod = leer(join(ROOT, 'go.mod')) || '';
+    if (/\btool\s+golang\.org\/x\/vuln\/cmd\/govulncheck\b/.test(goMod))
+      suggestions['deps-audit:go'] = { command: 'go tool govulncheck ./...', required: true, speed: 'slow', detectedFrom: 'go.mod#tool' };
   }
   if (existsSync(join(ROOT, 'pom.xml'))) {
     stacks.push('java-maven');
@@ -169,7 +174,7 @@ function detectar() {
 
 function cargarChecks() {
   const contenido = leer(CHECKS_PATH);
-  if (contenido === null) return { version: 1, checks: {}, unconfigured: ['lint', 'test', 'typecheck', 'build', 'mutation'] };
+  if (contenido === null) return { version: 1, checks: {}, unconfigured: ['lint', 'test', 'typecheck', 'build', 'security', 'mutation'] };
   try { return JSON.parse(contenido); }
   catch (error) { throw new Error(`.sdd/checks.json no es JSON válido: ${error.message}`); }
 }
@@ -214,6 +219,16 @@ function estadoProducto() {
     approvedBy: null,
     enforceFromSpec: null,
     hashes: {},
+  };
+}
+
+function estadoSeguridad() {
+  const registro = cargarInstalacion();
+  return registro.security || {
+    schemaVersion: 1,
+    status: 'legacy-pending',
+    standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
+    enforceFromSpec: null,
   };
 }
 
@@ -503,18 +518,38 @@ function configurar() {
 /**
  * Huella del árbol de trabajo: qué está a punto de commitearse.
  *
- * Se usa `git status --porcelain` además del HEAD porque lo que importa no es en qué commit
- * estás, sino si el contenido cambió desde que corrieron los gates. Un sello que solo mirase
- * HEAD daría por bueno un árbol modificado después de pasarlos.
+ * Incluye HEAD, estado, bytes del diff staged/unstaged y contenido no rastreado. Lo que importa
+ * no es el nombre del estado (`M`), sino que sean exactamente los mismos bytes sobre los que
+ * corrieron los gates.
  */
 function huellaArbol() {
   // Un repositorio recién creado no tiene HEAD, y su primer commit merece control igual que
   // cualquier otro: se toma el HEAD como cadena vacía en vez de renunciar a la huella.
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' });
-  const sucio = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' });
+  const sucio = spawnSync('git', ['status', '--porcelain', '-z'], { cwd: ROOT });
   if (sucio.status !== 0) return null; // esto sí significa que no hay repositorio
   const ref = head.status === 0 ? (head.stdout || '').trim() : '';
-  return hash(`${ref}\n${(sucio.stdout || '').trim()}`);
+  const argumentosDiff = head.status === 0
+    ? ['diff', '--binary', '--no-ext-diff', 'HEAD', '--']
+    : ['diff', '--binary', '--no-ext-diff', '--'];
+  const diff = spawnSync('git', argumentosDiff, { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 });
+  const staged = head.status === 0 ? null :
+    spawnSync('git', ['diff', '--cached', '--binary', '--no-ext-diff', '--'], {
+      cwd: ROOT, maxBuffer: 64 * 1024 * 1024,
+    });
+  const otros = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '-z'], {
+    cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  });
+  if (diff.status !== 0 || (staged && staged.status !== 0) || otros.status !== 0) return null;
+  const huella = createHash('sha256')
+    .update(ref).update('\0').update(sucio.stdout || '').update('\0')
+    .update(diff.stdout || '').update('\0').update(staged?.stdout || '').update('\0');
+  for (const ruta of (otros.stdout || '').split('\0').filter(Boolean).sort()) {
+    huella.update(ruta).update('\0');
+    try { huella.update(readFileSync(join(ROOT, ruta))); } catch { return null; }
+    huella.update('\0');
+  }
+  return huella.digest('hex').slice(0, 16);
 }
 
 const SELLO_PATH = join(ROOT, '.sdd', 'state', 'last-gate-run.json');
@@ -557,13 +592,20 @@ function ejecutarChecks() {
     resultados.push({ id, command: check.command, speed: velocidad, status: resultado.status, durationMs: Date.now() - inicio });
     if (resultado.status !== 0 && check.required !== false) fallo = true;
   }
+  const noConfigurados = (config.unconfigured || []).filter((id) =>
+    !filtro || (GATES[gateBase(id)] || 'fast') === filtro);
+  const estado = fallo ? 'fail' : resultados.length ? 'pass' : 'unconfigured';
   if (!JSON_OUT) {
     const alcance = filtro ? ` (${filtro})` : '';
-    console.log(`\n${resultados.length} check(s) ejecutado(s)${alcance}: ${fallo ? 'FAIL' : 'PASS'}`);
+    const veredicto = estado === 'fail' ? 'FAIL' : estado === 'pass' ? 'PASS' : 'NO EJECUTADO';
+    console.log(`\n${resultados.length} check(s) ejecutado(s)${alcance}: ${veredicto}`);
     for (const r of resultados) console.log(`  ${r.status === 0 ? '✓' : '✗'} ${r.id} — ${r.command}`);
     if (omitidos.length) console.log(`  · omitidos por velocidad: ${omitidos.join(', ')}`);
-  } else console.log(JSON.stringify({ ok: !fallo, speed: filtro, results: resultados, skipped: omitidos }));
-  escribirSello(filtro, !fallo, resultados);
+    if (noConfigurados.length) console.log(`  · no configurados: ${noConfigurados.join(', ')}`);
+  } else console.log(JSON.stringify({
+    ok: !fallo, status: estado, speed: filtro, results: resultados, skipped: omitidos, unconfigured: noConfigurados,
+  }));
+  if (resultados.length) escribirSello(filtro, !fallo, resultados);
   if (fallo) process.exitCode = 1;
 }
 
@@ -693,7 +735,9 @@ try {
   else if (comando === 'run') ejecutarChecks();
   else if (comando === 'debt') informeDeuda();
   else if (comando === 'skills-export') exportarSkills();
-  else if (comando === 'status') imprimir({ detection: detectar(), checks: cargarChecks(), product: estadoProducto(), debt: medirDeuda() });
+  else if (comando === 'status') imprimir({
+    detection: detectar(), checks: cargarChecks(), product: estadoProducto(), security: estadoSeguridad(), debt: medirDeuda(),
+  });
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {
   console.error(error.message);

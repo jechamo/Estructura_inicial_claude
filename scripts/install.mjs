@@ -74,6 +74,7 @@ const fusionados = [];
 const omitidos = [];
 const conflictos = [];
 const retirados = [];
+let contratoSeguridadActual = null;
 
 function listar(dir, base = dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -214,6 +215,63 @@ function fusionarGitignore(registroNuevo) {
     fusionados.push(`${ruta} (+${faltan.length})`);
     registroNuevo[ruta] = { hash: hash(nuevo), policy: 'append-block' };
   } else omitidos.push(ruta);
+}
+
+/** Devuelve el primer ID de spec que no pertenece a la historia previa del destino. */
+function siguienteSpecSeguridad() {
+  const dir = join(DESTINO, 'docs', 'specs');
+  if (!existsSync(dir)) return '001';
+  const ids = readdirSync(dir, { withFileTypes: true })
+    .filter((entrada) => entrada.isDirectory())
+    .map((entrada) => /^(\d{3})-/.exec(entrada.name)?.[1])
+    .filter(Boolean)
+    .map(Number);
+  return String((ids.length ? Math.max(...ids) : 0) + 1).padStart(3, '0');
+}
+
+function contratoSeguridad(anterior, modo) {
+  const base = {
+    schemaVersion: 1,
+    status: opciones.comando === 'update' && anterior.version
+      ? 'legacy-pending'
+      : modo === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+    standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
+    enforceFromSpec: siguienteSpecSeguridad(),
+  };
+  if (!anterior.security || typeof anterior.security !== 'object') return base;
+  return {
+    ...base,
+    ...anterior.security,
+    standards: { ...base.standards, ...(anterior.security.standards || {}) },
+  };
+}
+
+/**
+ * Migra únicamente el vocabulario. No sustituye comandos ni adopta el fichero completo.
+ * `security` queda pendiente solo si el proyecto no declaró ya un gate `security` o `security:*`.
+ */
+function migrarChecksSeguridad(registroNuevo) {
+  const ruta = '.sdd/checks.json';
+  const actual = leer(join(DESTINO, ruta));
+  if (actual === null) return;
+  let checks;
+  try {
+    checks = parseJsonc(actual);
+  } catch (error) {
+    registrarConflicto(ruta, SEMILLAS[ruta], `JSON/JSONC no válido: ${error.message}`);
+    return;
+  }
+  const configurados = Object.keys(checks.checks || {});
+  const yaConfigurado = configurados.some((id) => id === 'security' || id.startsWith('security:'));
+  const pendientes = Array.isArray(checks.unconfigured) ? checks.unconfigured : [];
+  const yaPendiente = pendientes.some((id) => id === 'security' || id.startsWith('security:'));
+  if (yaConfigurado || yaPendiente) return;
+
+  checks.unconfigured = [...pendientes, 'security'];
+  const nuevo = `${JSON.stringify(checks, null, 2)}\n`;
+  escribir(ruta, nuevo);
+  fusionados.push(`${ruta} (+security sin configurar)`);
+  registroNuevo[ruta] = { hash: hash(nuevo), policy: 'json-security-migration' };
 }
 
 function migrarRutasRetiradas(registroNuevo, previos) {
@@ -383,9 +441,12 @@ function instalarProyecto() {
     enforceFromSpec: null,
     hashes: {},
   };
+  const security = contratoSeguridad(anterior, modo);
+  contratoSeguridadActual = security;
 
   fusionarSemillas(registroNuevo);
   fusionarGitignore(registroNuevo);
+  migrarChecksSeguridad(registroNuevo);
   migrarRutasRetiradas(registroNuevo, previos);
 
   const rutas = listar(ORIGEN).filter((ruta) => debeCopiar(ruta, { conBaseline: opciones.conBaseline }));
@@ -413,6 +474,7 @@ function instalarProyecto() {
       updatedAt: ahora,
       source: 'jechamo/Estructura_inicial_claude',
       product,
+      security,
       files: registroNuevo,
       ficheros,
     }, null, 2)}\n`, 'utf8');
@@ -594,6 +656,9 @@ function informar(modo) {
   if (opciones.dry) console.log('\nSimulación: no se ha creado ni modificado ningún fichero.');
   else {
     console.log('\nVS Code: confía en el workspace y ejecuta `Developer: Reload Window` para aplicar una sola superficie de agentes y skills.');
+    if (contratoSeguridadActual?.status === 'legacy-pending') {
+      console.log(`Seguridad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoSeguridadActual.enforceFromSpec}.`);
+    }
     if (modo === 'greenfield') console.log('Siguiente paso: /sdd-intake; tras aprobar producto, /sdd-init.');
     else console.log('Siguiente paso: /sdd-intake para cerrar legacy-pending o /onboard para documentar la arquitectura existente.');
   }

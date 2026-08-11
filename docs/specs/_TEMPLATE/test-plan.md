@@ -51,6 +51,20 @@ Solo flujos críticos de negocio. Selectores por rol y texto accesible.
 - Fixtures: <…>
 - **Sin PII real.** Sin secretos, ni siquiera de prueba con formato válido.
 
+### 5.1 · Casos de abuso y controles de seguridad
+
+> Obligatorio si `Impacto de seguridad = sensible`. Cada control aplicable de `plan.md` aparece
+> aquí; un `no aplica` conserva la misma justificación material.
+
+| Control | ASVS | OWASP | Caso de abuso / condición negativa | Nivel | Test | Resultado seguro esperado |
+|---|---|---|---|---|---|---|
+| SEC-<ID> | ASVS 5.0.0 Vx | A0x:2025 | `<entrada, identidad, estado o fallo hostil>` | `<unit/integration/contract/e2e>` | `<ruta::caso>` | `<rechazo cerrado y observable>` |
+
+Si se elige JWT, incluye algoritmo no permitido y `alg: none`, firma inválida, `iss`, `aud`,
+`exp`, `nbf`, `iat`, `sub`, `jti`, tipo/scope incorrectos, revocación, **refresh token rotation**,
+**reuse detection**, 401/403, IDOR y ausencia de tokens en logs/URLs. Para cookies automáticas,
+prueba la defensa CSRF elegida; `SameSite` es defensa en profundidad, no sustituto universal.
+
 ## 6. Dobles
 
 | Dependencia | Doble | Por qué |

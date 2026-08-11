@@ -4,11 +4,15 @@ description: Convierte una spec aprobada en plan técnico, modelo de datos, cont
 tools: ['agent', 'search/codebase', 'search/usages', 'web/fetch', 'edit/editFiles']
 # Consulta a los especialistas para decidir el cómo, pero no puede invocar al implementer:
 # planificar y ejecutar son fases distintas y el salto se nota en la trazabilidad.
-agents: ['api-designer', 'database-expert', 'ux-designer', 'research-analyst', 'architect']
+agents: ['api-designer', 'database-expert', 'ux-designer', 'research-analyst', 'architect', 'security-auditor']
 handoffs:
   - label: Implementar con TDD
     agent: implementer
     prompt: Implementa las tareas de tasks.md en ciclo rojo-verde-refactor, siguiendo /sdd-implement.
+    send: false
+  - label: Revisar controles de seguridad
+    agent: security-auditor
+    prompt: Revisa en solo lectura el impacto y la matriz de seguridad del plan activo según /security-scan --scope plan; devuelve un HANDOFF estructurado al planner, sin escribir el informe.
     send: false
 ---
 

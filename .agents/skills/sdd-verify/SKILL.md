@@ -13,6 +13,7 @@ Ejecuta y **pega la salida real** de cada uno:
 
 ```bash
 node scripts/check-sdd.mjs --strict
+node scripts/sdd-project.mjs run --slow
 ```
 
 ```
@@ -54,10 +55,22 @@ por escrito en el PR y en la bitácora.
 
 ## Paso 5 — Seguridad (`@security-auditor`)
 
-OWASP Top 10 + nivel ASVS de la constitución (+ OWASP Agentic si hay LLM).
-Informe en `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
+Si `Impacto de seguridad = sensible`, ejecuta `/security-scan verify` contra **OWASP Top
+10:2025** y **ASVS 5.0.0** al nivel de la constitución. Comprueba la matriz exacta:
 
-**CRÍTICO o ALTO ⇒ bloquea la entrega.**
+| Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+
+Cada control aplicable necesita salida real; cada `no aplica`, motivo material. `security-pending`
+solo cubre historia brownfield, no una spec sensible nueva.
+
+`security-auditor` es **solo lectura**: devuelve HANDOFF con estándares, alcance, controles,
+evidencias, hallazgos, conteos y veredicto. El coordinador puede delegar en `@docs-writer` la
+materialización **literal** —sin reinterpretar— en
+`docs/security/reports/YYYY-MM-DD-NNN-slug.md`, con `<!-- sdd-security-report:v1 -->` y su JSON.
+
+**CRÍTICO o ALTO ⇒ bloquea la entrega.** MEDIO requiere responsable, justificación y fecha de
+revisión para `APTO CON CONDICIONES`. Un control no ejecutado conserva riesgo, propietario y paso.
 
 ## Paso 6 — Calidad de la suite (`@test-engineer`)
 
@@ -104,6 +117,8 @@ node scripts/sdd-project.mjs debt --json
 - [ ] Las delegaciones aparecen como `observed`; si alguna es `declared-direct` o
       `unverified`, está documentado por qué
 - [ ] La decisión de entrega de `evidence.md` §5 sigue en `NO-GO` hasta que un humano la cambie
+- [ ] El informe de seguridad es material y parseable; estándares, nivel, alcance, conteos y
+      veredicto coinciden con el HANDOFF literal del auditor
 
 ## Paso 8 — Operación
 
@@ -133,6 +148,7 @@ salida real de las herramientas.
 - Observabilidad: <instrumentada | huecos> · alertas sin playbook: <n>
 - Deuda: <ratio> · marcadores <n>
 - Seguridad: CRÍTICO <n> · ALTO <n> · MEDIO <n>
+- Informe de seguridad: <ruta> · OWASP Top 10:2025 · ASVS 5.0.0 <nivel> · <veredicto>
 - Veredicto: APTO PARA ENTREGA | REQUIERE CAMBIOS
 - Siguiente agente sugerido: implementer (arreglar) | release-manager — comando: /sdd-ship
 ```

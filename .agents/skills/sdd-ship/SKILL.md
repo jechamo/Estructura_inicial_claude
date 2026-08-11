@@ -28,6 +28,13 @@ después y hay que repetir.
 Recorre después la DoD de `AGENTS.md` §7 y ejecuta lo ejecutable, pegando la salida real.
 Si `/sdd-verify` no se ha pasado, ejecútalo antes. Cualquier gate en rojo → **para**.
 
+Para una spec `sensible`, exige además el informe exacto
+`docs/security/reports/YYYY-MM-DD-NNN-slug.md` con `<!-- sdd-security-report:v1 -->` y JSON
+parseable: **OWASP Top 10:2025**, **ASVS 5.0.0**, nivel, alcance, conteos y veredicto. El informe
+procede del HANDOFF de `security-auditor` (solo lectura) materializado literalmente por
+`docs-writer`. CRÍTICO/ALTO, MEDIO sin aceptación fechada o control aplicable sin evidencia
+bloquean. No vuelvas a auditar desde `release-manager`: si falta, vuelve a `/sdd-verify`.
+
 ## Paso 1b — Decisión GO / NO-GO
 
 `evidence.md` §5 arranca en `NO-GO`. Cambiarlo a `GO` **no es una formalidad**: es la
@@ -108,6 +115,7 @@ Deja escrito:
 - Agente origen: release-manager
 - Spec: NNN-slug → entregada
 - Gates: <todos verdes | bloqueado por X>
+- Seguridad: <no-sensible | informe · conteos · veredicto · riesgos aceptados>
 - Versión propuesta: vX.Y.Z
 - Resumen ejecutivo: <ruta> · cifras verificadas: sí | "sin medición todavía"
 - PR preparado (NO enviado): <título>

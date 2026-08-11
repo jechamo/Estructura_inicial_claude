@@ -8,8 +8,8 @@ versionado dentro del repositorio. Requiere Node 18 o posterior y no instala dep
 Usa una versión etiquetada; evita instalar directamente desde una rama móvil:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 El destino puede no existir y puede contener espacios. `--dry-run` no crea el directorio.
@@ -63,7 +63,7 @@ La instalación normal no crea `.mcp.json`, `.vscode/mcp.json` ni entradas MCP d
 solo los servidores que hayas elegido:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 init "C:\ruta\proyecto" `
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" `
   --mode auto --with-mcp context7,playwright
 ```
 
@@ -96,8 +96,8 @@ los comandos encontrados a `.sdd/checks.json`.
 ## Actualizar
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 check "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 update "C:\ruta\proyecto"
 ```
 
 Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y recibe una propuesta
@@ -110,7 +110,7 @@ y nunca se reinician.
 necesario para que un repositorio instalado funcione y no instala hooks globales:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.4.0 global --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 global --dry-run
 ```
 
 Codex y Antigravity se mantienen por proyecto para no alterar configuración personal.

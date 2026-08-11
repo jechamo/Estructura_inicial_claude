@@ -86,10 +86,103 @@ function tieneResultadoConcreto(texto) {
     .test(String(texto || ''));
 }
 
+function tieneResultadoSeguridadVerde(texto) {
+  const valor = String(texto || '');
+  if (/\b(?:no ejecutado|bloquead[oa]|rojo|fall(?:o|a|ed)?|error|pendiente|skipped?)\b|[🔴❌]/i.test(valor)) return false;
+  return /\b(?:pass(?:ed)?|verde|green|exit\s*(?:code\s*)?0|0\s+fallos?)\b|[🟢✅]/i.test(valor);
+}
+
 function coincideCadena(texto, cadena, { conTarea = false, conTest = false, conResultado = false } = {}) {
   const contiene = Object.values(cadena).every((id) => String(texto || '').includes(id));
   return contiene && (!conTarea || /\bT-\d{3}-\d+\b/.test(texto)) &&
     (!conTest || tieneTestConcreto(texto)) && (!conResultado || tieneResultadoConcreto(texto));
+}
+
+function celdasMarkdown(linea) {
+  const limpia = String(linea || '').trim();
+  if (!limpia.startsWith('|') || !limpia.endsWith('|')) return [];
+  return limpia.slice(1, -1).split('|').map((celda) => celda.trim());
+}
+
+function valorConcreto(valor) {
+  const limpio = String(valor || '').replace(/[`*]/g, '').trim();
+  if (!limpio || /<[^>]+>/.test(limpio) || /\bTBD\b/i.test(limpio) || /\bTODO\b/.test(limpio) ||
+      /^todo$/i.test(limpio) || /\bunknown\b/i.test(limpio)) return false;
+  if (/^(?:pendiente\b|por (?:definir|completar)\b)/i.test(limpio)) return false;
+  return !/^(?:n\/?a|no aplica|ningun[oa]|[-—…])$/i.test(limpio);
+}
+
+function escaparRegex(valor) {
+  return String(valor || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function fechaIsoValida(valor) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(valor || ''))) return false;
+  const fecha = new Date(`${valor}T00:00:00Z`);
+  return !Number.isNaN(fecha.valueOf()) && fecha.toISOString().slice(0, 10) === valor;
+}
+
+function referenciaTestResuelta(referencia) {
+  const limpia = String(referencia || '').replace(/[`*]/g, '').trim();
+  const separador = limpia.indexOf('::');
+  if (separador <= 0 || separador === limpia.length - 2) return false;
+  const ruta = limpia.slice(0, separador).replace(/\\/g, '/');
+  const caso = limpia.slice(separador + 2).trim();
+  const absoluta = resolve(ROOT, ruta);
+  const relativa = relative(ROOT, absoluta).replace(/\\/g, '/');
+  if (!relativa || relativa.startsWith('../') || relativa === '..' || !existsSync(absoluta)) return false;
+  return new RegExp(`\\b${escaparRegex(caso)}\\b`).test(leer(absoluta) || '');
+}
+
+function referenciaDecisionExiste(referencia) {
+  const id = String(referencia || '').trim();
+  if (!valorConcreto(id) || !/^(?:DEC-[A-Z0-9-]+|ADR-\d{4}(?:-[A-Z0-9-]+)?)$/i.test(id)) return false;
+  const patron = new RegExp(`(?:^|[^A-Z0-9-])${escaparRegex(id)}(?:$|[^A-Z0-9-])`, 'im');
+  const decisiones = leer(join(ROOT, 'docs/bitacora/DECISIONS.md')) || '';
+  if (patron.test(decisiones)) return true;
+  const adr = join(ROOT, 'docs/architecture/adr');
+  try {
+    return readdirSync(adr).filter((nombre) => nombre.endsWith('.md'))
+      .some((nombre) => patron.test(leer(join(adr, nombre)) || ''));
+  } catch { return false; }
+}
+
+function impactoSeguridad(spec) {
+  const linea = String(spec || '').split('\n').find((candidata) =>
+    /^\|\s*\*{0,2}Impacto de seguridad\*{0,2}\s*\|/i.test(candidata));
+  if (!linea || /\\\|/.test(linea)) return null;
+  const valor = celdasMarkdown(linea)[1];
+  const limpio = String(valor || '').replace(/[`*]/g, '').trim().toLowerCase();
+  return ['sensible', 'no-sensible', 'security-pending'].includes(limpio) ? limpio : null;
+}
+
+function matrizSeguridad(plan) {
+  const lineas = String(plan || '').split('\n');
+  const cabecera = lineas.findIndex((linea) => {
+    const c = celdasMarkdown(linea).map((x) => x.toLowerCase());
+    return c.length >= 8 && c[0] === 'control' && c[1] === 'asvs' && c[2] === 'owasp' &&
+      c[3] === 'aplica' && c[4].includes('decisión') && c[5] === 'tarea' && c[6] === 'test' && c[7] === 'evidencia';
+  });
+  if (cabecera === -1) return [];
+  const filas = [];
+  for (let i = cabecera + 2; i < lineas.length; i++) {
+    const c = celdasMarkdown(lineas[i]);
+    if (!c.length) break;
+    filas.push({
+      control: c[0], asvs: c[1], owasp: c[2], aplica: c[3].toLowerCase(),
+      decision: c[4], tarea: c[5], test: c[6], evidencia: c[7],
+    });
+  }
+  return filas;
+}
+
+function bloqueInformeSeguridad(contenido) {
+  const match = String(contenido || '').match(
+    /<!--\s*sdd-security-report:v1\s*-->\s*```json\s*([\s\S]*?)\s*```/i,
+  );
+  if (!match) return { error: 'falta el bloque <!-- sdd-security-report:v1 --> seguido de JSON' };
+  try { return { data: JSON.parse(match[1]) }; }
+  catch (error) { return { error: `JSON de seguridad inválido: ${error.message}` }; }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -338,11 +431,11 @@ for (const ruta of [
 // ─────────────────────────────────────────────────────────────────────────────
 const GATES_PERMITIDOS = new Set([
   'sdd', 'lint', 'test', 'typecheck', 'build', 'smells',
-  'coverage', 'e2e', 'visual', 'a11y', 'deps-audit', 'docs', 'mutation',
+  'coverage', 'e2e', 'visual', 'a11y', 'security', 'deps-audit', 'docs', 'mutation',
 ]);
 const checksRaw = leer(join(ROOT, '.sdd/checks.json'));
+let cfgChecks = null;
 if (checksRaw) {
-  let cfgChecks;
   try {
     cfgChecks = JSON.parse(checksRaw);
   } catch (e) {
@@ -362,6 +455,9 @@ if (checksRaw) {
         err('checks/velocidad', `gate '${id}': speed '${check.speed}' no válido (fast | slow)`);
   }
 }
+const gateSeguridadConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
+  String(id).split(':')[0] === 'security' && typeof check?.command === 'string' && check.command.trim() &&
+  check.required === true && check.enabled !== false && (check.speed || 'slow') === 'slow');
 
 const territoriosRaw = leer(join(ROOT, '.sdd/territories.json'));
 if (territoriosRaw) {
@@ -437,9 +533,11 @@ const specs = dirs(SPECS).filter((s) => !soloSpec || s.startsWith(soloSpec));
 const ficherosTest = walk(ROOT, (n) => /\.(test|spec)\.[jt]sx?$/.test(n) || /^test_.*\.py$/.test(n));
 const textoTests = ficherosTest.map((p) => leer(p) || '').join('\n');
 let contratoProducto = null;
+let contratoSeguridad = null;
 try {
   const registro = JSON.parse(leer(join(ROOT, '.sdd/installed.json')) || 'null');
   if (registro?.product?.status === 'approved') contratoProducto = registro.product;
+  if (registro?.security) contratoSeguridad = registro.security;
 } catch {
   // El error de JSON se informa una sola vez en la seccion de instalacion.
 }
@@ -450,6 +548,7 @@ const idsProducto = {
 };
 const filasFeatureProducto = (leer(join(ROOT, 'docs/product/FEATURE-MAP.md')) || '')
   .split('\n').filter((linea) => /^\|\s*FEAT-\d{3}\s*\|/.test(linea));
+const seguridadPorSpec = new Map();
 
 let tareasHechas = 0;
 
@@ -517,7 +616,8 @@ for (const s of specs) {
 
   // 3.1 · La spec no avanza con ambigüedades sin resolver
   const marcadores = (spec.match(/\[NEEDS CLARIFICATION/g) || []).length;
-  const tienePlan = existsSync(join(dir, 'plan.md'));
+  const plan = leer(join(dir, 'plan.md')) || '';
+  const tienePlan = Boolean(plan);
   if (marcadores && tienePlan)
     err('spec/clarify', `${s}: ${marcadores} marcador(es) [NEEDS CLARIFICATION] y ya existe plan.md — se planificó sobre ambigüedad`);
 
@@ -575,7 +675,69 @@ for (const s of specs) {
 
   const tasks = leer(join(dir, 'tasks.md'));
   if (tienePlan && !tasks) warn('spec/estructura', `${s}: hay plan.md pero no tasks.md`);
-  if (!tasks) continue;
+
+  const impacto = impactoSeguridad(spec);
+  const impactosValidos = new Set(['sensible', 'no-sensible', 'security-pending']);
+  const aplicaContratoSeguridad = contratoSeguridad && Number.isFinite(numeroSpec) &&
+    /^\d{3}$/.test(String(contratoSeguridad.enforceFromSpec || '')) &&
+    numeroSpec >= Number(contratoSeguridad.enforceFromSpec);
+  if (aplicaContratoSeguridad && !impacto) {
+    const mensaje = `${s}: falta Impacto de seguridad (sensible | no-sensible | security-pending)`;
+    STRICT ? err('seguridad/impacto', mensaje) : warn('seguridad/impacto', mensaje);
+  }
+  if (impacto && !impactosValidos.has(impacto))
+    err('seguridad/impacto', `${s}: Impacto de seguridad debe ser sensible | no-sensible | security-pending`);
+  if (impacto === 'security-pending' && tienePlan) {
+    const mensaje = `${s}: no puede aprobar plan.md mientras el impacto siga security-pending`;
+    STRICT ? err('seguridad/impacto', mensaje) : warn('seguridad/impacto', mensaje);
+  }
+  const controlesSeguridad = matrizSeguridad(plan);
+  if (impacto === 'sensible' && !controlesSeguridad.length) {
+    const mensaje = `${s}: una spec sensible necesita la matriz Control | ASVS | OWASP | Aplica | Decisión | Tarea | Test | Evidencia`;
+    STRICT ? err('seguridad/matriz', mensaje) : warn('seguridad/matriz', mensaje);
+  }
+  const idsControles = new Set();
+  for (const control of controlesSeguridad) {
+    if (Object.values(control).some((valor) => /<[^>]+>/.test(String(valor)))) {
+      if (STRICT && impacto === 'sensible')
+        err('seguridad/matriz', `${s}: la matriz de seguridad conserva marcadores de plantilla`);
+      continue;
+    }
+    if (!/^SEC-[A-Z0-9]+-\d{3}$/.test(control.control))
+      err('seguridad/control', `${s}: ID de control '${control.control}' inválido; usa SEC-<AREA>-NNN`);
+    else if (idsControles.has(control.control)) err('seguridad/control', `${s}: control duplicado ${control.control}`);
+    idsControles.add(control.control);
+    if (!['sí', 'si', 'no'].includes(control.aplica))
+      err('seguridad/aplica', `${s}/${control.control}: Aplica debe ser sí | no`);
+    const aplica = ['sí', 'si'].includes(control.aplica);
+    if (aplica) {
+      for (const [campo, valor] of Object.entries({
+        ASVS: control.asvs, OWASP: control.owasp, decisión: control.decision,
+        tarea: control.tarea, test: control.test, evidencia: control.evidencia,
+      })) {
+        if (!valorConcreto(valor)) err('seguridad/matriz', `${s}/${control.control}: falta ${campo} concreto`);
+      }
+      const sinFormato = (valor) => String(valor || '').replace(/[`*]/g, '').trim();
+      if (!/5\.0\.0/.test(sinFormato(control.asvs)))
+        err('seguridad/matriz', `${s}/${control.control}: ASVS debe conservar la versión 5.0.0`);
+      if (!/(?:A\d{2}|Top 10):2025/.test(sinFormato(control.owasp)))
+        err('seguridad/matriz', `${s}/${control.control}: OWASP debe usar un identificador :2025`);
+      if (!/^T-\d{3}-\d+$/.test(sinFormato(control.tarea)))
+        err('seguridad/matriz', `${s}/${control.control}: Tarea debe ser un ID T-NNN-NN`);
+      if (!/[/.][^\s]*::[^\s]+/.test(sinFormato(control.test)))
+        err('seguridad/matriz', `${s}/${control.control}: Test debe ser una referencia concreta ruta::caso`);
+      if (sinFormato(control.evidencia) !== `evidence.md#${control.control}`)
+        err('seguridad/matriz', `${s}/${control.control}: Evidencia debe enlazar evidence.md#${control.control}`);
+    } else if (!valorConcreto(control.decision)) {
+      err('seguridad/matriz', `${s}/${control.control}: un control no aplicable necesita justificación concreta`);
+    }
+  }
+  seguridadPorSpec.set(s, { impacto, controles: controlesSeguridad, tasks: tasks || '', testPlan: '', evidence: '' });
+  if (!tasks) {
+    if (STRICT && impacto === 'sensible')
+      err('seguridad/trazabilidad', `${s}: una spec sensible necesita tasks.md para propagar sus controles`);
+    continue;
+  }
   if (referenciasProductoSpec) {
     const noPropagadas = Object.entries(referenciasProductoSpec).filter(([tipo]) => tipo !== 'cadenas')
       .map(([, conjunto]) => conjunto)
@@ -598,6 +760,29 @@ for (const s of specs) {
   const unicos = [...new Set(criterios)];
   const evidence = leer(join(dir, 'evidence.md')) || '';
   const testPlan = leer(join(dir, 'test-plan.md')) || '';
+  Object.assign(seguridadPorSpec.get(s), { testPlan, evidence });
+  for (const control of controlesSeguridad.filter((fila) => ['sí', 'si'].includes(fila.aplica))) {
+    const limpiar = (valor) => String(valor || '').replace(/[`*]/g, '').trim();
+    const tareaId = limpiar(control.tarea);
+    const testRef = limpiar(control.test);
+    const bloqueTarea = tasks.split(/^### /m).slice(1)
+      .find((bloque) => new RegExp(`^${escaparRegex(tareaId)}(?:\\s|[·—-]|$)`).test(bloque));
+    const filaTest = testPlan.split('\n')
+      .find((linea) => linea.includes(control.control) && linea.includes(testRef));
+    const filaEvidence = evidence.split('\n')
+      .find((linea) => linea.includes(control.control) && linea.includes(tareaId) && linea.includes(testRef));
+    control.traza = { tareaId, testRef, bloqueTarea, filaTest, filaEvidence };
+
+    const incidencias = [];
+    if (!bloqueTarea || !bloqueTarea.includes(control.control) || !bloqueTarea.includes(testRef))
+      incidencias.push(`tasks.md no enlaza ${tareaId}, el control y ${testRef}`);
+    if (!filaTest) incidencias.push(`test-plan.md no conserva ${testRef}`);
+    if (!filaEvidence) incidencias.push('evidence.md no enlaza control, tarea y test');
+    for (const incidencia of incidencias) {
+      const mensaje = `${s}/${control.control}: ${incidencia}`;
+      STRICT ? err('seguridad/trazabilidad', mensaje) : warn('seguridad/trazabilidad', mensaje);
+    }
+  }
   for (const ca of unicos) {
     const enTests = textoTests.includes(ca);
     const enArtefactos = tasks.includes(ca) || evidence.includes(ca) || testPlan.includes(ca);
@@ -710,6 +895,20 @@ if (instalado) {
         if (STRICT) err('producto/drift', mensaje);
         else warn('producto/drift', mensaje);
       }
+    }
+    const security = reg.security;
+    if (!security) {
+      warn('seguridad/estado', 'la instalación es anterior al contrato security; ejecuta `sdd update`');
+    } else {
+      if (security.schemaVersion !== 1 || !['bootstrap', 'legacy-pending'].includes(security.status))
+        err('seguridad/estado', 'el contrato security de .sdd/installed.json no tiene versión o estado válidos');
+      if (security.standards?.owaspTop10 !== '2025' || security.standards?.asvs !== '5.0.0' ||
+          !['L1', 'L2', 'L3'].includes(security.standards?.level))
+        err('seguridad/estado', 'security.standards debe declarar OWASP 2025, ASVS 5.0.0 y nivel L1 | L2 | L3');
+      if (!/^\d{3}$/.test(String(security.enforceFromSpec || '')))
+        err('seguridad/estado', 'security.enforceFromSpec debe ser un ID NNN');
+      if (security.status === 'legacy-pending')
+        warn('seguridad/legacy-pending', `el baseline histórico no se reinterpreta; el contrato se exige desde la spec ${security.enforceFromSpec}`);
     }
     const modificados = Object.entries(reg.ficheros || {}).filter(([r, h]) => {
       const t = leer(join(ROOT, r));
@@ -883,13 +1082,120 @@ if (STRICT && !VIRGIN) {
 if (STRICT && soloSpec) {
   const carpeta = dirs(SPECS).find((d) => d.startsWith(`${soloSpec}-`) || d === soloSpec);
   const evidencia = carpeta ? leer(join(SPECS, carpeta, 'evidence.md')) || '' : '';
-  const decididoGo = /\|\s*\*\*Estado\*\*\s*\|\s*`?GO`?\s*\|/.test(evidencia);
+  const decididoGo = /^\|\s*\*{0,2}Estado\*{0,2}\s*\|\s*`?GO`?\s*\|\s*$/im.test(evidencia);
   if (carpeta && decididoGo) {
-    for (const [tipo, dir] of [['seguridad', 'docs/security/reports'], ['calidad', 'docs/quality/reports']]) {
-      let informes = [];
-      try { informes = readdirSync(join(ROOT, dir)); } catch { /* directorio ausente = sin informes */ }
-      if (!informes.some((f) => f.includes(carpeta)))
-        err('entrega/informe', `la spec ${carpeta} está en GO y no tiene informe de ${tipo} en ${dir}/`);
+    let informesCalidad = [];
+    try { informesCalidad = readdirSync(join(ROOT, 'docs/quality/reports')); } catch { /* ausente */ }
+    if (!informesCalidad.some((f) => f.includes(carpeta)))
+      err('entrega/informe', `la spec ${carpeta} está en GO y no tiene informe de calidad en docs/quality/reports/`);
+
+    const contrato = seguridadPorSpec.get(carpeta) || { impacto: null, controles: [] };
+    if (contrato.impacto === 'security-pending')
+      err('seguridad/impacto', `${carpeta}: no puede declarar GO con Impacto de seguridad security-pending`);
+
+    if (!contrato.impacto) {
+      // Compatibilidad: las specs anteriores al contrato 007 conservan el gate por nombre,
+      // pero no se reinterpretan ni se fuerzan a adoptar una matriz retroactivamente.
+      let informesSeguridad = [];
+      try { informesSeguridad = readdirSync(join(ROOT, 'docs/security/reports')); } catch { /* ausente */ }
+      if (!informesSeguridad.some((f) => f.includes(carpeta)))
+        err('entrega/informe', `la spec legacy ${carpeta} está en GO y no tiene informe de seguridad`);
+    } else {
+      if (!gateSeguridadConfigurado)
+        err('seguridad/gate', `${carpeta}: GO exige un gate security configurado, required y slow en .sdd/checks.json`);
+
+      const rutaDeclarada = evidencia.match(
+        /\*\*Informe de seguridad\*\*\s*:\s*`([^`]+)`/i,
+      )?.[1]?.replace(/\\/g, '/');
+      let rutaInforme = null;
+      if (!rutaDeclarada) {
+        err('seguridad/informe', `${carpeta}: evidence.md debe declarar **Informe de seguridad** con ruta exacta`);
+      } else if (
+        rutaDeclarada.startsWith('/') || /^[A-Za-z]:\//.test(rutaDeclarada) ||
+        rutaDeclarada.split('/').includes('..') || !rutaDeclarada.startsWith('docs/security/reports/') ||
+        !rutaDeclarada.endsWith('.md')
+      ) {
+        err('seguridad/informe', `${carpeta}: ruta de informe no permitida: ${rutaDeclarada}`);
+      } else {
+        rutaInforme = resolve(ROOT, rutaDeclarada);
+        const raizInformes = resolve(ROOT, 'docs/security/reports');
+        if (dirname(rutaInforme) !== raizInformes)
+          err('seguridad/informe', `${carpeta}: el informe debe estar directamente en docs/security/reports/`);
+        else if (!existsSync(rutaInforme)) err('seguridad/informe', `${carpeta}: no existe ${rutaDeclarada}`);
+      }
+
+      if (rutaInforme && existsSync(rutaInforme)) {
+        const parseado = bloqueInformeSeguridad(leer(rutaInforme));
+        if (parseado.error) {
+          err('seguridad/informe', `${carpeta}: ${parseado.error}`);
+        } else {
+          const informe = parseado.data;
+          if (informe?.schemaVersion !== 1) err('seguridad/informe', `${carpeta}: schemaVersion debe ser 1`);
+          if (informe?.spec !== carpeta) err('seguridad/informe', `${carpeta}: el informe declara spec '${informe?.spec}'`);
+          if (informe?.standards?.owaspTop10 !== '2025' || informe?.standards?.asvs !== '5.0.0')
+            err('seguridad/estandar', `${carpeta}: el informe debe usar OWASP Top 10:2025 y ASVS 5.0.0`);
+          if (!['L1', 'L2', 'L3'].includes(informe?.standards?.level))
+            err('seguridad/estandar', `${carpeta}: nivel ASVS debe ser L1 | L2 | L3`);
+          if (!valorConcreto(informe?.scope)) err('seguridad/informe', `${carpeta}: alcance vacío o pendiente`);
+          if (!Array.isArray(informe?.controlsEvaluated) ||
+              new Set(informe?.controlsEvaluated || []).size !== (informe?.controlsEvaluated || []).length)
+            err('seguridad/informe', `${carpeta}: controlsEvaluated debe ser un array sin duplicados`);
+          if (!Array.isArray(informe?.controlsNotExecuted))
+            err('seguridad/informe', `${carpeta}: controlsNotExecuted debe ser un array`);
+          else if (informe.controlsNotExecuted.length) {
+            for (const control of informe.controlsNotExecuted) {
+              if (!['control', 'reason', 'risk', 'owner', 'nextStep'].every((campo) => valorConcreto(control?.[campo])))
+                err('seguridad/informe', `${carpeta}: cada control no ejecutado necesita control, reason, risk, owner y nextStep`);
+            }
+            err('seguridad/veredicto', `${carpeta}: GO bloqueado por controles de seguridad no ejecutados`);
+          }
+          const aplicables = contrato.controles
+            .filter((fila) => ['sí', 'si'].includes(fila.aplica)).map((fila) => fila.control);
+          const noEvaluados = aplicables.filter((id) => !informe?.controlsEvaluated?.includes(id));
+          if (noEvaluados.length) err('seguridad/informe', `${carpeta}: controles aplicables no evaluados: ${noEvaluados.join(', ')}`);
+          for (const control of contrato.controles.filter((fila) => ['sí', 'si'].includes(fila.aplica))) {
+            const { tareaId, testRef, bloqueTarea, filaTest, filaEvidence } = control.traza || {};
+            const estadoTarea = bloqueTarea?.match(/Estado\**:\s*\**\s*([^\n]+)/i)?.[1]
+              ?.replace(/[`*]/g, '').trim().toLowerCase();
+            if (bloqueTarea && !estadoTarea?.startsWith('hecho'))
+              err('seguridad/trazabilidad', `${carpeta}/${control.control}: la tarea ${tareaId} no está hecha`);
+            if (testRef && !referenciaTestResuelta(testRef))
+              err('seguridad/trazabilidad', `${carpeta}/${control.control}: no se resuelve el test ${testRef}`);
+            if (filaEvidence && !tieneResultadoSeguridadVerde(filaEvidence))
+              err('seguridad/trazabilidad', `${carpeta}/${control.control}: evidence.md no aporta un resultado verde ejecutado`);
+          }
+
+          const conteos = informe?.openFindings || {};
+          const niveles = ['critical', 'high', 'medium', 'low'];
+          for (const nivel of niveles) {
+            if (!Number.isInteger(conteos[nivel]) || conteos[nivel] < 0)
+              err('seguridad/informe', `${carpeta}: openFindings.${nivel} debe ser entero no negativo`);
+          }
+          if (!['PASS', 'CONDITIONAL', 'BLOCKED'].includes(informe?.verdict))
+            err('seguridad/veredicto', `${carpeta}: veredicto inválido`);
+          if ((conteos.critical || 0) > 0 || (conteos.high || 0) > 0)
+            err('seguridad/veredicto', `${carpeta}: GO bloqueado por hallazgos CRÍTICO/ALTO abiertos`);
+          if (informe?.verdict === 'BLOCKED') err('seguridad/veredicto', `${carpeta}: el informe declara BLOCKED`);
+          if (informe?.verdict === 'PASS' && (conteos.medium || 0) > 0)
+            err('seguridad/veredicto', `${carpeta}: PASS exige cero hallazgos MEDIO abiertos`);
+          if (informe?.verdict === 'CONDITIONAL') {
+            const riesgos = informe?.acceptedRisks;
+            if (!(conteos.medium > 0) || !Array.isArray(riesgos) || riesgos.length !== conteos.medium)
+              err('seguridad/riesgo', `${carpeta}: CONDITIONAL exige una aceptación por cada MEDIO abierto`);
+            else {
+              const ids = riesgos.map((riesgo) => riesgo?.id);
+              if (new Set(ids).size !== ids.length)
+                err('seguridad/riesgo', `${carpeta}: los IDs de riesgos aceptados deben ser únicos`);
+              for (const riesgo of riesgos) {
+              if (!valorConcreto(riesgo?.id) || !valorConcreto(riesgo?.owner) ||
+                  !valorConcreto(riesgo?.justification) || !fechaIsoValida(riesgo?.reviewDate) ||
+                  !referenciaDecisionExiste(riesgo?.decisionRef))
+                err('seguridad/riesgo', `${carpeta}: riesgo aceptado sin id, owner, justification, reviewDate o decisionRef`);
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

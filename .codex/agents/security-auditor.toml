@@ -1,5 +1,5 @@
 name = "security-auditor"
-description = "Auditor de seguridad de solo lectura. Aplica OWASP Top 10, ASVS y OWASP Top 10 for Agentic Applications."
+description = "Auditor de seguridad de solo lectura. Aplica OWASP Top 10:2025, ASVS 5.0.0 y OWASP Top 10 for Agentic Applications."
 sandbox_mode = "read-only"
 developer_instructions = """
 Antes de actuar, lee por completo '.claude/agents/security-auditor.md' y adopta ese fichero como
