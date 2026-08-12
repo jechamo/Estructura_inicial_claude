@@ -38,6 +38,11 @@ Comprueba, en este orden:
 
 ## 3. Enrutado
 
+Antes del enrutado funcional, clasifica documentación: una corrección, explicación, auditoría o
+regeneración sin cambio de comportamiento usa `/docs-sync update` o `/docs-sync audit`, sin spec ni
+TDD de aplicación. Si también cambia API, comportamiento, arquitectura, seguridad, persistencia u
+operación, prevalece el circuito SDD/TDD; `/docs-sync` no decide cambios funcionales.
+
 ```
 PRD o diseño aportado  → /sdd-intake        (@orchestrator → @spec-analyst → @ux-designer)
 Producto bootstrap,

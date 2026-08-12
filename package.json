@@ -1,7 +1,7 @@
 {
   "name": "sdd-agents",
-  "version": "0.5.0",
-  "description": "Ecosistema portable de agentes SDD con intake universal de PRD y diseno, TDD, hooks y gates deterministas para Claude, Cursor, VS Code, Antigravity y Codex.",
+  "version": "0.6.0",
+  "description": "Ecosistema portable de agentes SDD con intake universal, TDD y documentación viva para Claude, VS Code, Cursor, Codex, Gemini CLI y Antigravity.",
   "bin": {
     "sdd": "scripts/install.mjs"
   },
@@ -11,6 +11,7 @@
   },
   "files": [
     ".agents/hooks.json",
+    ".agents/agents",
     ".agents/rules",
     ".agents/skills",
     ".agents/workflows",
@@ -29,8 +30,10 @@
     ".github/hooks",
     ".github/instructions",
     ".github/workflows/sdd-gates.yml",
+    ".gemini/agents",
     ".mcp.json",
     ".sdd/checks.json",
+    ".sdd/docs.json",
     ".sdd/githooks",
     ".sdd/hooks",
     ".sdd/README.md",
@@ -52,6 +55,8 @@
     "docs/design/DIRECTION-GUIDE.md",
     "docs/design/USABILITY-CHECKLIST.md",
     "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md",
+    "docs/guides/DOCUMENTACION.md",
+    "docs/guides/INSTALACION.md",
     "docs/ops/OBSERVABILITY.md",
     "docs/ops/runbooks/_TEMPLATE.md",
     "docs/quality/DEFINITION-OF-DONE.md",
@@ -72,6 +77,7 @@
     "scripts/install.mjs",
     "scripts/scan-secrets.mjs",
     "scripts/lib/manifiesto.mjs",
+    "scripts/lib/docs-contract.mjs",
     "scripts/sdd-project.mjs",
     "scripts/skills-sync.mjs",
     "scripts/test-hooks.mjs"

@@ -20,6 +20,9 @@ Agente responsable: `@planner`, con consulta a los especialistas.
 - Lee `Impacto de seguridad`: `sensible | no-sensible | security-pending`. Si falta o una spec
   sensible nueva intenta usar `security-pending`, devuelve a `/sdd-specify`; no normalices el
   hueco desde el plan.
+- Lee `Impacto de documentación`: `aplicable · DOC-* | no-aplica · motivo | docs-pending`.
+  Si aplica, cruza cada `DOC-ID` con `.sdd/docs.json` y añade fuente, artefacto, generación,
+  propietario, tarea, gate/comprobación y evidencia. Una spec nueva no aprueba `docs-pending`.
 
 ## Paso 1 — Investigación (`research.md`)
 
@@ -134,6 +137,7 @@ Checklist de conformidad:
 - [ ] Cada patrón aplicado tiene un problema real detrás (no decoración)
 - [ ] Nada implementado que la spec no pida (YAGNI)
 - [ ] Toda dependencia nueva justificada en `research.md`
+- [ ] Todo `DOC-ID` aplicable tiene fuente, artefacto, propietario, tarea, comprobación y evidencia
 - [ ] La cobertura total desde `OBJ-*` hasta cada test previsto está visible, o los huecos
       `legacy-pending` están advertidos
 - [ ] `Impacto de seguridad` está clasificado; si es `sensible`, la tabla usa exactamente

@@ -9,6 +9,57 @@
 
 ---
 
+## 2026-08-11 · Documentación viva, portable y versionada como parte de la entrega
+
+- **Tipo**: decisión de proceso, portabilidad y seguridad
+- **Contexto**: el circuito exigía documentación en la entrega, pero no declaraba de forma
+  verificable qué fuentes y artefactos documentales pertenecían a cada proyecto, cuándo una
+  petición editorial podía usar un flujo ligero ni qué configuración debía viajar al clonar el
+  repositorio. Además, el instalador podía modificar la configuración Git local para activar
+  hooks, una mutación ajena al contenido versionado y difícil de trasladar entre IDE y equipos.
+- **Decisión / hecho**: `.sdd/docs.json` pasa a ser el contrato portable de superficies
+  documentales, con fuentes, artefactos, propietario, gate y carácter generado. Una modificación
+  funcional entrega su documentación en el mismo PR y mantiene trazabilidad `DOC-ID → tarea →
+  artefacto → comprobación → evidencia`. Las peticiones exclusivamente editoriales usan
+  `/docs-sync update` sin abrir una spec funcional ni ejecutar TDD de aplicación; si descubren un
+  cambio de comportamiento, se detienen y escalan al circuito SDD/TDD. El baseline inicial se
+  crea con `/docs-sync bootstrap` y necesita aprobación humana antes de ser oficial.
+- **Propiedad y generación**: el propietario se decide por la fuente de verdad: contratos de API
+  para `api-designer`, ADR para `architect`, stories para `frontend-expert` o `implementer`,
+  comentarios públicos para quien implementa, guías y narrativa para `docs-writer`, runbooks y
+  CI/CD para `devops-expert`, y CHANGELOG para `release-manager`. OpenAPI, Storybook, TypeDoc y
+  otros generadores son opt-in; detectarlos no autoriza instalarlos ni a versionar sus builds.
+- **Versionado**: se versionan `.sdd/installed.json`, `.sdd/docs.json`, agentes, skills, reglas,
+  hooks, configuraciones compartidas seguras, specs, evidencias y documentación oficial. Se
+  excluyen secretos, credenciales, `.env`, configuración personal, confianza del IDE,
+  `.sdd/state/`, conflictos, cachés y resultados temporales. Los MCP compartidos solo pueden
+  referenciar variables de entorno, nunca contener credenciales.
+- **Hooks Git**: los hooks se distribuyen como ficheros versionados, pero su activación es manual
+  y opt-in. El instalador no ejecuta `git add`, commit, push, `chmod`, Husky ni cambia
+  `core.hooksPath`; muestra los comandos y los ficheros que conviene revisar. Esta decisión
+  reemplaza la activación automática descrita el 2026-08-09, manteniendo como control universal
+  la ejecución explícita de `sdd-project run --fast` y `--slow` por agentes y CI.
+- **Alternativas descartadas**: documentar después del merge —produce deriva y pierde el contexto
+  del cambio—; obligar a pasar todo el circuito SDD/TDD para una corrección editorial —añade
+  artefactos sin reducir riesgo—; instalar Swagger, Storybook o TypeDoc por detección —confunde
+  presencia con decisión de stack—; versionar builds generados por defecto —duplica fuentes de
+  verdad—; dejar agentes, skills o configuración SDD fuera de Git —un clon no recuperaría el
+  circuito—; activar hooks y mutar Git automáticamente —invade estado local y no es portable.
+- **Impacto**: un clon recupera el flujo, su documentación durable y su historia en todos los
+  hosts soportados; cada proyecto puede adoptar solo los gates documentales que realmente usa;
+  greenfield parte en `bootstrap` y brownfield en `legacy-pending`, sin sobrescribir documentos
+  existentes. La entrega bloquea documentación aplicable pendiente, mientras el trabajo
+  `docs-only` conserva un camino proporcional y auditable.
+- **Deuda aceptada**: ninguna; los generadores y gates tecnológicos se habilitan únicamente al
+  declararlos en el proyecto.
+- **Reversión**: restaurar `.sdd/docs.json` a modo `audit`, retirar la obligatoriedad documental
+  desde `.sdd/installed.json` y deshabilitar los gates `docs:*`; no se borran documentos, logs ni
+  decisiones existentes. Los hooks locales, al ser opt-in, se desactivan restaurando la
+  configuración Git elegida por cada equipo.
+- **Referencias**: spec `008-documentacion-viva-portable` · versión `v0.6.0` · reemplaza
+  parcialmente «Gates antes de commit y push, y un hook que no era ejecutable» del 2026-08-09
+- **Quién**: alcance aprobado por el usuario · registro `bitacora-keeper`
+
 ## 2026-08-11 · Seguridad trazable con auditor de solo lectura e informe verificable
 
 - **Tipo**: decisión estructural y corrección de gate

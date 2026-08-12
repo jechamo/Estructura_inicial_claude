@@ -11,4 +11,6 @@ spec-analyst -> ux-designer -> spec-analyst -> gate humano desde artefactos dura
 profundidad máxima 2, no escribas documentos y no permitas arquitectura o código antes del gate.
 Si la sesión no permite delegar, indica agente y comando exactos, empezando por
 'Selecciona spec-analyst y ejecuta /sdd-intake'.
+Las peticiones docs-only se delegan en docs-writer con /docs-sync. Si aparece un cambio de
+comportamiento, contrato, arquitectura, seguridad o persistencia, vuelve al circuito SDD/TDD.
 """

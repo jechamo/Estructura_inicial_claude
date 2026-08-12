@@ -382,6 +382,12 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "unconfigured": ["lint", "test", "typecheck", "build", "smells", "coverage", "e2e", "visual", "a11y", "security", "deps-audit", "docs", "mutation"]
 }
 `,
+  '.sdd/docs.json': `{
+  "schemaVersion": 1,
+  "mode": "audit",
+  "documentSets": []
+}
+`,
   '.env.example': `# Variables de aplicación
 # Añade solo nombres y explicaciones. Nunca incluyas valores reales ni credenciales.
 
@@ -424,7 +430,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   'docs/architecture/constitution.md', 'docs/design/DIRECCION-VISUAL.md',
   'docs/security/THREAT-MODEL.md', 'docs/bitacora/DECISIONS.md',
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
-  '.sdd/checks.json', '.sdd/installed.json', '.env.example',
+  '.sdd/checks.json', '.sdd/docs.json', '.sdd/installed.json', '.env.example',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
   '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
@@ -437,7 +443,8 @@ const EXCLUSIONES_EXACTAS = new Set([
 /** Devuelve true solo para artefactos reutilizables, nunca para historia generada. */
 export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   const r = ruta.replaceAll('\\', '/');
-  if (r.startsWith('.git/') || r.startsWith('node_modules/') || r.startsWith('scripts/lib/')) return false;
+  if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
+  if (r.startsWith('scripts/lib/') && r !== 'scripts/lib/docs-contract.mjs') return false;
   if (EXCLUSIONES_EXACTAS.has(r)) {
     if (conMcp && ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'].includes(r)) return true;
     return false;
@@ -457,6 +464,7 @@ export const APENDICE_GITIGNORE = {
   inicio: '# ─── SDD (instalado por sdd init) ───',
   fin: '# ─── fin SDD ───',
   lineas: [
+    '# Secretos y estado exclusivamente local',
     '.env',
     '.env.*',
     '!.env.example',

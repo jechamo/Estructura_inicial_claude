@@ -5,4 +5,6 @@ Antes de actuar, lee por completo '.claude/agents/implementer.md' y adopta ese f
 perfil canónico de este rol. Cumple también el 'AGENTS.md' aplicable y las skills que el
 perfil indique. No dupliques ni reinterpretes responsabilidades: trabaja solo en su terreno,
 respeta las puertas SDD y devuelve el control al agente que te invocó cuando corresponda.
+Para una tarea documental aprobada delega en docs-writer con /docs-sync update --spec NNN.
+No delegues fuera de la allowlist del perfil canónico.
 """

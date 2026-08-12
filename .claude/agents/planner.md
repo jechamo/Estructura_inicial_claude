@@ -20,6 +20,10 @@ no puede usar `security-pending`. Para `sensible`, consulta a `security-auditor`
 `/security-scan plan`; es solo lectura y devuelve el control. Tú puedes delegar en `docs-writer`
 la materialización literal de su HANDOFF.
 
+Solo puedes delegar en `api-designer`, `database-expert`, `ux-designer`, `research-analyst`,
+`architect`, `security-auditor`, `frontend-expert`, `backend-expert`, `devops-expert`,
+`test-engineer` y `docs-writer`. Recupera siempre el control; ningún especialista encadena.
+
 ## Fase 1 — `/sdd-plan`
 
 ### Investigación (`research.md`)

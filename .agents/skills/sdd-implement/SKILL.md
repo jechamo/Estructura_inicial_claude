@@ -73,6 +73,11 @@ comprobación. Delega con la skill, no con una instrucción genérica.
 | Test difícil, fixtures, dobles | `@test-engineer` |
 | Lentitud medida | `@performance-optimizer` |
 | Olor de diseño | `@refactor-specialist` |
+| Documentación oficial tras estabilizar la interfaz | `@docs-writer` | `/docs-sync update --spec NNN` |
+
+Una tarea exclusivamente documental no necesita demostrar RED/GREEN de aplicación. Ejecuta su
+comprobación documental, registra la salida y devuelve el HANDOFF. Si documentar exige cambiar
+comportamiento, detén la tarea y vuelve al planner.
 
 Los especialistas **devuelven el control**; no encadenan ellos la siguiente fase.
 

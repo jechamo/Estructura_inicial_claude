@@ -65,7 +65,10 @@ if (gatesEnabled() && contenido) {
 const politica = [
   /(^|\/)\.claude\/(agents|skills)\//,
   /(^|\/)\.agents\/skills\//,
+  /(^|\/)\.agents\/agents\//,
+  /(^|\/)\.gemini\/agents\//,
   /(^|\/)\.sdd\/hooks\//,
+  /(^|\/)\.sdd\/docs\.json$/,
   /(^|\/)\.claude\/settings\.json$/,
   /(^|\/)\.github\/(agents|prompts|instructions)\//,
   /(^|\/)\.cursor\/(rules|agents|commands)\//,

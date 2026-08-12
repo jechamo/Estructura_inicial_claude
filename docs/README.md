@@ -61,6 +61,7 @@ Estos **obligan**, no son sugerencias:
 | [`architecture/PATTERNS.md`](./architecture/PATTERNS.md) | Elegir patrón cuando aparece el problema |
 | [`guides/INSTALACION.md`](./guides/INSTALACION.md) | **Empieza aquí si tienes un proyecto ya montado**: cómo instalar la estructura sin pisar lo que ya tienes, y cómo actualizarla |
 | [`guides/COMO-TRABAJAR-CON-LOS-AGENTES.md`](./guides/COMO-TRABAJAR-CON-LOS-AGENTES.md) | **Empieza aquí si vas a usar el sistema**: comunicación entre agentes, por dónde empezar, TDD, calidad y seguridad |
+| [`guides/DOCUMENTACION.md`](./guides/DOCUMENTACION.md) | Qué se versiona, circuitos docs-only/SDD, `/docs-sync`, propietarios y gates |
 | [`agents/CATALOG.md`](./agents/CATALOG.md) | Qué agente hace qué y a quién llama |
 | [`agents/MAPEO-10-AGENTES.md`](./agents/MAPEO-10-AGENTES.md) | La idea original de 10 agentes y por qué cambió cada pieza |
 | [`agents/SKILLS-EXTERNAS.md`](./agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, auditoría y registro |
@@ -81,7 +82,11 @@ Estos **obligan**, no son sugerencias:
 - Una sola fuente de verdad por hecho. **No dupliques: enlaza.**
 - `/sdd-intake` acepta PRD en texto/ruta/carpeta/URL y diseño opcional. Si no hay delegación,
   cada handoff indica perfil, comando y rutas a releer; nunca depende solo del chat.
-- La plantilla conserva 20 agentes y 25 skills. No añadas prompts/commands paralelos ni actives
-  MCP para representar el intake.
+- La plantilla conserva 20 agentes y 26 skills en seis superficies de host. No añadas
+  prompts/commands paralelos ni actives MCP para representar una skill.
+- Una corrección editorial entra por `/docs-sync update`; si cambia comportamiento, contrato,
+  arquitectura, seguridad o persistencia, vuelve a SDD/TDD.
+- Código y documentación aplicable llegan en el mismo PR, con trazabilidad
+  `DOC-ID → tarea → artefacto → comprobación → evidencia`.
 - No crees documentos que nadie ha pedido ni que nadie va a mantener.
 - Español para la documentación, inglés para el código y los identificadores.

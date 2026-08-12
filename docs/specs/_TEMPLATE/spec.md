@@ -11,6 +11,7 @@
 | **Baseline de producto** | [`docs/product/PRD.md`](../../product/PRD.md) · estado `<pending/approved/legacy-pending>` |
 | **Fuentes** | [`docs/product/SOURCES.md`](../../product/SOURCES.md) · `<SRC-...>` |
 | **Impacto de seguridad** | `sensible` \| `no-sensible` \| `security-pending` |
+| **Impacto de documentación** | `aplicable · DOC-...` \| `no-aplica · <motivo material>` \| `docs-pending` |
 
 > ⚠️ Esta spec describe **QUÉ** y **POR QUÉ**. Cero tecnología: ni tablas, ni endpoints,
 > ni frameworks, ni nombres de clase. Eso va en `plan.md`.
@@ -110,6 +111,16 @@ justifica por escrito aquí (tecnología conocida, equipo estable, riesgo extern
 
 La spec declara el impacto y el comportamiento esperado; las decisiones técnicas y la matriz de
 controles se completan en `plan.md`.
+
+### 5.2 · Clasificación documental
+
+> `aplicable` identifica una o más superficies `DOC-*` declaradas en `.sdd/docs.json`.
+> `no-aplica` necesita un motivo material. `docs-pending` solo conserva historia brownfield
+> anterior a `documentation.enforceFromSpec`; una spec nueva no puede usarlo como excepción.
+
+| DOC-ID / estado | Superficie afectada | Audiencia | Motivo o comportamiento que cambia |
+|---|---|---|---|
+| `DOC-...` \| `no-aplica` | `<public-api/public-code/ui-catalog/user-guide/architecture/operations/developer-readme>` | `<audiencia>` | `<motivo concreto>` |
 
 ## 6. Criterios de aceptación
 

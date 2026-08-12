@@ -10,7 +10,7 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join, dirname, resolve, parse } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -151,6 +151,13 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala AGENTS.md', existsSync(join(d, 'AGENTS.md')));
   comprueba('instala los agentes', existsSync(join(d, '.claude/agents/implementer.md')));
   comprueba('instala las skills canónicas portables', existsSync(join(d, '.agents/skills/middle/SKILL.md')));
+  comprueba('instala /docs-sync como skill canónica sin comandos paralelos',
+    existsSync(join(d, '.agents/skills/docs-sync/SKILL.md')) &&
+    !existsSync(join(d, '.github/prompts/docs-sync.prompt.md')) &&
+    !existsSync(join(d, '.cursor/commands/docs-sync.md')));
+  comprueba('el adaptador Claude de /docs-sync apunta a la fuente canónica',
+    (leer(join(d, '.claude/skills/docs-sync/SKILL.md')) || '')
+      .includes('.agents/skills/docs-sync/SKILL.md'));
   comprueba('instala la skill canónica de intake sin prompt paralelo',
     existsSync(join(d, '.agents/skills/sdd-intake/SKILL.md')) &&
     !existsSync(join(d, '.github/prompts/sdd-intake.prompt.md')) &&
@@ -173,11 +180,17 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los hooks de Copilot', existsSync(join(d, '.github/hooks/sdd.json')));
   comprueba('instala los 20 agentes de Codex',
     existsSync(join(d, '.codex/agents')) && readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20);
-  comprueba('mantiene paridad exacta de 20 agentes y 25 skills sin duplicados',
+  comprueba('mantiene paridad exacta de 20 agentes en seis hosts y 26 skills sin duplicados',
+    readdirSync(join(d, '.claude/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
     readdirSync(join(d, '.github/agents')).filter((f) => f.endsWith('.agent.md')).length === 20 &&
     readdirSync(join(d, '.cursor/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
-    readdirSync(join(d, '.agents/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 25 &&
-    readdirSync(join(d, '.claude/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 25);
+    readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20 &&
+    existsSync(join(d, '.agents/agents')) &&
+    readdirSync(join(d, '.agents/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
+    existsSync(join(d, '.gemini/agents')) &&
+    readdirSync(join(d, '.gemini/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
+    readdirSync(join(d, '.agents/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 26 &&
+    readdirSync(join(d, '.claude/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 26);
   comprueba('los adaptadores permiten planificar seguridad y materializar el handoff sin escribir desde el auditor', (() => {
     const plannerGithub = leer(join(d, '.github/agents/planner.agent.md')) || '';
     const orchestratorGithub = leer(join(d, '.github/agents/orchestrator.agent.md')) || '';
@@ -205,6 +218,18 @@ console.log('\n1 · init sobre un directorio vacío');
     /trust|confiar|conf[ií]a/i.test(r.stdout || '') && /reload|recargar/i.test(r.stdout || '') && /VS Code/i.test(r.stdout || ''));
   comprueba('crea docs/specs', existsSync(join(d, 'docs/specs')));
   comprueba('deja registro de instalación', existsSync(join(d, '.sdd/installed.json')));
+  comprueba('greenfield instala el contrato documental vacío en audit', (() => {
+    try {
+      const docs = JSON.parse(leer(join(d, '.sdd/docs.json')) || '{}');
+      return docs.schemaVersion === 1 && docs.mode === 'audit' &&
+        Array.isArray(docs.documentSets) && docs.documentSets.length === 0;
+    } catch { return false; }
+  })());
+  comprueba('greenfield exige documentación desde la primera spec', (() => {
+    const documentation = JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').documentation;
+    return documentation?.schemaVersion === 1 && documentation.status === 'bootstrap' &&
+      documentation.enforceFromSpec === '001';
+  })());
   comprueba('greenfield nace con baseline de producto pendiente', (() => {
     const registro = JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}');
     return registro.product?.status === 'bootstrap' &&
@@ -371,6 +396,16 @@ console.log('\n1 · init sobre un directorio vacío');
         !Object.values(c.checks || {}).some((x) => /npm |pytest|gradle|mvn /.test(x?.command || ''));
     } catch { return false; }
   })());
+  comprueba('el tooling documental nace opt-in y sin inventar Swagger, Storybook o TypeDoc', (() => {
+    try {
+      const c = JSON.parse(leer(join(d, '.sdd/checks.json')) || '{}');
+      const comandos = Object.entries(c.checks || {})
+        .filter(([id]) => id === 'docs' || id.startsWith('docs:'))
+        .map(([, check]) => check?.command || '');
+      return c.unconfigured?.includes('docs') && comandos.length === 0 &&
+        !/swagger|storybook|typedoc/i.test(JSON.stringify(c));
+    } catch { return false; }
+  })());
   comprueba('no activa MCP por defecto',
     !existsSync(join(d, '.mcp.json')) && !existsSync(join(d, '.vscode/mcp.json')) &&
     !existsSync(join(d, '.agents/mcp_config.json')));
@@ -386,6 +421,38 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala contrato completo JWT, refresh y autorización', contrato_jwt(d));
   comprueba('CSRF no descansa únicamente en SameSite', csrf_no_samesite_solo(d));
   comprueba('las plantillas propagan impacto, controles y abuso hasta la evidencia', matriz_seguridad(d));
+  comprueba('las plantillas propagan DOC-ID desde impacto hasta evidencia', (() => {
+    const spec = leer(join(d, 'docs/specs/_TEMPLATE/spec.md')) || '';
+    const plan = leer(join(d, 'docs/specs/_TEMPLATE/plan.md')) || '';
+    const tasks = leer(join(d, 'docs/specs/_TEMPLATE/tasks.md')) || '';
+    const tests = leer(join(d, 'docs/specs/_TEMPLATE/test-plan.md')) || '';
+    const evidence = leer(join(d, 'docs/specs/_TEMPLATE/evidence.md')) || '';
+    return /Impacto de documentaci[oó]n/.test(spec) &&
+      ['aplicable', 'no-aplica', 'docs-pending'].every((estado) => spec.includes(estado)) &&
+      /no-aplica[\s\S]{0,120}(?:motivo|justificaci[oó]n)/i.test(spec) &&
+      /DOC-ID[\s\S]{0,500}superficie[\s\S]{0,500}fuente de verdad[\s\S]{0,500}artefacto/i.test(plan) &&
+      /Documentaci[oó]n[^\n]*DOC-/i.test(tasks) && /DOC-ID/.test(tests) &&
+      /DOC-ID[\s\S]{0,500}tarea[\s\S]{0,500}artefacto[\s\S]{0,500}(?:comprobaci[oó]n|resultado)/i.test(evidence);
+  })());
+  comprueba('docs-writer tiene ownership acotado y devuelve el handoff al invocador', (() => {
+    const perfil = leer(join(d, '.claude/agents/docs-writer.md')) || '';
+    const mantiene = perfil.match(/## Qu[eé] mantienes([\s\S]*?)(?:\n## |$)/i)?.[1] || '';
+    return /README\.md|docs\/guides|docs\/api/.test(mantiene) &&
+      /\.sdd\/docs\.json/.test(mantiene) && /tools:[^\n]*\bBash\b/.test(perfil) &&
+      !/docs\/product|docs\/specs|architecture\/adr|bit[aá]cora|CHANGELOG/i.test(mantiene) &&
+      /Devuelvo control a:\s*<agente que me invoc[oó]>/i.test(perfil);
+  })());
+  comprueba('orchestrator e implementer pueden delegar docs-only y tareas documentales', (() => {
+    const rutas = [
+      '.claude/agents/orchestrator.md', '.claude/agents/implementer.md',
+      '.github/agents/orchestrator.agent.md', '.github/agents/implementer.agent.md',
+      '.cursor/agents/orchestrator.md', '.cursor/agents/implementer.md',
+      '.codex/agents/orchestrator.toml', '.codex/agents/implementer.toml',
+      '.agents/agents/orchestrator.md', '.agents/agents/implementer.md',
+      '.gemini/agents/orchestrator.md', '.gemini/agents/implementer.md',
+    ];
+    return rutas.every((ruta) => /docs-writer/.test(leer(join(d, ruta)) || ''));
+  })());
   comprueba('la doctrina de seguridad es descubrible y portable entre hosts', portabilidad_seguridad(d));
   comprueba('instala dirección visual mínima y conserva la guía aparte',
     existsSync(join(d, 'docs/design/DIRECTION-GUIDE.md')) &&
@@ -394,6 +461,21 @@ console.log('\n1 · init sobre un directorio vacío');
     existsSync(join(d, 'docs/architecture/adr/_TEMPLATE.md')) &&
     !existsSync(join(d, 'docs/architecture/adr/ADR-0000-plantilla.md')));
   comprueba('el CI instalado es universal y no prueba la plantilla', workflow_supply_chain(d));
+  comprueba('el CI documental obtiene historial y pasa un SHA base exacto al gate', (() => {
+    const ci = leer(join(d, '.github/workflows/sdd-gates.yml')) || '';
+    return /fetch-depth:\s*0/.test(ci) && /pull_request\.base\.sha|github\.event\.before/.test(ci) &&
+      /--docs-diff\s+--base/.test(ci) && /push:[\s\S]{0,80}branches:/.test(ci) &&
+      !/continue-on-error:\s*true/.test(ci);
+  })());
+  comprueba('el pre-push documental resuelve una base y falla cerrado si no puede', (() => {
+    const hook = leer(join(d, '.sdd/githooks/pre-push')) || '';
+    return /--docs-diff\s+--base/.test(hook) && /local_sha\^\{commit\}/.test(hook) &&
+      /refs\/tags\/\*/.test(hook) && /exit\s+1|NO EJECUTADO/i.test(hook);
+  })());
+  comprueba('el instalador explica qué versionar y qué conservar local',
+    /versionar|subir|commit/i.test(r.stdout || '') &&
+    /local|no versionar|excluid/i.test(r.stdout || '') &&
+    /git status/i.test(r.stdout || ''));
 
   // Lo que NO debe viajar: el historial de la plantilla
   comprueba('NO copia el contenido del README de la plantilla',
@@ -465,7 +547,7 @@ console.log('\n1 · init sobre un directorio vacío');
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('inventory cuenta agentes y skills canónicos',
-    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 25);
+    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 26);
 
   comprueba('la skill observability se instala con su adaptador Claude',
     existsSync(join(d, '.agents/skills/observability/SKILL.md')) &&
@@ -474,17 +556,16 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('los git hooks viajan con la plantilla',
     existsSync(join(d, '.sdd/githooks/pre-commit')) && existsSync(join(d, '.sdd/githooks/pre-push')));
 
-  // Los gates antes de commit y push deben quedar activos sin pasos manuales, y el mecanismo
-  // cambia con el stack: Husky donde hay npm install donde engancharse, core.hooksPath donde no.
+  // Los hooks compartidos se versionan, pero el instalador no muta Git, Husky ni package.json.
+  // La activación es una decisión local y se muestra como comando explícito.
   {
     const nodo = nuevoDestino();
     spawnSync('git', ['init', '-q', '.'], { cwd: nodo, encoding: 'utf8' });
     writeFileSync(join(nodo, 'package.json'), '{"name":"n","version":"1.0.0"}\n', 'utf8');
-    sdd(nodo, 'init', nodo, '--mode', 'auto');
-    const preCommit = leer(join(nodo, '.husky/pre-commit')) || '';
-    comprueba('en Node monta Husky delegando en sdd-project run',
-      preCommit.includes('sdd-project.mjs run --fast') &&
-      (leer(join(nodo, '.husky/pre-push')) || '').includes('run --slow'));
+    const instalacionNodo = sdd(nodo, 'init', nodo, '--mode', 'auto');
+    comprueba('en Node no crea Husky y explica la activación manual',
+      !existsSync(join(nodo, '.husky')) &&
+      /git config core\.hooksPath \.sdd\/githooks|hooks.*manual/i.test(instalacionNodo.stdout || ''));
     // El package.json es del usuario: se propone el cambio, no se aplica.
     comprueba('en Node no modifica el package.json del proyecto',
       !JSON.parse(leer(join(nodo, 'package.json'))).scripts);
@@ -494,8 +575,8 @@ console.log('\n1 · init sobre un directorio vacío');
     writeFileSync(join(py, 'pyproject.toml'), '[project]\nname="x"\n', 'utf8');
     sdd(py, 'init', py, '--mode', 'auto');
     const rutaHooks = spawnSync('git', ['config', '--get', 'core.hooksPath'], { cwd: py, encoding: 'utf8' });
-    comprueba('sin Node configura core.hooksPath y no crea .husky',
-      (rutaHooks.stdout || '').trim() === '.sdd/githooks' && !existsSync(join(py, '.husky')));
+    comprueba('sin Node tampoco muta core.hooksPath ni crea .husky',
+      !(rutaHooks.stdout || '').trim() && !existsSync(join(py, '.husky')));
 
     const sin = nuevoDestino();
     spawnSync('git', ['init', '-q', '.'], { cwd: sin, encoding: 'utf8' });
@@ -613,6 +694,7 @@ function gate_security_e_informe() {
 | Estado | aprobada |
 |---|---|
 | Impacto de seguridad | sensible |
+| Impacto de documentación | no-aplica · fixture técnico del gate de seguridad |
 | RF-01 | El sistema DEBE verificar el gate. | M | 1 |
 ### CA-01 · Gate bloqueante
 `, 'utf8');
@@ -894,6 +976,7 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 | **Estado** | aprobada |
 |---|---|
 | **Impacto de seguridad** | no-sensible |
+| **Impacto de documentación** | no-aplica · fixture técnico de ejecución directa |
 
 | Id | Requisito | Prioridad | Esfuerzo |
 |---|---|---|---|
@@ -1057,6 +1140,15 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
     '{\n  "editor.tabSize": 4,\n  "files.associations": { "*.foo": "json" },\n' +
     '  "chat.agentFilesLocations": { ".claude/agents": true, ".github/agents": false },\n' +
     '  "chat.agentSkillsLocations": { ".claude/skills": true, ".agents/skills": false }\n}\n', 'utf8');
+  mkdirSync(join(d, '.sdd'), { recursive: true });
+  writeFileSync(join(d, '.sdd/docs.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    mode: 'audit',
+    documentSets: [{
+      id: 'DOC-PROPIO', kind: 'user-guide', sources: ['src/**'], artifacts: ['docs/guides/**'],
+      generated: false, gate: null, owner: 'docs-writer', extensionPropia: SENTINELA,
+    }],
+  }, null, 2)}\n`, 'utf8');
 
   sdd(d, 'init');
 
@@ -1079,6 +1171,13 @@ console.log('\n2 · init sobre un proyecto con ficheros propios');
       .every((nombre) => leer(join(d, 'docs/product', nombre)).includes(SENTINELA)));
   comprueba('brownfield sin aprobación explícita queda legacy-pending sin romper la instalación',
     JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').product?.status === 'legacy-pending');
+  comprueba('brownfield conserva el contrato documental y empieza a exigir desde la siguiente spec', (() => {
+    const docs = JSON.parse(leer(join(d, '.sdd/docs.json')) || '{}');
+    const documentation = JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').documentation;
+    return docs.documentSets?.[0]?.extensionPropia === SENTINELA &&
+      documentation?.schemaVersion === 1 && documentation.status === 'legacy-pending' &&
+      documentation.enforceFromSpec === '778';
+  })());
   comprueba('MCP queda intacto sin --with-mcp', leer(join(d, '.mcp.json')).includes(SENTINELA));
   comprueba('CI existente queda intacto', leer(join(d, '.github/workflows/sdd-gates.yml')).includes(SENTINELA));
 
@@ -1104,10 +1203,13 @@ console.log('\n2 quater · conflictos de configuración');
   const d = nuevoDestino();
   mkdirSync(join(d, '.vscode'), { recursive: true });
   mkdirSync(join(d, '.codex'), { recursive: true });
+  mkdirSync(join(d, '.sdd'), { recursive: true });
   const JSONC_MALO = '{ "editor.tabSize": 2, esto-no-es-jsonc }\n';
   const TOML_MALO = '[[[esto no es toml\n';
+  const DOCS_MALO = '{ "schemaVersion": 1, "documentSets": [';
   writeFileSync(join(d, '.vscode/settings.json'), JSONC_MALO, 'utf8');
   writeFileSync(join(d, '.codex/config.toml'), TOML_MALO, 'utf8');
+  writeFileSync(join(d, '.sdd/docs.json'), DOCS_MALO, 'utf8');
 
   const r = sdd(d, 'init', '--with-mcp', 'context7');
   comprueba('configuración malformada no aborta toda la instalación', r.status === 0, r.stderr?.slice(0, 180));
@@ -1117,6 +1219,9 @@ console.log('\n2 quater · conflictos de configuración');
   comprueba('TOML malformado se preserva', leer(join(d, '.codex/config.toml')) === TOML_MALO);
   comprueba('TOML propuesto queda bajo conflicts',
     existsSync(join(d, `.sdd/conflicts/${VERSION}/.codex/config.toml`)));
+  comprueba('docs.json inválido se preserva y la propuesta queda bajo conflicts',
+    leer(join(d, '.sdd/docs.json')) === DOCS_MALO &&
+    existsSync(join(d, `.sdd/conflicts/${VERSION}/.sdd/docs.json`)));
 }
 
 // ─── 2 bis · Destino explícito y modos ─────────────────────────────────────
@@ -1157,10 +1262,19 @@ console.log('\n3 · ejecutar init dos veces');
 {
   const d = nuevoDestino();
   sdd(d, 'init');
+  const docsPrimera = leer(join(d, '.sdd/docs.json'));
+  const registroPrimero = leer(join(d, '.sdd/installed.json'));
+  const documentationPrimera = JSON.parse(registroPrimero || '{}').documentation;
   const segunda = sdd(d, 'init');
 
   comprueba('la segunda no genera conflictos', /0 conflicto\(s\)/.test(segunda.stdout || ''), (segunda.stdout || '').slice(-160));
   comprueba('no deja ficheros .sdd-nuevo', !existsSync(join(d, 'AGENTS.md.sdd-nuevo')));
+  comprueba('la segunda conserva idempotentes docs.json e installed.documentation',
+    docsPrimera !== null && leer(join(d, '.sdd/docs.json')) === docsPrimera &&
+    leer(join(d, '.sdd/installed.json')) === registroPrimero &&
+    documentationPrimera?.status === 'bootstrap' &&
+    JSON.stringify(JSON.parse(leer(join(d, '.sdd/installed.json')) || '{}').documentation) ===
+      JSON.stringify(documentationPrimera));
 }
 
 // ─── 4 · update no pisa lo que has tocado ────────────────────────────────────
@@ -1313,6 +1427,96 @@ console.log('\n4 quater · migración conservadora de seguridad');
     existsSync(join(d, `.sdd/conflicts/${VERSION}/.sdd/checks.json`)));
 }
 
+console.log('\n4 quinquies · migración conservadora de documentación');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'brownfield');
+  mkdirSync(join(d, 'docs/specs/003-previa'), { recursive: true });
+  mkdirSync(join(d, 'docs/specs/011-previa'), { recursive: true });
+  rmSync(join(d, '.sdd/docs.json'), { force: true });
+
+  const registroRuta = join(d, '.sdd/installed.json');
+  const anterior = JSON.parse(leer(registroRuta));
+  delete anterior.documentation;
+  anterior.version = '0.5.0';
+  writeFileSync(registroRuta, `${JSON.stringify(anterior, null, 2)}\n`, 'utf8');
+
+  const checksRuta = join(d, '.sdd/checks.json');
+  writeFileSync(checksRuta, `${JSON.stringify({
+    version: 1,
+    checks: {
+      sdd: { command: 'node scripts/check-sdd.mjs', required: true, speed: 'fast' },
+      'docs:links': { command: 'node mi-doc-check.mjs', required: true, speed: 'slow' },
+    },
+    unconfigured: ['test'],
+    extensionPropia: { sentinel: true },
+  }, null, 2)}\n`, 'utf8');
+
+  const update = sdd(d, 'update');
+  const docs = JSON.parse(leer(join(d, '.sdd/docs.json')) || '{}');
+  const registro = JSON.parse(leer(registroRuta));
+  const checks = JSON.parse(leer(checksRuta));
+  comprueba('update crea docs.json audit y documentation legacy-pending desde la siguiente spec',
+    update.status === 0 && docs.schemaVersion === 1 && docs.mode === 'audit' &&
+    Array.isArray(docs.documentSets) && registro.documentation?.status === 'legacy-pending' &&
+    registro.documentation?.enforceFromSpec === '012');
+  comprueba('la migración conserva un gate docs:* real y extensiones propias',
+    checks.checks?.['docs:links']?.command === 'node mi-doc-check.mjs' &&
+    checks.extensionPropia?.sentinel === true && !checks.unconfigured.includes('docs'));
+
+  const docsPrimera = leer(join(d, '.sdd/docs.json'));
+  const estadoPrimero = JSON.stringify(registro.documentation);
+  const repetida = sdd(d, 'update');
+  comprueba('la migración documental repetida es idempotente',
+    repetida.status === 0 && leer(join(d, '.sdd/docs.json')) === docsPrimera &&
+    JSON.stringify(JSON.parse(leer(registroRuta)).documentation) === estadoPrimero);
+
+  rmSync(join(d, 'docs/specs/003-previa'), { recursive: true, force: true });
+  rmSync(join(d, 'docs/specs/011-previa'), { recursive: true, force: true });
+  spawnSync('git', ['init', '-q', '.'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['add', '-A'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push'],
+    { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    'commit', '-q', '-m', 'adopta SDD'], { cwd: d, encoding: 'utf8' });
+  const base = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  const legado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--docs-diff', '--base', base], { cwd: d, encoding: 'utf8' });
+  comprueba('el primer PR brownfield queda N/A verificable antes del umbral documental',
+    legado.status === 0 && /legacy-pending|N\/A|spec 012/i.test(legado.stdout || ''));
+
+  mkdirSync(join(d, 'docs/specs/012-nueva'), { recursive: true });
+  const cruzaUmbral = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--docs-diff', '--base', base], { cwd: d, encoding: 'utf8' });
+  comprueba('la primera spec posterior al umbral obliga a aprobar el contrato documental',
+    cruzaUmbral.status === 1 && /NO EJECUTADO|enforce|documentSets|contrato/i.test(cruzaUmbral.stdout || ''));
+  rmSync(join(d, 'docs/specs/012-nueva'), { recursive: true, force: true });
+
+  writeFileSync(join(d, '.sdd/docs.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    mode: 'audit',
+    documentSets: [{
+      id: 'DOC-BASELINE', kind: 'developer-readme', sources: ['README.md'],
+      artifacts: ['docs/README.md'], generated: false, gate: null, owner: 'docs-writer',
+    }],
+  }, null, 2)}\n`, 'utf8');
+  const aprobado = spawnSync(process.execPath,
+    ['scripts/sdd-project.mjs', 'approve-docs', '--approved-by', 'Equipo Test'], { cwd: d, encoding: 'utf8' });
+  const registroAprobado = JSON.parse(leer(registroRuta) || '{}').documentation;
+  comprueba('approve-docs exige persona y materializa un baseline durable sin mover el umbral',
+    aprobado.status === 0 && JSON.parse(leer(join(d, '.sdd/docs.json')) || '{}').mode === 'enforce' &&
+    registroAprobado?.status === 'approved' && registroAprobado?.approvedBy === 'Equipo Test' &&
+    registroAprobado?.enforceFromSpec === '012' && /^[0-9a-f]{16}$/.test(registroAprobado?.configHash || ''));
+
+  const contratoDerivado = JSON.parse(leer(join(d, '.sdd/docs.json')) || '{}');
+  contratoDerivado.documentSets[0].sources = ['docs/README.md'];
+  writeFileSync(join(d, '.sdd/docs.json'), `${JSON.stringify(contratoDerivado, null, 2)}\n`, 'utf8');
+  const driftAprobado = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--docs-diff', '--base', base], { cwd: d, encoding: 'utf8' });
+  comprueba('docs-diff bloquea deriva de un contrato aprobado aunque conserve documentSets',
+    driftAprobado.status === 1 && /drift|aprobado|contrato documental/i.test(driftAprobado.stdout || ''));
+}
+
 console.log('\n4 bis · allowlist de distribución npm');
 {
   const paquete = JSON.parse(leer(join(ORIGEN, 'package.json')) || '{}');
@@ -1333,10 +1537,14 @@ console.log('\n4 bis · allowlist de distribución npm');
     'docs/quality/_TEMPLATE.executive-summary.md',
     'docs/ops/OBSERVABILITY.md', 'docs/ops/runbooks/_TEMPLATE.md',
     'docs/design/USABILITY-CHECKLIST.md',
+    'docs/guides/DOCUMENTACION.md', 'docs/guides/INSTALACION.md',
     'docs/architecture/PATTERNS.md', 'docs/sdd/OPERATING-MODEL.md',
     'docs/security/AUTH-TOKENS.md', 'docs/security/SECURITY-CHECKLIST.md',
     '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push',
     '.agents/skills/observability/SKILL.md', '.claude/skills/observability/SKILL.md',
+    '.agents/skills/docs-sync/SKILL.md', '.claude/skills/docs-sync/SKILL.md',
+    '.agents/agents/orchestrator.md', '.gemini/agents/orchestrator.md',
+    '.sdd/docs.json',
     'scripts/sdd-project.mjs', 'scripts/check-sdd.mjs', 'scripts/scan-secrets.mjs',
   ];
   const ausentes = imprescindibles.filter((ruta) => !cubierto(ruta));
@@ -1354,6 +1562,47 @@ console.log('\n4 bis · allowlist de distribución npm');
   const serializada = JSON.stringify(allowlist);
   comprueba('la allowlist no publica globs locales ni historia activa',
     !/\.claude\/\*\*|\.sdd\/\*\*|docs\/specs\/\*\*|scripts\/test-install\.mjs/.test(serializada));
+}
+
+console.log('\n4 bis bis · Git portable sin mutaciones implícitas');
+{
+  const d = nuevoDestino();
+  spawnSync('git', ['init', '-q', '.'], { cwd: d, encoding: 'utf8' });
+  writeFileSync(join(d, 'sentinel.txt'), 'contenido previo\n', 'utf8');
+  spawnSync('git', ['add', 'sentinel.txt'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    'commit', '-q', '-m', 'baseline'], { cwd: d, encoding: 'utf8' });
+  const headAntes = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+
+  const r = sdd(d, 'init', '--mode', 'brownfield');
+  const headDespues = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  const indiceLimpio = spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: d, encoding: 'utf8' });
+  comprueba('el instalador no ejecuta git add, commit ni push',
+    r.status === 0 && headDespues === headAntes && indiceLimpio.status === 0);
+
+  const compartidos = [
+    'AGENTS.md', 'CHANGELOG.md', 'docs/README.md', '.sdd/docs.json', '.sdd/installed.json',
+    '.agents/skills/docs-sync/SKILL.md', '.claude/agents/docs-writer.md',
+    '.github/agents/docs-writer.agent.md', '.cursor/agents/docs-writer.md',
+    '.codex/agents/docs-writer.toml', '.agents/agents/docs-writer.md',
+    '.gemini/agents/docs-writer.md',
+  ];
+  const noIgnorados = compartidos.every((ruta) =>
+    existsSync(join(d, ruta)) &&
+    spawnSync('git', ['check-ignore', '-q', '--', ruta], { cwd: d, encoding: 'utf8' }).status === 1);
+  comprueba('agentes, skills, configuración SDD e historia quedan versionables', noIgnorados);
+  comprueba('estado local y secretos quedan ignorados', (() => {
+    const ignorados = ['.env', '.sdd/state/prueba.json', '.sdd/conflicts/prueba.txt'];
+    for (const ruta of ignorados) {
+      mkdirSync(dirname(join(d, ruta)), { recursive: true });
+      writeFileSync(join(d, ruta), 'dato local\n', 'utf8');
+    }
+    return ignorados.every((ruta) =>
+      spawnSync('git', ['check-ignore', '-q', '--', ruta], { cwd: d, encoding: 'utf8' }).status === 0);
+  })());
+  comprueba('la salida final distingue compartidos y locales y recomienda git status',
+    /versionar|subir|commit/i.test(r.stdout || '') && /local|no versionar|excluid/i.test(r.stdout || '') &&
+    /git status/i.test(r.stdout || ''));
 }
 
 // ─── 5 · check y dry-run ─────────────────────────────────────────────────────
@@ -1375,6 +1624,152 @@ console.log('\n5 · check y --dry-run');
 
   const rg = sdd(instalado, 'global', '--dry-run');
   comprueba('global --dry-run no toca tu home', rg.status === 0 && /Capa global/.test(rg.stdout || ''));
+}
+
+console.log('\n5 bis · contrato documental y diff base-aware');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  mkdirSync(join(d, 'src'), { recursive: true });
+  mkdirSync(join(d, 'docs/guides'), { recursive: true });
+  writeFileSync(join(d, 'src/public.mjs'), 'export const valor = 1;\n', 'utf8');
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API pública\n\nValor documentado.\n', 'utf8');
+
+  const docsRuta = join(d, '.sdd/docs.json');
+  const contratoValido = {
+    schemaVersion: 1,
+    mode: 'enforce',
+    documentSets: [{
+      id: 'DOC-PUBLIC', kind: 'public-code', sources: ['src/public.mjs'],
+      artifacts: ['docs/guides/public.md'], generated: false, gate: null, owner: 'docs-writer',
+    }],
+  };
+  const guardaContrato = (contrato) =>
+    writeFileSync(docsRuta, `${JSON.stringify(contrato, null, 2)}\n`, 'utf8');
+  const checkDocs = (...args) => spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', ...args], { cwd: d, encoding: 'utf8' });
+  guardaContrato(contratoValido);
+
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['../fuera.md'],
+  }] });
+  const traversal = checkDocs();
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['C:/fuera.md'],
+  }] });
+  const absoluta = checkDocs();
+  comprueba('check-sdd rechaza traversal y rutas documentales absolutas',
+    traversal.status === 1 && absoluta.status === 1 &&
+    /docs|document|ruta|path|escape/i.test(`${traversal.stdout}${absoluta.stdout}`));
+
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['docs/guides/no-existe.md'],
+  }] });
+  const exactoAusente = checkDocs();
+  comprueba('un artefacto concreto inexistente falla aunque no use glob',
+    exactoAusente.status === 1 && /no existe|artefacto|document/i.test(exactoAusente.stdout || ''));
+
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['docs/{guides,api}/**'],
+  }] });
+  const globNoSoportado = checkDocs();
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['credentials/token.md'],
+  }] });
+  const rutaSensible = checkDocs();
+  comprueba('el contrato rechaza globs ambiguos y rutas con material sensible',
+    globNoSoportado.status === 1 && rutaSensible.status === 1 &&
+    /glob|soportad|ruta|secret|credencial|estado local/i.test(`${globNoSoportado.stdout}${rutaSensible.stdout}`));
+
+  const fuera = nuevoDestino();
+  writeFileSync(join(fuera, 'privado.md'), '# Fuera del repositorio\n', 'utf8');
+  const enlaceDirectorio = join(d, 'docs/guides/escape');
+  symlinkSync(fuera, enlaceDirectorio, process.platform === 'win32' ? 'junction' : 'dir');
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], artifacts: ['docs/guides/escape/privado.md'],
+  }] });
+  const escapeEnlace = checkDocs();
+  comprueba('check-sdd rechaza artefactos que escapan mediante symlink o junction',
+    escapeEnlace.status === 1 && /escapa|fuera|enlace|ruta|document/i.test(escapeEnlace.stdout || ''));
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API\n\n[Fuera](./escape/privado.md)\n', 'utf8');
+  guardaContrato(contratoValido);
+  const enlacePorEscape = checkDocs();
+  comprueba('check-sdd rechaza enlaces Markdown que atraviesan un symlink o junction',
+    enlacePorEscape.status === 1 && /enlace|escapa|repositorio/i.test(enlacePorEscape.stdout || ''));
+  rmSync(enlaceDirectorio, { recursive: true, force: true });
+
+  guardaContrato(contratoValido);
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API\n\n[Enlace roto](./no-existe.md)\n', 'utf8');
+  const enlaceRoto = checkDocs();
+  comprueba('check-sdd rechaza enlaces rotos en documentos oficiales declarados',
+    enlaceRoto.status === 1 && /enlace|link|no existe|document/i.test(enlaceRoto.stdout || ''));
+
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API\n\nTODO: completar antes de publicar.\n', 'utf8');
+  const placeholder = checkDocs();
+  comprueba('check-sdd rechaza placeholders en documentos oficiales declarados',
+    placeholder.status === 1 && /placeholder|TODO|pendiente|document/i.test(placeholder.stdout || ''));
+
+  guardaContrato({ ...contratoValido, documentSets: [{
+    ...contratoValido.documentSets[0], generated: true, gate: 'docs:typedoc',
+  }] });
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API\n\nValor documentado.\n', 'utf8');
+  const gateAusente = checkDocs();
+  comprueba('un artefacto generado exige un gate docs:* realmente configurado',
+    gateAusente.status === 1 && /docs:typedoc|gate.*document|no ejecutado/i.test(gateAusente.stdout || ''));
+
+  const checksRuta = join(d, '.sdd/checks.json');
+  const checksConDocs = JSON.parse(leer(checksRuta) || '{}');
+  checksConDocs.checks['docs:typedoc'] = {
+    command: 'node -e "process.exit(0)"', required: true, speed: 'slow', enabled: true,
+  };
+  checksConDocs.unconfigured = (checksConDocs.unconfigured || []).filter((id) => id !== 'docs');
+  writeFileSync(checksRuta, `${JSON.stringify(checksConDocs, null, 2)}\n`, 'utf8');
+  const generadoSinBuild = checkDocs();
+  comprueba('un output generado e ignorado puede faltar si su gate slow está configurado',
+    generadoSinBuild.status === 0, `${generadoSinBuild.stdout}${generadoSinBuild.stderr}`.slice(-220));
+
+  guardaContrato(contratoValido);
+  spawnSync('git', ['init', '-q', '.'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['add', '-A'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push'],
+    { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    'commit', '-q', '-m', 'baseline'], { cwd: d, encoding: 'utf8' });
+  const base = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  comprueba('el fixture documental materializa un SHA base real',
+    /^[0-9a-f]{40,64}$/i.test(base), 'git rev-parse HEAD no devolvió un SHA');
+
+  guardaContrato({ schemaVersion: 1, mode: 'audit', documentSets: [] });
+  const contratoSinAprobar = checkDocs('--docs-diff', '--base', base);
+  comprueba('docs-diff no pasa si el contrato sigue en audit y vacío',
+    contratoSinAprobar.status === 1 && /NO EJECUTADO|enforce|documentSets|contrato/i.test(contratoSinAprobar.stdout || ''));
+  guardaContrato(contratoValido);
+
+  writeFileSync(join(d, 'src/public.mjs'), 'export const valor = 2;\n', 'utf8');
+  writeFileSync(join(d, 'CHANGELOG.md'), `${leer(join(d, 'CHANGELOG.md'))}\n- Cambia la API pública.\n`, 'utf8');
+  const sinDocs = checkDocs('--docs-diff', '--base', base);
+  comprueba('docs-diff detecta fuente pública cambiada sin su artefacto',
+    sinDocs.status === 1 && /DOC-PUBLIC|document|artefacto|diff|base/i.test(sinDocs.stdout || ''));
+
+  spawnSync('git', ['add', 'src/public.mjs', 'CHANGELOG.md'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    'commit', '-q', '-m', 'cambio de código'], { cwd: d, encoding: 'utf8' });
+  writeFileSync(join(d, 'docs/guides/public.md'), '# API pública\n\nValor documentado: 2.\n', 'utf8');
+  spawnSync('git', ['add', 'docs/guides/public.md'], { cwd: d, encoding: 'utf8' });
+  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    'commit', '-q', '-m', 'documenta el cambio'], { cwd: d, encoding: 'utf8' });
+  const mismoPr = checkDocs('--docs-diff', '--base', base);
+  comprueba('código y documentación pueden vivir en commits distintos del mismo PR',
+    mismoPr.status === 0, `${mismoPr.stdout}${mismoPr.stderr}`.slice(-220));
+
+  const baseInvalida = checkDocs('--docs-diff', '--base', 'f'.repeat(40));
+  comprueba('docs-diff falla cerrado cuando no puede resolver el SHA base',
+    baseInvalida.status === 1 && /base|SHA|NO EJECUTADO|resolver/i.test(`${baseInvalida.stdout}${baseInvalida.stderr}`));
+
+  rmSync(join(d, 'docs/guides/public.md'), { force: true });
+  const eliminado = checkDocs('--docs-diff', '--base', base);
+  comprueba('docs-diff detecta artefactos eliminados o renombrados sin actualizar el contrato',
+    eliminado.status === 1 && /DOC-PUBLIC|elimin|renombr|artefacto|document/i.test(eliminado.stdout || ''));
 }
 
 // ─── 6 · No instalarse sobre sí misma ────────────────────────────────────────

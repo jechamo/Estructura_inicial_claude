@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "mode": "enforce",
+  "documentSets": [
+    {
+      "id": "DOC-VCS",
+      "kind": "developer-readme",
+      "sources": ["scripts/install.mjs", "scripts/lib/manifiesto.mjs"],
+      "artifacts": ["docs/guides/INSTALACION.md", "docs/guides/DOCUMENTACION.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-SYNC",
+      "kind": "user-guide",
+      "sources": [".agents/skills/docs-sync/SKILL.md", ".sdd/hooks/sdd-router.mjs"],
+      "artifacts": ["docs/guides/DOCUMENTACION.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-TRACE",
+      "kind": "architecture",
+      "sources": ["docs/specs/_TEMPLATE/*.md", "scripts/check-sdd.mjs"],
+      "artifacts": ["docs/sdd/OPERATING-MODEL.md", "docs/guides/DOCUMENTACION.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "planner"
+    },
+    {
+      "id": "DOC-GATES",
+      "kind": "operations",
+      "sources": ["scripts/sdd-project.mjs", ".sdd/githooks/*", ".github/workflows/*.yml"],
+      "artifacts": ["docs/guides/DOCUMENTACION.md", "docs/quality/DEFINITION-OF-DONE.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "devops-expert"
+    },
+    {
+      "id": "DOC-HOSTS",
+      "kind": "developer-readme",
+      "sources": [
+        ".claude/agents/*.md",
+        ".github/agents/*.agent.md",
+        ".cursor/agents/*.md",
+        ".codex/agents/*.toml",
+        ".agents/agents/*.md",
+        ".gemini/agents/*.md"
+      ],
+      "artifacts": ["docs/integrations/IDE-COMPATIBILITY.md", "docs/agents/CATALOG.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "implementer"
+    },
+    {
+      "id": "DOC-OPS",
+      "kind": "developer-readme",
+      "sources": ["package.json"],
+      "artifacts": ["README.md", "docs/README.md", "CHANGELOG.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "release-manager"
+    }
+  ]
+}

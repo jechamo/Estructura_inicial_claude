@@ -8,9 +8,8 @@
  *   sdd global [--dry-run]
  */
 import {
-  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync, chmodSync,
+  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync,
 } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { join, dirname, relative, resolve, sep, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
@@ -75,6 +74,7 @@ const omitidos = [];
 const conflictos = [];
 const retirados = [];
 let contratoSeguridadActual = null;
+let contratoDocumentacionActual = null;
 
 function listar(dir, base = dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -182,6 +182,15 @@ function tomlPareceValido(contenido) {
 function fusionarSemillas(registroNuevo) {
   for (const [ruta, semilla] of Object.entries(SEMILLAS)) {
     const actual = leer(join(DESTINO, ruta));
+    if (ruta === '.sdd/docs.json' && actual !== null) {
+      try {
+        JSON.parse(actual);
+        omitidos.push(ruta);
+      } catch (error) {
+        registrarConflicto(ruta, semilla, `JSON documental no valido: ${error.message}`);
+      }
+      continue;
+    }
     if (ruta in BLOQUES_GESTIONADOS && actual !== null) {
       const nuevo = bloqueGestionado(actual, BLOQUES_GESTIONADOS[ruta]);
       if (nuevo !== actual) {
@@ -218,7 +227,7 @@ function fusionarGitignore(registroNuevo) {
 }
 
 /** Devuelve el primer ID de spec que no pertenece a la historia previa del destino. */
-function siguienteSpecSeguridad() {
+function siguienteSpec() {
   const dir = join(DESTINO, 'docs', 'specs');
   if (!existsSync(dir)) return '001';
   const ids = readdirSync(dir, { withFileTypes: true })
@@ -236,7 +245,7 @@ function contratoSeguridad(anterior, modo) {
       ? 'legacy-pending'
       : modo === 'greenfield' ? 'bootstrap' : 'legacy-pending',
     standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
-    enforceFromSpec: siguienteSpecSeguridad(),
+    enforceFromSpec: siguienteSpec(),
   };
   if (!anterior.security || typeof anterior.security !== 'object') return base;
   return {
@@ -244,6 +253,19 @@ function contratoSeguridad(anterior, modo) {
     ...anterior.security,
     standards: { ...base.standards, ...(anterior.security.standards || {}) },
   };
+}
+
+function contratoDocumentacion(anterior, modo) {
+  const base = {
+    schemaVersion: 1,
+    status: opciones.comando === 'update' && anterior.version
+      ? 'legacy-pending'
+      : modo === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+    enforceFromSpec: siguienteSpec(),
+  };
+  if (!anterior.documentation || typeof anterior.documentation !== 'object' ||
+      Array.isArray(anterior.documentation)) return base;
+  return { ...base, ...anterior.documentation };
 }
 
 /**
@@ -272,6 +294,38 @@ function migrarChecksSeguridad(registroNuevo) {
   escribir(ruta, nuevo);
   fusionados.push(`${ruta} (+security sin configurar)`);
   registroNuevo[ruta] = { hash: hash(nuevo), policy: 'json-security-migration' };
+}
+
+/** Conserva gates docs/docs:* reales y solo mantiene `docs` pendiente si no existe ninguno. */
+function migrarChecksDocumentacion(registroNuevo) {
+  const ruta = '.sdd/checks.json';
+  const actual = leer(join(DESTINO, ruta));
+  if (actual === null) return;
+  let checks;
+  try {
+    checks = parseJsonc(actual);
+  } catch (error) {
+    if (!conflictos.some((item) => item.startsWith(`${ruta} `)))
+      registrarConflicto(ruta, SEMILLAS[ruta], `JSON/JSONC no valido: ${error.message}`);
+    return;
+  }
+
+  const gateReal = Object.entries(checks.checks || {}).some(([id, gate]) =>
+    (id === 'docs' || id.startsWith('docs:')) && gate &&
+    typeof gate.command === 'string' && gate.command.trim() && gate.required === true &&
+    gate.enabled !== false && gate.speed === 'slow');
+  const pendientes = Array.isArray(checks.unconfigured) ? checks.unconfigured : [];
+  const yaPendiente = pendientes.some((id) => id === 'docs' || id.startsWith('docs:'));
+  const nuevosPendientes = gateReal
+    ? pendientes.filter((id) => id !== 'docs')
+    : yaPendiente ? pendientes : [...pendientes, 'docs'];
+  if (JSON.stringify(nuevosPendientes) === JSON.stringify(pendientes)) return;
+
+  checks.unconfigured = nuevosPendientes;
+  const nuevo = `${JSON.stringify(checks, null, 2)}\n`;
+  escribir(ruta, nuevo);
+  fusionados.push(`${ruta} (${gateReal ? 'docs configurado' : 'docs sin configurar'})`);
+  registroNuevo[ruta] = { hash: hash(nuevo), policy: 'json-docs-migration' };
 }
 
 function migrarRutasRetiradas(registroNuevo, previos) {
@@ -443,10 +497,13 @@ function instalarProyecto() {
   };
   const security = contratoSeguridad(anterior, modo);
   contratoSeguridadActual = security;
+  const documentation = contratoDocumentacion(anterior, modo);
+  contratoDocumentacionActual = documentation;
 
   fusionarSemillas(registroNuevo);
   fusionarGitignore(registroNuevo);
   migrarChecksSeguridad(registroNuevo);
+  migrarChecksDocumentacion(registroNuevo);
   migrarRutasRetiradas(registroNuevo, previos);
 
   const rutas = listar(ORIGEN).filter((ruta) => debeCopiar(ruta, { conBaseline: opciones.conBaseline }));
@@ -464,9 +521,15 @@ function instalarProyecto() {
 
   if (!opciones.dry) {
     mkdirSync(dirname(REGISTRO), { recursive: true });
+    for (const [ruta, meta] of Object.entries(registroNuevo)) {
+      const actual = leer(join(DESTINO, ruta));
+      if (actual !== null) meta.hash = hash(actual);
+      if (ruta in BLOQUES_GESTIONADOS) meta.policy = 'managed-block';
+      else if (JSON_FUSIONABLES.includes(ruta)) meta.policy = 'json-merge';
+    }
     const ficheros = Object.fromEntries(Object.entries(registroNuevo).map(([ruta, meta]) => [ruta, meta.hash]));
     const ahora = new Date().toISOString();
-    writeFileSync(REGISTRO, `${JSON.stringify({
+    const siguiente = {
       schemaVersion: VERSION_MANIFIESTO,
       version: VERSION,
       mode: modo,
@@ -475,9 +538,18 @@ function instalarProyecto() {
       source: 'jechamo/Estructura_inicial_claude',
       product,
       security,
+      documentation,
       files: registroNuevo,
       ficheros,
-    }, null, 2)}\n`, 'utf8');
+    };
+    const sinFecha = (registro) => {
+      const copia = { ...registro };
+      delete copia.updatedAt;
+      return JSON.stringify(copia);
+    };
+    if (anterior.updatedAt && sinFecha(anterior) === sinFecha(siguiente))
+      siguiente.updatedAt = anterior.updatedAt;
+    writeFileSync(REGISTRO, `${JSON.stringify(siguiente, null, 2)}\n`, 'utf8');
   }
 
   informar(modo);
@@ -556,90 +628,19 @@ function instalarGlobal() {
   }
 }
 
-/**
- * Deja los gates activos antes de commit y push, sin pasos manuales.
- *
- * En Node monta Husky —que se autoactiva con `npm install` y es lo que el equipo reconoce—;
- * en el resto de stacks, `core.hooksPath`, que no depende de ningún gestor de paquetes.
- *
- * En ambos casos los hooks **delegan en `sdd-project run`**: si mañana el proyecto cambia de
- * runner, se toca `.sdd/checks.json` y los hooks no se enteran.
- *
- * No ejecuta `npm install` ni instala nada: deja el comando escrito. Y no cambia permisos en
- * silencio — si el `chmod` falla, lo dice y da el comando.
- */
+/** Informa cómo activar los hooks copiados; no ejecuta Git ni modifica permisos. */
 function activarGitHooks(destino) {
   if (opciones.sinHooks) {
-    console.log('\nGates locales: omitidos por --no-hooks. Actívalos cuando quieras:');
-    console.log('  git config core.hooksPath .sdd/githooks');
+    console.log('\nGates locales: hooks versionables instalados; activación omitida por --no-hooks.');
     return;
   }
 
   const esGit = existsSync(join(destino, '.git'));
-  if (!esGit) {
-    console.log('\nGates locales: el destino no es un repositorio git todavía. Cuando lo sea:');
-    console.log('  git config core.hooksPath .sdd/githooks');
-    return;
-  }
-
-  const pkgPath = join(destino, 'package.json');
-  const esNode = existsSync(pkgPath);
-
-  if (esNode) {
-    // Husky: el proyecto destino ya tiene node_modules; la plantilla mantiene cero dependencias.
-    const husky = ['pre-commit', 'pre-push'];
-    if (!opciones.dry) {
-      mkdirSync(join(destino, '.husky'), { recursive: true });
-      for (const hook of husky) {
-        const ruta = join(destino, '.husky', hook);
-        if (existsSync(ruta)) continue; // nunca pisamos un hook que ya existe
-        const velocidad = hook === 'pre-commit' ? '--fast' : '--slow';
-        writeFileSync(ruta, `node scripts/sdd-project.mjs run ${velocidad}\n`, 'utf8');
-        fijarEjecutable(ruta);
-      }
-    }
-    let necesitaPrepare = true;
-    try {
-      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-      necesitaPrepare = pkg.scripts?.prepare !== 'husky';
-    } catch { /* package.json ilegible: se informa igual */ }
-
-    console.log('\nGates locales (Node): `.husky/pre-commit` y `.husky/pre-push` creados.');
-    console.log('Delegan en `sdd-project run`, así que siguen valiendo si cambias de runner.');
-    if (necesitaPrepare) {
-      console.log('\nPara que se activen solos en todo el equipo, añade a tu package.json y ejecuta:');
-      console.log('  "scripts": { "prepare": "husky" }');
-      console.log('  npm install --save-dev husky && npm run prepare');
-      console.log('No lo hago yo: tu package.json es tuyo, y `npm install` es una decisión tuya.');
-    }
-    return;
-  }
-
-  // Resto de stacks: no hay `npm install` donde engancharse, así que se configura git directamente.
-  const r = opciones.dry
-    ? { status: 0 }
-    : spawnSync('git', ['config', 'core.hooksPath', '.sdd/githooks'], { cwd: destino, encoding: 'utf8' });
-  if (r.status === 0) {
-    console.log('\nGates locales: `core.hooksPath` → `.sdd/githooks` (rápidos antes del commit, lentos antes del push).');
-    console.log('Para desactivarlos: git config --unset core.hooksPath');
-  } else {
-    console.log('\n⚠ Gates locales: no se pudo configurar `core.hooksPath`. Ejecútalo tú:');
-    console.log('  git config core.hooksPath .sdd/githooks');
-  }
-}
-
-/**
- * Bit de ejecución en POSIX. Si falla, **no se calla**: git no ejecuta un hook no ejecutable, y
- * en algunas versiones lo hace en silencio, que es peor que fallar.
- */
-function fijarEjecutable(ruta) {
-  if (process.platform === 'win32') return; // el bit no aplica; git usa el índice
-  try {
-    chmodSync(ruta, 0o755);
-  } catch (error) {
-    console.log(`\n⚠ No se pudo dar permiso de ejecución a ${ruta}: ${error.message}`);
-    console.log(`  Sin él, git no lo ejecutará. Ejecuta:  chmod +x ${ruta}`);
-  }
+  console.log(`\nGates locales: hooks compartidos instalados${esGit ? '' : '; inicializa Git primero'}.`);
+  console.log('Activación manual recomendada:');
+  console.log('  git config core.hooksPath .sdd/githooks');
+  console.log('  git update-index --chmod=+x .sdd/githooks/pre-commit .sdd/githooks/pre-push');
+  console.log('El instalador no ejecuta esos comandos, no crea Husky y no modifica permisos.');
 }
 
 function informar(modo) {
@@ -659,6 +660,12 @@ function informar(modo) {
     if (contratoSeguridadActual?.status === 'legacy-pending') {
       console.log(`Seguridad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoSeguridadActual.enforceFromSpec}.`);
     }
+    if (contratoDocumentacionActual?.status === 'legacy-pending') {
+      console.log(`Documentación: legacy-pending; conserva el contrato previo y exige desde la spec ${contratoDocumentacionActual.enforceFromSpec}.`);
+    }
+    console.log('\nCompartido/versionable: código, tests, agentes, skills, reglas, hooks, specs, evidencias y documentación oficial.');
+    console.log('Local/excluido: secretos `.env*`, configuración personal, cachés, `.sdd/state/` y `.sdd/conflicts/`.');
+    console.log('Revisa deliberadamente antes de versionar: git status --short');
     if (modo === 'greenfield') console.log('Siguiente paso: /sdd-intake; tras aprobar producto, /sdd-init.');
     else console.log('Siguiente paso: /sdd-intake para cerrar legacy-pending o /onboard para documentar la arquitectura existente.');
   }

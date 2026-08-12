@@ -33,6 +33,7 @@
 - **Capa**: domain
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
 - **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
+- **Documentación**: `DOC-<ID>` \| `no aplica (<motivo material>)`
 - **Test que la define**: `tests/domain/<...>.test.ts::debe_<comportamiento>_cuando_<condición>`
 - **Depende de**: ninguna
 - **Ficheros previstos**: `src/domain/<...>`
@@ -48,6 +49,7 @@
 - **Capa**: application
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01
 - **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
+- **Documentación**: `DOC-<ID>` \| `no aplica (<motivo material>)`
 - **Test que la define**: `…`
 - **Depende de**: T-NNN-01
 - **Ficheros previstos**: `…`

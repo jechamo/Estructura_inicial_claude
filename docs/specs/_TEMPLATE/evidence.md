@@ -47,6 +47,12 @@ trabajó él mismo) · `unverified` (delegación afirmada pero no observada — 
 |---|---|---|---|---|
 | E2E en Safari | Sin runner de macOS en CI | Regresión no detectada en WebKit | | Añadir job antes de la v1.1 |
 
+### 3.0 · Evidencia documental
+
+| DOC-ID | Tarea | Artefacto | Comprobación ejecutada | Resultado | Estado |
+|---|---|---|---|---|---|
+| DOC-... | T-NNN-XX | `<ruta versionable>` | `<comando o revisión exacta>` | `<salida real>` | `<verificado/no ejecutado/no aplica>` |
+
 ### 3.1 · Controles de seguridad ejecutados
 
 | Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |

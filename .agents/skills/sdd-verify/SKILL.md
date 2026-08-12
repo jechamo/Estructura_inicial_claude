@@ -30,6 +30,10 @@ ficheros que toda tarea `hecho` tiene evidencia y ejecución registrada, que nin
 de aceptación quedó sin test, que no se planificó sobre ambigüedades y que el log de
 ejecución no se ha manipulado. Si sale con código 1, **para**.
 
+También contrasta `Impacto de documentación`, matriz `DOC-ID`, tareas, artefactos y evidencia.
+Ejecuta gates `docs`/`docs:*`; ausente o `NO EJECUTADO` no equivale a verde. El co-cambio del PR
+se valida con `--docs-diff --base <SHA>` en pre-push y CI.
+
 Si algo está en rojo, **para aquí**. No se revisa código que no compila ni pasa tests.
 
 ## Paso 2 — Trazabilidad

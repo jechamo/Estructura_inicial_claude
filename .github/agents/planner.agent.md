@@ -4,7 +4,7 @@ description: Convierte una spec aprobada en plan técnico, modelo de datos, cont
 tools: ['agent', 'search/codebase', 'search/usages', 'web/fetch', 'edit/editFiles']
 # Consulta a los especialistas para decidir el cómo, pero no puede invocar al implementer:
 # planificar y ejecutar son fases distintas y el salto se nota en la trazabilidad.
-agents: ['api-designer', 'database-expert', 'ux-designer', 'research-analyst', 'architect', 'security-auditor']
+agents: ['api-designer', 'database-expert', 'ux-designer', 'research-analyst', 'architect', 'security-auditor', 'frontend-expert', 'backend-expert', 'devops-expert', 'test-engineer', 'docs-writer']
 handoffs:
   - label: Implementar con TDD
     agent: implementer
@@ -13,6 +13,10 @@ handoffs:
   - label: Revisar controles de seguridad
     agent: security-auditor
     prompt: Revisa en solo lectura el impacto y la matriz de seguridad del plan activo según /security-scan --scope plan; devuelve un HANDOFF estructurado al planner, sin escribir el informe.
+    send: false
+  - label: Materializar documentación del plan
+    agent: docs-writer
+    prompt: Materializa únicamente la narrativa documental que te delegue el planner y devuelve el control con HANDOFF; no edites specs, ADR, producto, diseño, bitácora ni changelog.
     send: false
 ---
 

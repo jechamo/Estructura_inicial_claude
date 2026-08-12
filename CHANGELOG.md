@@ -7,6 +7,39 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+## [0.6.0] — 2026-08-11
+
+### Added
+- **Documentación viva con `/docs-sync`.** Permite crear el baseline documental de un proyecto,
+  actualizar la documentación asociada a una spec, atender cambios editoriales sin ejecutar todo
+  el circuito SDD/TDD y auditar divergencias sin escribir.
+- **Contrato documental portable en `.sdd/docs.json`.** Cada proyecto declara sus fuentes,
+  artefactos, propietario y gate opcional para OpenAPI, Storybook, TypeDoc, enlaces u otras
+  superficies reales, sin instalar herramientas que el stack no utiliza.
+- **El circuito completo viaja con el repositorio.** Los 20 agentes y 26 skills quedan disponibles
+  de forma coherente en seis superficies: Claude, VS Code/GitHub, Cursor, Codex,
+  Gemini/Antigravity y el formato compartido de Agent Skills.
+
+### Changed
+- **La documentación aplicable forma parte de la misma entrega que el cambio.** Specs, tareas,
+  tests y evidencias enlazan `DOC-ID`; la entrega se bloquea si queda documentación oficial
+  pendiente, pero una corrección exclusivamente documental conserva un circuito ligero.
+- **Greenfield y brownfield conservan su contexto.** Los proyectos nuevos nacen en estado
+  `bootstrap`; los existentes se actualizan como `legacy-pending` y mantienen íntegros sus README,
+  guías, contratos y decisiones hasta aprobar su propio baseline.
+- **Los gates documentales comparan contra el SHA base del cambio.** CI y pre-push pueden detectar
+  fuentes modificadas sin su artefacto, documentación borrada, enlaces rotos, rutas inseguras y
+  generadores requeridos no ejecutados, incluso cuando código y documentación llegan en commits
+  distintos del mismo PR.
+- **El instalador deja el control de Git en manos del proyecto.** Instala hooks y configuración
+  versionables, muestra los comandos manuales recomendados y no ejecuta `git add`, commit, push,
+  `core.hooksPath`, Husky ni cambios de permisos.
+
+### Security
+- Las rutas del contrato documental se validan para impedir traversal, destinos absolutos y
+  enlaces fuera del repositorio; los artefactos oficiales también se comprueban para evitar
+  secretos, placeholders y referencias rotas antes de la entrega.
+
 ## [0.5.0] — 2026-08-11
 
 ### Security

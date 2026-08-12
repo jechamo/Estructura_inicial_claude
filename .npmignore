@@ -22,6 +22,7 @@ credentials/
 .sdd/installed.json
 .sdd/agent-audit.jsonl
 .sdd/external-skills.json
+!.sdd/docs.json
 docs/specs/[0-9]*/
 docs/architecture/adr/ADR-*.md
 docs/bitacora/sessions/

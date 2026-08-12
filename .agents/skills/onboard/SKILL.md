@@ -82,6 +82,9 @@ Especifica solo lo que vayas a tocar, cuando lo vayas a tocar.
 
 ## Cierre
 
+Deriva a `/docs-sync bootstrap` para proponer el mapa documental brownfield. Conserva todos los
+documentos existentes; el estado permanece `legacy-pending` hasta aprobación humana.
+
 ```
 ### HANDOFF
 - Agente origen: architect (tras research-analyst)

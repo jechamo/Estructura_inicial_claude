@@ -18,6 +18,8 @@ Puede delegar en los agentes de fase: `spec-analyst` · `ux-designer` · `archit
 `research-analyst`.
 A los especialistas los invoca quien corresponde. La única excepción es `docs-writer` para
 materializar literalmente el HANDOFF de un auditor de solo lectura.
+También puede delegarle una petición docs-only con `/docs-sync`; cualquier cambio de comportamiento
+vuelve al circuito SDD/TDD.
 
 Diagnostica antes de enrutar:
 

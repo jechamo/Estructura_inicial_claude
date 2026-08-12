@@ -50,13 +50,14 @@ Antigravity y Codex. La política completa y vinculante está en
 | Implementación de tarea | `/sdd-implement` → `/middle`, `/front` o `/bbdd` |
 | Validación | `/sdd-verify` |
 | Entrega | `/sdd-ship` |
+| Documentación sin cambio de comportamiento | `/docs-sync update` o `/docs-sync audit` |
 | Duda sobre la fase | `orchestrator` o `/sdd-status` |
 
 ## Agentes, delegación y aislamiento
 
 - Perfiles canónicos: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` contiene adaptadores.
-- El contrato instalado mantiene **20 agentes** y **25 skills**; no se crean prompts o commands
+- El contrato instalado mantiene **20 agentes** y **26 skills**; no se crean prompts o commands
   paralelos para representar una skill.
 - `orchestrator` es la puerta de entrada por defecto.
 - Solo `orchestrator`, `planner` e `implementer` delegan.
@@ -67,6 +68,18 @@ Antigravity y Codex. La política completa y vinculante está en
 - Durante intake, solo `orchestrator` encadena `spec-analyst` → retorno → `ux-designer` →
   retorno → `spec-analyst`. Si el host no delega, indica perfil y comando exactos y reanuda
   leyendo los documentos durables del repositorio.
+- El análisis de solo lectura puede paralelizarse. Las escrituras solo se paralelizan en tareas
+  `[P]`, con ficheros disjuntos, aislamiento real y reconciliación posterior.
+
+## Documentación viva
+
+- Una spec declara `Impacto de documentación: aplicable | no-aplica · motivo | docs-pending`.
+- Si aplica, conserva `DOC-ID → tarea → artefacto → comprobación → evidencia` en el mismo PR.
+- Una petición editorial usa `/docs-sync` sin spec funcional ni TDD de aplicación. Si descubre
+  que debe cambiar comportamiento, contrato o arquitectura, devuelve el control a SDD/TDD.
+- `.sdd/docs.json` declara solo superficies reales. OpenAPI, Storybook y TypeDoc son opt-in.
+- Agentes, skills, configuración SDD, `.sdd/installed.json` y documentación oficial se versionan;
+  secretos, configuración personal, `.sdd/state/` y `.sdd/conflicts/` no.
 
 ## Trazabilidad
 

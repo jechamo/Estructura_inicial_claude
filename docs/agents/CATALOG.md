@@ -1,6 +1,8 @@
 # Catálogo de agentes
 
-20 agentes en tres niveles. Definición canónica en [`.claude/agents/`](../../.claude/agents/).
+20 agentes en tres niveles y 26 skills. Definición canónica en
+[`.claude/agents/`](../../.claude/agents/), con adaptadores para GitHub/VS Code, Cursor, Codex,
+Gemini CLI y Antigravity.
 
 El historial de diseño que originó este reparto pertenece a la plantilla y no se instala en los
 proyectos destino; este catálogo es el contrato operativo portable.
@@ -91,7 +93,7 @@ patrones y lista de comprobación. Un agente al que solo le dices "aplica SOLID"
 | [`refactor-specialist`](../../.claude/agents/refactor-specialist.md) | SOLID, DRY, KISS, YAGNI, patrones | — | `opus` | — |
 | [`performance-optimizer`](../../.claude/agents/performance-optimizer.md) | Latencia, memoria, bundle, consultas | — | `inherit` | — |
 | [`devops-expert`](../../.claude/agents/devops-expert.md) | CI/CD, contenedores, IaC, observabilidad | — | `inherit` | — |
-| [`docs-writer`](../../.claude/agents/docs-writer.md) | README, guías, documentación de API | — | `haiku` | — |
+| [`docs-writer`](../../.claude/agents/docs-writer.md) | README, guías, API para consumidores y baseline documental | [`/docs-sync`](../../.agents/skills/docs-sync/SKILL.md) | `haiku` | — |
 | [`bitacora-keeper`](../../.claude/agents/bitacora-keeper.md) | Memoria del proyecto, decisiones, deuda | [`/bitacora`](../../.agents/skills/bitacora/SKILL.md) | `haiku` | — |
 
 ---

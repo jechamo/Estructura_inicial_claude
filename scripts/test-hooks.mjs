@@ -112,6 +112,8 @@ comprueba(
   'ask',
 );
 comprueba('tocar skills de terceros escala', decisionDe('guard-write.mjs', escribir('.sdd/external-skills.json')), 'ask');
+comprueba('tocar el contrato documental compartido escala al humano',
+  decisionDe('guard-write.mjs', escribir('.sdd/docs.json')), 'ask');
 comprueba(
   'Codex convierte ask en deny para no continuar sin revisión',
   decisionDe('guard-write.mjs', escribir('.agents/skills/tdd/SKILL.md'), 'codex'),
@@ -225,9 +227,12 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
     spawnSync('git', ['init', '-q', '.'], { cwd: proyecto, encoding: 'utf8' });
     mkdirSync(join(proyecto, '.sdd/state'), { recursive: true });
     mkdirSync(join(proyecto, 'scripts'), { recursive: true });
+    mkdirSync(join(proyecto, 'scripts/lib'), { recursive: true });
     writeFileSync(join(proyecto, '.gitignore'), '.sdd/state/\n', 'utf8');
     writeFileSync(join(proyecto, 'scripts/sdd-project.mjs'),
       readFileSync(join(process.cwd(), 'scripts/sdd-project.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/docs-contract.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/docs-contract.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {
@@ -353,6 +358,32 @@ comprueba('una spec aprobada tiene prioridad aunque cite el PRD de origen', (() 
 comprueba('Figma de una feature existente sigue en design y no en intake', (() => {
   const salida = salidaDe('sdd-router.mjs', preguntar('Sincroniza este componente de Figma con la pantalla de la spec 042 aprobada'));
   return !/sdd-intake/.test(salida) && /sdd-design/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+
+console.log('\nsdd-router · circuito documental ligero');
+comprueba('documentar comportamiento existente enruta a /docs-sync sin abrir una spec', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Documenta el endpoint existente sin cambiar su comportamiento'));
+  return /\/docs-sync/.test(salida) && !/sdd-specify|sdd-implement/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('corregir una guía usa /docs-sync update', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Corrige una errata de docs/guides/instalacion.md'));
+  return /\/docs-sync/.test(salida) && /update|docs-only/i.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('auditar deriva documental usa /docs-sync audit y mantiene solo lectura', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Audita si la documentación oficial está desactualizada, sin escribir'));
+  return /\/docs-sync/.test(salida) && /audit|solo lectura|read-only/i.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('cambiar código y documentarlo sin spec prevalece sobre docs-only', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Cambia el endpoint de pagos y actualiza su documentación'));
+  return /sdd-specify/.test(salida) && !/\/docs-sync/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('cambiar código de una spec aprobada conserva implementación TDD', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('La spec 042 está aprobada: cambia el endpoint y documenta el resultado'));
+  return /sdd-implement/.test(salida) && !/\/docs-sync/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('una decisión arquitectónica nueva no se degrada a docs-only', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Decidamos una arquitectura nueva y crea el ADR correspondiente'));
+  return /sdd-specify|sdd-plan|architect/.test(salida) && !/\/docs-sync/.test(salida) ? 'ok' : 'fail';
 })(), 'ok');
 function auth_feature_vs_auditoria() {
   comprueba('una feature de autenticación conserva el circuito SDD y no se convierte en auditoría', (() => {

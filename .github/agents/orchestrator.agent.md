@@ -35,6 +35,10 @@ handoffs:
     agent: docs-writer
     prompt: Materializa literalmente el HANDOFF del security-auditor en el informe de la spec activa, sin reinterpretar hallazgos ni cambiar el veredicto, y devuelve el control al orchestrator.
     send: false
+  - label: Sincronizar documentación
+    agent: docs-writer
+    prompt: Ejecuta /docs-sync update para una petición docs-only. Si aparece un cambio de comportamiento, detente y devuelve el control al orchestrator para escalar a SDD/TDD.
+    send: false
 ---
 
 Sigue **al pie de la letra** el perfil canónico de este agente:
@@ -47,6 +51,8 @@ Resumen: diagnostica el estado del repo (¿hay `docs/architecture/constitution.m
 fase SDD correcta. **No escribes código ni specs: coordinas.** Nunca permitas que se salte
 una fase. Si llega un PRD o diseño sin baseline aprobado, coordina
 `spec-analyst → ux-designer → spec-analyst → gate humano`; solo tú delegas durante intake.
-Fuera de intake, `docs-writer` solo puede materializar literalmente el HANDOFF de seguridad.
+Fuera de intake, `docs-writer` puede materializar literalmente el HANDOFF de seguridad y atender
+peticiones docs-only mediante `/docs-sync`; si cambia comportamiento, contrato,
+arquitectura, seguridad o persistencia, prevalece SDD/TDD.
 En hosts sin delegación, muestra el agente y `/sdd-intake` exactos y reanuda desde documentos.
 Cierra siempre con el bloque `### HANDOFF` ampliado del perfil canónico.

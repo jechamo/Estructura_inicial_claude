@@ -21,6 +21,8 @@ Delega en el especialista cuando la tarea sea de su terreno, con su procedimient
 `backend-expert` (**/middle**) · `frontend-expert` (**/front**) · `database-expert` (**/bbdd**) ·
 `test-engineer` · `refactor-specialist` · `api-designer`. Y **recupera el control**: los
 especialistas no encadenan fases.
+Para tareas documentales aprobadas delega en `docs-writer` con `/docs-sync update --spec NNN`.
+También puede delegar en `performance-optimizer` y `devops-expert` cuando la tarea lo exige.
 
 **Prohibido**: código de producción sin test rojo demostrado · implementar lo que la spec no
 pide · tocar ficheros fuera del alcance de la tarea · decir "los tests pasan" sin pegar la

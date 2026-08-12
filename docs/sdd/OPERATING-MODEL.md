@@ -95,6 +95,19 @@ El `architect` solo interviene si el cambio la viola (entonces → nuevo ADR).
 | Construir | `/sdd-implement` | Código + tests | TDD estricto: rojo → verde → refactor. Cada tarea entra por su skill: `/middle`, `/front` o `/bbdd` |
 | Validar | `/sdd-verify` | `docs/quality/reports/`, informe de seguridad, `evidence.md` | Todos los gates de §7 en verde |
 | Entregar | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana aprobada |
+| Documentar sin cambiar comportamiento | `/docs-sync bootstrap | update | audit` | README, guías, API para consumidores y `.sdd/docs.json` en bootstrap | Fuentes verificadas, enlaces válidos, gate real o `NO EJECUTADO` explícito |
+
+### 2.3.1 Documentación viva
+
+Una spec con impacto aplicable mantiene `DOC-ID → tarea → artefacto → comprobación → evidencia`.
+El documento puede vivir en otro commit, pero debe llegar en el mismo PR que el cambio. Los
+artefactos generados se comprueban con un gate `docs:*` lento; sus builds no se versionan salvo
+decisión explícita.
+
+Las peticiones editoriales usan `/docs-sync` sin spec funcional, diseño técnico ni TDD de
+aplicación. Si al documentar aparece un cambio de comportamiento, contrato, arquitectura,
+seguridad o persistencia, el circuito ligero vuelve a `/sdd-specify` o a la spec ya aprobada. El
+baseline inicial se aprueba por una persona antes de pasar `.sdd/docs.json` a `enforce`.
 
 ### 2.4 Gates humanos
 
@@ -390,7 +403,7 @@ Modelo **híbrido**: un orquestador central + agentes con criterio propio de han
 
 Durante `/sdd-intake`, solo `orchestrator` coordina la secuencia `spec-analyst` → retorno →
 `ux-designer` → retorno → `spec-analyst`. Los especialistas escriben sus artefactos, cierran su
-handoff y devuelven el control; no se llaman entre sí. Se mantienen **20 agentes** y **25 skills**:
+handoff y devuelven el control; no se llaman entre sí. Se mantienen **20 agentes** y **26 skills**:
 intake es una skill nueva, no un agente nuevo ni un prompt/command paralelo.
 
 **Protocolo de handoff.** Al terminar, todo agente cierra con este bloque:

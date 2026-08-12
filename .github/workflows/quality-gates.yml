@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ matrix.node }}
@@ -40,12 +41,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        spec: ['002', '004', '005', '006', '007']
+        spec: ['002', '004', '005', '006', '007', '008']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: 22
       - run: node scripts/check-sdd.mjs --strict --spec ${{ matrix.spec }}
+
+  documentation:
+    name: Documentation diff · exact base
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+      - name: Validate documentation against exact PR base
+        env:
+          SDD_DOCS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: node scripts/check-sdd.mjs --docs-diff --base "$SDD_DOCS_BASE"

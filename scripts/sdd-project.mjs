@@ -10,6 +10,8 @@
  *   node scripts/sdd-project.mjs status [--json]
  *   node scripts/sdd-project.mjs product-status [--json]
  *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
+ *   node scripts/sdd-project.mjs docs-status [--json]
+ *   node scripts/sdd-project.mjs approve-docs --approved-by <persona> [--json]
  *
  * Detectar no equivale a aprobar: `detect` nunca escribe. `configure` requiere la bandera
  * explícita y conserva cualquier comando ya definido por el proyecto.
@@ -18,6 +20,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { validateDocsConfig } from './lib/docs-contract.mjs';
 
 const ROOT = process.cwd();
 const argv = process.argv.slice(2);
@@ -27,6 +30,7 @@ const operando = argv.slice(indiceComando + 1).find((a) => !a.startsWith('-')) |
 const JSON_OUT = argv.includes('--json');
 const DRY = argv.includes('--dry-run');
 const CHECKS_PATH = join(ROOT, '.sdd', 'checks.json');
+const DOCS_PATH = join(ROOT, '.sdd', 'docs.json');
 
 /**
  * Vocabulario cerrado de gates. Un identificador libre convierte `checks.json` en un cajón de
@@ -106,6 +110,9 @@ function detectar() {
       })) {
         const encontrado = candidatos.find((nombre) => scripts[nombre]);
         if (encontrado) sugerirScript(id, encontrado);
+      }
+      for (const nombre of ['docs:openapi', 'docs:storybook', 'docs:typedoc', 'docs:links']) {
+        if (scripts[nombre]) sugerirScript(nombre, nombre);
       }
       // Solo con lockfile real: auditar sin árbol de dependencias fijado da un resultado que
       // cambia entre ejecuciones, y `detectedFrom` tiene que poder señalar el fichero.
@@ -230,6 +237,57 @@ function estadoSeguridad() {
     standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
     enforceFromSpec: null,
   };
+}
+
+function estadoDocumentacion() {
+  const registro = cargarInstalacion();
+  return registro.documentation || {
+    schemaVersion: 1,
+    status: registro.mode === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+    approvedAt: null,
+    approvedBy: null,
+    enforceFromSpec: null,
+    configHash: null,
+  };
+}
+
+function aprobarDocumentacion() {
+  const indice = argv.indexOf('--approved-by');
+  const approvedBy = indice >= 0 ? argv[indice + 1]?.trim() : null;
+  if (!approvedBy || approvedBy.startsWith('--'))
+    throw new Error('approve-docs requiere `--approved-by <persona>` como confirmación explícita.');
+  if (approvedBy.length > 100 || /[\r\n|<>]/.test(approvedBy))
+    throw new Error('approved-by debe ser una identidad breve, sin saltos, etiquetas ni separadores de tabla.');
+  const raw = leer(DOCS_PATH);
+  if (raw === null) throw new Error('Falta .sdd/docs.json; ejecuta primero `/docs-sync bootstrap`.');
+  let config;
+  try { config = JSON.parse(raw); }
+  catch (error) { throw new Error(`.sdd/docs.json no es JSON válido: ${error.message}`); }
+  config = { ...config, mode: 'enforce' };
+  const validacion = validateDocsConfig(config, {
+    root: ROOT, checks: cargarChecks(), requireNonEmpty: true,
+  });
+  const errores = Array.isArray(validacion) ? validacion : validacion?.errors || [];
+  if (errores.length) throw new Error(`Contrato documental no aprobable: ${errores.join('; ')}`);
+  const contenido = `${JSON.stringify(config, null, 2)}\n`;
+  const registro = cargarInstalacion();
+  const previo = estadoDocumentacion();
+  const ahora = new Date().toISOString();
+  const documentation = {
+    ...previo,
+    schemaVersion: 1,
+    status: 'approved',
+    approvedAt: ahora,
+    approvedBy,
+    enforceFromSpec: previo.enforceFromSpec,
+    configHash: hash(contenido),
+  };
+  if (!DRY) {
+    writeFileSync(DOCS_PATH, contenido, 'utf8');
+    registro.documentation = documentation;
+    writeFileSync(INSTALLED_PATH, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
+  }
+  imprimir({ ...documentation, dryRun: DRY });
 }
 
 function ids(texto, patron) {
@@ -490,6 +548,9 @@ function verificar() {
   if (argv.includes('--strict')) argumentos.push('--strict');
   const specIndex = argv.indexOf('--spec');
   if (specIndex >= 0 && argv[specIndex + 1]) argumentos.push('--spec', argv[specIndex + 1]);
+  if (argv.includes('--docs-diff')) argumentos.push('--docs-diff');
+  const baseIndex = argv.indexOf('--base');
+  if (baseIndex >= 0 && argv[baseIndex + 1]) argumentos.push('--base', argv[baseIndex + 1]);
   const resultado = spawnSync(process.execPath, argumentos, { cwd: ROOT, stdio: 'inherit' });
   process.exitCode = resultado.status ?? 1;
 }
@@ -728,6 +789,8 @@ try {
   else if (comando === 'inventory') imprimir(inventario());
   else if (comando === 'product-status') imprimir(estadoProducto());
   else if (comando === 'approve-product') aprobarProducto();
+  else if (comando === 'docs-status') imprimir(estadoDocumentacion());
+  else if (comando === 'approve-docs') aprobarDocumentacion();
   else if (comando === 'new-spec') nuevaSpec();
   else if (comando === 'new-adr') nuevoAdr();
   else if (comando === 'verify') verificar();
@@ -736,7 +799,8 @@ try {
   else if (comando === 'debt') informeDeuda();
   else if (comando === 'skills-export') exportarSkills();
   else if (comando === 'status') imprimir({
-    detection: detectar(), checks: cargarChecks(), product: estadoProducto(), security: estadoSeguridad(), debt: medirDeuda(),
+    detection: detectar(), checks: cargarChecks(), product: estadoProducto(), security: estadoSeguridad(),
+    documentation: estadoDocumentacion(), debt: medirDeuda(),
   });
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {

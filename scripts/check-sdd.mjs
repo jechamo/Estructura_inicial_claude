@@ -16,17 +16,26 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { validateDocsConfig, normalizeDocPath, matchesDocPattern } from './lib/docs-contract.mjs';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
 const STRICT = args.includes('--strict');
 const VIRGIN = args.includes('--virgin');
+const DOCS_DIFF = args.includes('--docs-diff');
+const indiceBaseDocs = args.indexOf('--base');
+const BASE_DOCS = indiceBaseDocs >= 0 ? args[indiceBaseDocs + 1] : null;
 const soloSpec = (args[args.indexOf('--spec') + 1] || '').replace(/^--.*/, '');
 
 const problemas = [];
 const avisos = [];
 const err = (regla, msg) => problemas.push({ regla, msg });
 const warn = (regla, msg) => avisos.push({ regla, msg });
+
+if (DOCS_DIFF && (!BASE_DOCS || BASE_DOCS.startsWith('--')))
+  err('docs/diff-base', '--docs-diff requiere `--base <SHA completo>`');
+if (!DOCS_DIFF && indiceBaseDocs >= 0)
+  err('docs/diff-base', '--base solo es válido junto con --docs-diff');
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
 const rel = (p) => relative(ROOT, p).replace(/\\/g, '/');
@@ -156,6 +165,74 @@ function impactoSeguridad(spec) {
   return ['sensible', 'no-sensible', 'security-pending'].includes(limpio) ? limpio : null;
 }
 
+function impactoDocumentacion(spec) {
+  const linea = String(spec || '').split('\n').find((candidata) =>
+    /^\|\s*\*{0,2}Impacto de documentaci[oó]n\*{0,2}\s*\|/i.test(candidata));
+  if (!linea || /\\\|/.test(linea)) return null;
+  const valor = String(celdasMarkdown(linea)[1] || '').replace(/[`*]/g, '').trim();
+  const normalizado = valor.toLowerCase();
+  const ids = [...new Set(valor.match(/\bDOC-[A-Z0-9-]+\b/g) || [])];
+  if (/^aplicable(?:\s|·|-|:)/i.test(valor) || normalizado === 'aplicable')
+    return { estado: 'aplicable', ids, motivo: null, valor };
+  if (/^docs-pending$/i.test(valor)) return { estado: 'docs-pending', ids: [], motivo: null, valor };
+  if (/^no-aplica(?:\s|·|-|:)/i.test(valor)) {
+    const motivo = valor.replace(/^no-aplica\s*(?:·|-|:)?\s*/i, '').trim();
+    return { estado: 'no-aplica', ids: [], motivo, valor };
+  }
+  return { estado: 'invalido', ids, motivo: null, valor };
+}
+
+function matrizDocumentacion(plan) {
+  const lineas = String(plan || '').split('\n');
+  const cabecera = lineas.findIndex((linea) => {
+    const c = celdasMarkdown(linea).map((x) => x.toLowerCase());
+    return c.length >= 8 && c[0] === 'doc-id' && c.includes('artefacto') &&
+      c.some((x) => x.includes('fuente')) && c.includes('tarea') &&
+      c.some((x) => x.includes('gate') || x.includes('comprobaci')) && c.includes('evidencia');
+  });
+  if (cabecera === -1) return [];
+  const cabeceras = celdasMarkdown(lineas[cabecera]).map((x) => x.toLowerCase());
+  const indice = (fragmento) => cabeceras.findIndex((x) => x.includes(fragmento));
+  const filas = [];
+  for (let i = cabecera + 2; i < lineas.length; i++) {
+    const c = celdasMarkdown(lineas[i]);
+    if (!c.length) break;
+    filas.push({
+      id: c[0],
+      fuente: c[indice('fuente')],
+      artefacto: c[indice('artefacto')],
+      tarea: c[indice('tarea')],
+      comprobacion: c[Math.max(indice('gate'), indice('comprobaci'))],
+      evidencia: c[indice('evidencia')],
+    });
+  }
+  return filas;
+}
+
+function enlacesMarkdownValidos(rutaRelativa, contenido) {
+  for (const match of String(contenido || '').matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+    const bruto = match[1].trim().replace(/^<|>$/g, '').split(/\s+["']/)[0];
+    const destino = bruto.split('#')[0].split('?')[0];
+    if (!destino || /^(?:https?:|mailto:|tel:|#|\/)/i.test(destino)) continue;
+    let decodificado = destino;
+    try { decodificado = decodeURIComponent(destino); } catch { /* se valida tal cual */ }
+    const absoluta = resolve(ROOT, dirname(rutaRelativa), decodificado);
+    const relativa = relative(ROOT, absoluta).replace(/\\/g, '/');
+    let segura = true;
+    try { normalizeDocPath(relativa, ROOT); }
+    catch { segura = false; }
+    if (!segura || relativa === '..' || relativa.startsWith('../') || !existsSync(absoluta))
+      err('docs/enlace', `${rutaRelativa}: el enlace interno '${destino}' no existe o escapa del repositorio`);
+  }
+}
+
+function tienePlaceholderDocumental(contenido) {
+  const texto = String(contenido || '');
+  return /^\s*(?:[-*]\s*)?(?:TODO|TBD)\s*(?::|$)/m.test(texto) ||
+    /^\s*(?:[-*]\s*)?(?:\|\s*[^|]+\s*)?\|\s*\[NEEDS CLARIFICATION[^\]]*\]\s*\|?\s*$/m.test(texto) ||
+    /^\s*(?:[-*]\s*)?(?:\|\s*[^|]+\s*)?\|\s*<\s*(?:pendiente|pending|por completar)\s*>\s*\|?\s*$/im.test(texto);
+}
+
 function matrizSeguridad(plan) {
   const lineas = String(plan || '').split('\n');
   const cabecera = lineas.findIndex((linea) => {
@@ -220,7 +297,7 @@ for (const f of existsSync(AGENTES_DIR) ? readdirSync(AGENTES_DIR).filter((x) =>
     err('agente/tools', `${f}: 'tools' lleva especificadores — el scoping va en permissions de settings.json. Valor: ${fm.tools}`);
 
   const delegadores = new Set(['orchestrator', 'planner', 'implementer']);
-  const puedeDelegar = /(^|,\s*)Agent(\s*,|$)/.test(fm.tools || '');
+  const puedeDelegar = /(^|,\s*)Agent(?:\([^)]*\))?(\s*,|$)/.test(fm.tools || '');
   if (puedeDelegar && !delegadores.has(fm.name))
     err('delegacion/permiso', `${f}: '${fm.name}' puede delegar y no está en la lista de coordinadores`);
   if (delegadores.has(fm.name) && !puedeDelegar)
@@ -230,8 +307,16 @@ for (const f of existsSync(AGENTES_DIR) ? readdirSync(AGENTES_DIR).filter((x) =>
 }
 
 // Los envoltorios de otras superficies deben apuntar a un perfil que exista.
-const envueltos = { '.github/agents': new Set(), '.cursor/agents': new Set(), '.codex/agents': new Set() };
-for (const [dir, filtro] of [['.github/agents', (n) => n.endsWith('.agent.md')], ['.cursor/agents', (n) => n.endsWith('.md')]]) {
+const envueltos = {
+  '.github/agents': new Set(), '.cursor/agents': new Set(), '.codex/agents': new Set(),
+  '.agents/agents': new Set(), '.gemini/agents': new Set(),
+};
+for (const [dir, filtro] of [
+  ['.github/agents', (n) => n.endsWith('.agent.md')],
+  ['.cursor/agents', (n) => n.endsWith('.md')],
+  ['.agents/agents', (n) => n.endsWith('.md')],
+  ['.gemini/agents', (n) => n.endsWith('.md')],
+]) {
   for (const p of walk(join(ROOT, dir), filtro)) {
     const t = leer(p) || '';
     const nombre = (t.match(/^name:\s*(.+)$/m) || [])[1]?.trim() || p.split(/[/\\]/).pop().replace(/\.(agent\.)?md$/, '');
@@ -344,8 +429,8 @@ const skillsCanonicas = dirs(SKILLS_DIR);
 const skillsClaude = dirs(join(ROOT, '.claude/skills'));
 if (nombresAgentes.size !== 20)
   err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
-if (skillsCanonicas.length !== 25)
-  err('paridad/skills', `se esperaban 25 skills canónicas y hay ${skillsCanonicas.length}`);
+if (skillsCanonicas.length !== 26)
+  err('paridad/skills', `se esperaban 26 skills canónicas y hay ${skillsCanonicas.length}`);
 const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
 if (adaptersFaltantes.length)
   err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
@@ -412,6 +497,7 @@ for (const ruta of contratoIntake) {
 for (const ruta of [
   '.claude/agents/orchestrator.md', '.claude/agents/spec-analyst.md', '.claude/agents/ux-designer.md',
   '.github/agents/orchestrator.agent.md', '.cursor/agents/orchestrator.md', '.codex/agents/orchestrator.toml',
+  '.agents/agents/orchestrator.md', '.gemini/agents/orchestrator.md',
   '.agents/workflows/sdd-proyecto-nuevo.md', '.agents/workflows/sdd-nueva-funcionalidad.md',
 ]) {
   if (!/sdd-intake|\bintake\b/i.test(leer(join(ROOT, ruta)) || ''))
@@ -458,6 +544,69 @@ if (checksRaw) {
 const gateSeguridadConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
   String(id).split(':')[0] === 'security' && typeof check?.command === 'string' && check.command.trim() &&
   check.required === true && check.enabled !== false && (check.speed || 'slow') === 'slow');
+
+const docsRaw = leer(join(ROOT, '.sdd/docs.json'));
+let cfgDocs = null;
+if (docsRaw !== null) {
+  try {
+    cfgDocs = parseJsonc(docsRaw);
+    const validacion = validateDocsConfig(cfgDocs, { root: ROOT, checks: cfgChecks || {}, requireNonEmpty: false });
+    const errores = Array.isArray(validacion) ? validacion : validacion?.errors || [];
+    for (const mensaje of errores) err('docs/contrato', mensaje);
+  } catch (error) {
+    err('docs/contrato', `.sdd/docs.json no es válido: ${error.message}`);
+  }
+}
+const setsDocumentales = new Map((cfgDocs?.documentSets || []).map((set) => [set.id, set]));
+
+let estadoDocsParaDiff = null;
+try { estadoDocsParaDiff = JSON.parse(leer(join(ROOT, '.sdd/installed.json')) || 'null')?.documentation || null; }
+catch { /* el error de installed.json se informa en su sección */ }
+const docsLegacySinUmbral = estadoDocsParaDiff?.status === 'legacy-pending' &&
+  !dirs(join(ROOT, 'docs/specs')).some((spec) =>
+    Number.parseInt(spec.slice(0, 3), 10) >= Number(estadoDocsParaDiff.enforceFromSpec));
+if (DOCS_DIFF && (cfgDocs?.mode !== 'enforce' || !cfgDocs?.documentSets?.length)) {
+  if (docsLegacySinUmbral)
+    warn('docs/diff-contract', `N/A: brownfield legacy-pending; el contrato se exigirá desde la spec ${estadoDocsParaDiff.enforceFromSpec}`);
+  else
+    err('docs/diff-contract', 'NO EJECUTADO: --docs-diff exige `.sdd/docs.json` aprobado, en modo enforce y con documentSets');
+}
+
+function artefactosDeclarados(patron) {
+  const normalizado = normalizeDocPath(patron, ROOT);
+  if (!/[*?]/.test(normalizado)) return [normalizado];
+  return walk(ROOT, () => true).map((ruta) => rel(ruta))
+    .filter((ruta) => matchesDocPattern(ruta, normalizado));
+}
+
+if (cfgDocs?.mode === 'enforce') {
+  for (const set of cfgDocs.documentSets || []) {
+    if (set.generated) continue;
+    for (const patron of set.artifacts || []) {
+      let declarados;
+      try { declarados = artefactosDeclarados(patron); }
+      catch (error) { err('docs/ruta', `${set.id}: ${error.message}`); continue; }
+      if (!declarados.length) {
+        err('docs/artefacto', `${set.id}: el patrón oficial ${patron} no resuelve ningún artefacto`);
+        continue;
+      }
+      for (const relativa of declarados) {
+        try { normalizeDocPath(relativa, ROOT); }
+        catch (error) { err('docs/ruta', `${set.id}: ${error.message}`); continue; }
+        const absoluta = resolve(ROOT, relativa);
+        if (!existsSync(absoluta) || !statSync(absoluta).isFile()) {
+          err('docs/artefacto', `${set.id}: no existe el artefacto oficial ${relativa}`);
+          continue;
+        }
+        if (!/\.md$/i.test(relativa)) continue;
+        const contenido = leer(absoluta) || '';
+        enlacesMarkdownValidos(relativa, contenido);
+        if (tienePlaceholderDocumental(contenido))
+          err('docs/placeholder', `${set.id}: ${relativa} conserva un placeholder documental`);
+      }
+    }
+  }
+}
 
 const territoriosRaw = leer(join(ROOT, '.sdd/territories.json'));
 if (territoriosRaw) {
@@ -534,10 +683,12 @@ const ficherosTest = walk(ROOT, (n) => /\.(test|spec)\.[jt]sx?$/.test(n) || /^te
 const textoTests = ficherosTest.map((p) => leer(p) || '').join('\n');
 let contratoProducto = null;
 let contratoSeguridad = null;
+let contratoDocumentacion = null;
 try {
   const registro = JSON.parse(leer(join(ROOT, '.sdd/installed.json')) || 'null');
   if (registro?.product?.status === 'approved') contratoProducto = registro.product;
   if (registro?.security) contratoSeguridad = registro.security;
+  if (registro?.documentation) contratoDocumentacion = registro.documentation;
 } catch {
   // El error de JSON se informa una sola vez en la seccion de instalacion.
 }
@@ -676,6 +827,51 @@ for (const s of specs) {
   const tasks = leer(join(dir, 'tasks.md'));
   if (tienePlan && !tasks) warn('spec/estructura', `${s}: hay plan.md pero no tasks.md`);
 
+  const impactoDocs = impactoDocumentacion(spec);
+  const aplicaContratoDocs = contratoDocumentacion && Number.isFinite(numeroSpec) &&
+    /^\d{3}$/.test(String(contratoDocumentacion.enforceFromSpec || '')) &&
+    numeroSpec >= Number(contratoDocumentacion.enforceFromSpec);
+  if (aplicaContratoDocs && !impactoDocs) {
+    const mensaje = `${s}: falta Impacto de documentación (aplicable · DOC-* | no-aplica · motivo | docs-pending)`;
+    STRICT ? err('docs/impacto', mensaje) : warn('docs/impacto', mensaje);
+  }
+  if (impactoDocs?.estado === 'invalido')
+    err('docs/impacto', `${s}: Impacto de documentación no es válido: '${impactoDocs.valor}'`);
+  if (impactoDocs?.estado === 'no-aplica' && !valorConcreto(impactoDocs.motivo))
+    err('docs/impacto', `${s}: no-aplica necesita un motivo material`);
+  if (impactoDocs?.estado === 'docs-pending' && tienePlan) {
+    const mensaje = `${s}: no puede aprobar plan.md mientras el impacto documental siga docs-pending`;
+    STRICT ? err('docs/impacto', mensaje) : warn('docs/impacto', mensaje);
+  }
+
+  const filasDocs = matrizDocumentacion(plan);
+  if (impactoDocs?.estado === 'aplicable') {
+    if (!impactoDocs.ids.length)
+      err('docs/impacto', `${s}: impacto aplicable necesita al menos un DOC-ID`);
+    if (!filasDocs.length) {
+      const mensaje = `${s}: impacto aplicable necesita matriz DOC-ID → fuente → artefacto → tarea → comprobación → evidencia`;
+      STRICT ? err('docs/matriz', mensaje) : warn('docs/matriz', mensaje);
+    }
+    for (const id of impactoDocs.ids) {
+      if ((aplicaContratoDocs || cfgDocs?.mode === 'enforce') && !setsDocumentales.has(id))
+        err('docs/contrato', `${s}: ${id} no está declarado en .sdd/docs.json`);
+      const fila = filasDocs.find((candidata) => candidata.id === id);
+      if (!fila) {
+        const mensaje = `${s}: ${id} no aparece en la matriz documental del plan`;
+        STRICT ? err('docs/matriz', mensaje) : warn('docs/matriz', mensaje);
+        continue;
+      }
+      for (const [campo, valor] of Object.entries({
+        fuente: fila.fuente, artefacto: fila.artefacto, tarea: fila.tarea,
+        comprobación: fila.comprobacion, evidencia: fila.evidencia,
+      })) if (!valorConcreto(valor)) err('docs/matriz', `${s}/${id}: falta ${campo} concreto`);
+      if (!/\bT-\d{3}-\d+\b/.test(fila.tarea || ''))
+        err('docs/matriz', `${s}/${id}: la tarea debe usar un ID T-NNN-NN`);
+      if (!String(fila.evidencia || '').includes(`evidence.md#${id}`))
+        err('docs/matriz', `${s}/${id}: la evidencia debe enlazar evidence.md#${id}`);
+    }
+  }
+
   const impacto = impactoSeguridad(spec);
   const impactosValidos = new Set(['sensible', 'no-sensible', 'security-pending']);
   const aplicaContratoSeguridad = contratoSeguridad && Number.isFinite(numeroSpec) &&
@@ -736,6 +932,8 @@ for (const s of specs) {
   if (!tasks) {
     if (STRICT && impacto === 'sensible')
       err('seguridad/trazabilidad', `${s}: una spec sensible necesita tasks.md para propagar sus controles`);
+    if (STRICT && impactoDocs?.estado === 'aplicable')
+      err('docs/trazabilidad', `${s}: una spec con documentación aplicable necesita tasks.md`);
     continue;
   }
   if (referenciasProductoSpec) {
@@ -761,6 +959,35 @@ for (const s of specs) {
   const evidence = leer(join(dir, 'evidence.md')) || '';
   const testPlan = leer(join(dir, 'test-plan.md')) || '';
   Object.assign(seguridadPorSpec.get(s), { testPlan, evidence });
+  if (impactoDocs?.estado === 'aplicable') {
+    const bloquesTareaDocs = tasks.split(/^### /m).slice(1);
+    for (const id of impactoDocs.ids) {
+      const fila = filasDocs.find((candidata) => candidata.id === id);
+      if (!fila) continue;
+      const tareas = [...new Set(String(fila.tarea || '').match(/\bT-\d{3}-\d+\b/g) || [])];
+      const bloqueTarea = bloquesTareaDocs.find((bloque) =>
+        tareas.some((tarea) => bloque.startsWith(tarea)) &&
+        new RegExp(`Documentaci[oó]n[^\n]*${escaparRegex(id)}`, 'i').test(bloque));
+      const filaTestDocs = testPlan.split('\n').find((linea) =>
+        linea.includes(id) && String(fila.comprobacion || '').split(/[,;]/)[0]
+          .replace(/[`*]/g, '').trim().split('::').pop() &&
+        linea.includes(String(fila.comprobacion || '').replace(/[`*]/g, '').trim().split('::').pop()));
+      const filaEvidenceDocs = evidence.split('\n').find((linea) =>
+        linea.includes(id) && tareas.some((tarea) => linea.includes(tarea)) &&
+        String(fila.artefacto || '').split(/[,;]/).some((artefacto) =>
+          linea.includes(artefacto.replace(/[`*]/g, '').trim())));
+      const incidencias = [];
+      if (!bloqueTarea) incidencias.push('tasks.md no enlaza DOC-ID con una tarea documental');
+      if (!filaTestDocs) incidencias.push('test-plan.md no conserva la comprobación documental');
+      if (!filaEvidenceDocs) incidencias.push('evidence.md no enlaza DOC-ID, tarea y artefacto');
+      else if (STRICT && !tieneResultadoConcreto(filaEvidenceDocs))
+        incidencias.push('evidence.md no contiene un resultado documental ejecutado');
+      for (const incidencia of incidencias) {
+        const mensaje = `${s}/${id}: ${incidencia}`;
+        STRICT ? err('docs/trazabilidad', mensaje) : warn('docs/trazabilidad', mensaje);
+      }
+    }
+  }
   for (const control of controlesSeguridad.filter((fila) => ['sí', 'si'].includes(fila.aplica))) {
     const limpiar = (valor) => String(valor || '').replace(/[`*]/g, '').trim();
     const tareaId = limpiar(control.tarea);
@@ -909,6 +1136,31 @@ if (instalado) {
         err('seguridad/estado', 'security.enforceFromSpec debe ser un ID NNN');
       if (security.status === 'legacy-pending')
         warn('seguridad/legacy-pending', `el baseline histórico no se reinterpreta; el contrato se exige desde la spec ${security.enforceFromSpec}`);
+    }
+    const documentation = reg.documentation;
+    if (!documentation) {
+      warn('docs/estado', 'la instalación es anterior al contrato documental; ejecuta `sdd update`');
+    } else {
+      if (documentation.schemaVersion !== 1 ||
+          !['bootstrap', 'legacy-pending', 'approved'].includes(documentation.status))
+        err('docs/estado', 'installed.documentation debe usar schemaVersion 1 y estado bootstrap | legacy-pending | approved');
+      if (!/^\d{3}$/.test(String(documentation.enforceFromSpec || '')))
+        err('docs/estado', 'documentation.enforceFromSpec debe ser un ID NNN');
+      if (documentation.status === 'approved') {
+        if (!documentation.approvedAt || !documentation.approvedBy || !documentation.configHash)
+          err('docs/aprobacion', 'documentation approved necesita fecha, persona y configHash');
+        if (cfgDocs?.mode !== 'enforce')
+          err('docs/aprobacion', 'documentation approved exige .sdd/docs.json en modo enforce');
+        const actual = docsRaw === null ? null : createHash('sha256').update(docsRaw).digest('hex').slice(0, 16);
+        if (documentation.configHash && actual !== documentation.configHash) {
+          const mensaje = 'el contrato documental aprobado tiene drift respecto de .sdd/docs.json';
+          (STRICT || DOCS_DIFF) ? err('docs/drift', mensaje) : warn('docs/drift', mensaje);
+        }
+      } else if (documentation.status === 'legacy-pending') {
+        warn('docs/legacy-pending', `la documentación histórica se conserva; el contrato se exige desde la spec ${documentation.enforceFromSpec}`);
+      } else if (documentation.status === 'bootstrap') {
+        warn('docs/bootstrap', 'el baseline documental necesita `/docs-sync bootstrap` y aprobación humana');
+      }
     }
     const modificados = Object.entries(reg.ficheros || {}).filter(([r, h]) => {
       const t = leer(join(ROOT, r));
@@ -1070,6 +1322,66 @@ if (STRICT && !VIRGIN) {
       r === 'AGENTS.md' || r === 'docs/architecture/constitution.md');
     if (contrato.length && !tocados.includes('docs/bitacora/DECISIONS.md'))
       err('entrega/bitacora', `el cambio toca el contrato (${contrato[0]}) y no añade entrada en docs/bitacora/DECISIONS.md`);
+  }
+}
+
+function parsearNameStatusNul(salida) {
+  const tokens = String(salida || '').split('\0').filter((token) => token.length);
+  const cambios = new Map();
+  for (let i = 0; i < tokens.length;) {
+    let estado = tokens[i++];
+    let ruta = null;
+    const tab = estado.match(/^([A-Z][0-9]*)\t(.+)$/);
+    if (tab) { estado = tab[1]; ruta = tab[2]; }
+    else ruta = tokens[i++];
+    if (!ruta) break;
+    cambios.set(ruta.replace(/\\/g, '/'), estado);
+    if (/^[RC]/.test(estado)) {
+      const nueva = tokens[i++];
+      if (nueva) cambios.set(nueva.replace(/\\/g, '/'), estado);
+    }
+  }
+  return cambios;
+}
+
+if (DOCS_DIFF) {
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(String(BASE_DOCS || ''))) {
+    err('docs/diff-base', 'NO EJECUTADO: --base debe ser un SHA hexadecimal completo');
+  } else {
+    const objeto = spawnSync('git', ['cat-file', '-e', `${BASE_DOCS}^{commit}`], {
+      cwd: ROOT, encoding: 'utf8',
+    });
+    if (objeto.status !== 0) {
+      err('docs/diff-base', `NO EJECUTADO: no se pudo resolver el SHA base ${BASE_DOCS}`);
+    } else {
+      const acumulado = spawnSync('git', [
+        'diff', '--name-status', '-z', '--find-renames', `${BASE_DOCS}...HEAD`, '--',
+      ], { cwd: ROOT, encoding: 'utf8' });
+      const trabajo = spawnSync('git', [
+        'diff', '--name-status', '-z', '--find-renames', 'HEAD', '--',
+      ], { cwd: ROOT, encoding: 'utf8' });
+      if (acumulado.status !== 0 || trabajo.status !== 0) {
+        err('docs/diff-base', `NO EJECUTADO: Git no pudo comparar el árbol contra ${BASE_DOCS}`);
+      } else {
+        const cambios = parsearNameStatusNul(acumulado.stdout);
+        for (const [ruta, estado] of parsearNameStatusNul(trabajo.stdout)) cambios.set(ruta, estado);
+        for (const set of cfgDocs?.documentSets || []) {
+          const fuentes = [...cambios.keys()].filter((ruta) =>
+            (set.sources || []).some((patron) => matchesDocPattern(ruta, patron)));
+          if (!fuentes.length) continue;
+          const artefactos = [...cambios.keys()].filter((ruta) =>
+            (set.artifacts || []).some((patron) => matchesDocPattern(ruta, patron)));
+          if (!set.generated && !artefactos.length) {
+            err('docs/diff', `${set.id}: cambió ${fuentes[0]} pero ningún artefacto documental del conjunto cambió en el PR`);
+            continue;
+          }
+          const eliminados = set.generated ? [] : artefactos.filter((ruta) =>
+            cambios.get(ruta)?.startsWith('D') || !existsSync(resolve(ROOT, ruta)));
+          if (eliminados.length)
+            err('docs/diff', `${set.id}: artefacto documental eliminado o renombrado sin actualizar el contrato: ${eliminados[0]}`);
+        }
+      }
+    }
   }
 }
 

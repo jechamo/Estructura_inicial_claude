@@ -10,7 +10,8 @@ Perfil canónico completo: [`.claude/agents/planner.md`](../../.claude/agents/pl
 Reglas del proyecto: [`AGENTS.md`](../../AGENTS.md).
 
 Puede delegar **únicamente** en: `api-designer` · `database-expert` · `ux-designer` ·
-`research-analyst` · `architect` · `security-auditor`. Este último actúa en solo lectura con
+`research-analyst` · `architect` · `security-auditor` · `frontend-expert` · `backend-expert` ·
+`devops-expert` · `test-engineer` · `docs-writer`. `security-auditor` actúa en solo lectura con
 `/security-scan --scope plan` y devuelve el control; nunca escribe el informe.
 Recupera siempre el control: los especialistas no encadenan fases.
 

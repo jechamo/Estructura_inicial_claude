@@ -166,6 +166,17 @@ JWT o credenciales de navegador; JWT no es el valor por defecto.
 
 Consultas críticas: <…> · Estrategia de caché e **invalidación**: <…>
 
+## 10 bis. Documentación
+
+**Impacto heredado de `spec.md`**: `aplicable · DOC-... | no-aplica · motivo | docs-pending`.
+
+| DOC-ID | Superficie | Aplica / motivo | Fuente de verdad | Artefacto | Generado / manual | Propietario | Tarea | Gate / comprobación | Evidencia |
+|---|---|---|---|---|---|---|---|---|---|
+| DOC-... | `<kind de .sdd/docs.json>` | `<sí / motivo material>` | `<ruta o contrato>` | `<ruta versionable>` | `<generado/manual>` | `<agente>` | T-NNN-XX | `<docs:* o revisión verificable>` | `evidence.md#DOC-...` |
+
+Un artefacto generado exige un gate documental real y lento. La fuente se versiona; el build
+generado solo se versiona si `.sdd/docs.json` lo declara explícitamente.
+
 ## 11. Observabilidad
 
 - Logs (eventos, campos, sin PII): <…>

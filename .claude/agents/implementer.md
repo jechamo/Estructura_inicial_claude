@@ -59,6 +59,7 @@ Delega y recupera el control (nunca encadenes tú los especialistas):
 | Pipeline, contenedores, entornos | `@devops-expert` |
 | Instrumentación de errores, alertas, salud de versión | `@devops-expert` — skill `/observability` |
 | Refactor estructural que no cabe en un paso | `@refactor-specialist` |
+| Tarea documental trazada, sin cambio adicional de comportamiento | `@docs-writer` — skill `/docs-sync update --spec NNN` |
 
 ## Reglas duras
 

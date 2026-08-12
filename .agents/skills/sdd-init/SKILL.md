@@ -91,6 +91,9 @@ Sirve para verificar que el andamiaje funciona antes de escribir nada de negocio
 
 ## Paso 5 — Cierre
 
+Indica `/docs-sync bootstrap` para preparar README, índice y contrato documental desde hechos
+verificables, sin crear código ni imponer Swagger, Storybook o TypeDoc.
+
 ```
 ### HANDOFF
 - Agente origen: architect

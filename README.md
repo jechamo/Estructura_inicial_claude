@@ -1,9 +1,9 @@
 # Ecosistema de agentes SDD
 
 Estructura inicial lista para **copiar y pegar** en cualquier proyecto. Trae un circuito de
-Spec-Driven Development completo, 20 agentes especializados, 25 skills, hooks y un validador
-determinista, con soporte para **Claude Code, GitHub Copilot, VS Code, Cursor, Antigravity
-y Codex**.
+Spec-Driven Development completo, 20 agentes especializados, 26 skills, hooks y un validador
+determinista, con soporte para **Claude Code, GitHub Copilot/VS Code, Cursor, Codex, Gemini CLI
+y Antigravity**.
 
 > **Regla cero: ninguna línea de código se escribe sin una especificación aprobada.**
 > El artefacto de verdad es la spec. El código es su compilación.
@@ -21,8 +21,8 @@ Instálalo por proyecto desde una versión etiquetada. El mismo comando vale par
 brownfield, y el destino puede no existir:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto --dry-run
-npx --yes github:jechamo/Estructura_inicial_claude#v0.5.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -37,8 +37,10 @@ Guía completa: [`docs/guides/INSTALACION.md`](docs/guides/INSTALACION.md).
    ejecutará `/sdd-intake`. Si aún no hay documentación de producto, el intake es conversacional.
 2. Aprueba producto antes de arquitectura; después usa `/sdd-init` en greenfield o `/onboard`
    en un repositorio existente sin documentar.
-3. Revisa las propuestas antes de aprobar arquitectura, territorios y checks del stack.
-4. Abre el proyecto en cualquiera de los hosts soportados y entra por `orchestrator`.
+3. Crea el baseline de documentación oficial con `/docs-sync bootstrap` y apruébalo después de
+   revisar fuentes, artefactos y gates.
+4. Revisa las propuestas antes de aprobar arquitectura, territorios y checks del stack.
+5. Abre el proyecto en cualquiera de los hosts soportados y entra por `orchestrator`.
 
 ```bash
 /sdd-start
@@ -52,6 +54,7 @@ Si prefieres saltarte el router:
 | Proyecto nuevo, carpeta vacía | `/sdd-intake` → `/sdd-init` |
 | Repositorio existente sin documentar | `/onboard` |
 | Funcionalidad nueva sobre proyecto ya montado | `/sdd-specify` |
+| Solo quiero corregir o sincronizar documentación | `/docs-sync update` |
 | No sé en qué punto estoy | `/sdd-status` |
 
 ---
@@ -105,6 +108,10 @@ no depende del chat, vive en el repositorio.
 | `/sdd-implement` | Código + tests | TDD: rojo → verde → refactor. Cada tarea entra por `/middle`, `/front` o `/bbdd` |
 | `/sdd-verify` | Informes de calidad y seguridad | Todos los gates en verde |
 | `/sdd-ship` | PR, CHANGELOG, bitácora | Revisión humana |
+
+Si una spec afecta documentación, plan y tareas trazan `DOC-ID → tarea → artefacto →
+comprobación → evidencia`. Una petición exclusivamente editorial usa `/docs-sync update` y no
+activa TDD de aplicación. Guía: [`docs/guides/DOCUMENTACION.md`](docs/guides/DOCUMENTACION.md).
 
 El diseño de Stitch/Figma, boceto o descripción es **opcional**. Si una fuente no es accesible,
 se pide acceso/exportación o permiso para tratarla como ausente; no se activa MCP por defecto.
@@ -246,6 +253,7 @@ flowchart TD
 | Algo va lento | `performance-optimizer` (con medición previa, siempre) |
 | Se toca auth, pagos o datos personales | `security-auditor` de forma obligatoria |
 | Se toma una decisión relevante | `bitacora-keeper` + `/adr` si es estructural |
+| Solo cambia documentación oficial | `docs-writer` con `/docs-sync update`; escala si cambia comportamiento |
 
 ---
 
@@ -316,13 +324,16 @@ Una sola fuente de verdad — [`AGENTS.md`](AGENTS.md) — y cada herramienta la
 | **VS Code (Copilot)** | `.github/copilot-instructions.md` + `.github/instructions/*` | `.github/agents/*.agent.md` seleccionado por workspace | `.agents/skills/*/SKILL.md` |
 | **GitHub Copilot** (CLI / nube) | `AGENTS.md` + `.github/copilot-instructions.md` | `.github/agents/*.agent.md` | `.agents/skills/*/SKILL.md` |
 | **Cursor** | `.cursor/rules/*.mdc` | `.cursor/agents/*.md` | `.agents/skills/*/SKILL.md` |
-| **Antigravity** | `AGENTS.md` + `.agents/rules/*.md` | Perfiles de `.claude/agents/` | `.agents/workflows/*.md` |
 | **Codex** | `AGENTS.md` | `.codex/agents/*.toml` → `.claude/agents/` | Skills de `.agents/skills/` y delegación por prompt |
+| **Gemini CLI** | `GEMINI.md` → `AGENTS.md` | `.gemini/agents/*.md` → perfiles canónicos | `.agents/skills/*/SKILL.md` |
+| **Antigravity** | `AGENTS.md` + `.agents/rules/*.md` | `.agents/agents/*.md` → perfiles canónicos | `.agents/skills/*/SKILL.md` + workflows |
 
 > **Sobre VS Code**: sí, funciona. VS Code lee los agentes personalizados tanto de
 > `.github/agents/` como de `.claude/agents/`, así que los perfiles canónicos sirven para
 > ambos. En `.github/agents/` solo hay envoltorios finos que apuntan al perfil real y añaden
 > `handoffs`, que es una función propia de VS Code y genera botones de traspaso en el chat.
+> [`.vscode/settings.json`](.vscode/settings.json) deja activa solo `.github/agents/` y solo
+> `.agents/skills/` dentro de ese host para evitar agentes y comandos duplicados.
 > Detalle en [`.github/agents/README.md`](.github/agents/README.md).
 > Esa selección se aplica solo en un workspace confiable: tras instalar, usa
 > `Workspaces: Manage Workspace Trust` y después `Developer: Reload Window`.
@@ -416,14 +427,17 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   └── hooks.json                Guardas funcionando también en Cursor
 ├── .codex/
 │   ├── config.toml               Habilita los subagentes del proyecto
-│   └── agents/                   20 adaptadores TOML hacia los perfiles canónicos
+│   ├── agents/                   20 adaptadores TOML hacia los perfiles canónicos
 │   └── hooks.json                Contrato de hooks de Codex
+├── .gemini/agents/               20 adaptadores para Gemini CLI
 ├── .agents/
-│   ├── skills/                   25 skills canónicas portables
-│   └── rules/ · workflows/       Adaptadores de Antigravity
+│   ├── agents/                   20 adaptadores para Antigravity
+│   ├── skills/                   26 skills canónicas portables
+│   └── rules/ · workflows/       Reglas y workflows de Antigravity
 ├── .sdd/
 │   ├── hooks/                    Implementaciones Node compartidas por host
 │   ├── checks.json               Gates reales del proyecto
+│   ├── docs.json                 Superficies y gates documentales reales
 │   └── installed.json            Propiedad y hashes del instalador
 ├── scripts/check-sdd.mjs         ⭐ Gate determinista, en cualquier proveedor
 ├── scripts/sdd-project.mjs       Detección y ejecución determinista de checks
@@ -477,6 +491,7 @@ registra no es la decisión, sino **la alternativa descartada y por qué**.
 |---|---|
 | [`AGENTS.md`](AGENTS.md) | La constitución. Empieza aquí |
 | [`docs/README.md`](docs/README.md) | Mapa de toda la documentación |
+| [`docs/guides/DOCUMENTACION.md`](docs/guides/DOCUMENTACION.md) | Qué versionar y cómo usar `/docs-sync` y sus gates |
 | [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md) | Los 20 agentes y sus handoffs |
 | [`docs/agents/MAPEO-10-AGENTES.md`](docs/agents/MAPEO-10-AGENTES.md) | De dónde viene este diseño: los 10 agentes de la idea original y qué cambió |
 | [`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, política de auditoría y registro |
@@ -503,7 +518,8 @@ node scripts/check-sdd.mjs --strict
 
 Verifica que toda tarea `hecho` tiene evidencia y ejecución registrada, que ningún criterio
 de aceptación quedó sin test, que no se planificó sobre ambigüedades, que el log de ejecución
-no se ha manipulado, y que las superficies de los IDE no han derivado del perfil canónico.
+no se ha manipulado, que la trazabilidad `DOC-ID` está completa y que las superficies de los IDE
+no han derivado del perfil canónico.
 
 Y el segundo, para las skills de terceros:
 
@@ -543,3 +559,5 @@ afirmación cómoda.
 4. Ajusta los umbrales de `docs/quality/DEFINITION-OF-DONE.md` a tu realidad — pero no los
    bajes sin escribir por qué en la bitácora.
 5. Añade especialistas propios en `.claude/agents/` siguiendo el mismo formato.
+6. Declara las superficies documentales reales en `.sdd/docs.json` mediante
+   `/docs-sync bootstrap`; no inventes generadores o gates que el proyecto no use.

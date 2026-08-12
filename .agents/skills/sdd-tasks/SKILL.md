@@ -23,6 +23,7 @@ no se crea `tasks.md`.
 - Capa: domain | application | infrastructure | interfaces | test | infra | docs
 - Cubre: OBJ-001 → PRD-RF-003 → UC-002 → RF-03 → CA-05
 - Controles de seguridad: SEC-<ID> | no aplica (<justificación material>)
+- Documentación: DOC-<ID> | no aplica (<motivo material>)
 - Test que la define: `tests/domain/order/place_order.test.ts::debe_rechazar_cuando_stock_insuficiente`
 - Depende de: T-NNN-YY  (o "ninguna")
 - Ficheros previstos: `src/domain/order/Order.ts`
@@ -78,6 +79,9 @@ no se crea `tasks.md`.
 11. Incluye casos de abuso y auditoría `/security-scan verify`. El `security-auditor` es solo
     lectura y devuelve HANDOFF; el agente que lo invocó puede delegar en `docs-writer` la
     materialización literal de `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
+12. Si `Impacto de documentación = aplicable`, crea una tarea real por artefacto mantenible,
+    dependiente de la estabilización de su fuente. Conserva `DOC-ID`, propietario, artefacto,
+    gate y evidencia. Código y docs pueden vivir en commits distintos del mismo PR.
 
 ## Verificación de cobertura
 

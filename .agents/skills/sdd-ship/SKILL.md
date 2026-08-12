@@ -14,6 +14,10 @@ usuario lo pida explícitamente en este turno. Preparas todo y muestras los coma
 
 ## Paso 1 — Gates
 
+Bloquea la entrega si queda un `DOC-ID` aplicable pendiente, un artefacto oficial sin evidencia o
+un gate `docs:*` requerido no ejecutado. CHANGELOG y resumen ejecutivo no sustituyen la
+documentación oficial de la aplicación.
+
 ```bash
 node scripts/sdd-project.mjs run --fast     # lint · test · typecheck · build · smells
 node scripts/sdd-project.mjs run --slow     # coverage · e2e · deps-audit · docs

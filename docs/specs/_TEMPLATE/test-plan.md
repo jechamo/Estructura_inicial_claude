@@ -73,6 +73,14 @@ prueba la defensa CSRF elegida; `SameSite` es defensa en profundidad, no sustitu
 
 > No mockees lo que no controlas: envuélvelo en un puerto y haz un fake del puerto.
 
+## 6 bis. Verificación documental
+
+| DOC-ID | Tarea | Fuente | Artefacto | Comprobación o revisión | Resultado esperado |
+|---|---|---|---|---|---|
+| DOC-... | T-NNN-XX | `<ruta>` | `<ruta>` | `<comando docs:* o revisión material>` | `<artefacto actualizado y verificable>` |
+
+La documentación puede vivir en otro commit del mismo PR. `NO EJECUTADO` no equivale a verde.
+
 ## 7. Criterio de suficiencia
 
 **Cobertura por tier**, no global — el tier lo declara `plan.md` §8.1:

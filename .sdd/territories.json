@@ -1,7 +1,7 @@
 {
   "version": 1,
   "modo": "audit",
-  "descripcion": "La plantilla no asume rutas de aplicación. /sdd-init o /onboard proponen territorios a partir del proyecto real.",
+  "descripcion": "La plantilla no asume rutas de aplicación. Declara solo propiedad documental durable; /sdd-init o /onboard proponen territorios de aplicación.",
   "territories": [
     {
       "name": "arquitectura-sdd",
@@ -24,6 +24,21 @@
       "name": "diseno-sdd",
       "agent": "ux-designer",
       "paths": ["docs/design/**"]
+    },
+    {
+      "name": "documentacion-lectores",
+      "agent": "docs-writer",
+      "paths": ["README.md", "CONTRIBUTING.md", "docs/README.md", "docs/guides/**", "docs/api/**", ".sdd/docs.json"]
+    },
+    {
+      "name": "memoria-proyecto",
+      "agent": "bitacora-keeper",
+      "paths": ["docs/bitacora/**"]
+    },
+    {
+      "name": "entrega-publica",
+      "agent": "release-manager",
+      "paths": ["CHANGELOG.md"]
     },
     {
       "name": "operacion-sdd",

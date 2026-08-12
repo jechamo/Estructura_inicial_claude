@@ -47,21 +47,26 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 |---|---|---|---|---|---|---|---|
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** | ✅ nativo, cada sesión |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ | ❌ |
-| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | ❌ sin formato propio | ✅ `.codex/agents/*.toml` | ❌ sin formato |
-| Comandos `/` | ✅ 25 skills | ✅ 25 skills | ✅ skills | ✅ 25 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
+| Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | 🟡 `.agents/agents/` | ✅ `.codex/agents/*.toml` | ❌ sin formato |
+| Comandos `/` | ✅ 26 skills | ✅ 26 skills | ✅ skills | ✅ 26 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes | ❌ un solo agente |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ | ❌ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` | ❌ **el auditor puede escribir** |
 | **Territorio por agente** | ✅ hook + `territories.json` | 🟡 contrato instalado, sin smoke en vivo | ❌ | ✅ hook + `territories.json` | ⚠️ contrato sin smoke en vivo | ⚠️ contrato de hook; CI es el juez | ❌ |
 | Botones de handoff | ❌ (delega el modelo) | ✅ `handoffs:` en frontmatter | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hooks de herramienta | ✅ 7 eventos, probados | 🟡 `.github/hooks/sdd.json`, sin smoke en vivo | ❌ | ✅ `.cursor/hooks.json` | ⚠️ contrato sin smoke en vivo | ⚠️ `.codex/hooks.json`, sin smoke en vivo | ❌ |
-| Git hooks antes de commit/push | ✅ Husky o `core.hooksPath` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ sin git local |
+| Git hooks antes de commit/push | ✅ opt-in con `core.hooksPath` | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ sin git local |
 | Aviso si los gates no se han pasado | ✅ sello + `guard-bash` | 🟡 mismo contrato, sin smoke | ❌ | ✅ | ❌ | ⚠️ contrato declarado | ❌ |
 | **El agente ejecuta los gates** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ **la única capa que llega aquí** |
 | Trazabilidad `observed` | ✅ `SubagentStart/Stop` | 🟡 eventos configurados, sin smoke | ❌ | ❌ | ❌ | ⚠️ eventos configurados, sin smoke | ❌ siempre `unverified` |
 | `model:` por agente | ✅ | ✅ (`model:`, admite array) | ✅ | 🟡 | ❌ | ✅ | ❌ |
 | MCP | ✅ `.mcp.json` | ✅ `.vscode/mcp.json` | ✅ | ✅ | ✅ | ✅ | ❌ |
 | `check-sdd.mjs` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 solo en CI, no bajo demanda |
+
+Gemini CLI usa su superficie propia `.gemini/agents/`: instala los mismos 20 nombres, conserva
+los cuatro auditores read-only y limita la delegación a `orchestrator`, `planner` e `implementer`.
+Antigravity usa `.agents/agents/`. Ambos comparten `AGENTS.md`, las 26 skills canónicas y los gates
+deterministas; la ejecución real de subagentes/hooks sigue dependiendo del host.
 
 ### Qué significa cada casilla incómoda
 
@@ -250,7 +255,7 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 /sdd-start
 ```
-Los 20 agentes con `@nombre`, 25 skills, 7 hooks y trazabilidad `observed`.
+Los 20 agentes con `@nombre`, 26 skills, 7 hooks y trazabilidad `observed`.
 
 ### Intake sin superficies duplicadas
 
