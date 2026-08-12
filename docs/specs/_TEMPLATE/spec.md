@@ -11,6 +11,7 @@
 | **Baseline de producto** | [`docs/product/PRD.md`](../../product/PRD.md) · estado `<pending/approved/legacy-pending>` |
 | **Fuentes** | [`docs/product/SOURCES.md`](../../product/SOURCES.md) · `<SRC-...>` |
 | **Impacto de seguridad** | `sensible` \| `no-sensible` \| `security-pending` |
+| **Impacto de usabilidad** | `aplicable` \| `sin-ui · <motivo material>` \| `ux-pending` |
 | **Impacto de documentación** | `aplicable · DOC-...` \| `no-aplica · <motivo material>` \| `docs-pending` |
 
 > ⚠️ Esta spec describe **QUÉ** y **POR QUÉ**. Cero tecnología: ni tablas, ni endpoints,
@@ -121,6 +122,26 @@ controles se completan en `plan.md`.
 | DOC-ID / estado | Superficie afectada | Audiencia | Motivo o comportamiento que cambia |
 |---|---|---|---|
 | `DOC-...` \| `no-aplica` | `<public-api/public-code/ui-catalog/user-guide/architecture/operations/developer-readme>` | `<audiencia>` | `<motivo concreto>` |
+
+### 5.3 · Clasificación de usabilidad
+
+> Usa `aplicable` cuando la spec toca una pantalla, un formulario, un texto que lee una persona o
+> una espera que se nota. `sin-ui` necesita un motivo material —"no procede" no lo es—.
+> `ux-pending` es una transición brownfield para contexto histórico, nunca una excepción para una
+> spec nueva con interfaz.
+
+| Señal | Aplica | Requisito / caso afectado | Fuente o motivo |
+|---|---|---|---|
+| Pantalla nueva o modificada | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| Formulario o entrada de datos | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| Espera perceptible (> 300 ms) | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+| Texto de interfaz nuevo | `<sí/no>` | `<RF/CA>` | `<SRC/razón>` |
+
+La spec declara el impacto y el comportamiento esperado; las decisiones de diseño van en
+`design.md` y la matriz de controles se completa en `plan.md` §9.3.
+
+Doctrina vinculante: [`A11Y-CHECKLIST.md`](../../design/A11Y-CHECKLIST.md) —el suelo legal— y
+[`USABILITY-CHECKLIST.md`](../../design/USABILITY-CHECKLIST.md) —lo que hace que además funcione—.
 
 ## 6. Criterios de aceptación
 

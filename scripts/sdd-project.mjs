@@ -103,7 +103,7 @@ function detectar() {
         coverage: ['test:coverage', 'coverage'],
         e2e: ['test:e2e', 'e2e'],
         visual: ['test:visual', 'visual'],
-        a11y: ['test:a11y', 'a11y'],
+        a11y: ['test:a11y', 'a11y', 'axe', 'pa11y', 'lighthouse', 'test:accessibility'],
         security: ['security', 'security:scan', 'test:security'],
         docs: ['docs:check', 'docs:lint'],
         mutation: ['test:mutation', 'mutation'],
@@ -235,6 +235,16 @@ function estadoSeguridad() {
     schemaVersion: 1,
     status: 'legacy-pending',
     standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L2' },
+    enforceFromSpec: null,
+  };
+}
+
+function estadoUsabilidad() {
+  const registro = cargarInstalacion();
+  return registro.usability || {
+    schemaVersion: 1,
+    status: 'legacy-pending',
+    standards: { wcag: '2.2', level: 'AA', heuristics: 'nielsen-10' },
     enforceFromSpec: null,
   };
 }
@@ -800,7 +810,7 @@ try {
   else if (comando === 'skills-export') exportarSkills();
   else if (comando === 'status') imprimir({
     detection: detectar(), checks: cargarChecks(), product: estadoProducto(), security: estadoSeguridad(),
-    documentation: estadoDocumentacion(), debt: medirDeuda(),
+    usability: estadoUsabilidad(), documentation: estadoDocumentacion(), debt: medirDeuda(),
   });
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {

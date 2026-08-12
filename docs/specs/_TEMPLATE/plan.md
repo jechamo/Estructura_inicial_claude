@@ -158,6 +158,52 @@ JWT o credenciales de navegador; JWT no es el valor por defecto.
 - Informe: `docs/security/reports/YYYY-MM-DD-NNN-slug.md` con
   `<!-- sdd-security-report:v1 -->` y JSON canónico.
 
+### 9.3 · Matriz de controles de usabilidad
+
+**Impacto de usabilidad heredado de `spec.md`**: `aplicable | sin-ui · motivo | ux-pending`.
+
+Marco: **WCAG 2.2 AA** ([`A11Y-CHECKLIST.md`](../../design/A11Y-CHECKLIST.md)) y las **diez
+heurísticas** ([`USABILITY-CHECKLIST.md`](../../design/USABILITY-CHECKLIST.md)).
+
+> Una fila por control. ID `UX-<AREA>-NNN` con área `A11Y`, `FORM`, `COPY` o `PERF`.
+> `Aplica = no` exige una justificación material. Si aplica, ninguna celda desde decisión hasta
+> evidencia puede quedar vacía o con marcador.
+
+| Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+| UX-A11Y-001 | `<criterio o n/a>` | `<H1…H10 o n/a>` | `<sí/no>` | `<decisión o motivo material>` | T-NNN-XX | `<ruta::caso>` | `evidence.md#UX-A11Y-001` |
+| UX-FORM-001 | `<criterio o n/a>` | `<H1…H10 o n/a>` | `<sí/no>` | `<decisión o motivo material>` | T-NNN-XX | `<ruta::caso>` | `evidence.md#UX-FORM-001` |
+| UX-COPY-001 | `<criterio o n/a>` | `<H1…H10 o n/a>` | `<sí/no>` | `<decisión o motivo material>` | T-NNN-XX | `<ruta::caso>` | `evidence.md#UX-COPY-001` |
+| UX-PERF-001 | `<criterio o n/a>` | `<H1…H10 o n/a>` | `<sí/no>` | `<decisión o motivo material>` | T-NNN-XX | `<ruta::caso>` | `evidence.md#UX-PERF-001` |
+
+**Umbrales de velocidad percibida** que fija esta spec, si `PERF` aplica:
+
+| Espera | Qué se muestra | Objetivo |
+|---|---|---|
+| < 100 ms | Nada; cambio de estado inmediato del elemento pulsado | Toda interacción |
+| 100 ms – 1 s | Estado visible en el propio control | |
+| 1 – 3 s | Indicador de progreso | |
+| > 3 s | Progreso con estimación y opción de cancelar | |
+
+**Actualización optimista** — dónde se usa y, sobre todo, dónde **no**:
+
+| Acción | ¿Optimista? | Reversión escrita | Por qué |
+|---|---|---|---|
+| `<acción reversible>` | Sí | `<cómo se restaura el estado exacto>` | Fácil de revertir, fallo raro |
+| `<pago / alta / borrado>` | **No** | — | El usuario debe poder afirmar que ocurrió |
+
+### 9.4 · Auditoría de usabilidad prevista
+
+- Skill: `/sdd-verify` paso 5 bis, con alcance `verify`.
+- Auditor: `code-reviewer` en solo lectura, con las dos checklists como criterio; devuelve un
+  HANDOFF y no escribe el informe.
+- Consultado en fase de diseño y de plan: `ux-designer`, que conserva su escritura en `/sdd-design`.
+- Escritor autorizado: `docs-writer`, que materializa literalmente el handoff sin reinterpretarlo.
+- Informe: `docs/design/reports/YYYY-MM-DD-NNN-slug.md` con
+  `<!-- sdd-usability-report:v1 -->` y JSON canónico.
+- Gate `a11y`: obligatorio si el impacto es `aplicable`. Sin herramienta en el proyecto, se declara
+  como **control no ejecutado** con riesgo, propietario y siguiente paso. Nunca como "pasa".
+
 ## 10. Rendimiento
 
 | Métrica | Objetivo | Cómo se consigue |

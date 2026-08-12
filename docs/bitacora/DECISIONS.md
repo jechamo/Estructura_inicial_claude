@@ -9,6 +9,57 @@
 
 ---
 
+## 2026-08-12 · Usabilidad como contrato verificable, auditada por quien no la diseñó
+
+- **Tipo**: decisión de proceso, portabilidad y calidad
+- **Contexto**: la doctrina de usabilidad ya existía y era buena —`USABILITY-CHECKLIST.md` cubría
+  heurísticas, formularios, mensajes de error, microcopy y velocidad percibida—, pero el circuito
+  no la exigía en ningún punto verificable. `/sdd-verify`, `/sdd-clarify`, `/sdd-tasks` y
+  `/sdd-ship` no la mencionaban ni una vez; las tablas §6 y §6 bis de `design.md` no las validaba
+  nada, así que se podían entregar vacías sin coste; `docs/design/a11y-checklist.md` se declaraba
+  entregable obligatorio en dos sitios sin existir ni tener plantilla; y ningún IDE recibía reglas
+  de usabilidad al editar interfaz. En la práctica, que una pantalla fuera usable dependía de que
+  el agente de turno se acordara. Es exactamente la situación que tenía la seguridad antes de la
+  spec 007.
+- **Decisión / hecho**: se replica el contrato de seguridad capa por capa sobre los mismos
+  ficheros. Una spec declara `Impacto de usabilidad` (`aplicable` | `sin-ui · motivo material` |
+  `ux-pending`); si aplica, `plan.md` §9.3 mantiene la matriz `UX-<AREA>-NNN` con áreas `A11Y`,
+  `FORM`, `COPY` y `PERF`, y cada control aplicable enlaza decisión, tarea, test y evidencia.
+  `/sdd-verify` gana un paso de auditoría y produce un informe parseable en `docs/design/reports/`
+  con `sdd-usability-report:v1`. `check-sdd.mjs` valida la clasificación, la matriz, las tablas de
+  diseño y la puerta de `GO`. El contrato viaja en `.sdd/installed.json` con `enforceFromSpec`, de
+  modo que las specs 001-008 no se reinterpretan.
+- **Alternativas descartadas**:
+  - *Crear un `usability-auditor`*: rompería la paridad de 20 agentes en seis superficies, que es
+    parte del contrato instalado y se verifica en CI, a cambio de poco. `code-reviewer` ya es
+    auditor de solo lectura y ya coordina `/sdd-verify`.
+  - *Que `ux-designer` audite su propio diseño*: es quien escribe en `/sdd-design`. Un auditor que
+    redacta su propio veredicto no es un control. Además, meterlo en `auditoresSoloLectura`
+    forzaría `sandbox_mode = "read-only"` en su perfil de Codex y le quitaría la escritura que
+    necesita para diseñar.
+  - *Hacer obligatorio el gate `a11y` desde el arranque*: la plantilla se instala en proyectos sin
+    frontend y sin runner de accesibilidad. El propio runner ya declara que "un gate sin comando no
+    es un control, es una casilla que alguien dará por buena", así que se respeta esa regla.
+  - *Dejarlo solo en doctrina*: es lo que ya había, y es justo lo que no funcionaba.
+- **Consecuencias**: `VERSION_MANIFIESTO` pasa a 6 y las instalaciones existentes reciben el
+  contrato como `legacy-pending` al ejecutar `update`. Una spec nueva con interfaz cuesta más de
+  escribir: hay que clasificar, trazar y verificar a mano teclado y lector de pantalla. Es
+  deliberado. WCAG 2.2 AA queda declarado como **suelo y no techo**: cumplirlo entero no hace
+  usable un producto, y por eso las diez heurísticas se recorren además de la norma.
+- **Riesgo aceptado**: el gate `a11y` no bloquea cuando no está configurado; solo avisa. Un
+  proyecto puede entregar con toda la verificación descansando en la manual. Se prefiere eso a
+  imponer un runner que la plantilla no puede elegir sin conocer el stack.
+- **Efecto colateral corregido**: la comprobación de evidencia verde comparaba emojis sin el
+  indicador `u`; como 🔴 y 🟢 comparten sustituto alto en UTF-16, un resultado verde con emoji se
+  leía como rojo. Las plantillas usan 🟢, así que el fallo alcanzaba a cualquier proyecto que
+  siguiera la convención. Se corrige en `tieneResultadoSeguridadVerde`.
+- **Spec**: [`009-usabilidad-integrada`](../specs/009-usabilidad-integrada/spec.md)
+- **Fuentes**: cuatro lecciones de máster aportadas por el usuario (heurísticas y accesibilidad,
+  formularios usables, microcopy con IA, performance percibida), incorporadas como principio
+  verificable y no como ejemplo de código.
+
+---
+
 ## 2026-08-11 · Documentación viva, portable y versionada como parte de la entrega
 
 - **Tipo**: decisión de proceso, portabilidad y seguridad

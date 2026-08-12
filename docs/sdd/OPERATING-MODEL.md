@@ -363,6 +363,62 @@ Checklist completa: `docs/security/SECURITY-CHECKLIST.md`. Tokens/CSRF:
 
 ---
 
+## 8 bis. Usabilidad (contrato, no recomendación)
+
+Marco versionado: **WCAG 2.2 AA** como suelo verificable y las **diez heurísticas de Nielsen** como
+criterio de que además se entienda. Son cosas distintas y las dos son obligatorias: una pantalla
+puede ser perfectamente accesible y perfectamente confusa, y cumplir la norma entera no la salva.
+
+Doctrina vinculante: [`A11Y-CHECKLIST.md`](../design/A11Y-CHECKLIST.md) y
+[`USABILITY-CHECKLIST.md`](../design/USABILITY-CHECKLIST.md).
+
+### 8 bis.1 Trazabilidad por fase
+
+| Fase | Contrato de usabilidad |
+|---|---|
+| Specify | Clasifica `Impacto de usabilidad` como `aplicable`, `sin-ui · motivo` o `ux-pending`; sin tecnología |
+| Design | Rellena `docs/design/a11y-checklist.md` del proyecto y las tablas §6 y §6 bis de `design.md`; propone los `UX-*` |
+| Plan | Define la matriz `Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia`, los umbrales de espera y dónde **no** hay actualización optimista |
+| Tasks | Cada tarea de interfaz declara `Controles de usabilidad` y su test/caso hostil |
+| Implement | TDD y salida real por control; no ejecutado conserva riesgo, propietario y paso |
+| Verify | Auditoría de `code-reviewer` en solo lectura, verificación manual de teclado y lector, informe material y gate bloqueante |
+| Ship | Reutiliza el informe verificado; no vuelve a auditar ni permite `GO` incoherente |
+
+Áreas de control: `A11Y` accesibilidad · `FORM` formularios · `COPY` microcopy · `PERF` velocidad
+percibida. El identificador es `UX-<AREA>-NNN`.
+
+`ux-pending` sirve únicamente para preservar historia brownfield durante la adopción. Una spec
+nueva con interfaz no puede usarlo para omitir matriz, pruebas o informe. Un `sin-ui` necesita un
+motivo material: "no procede" no lo es.
+
+**Quién audita.** `ux-designer` diseña y **escribe** en `/sdd-design`; por eso no puede ser también
+quien audite lo construido. Esa auditoría la asume `code-reviewer`, que ya es de solo lectura y ya
+coordina `/sdd-verify`. Nadie audita su propio diseño, y no se crea un agente nuevo para ello: la
+paridad de 20 perfiles en seis superficies es parte del contrato.
+
+El auditor no escribe. Devuelve HANDOFF estructurado y control al agente que lo invocó. Solo
+entonces un agente con delegación puede pedir a `docs-writer` que materialice **literalmente** el
+informe en `docs/design/reports/YYYY-MM-DD-NNN-slug.md`, con
+`<!-- sdd-usability-report:v1 -->` y JSON. No se reinterpretan hallazgos, conteos ni veredicto.
+
+**El gate `a11y` no se presupone.** Es obligatorio cuando el impacto es `aplicable`, pero la
+plantilla no impone runner: sin herramienta configurada, se declara **control no ejecutado** con
+riesgo, propietario y siguiente paso. Ausente nunca equivale a verde.
+
+Innegociables:
+- **El elemento nativo primero.** Un `div` con `onClick` no recibe foco, no responde a teclado y no
+  se anuncia como botón. ARIA solo donde el HTML no llega.
+- **Foco visible siempre** y orden de tabulación igual al orden visual.
+- **Etiqueta de formulario visible y persistente.** El texto de ejemplo muestra formato, no sustituye.
+- **Validación al salir del campo**, no mientras se escribe; el error dice **cómo se arregla**.
+- **Botones con verbo + sustantivo.** Tras leerlo se sabe qué va a pasar.
+- **Toda acción responde en menos de 100 ms**, aunque solo cambie el estado del control.
+- **Ninguna actualización optimista** en pagos, alta de cuenta, cambio de contraseña ni borrados
+  irreversibles; las que existan, con reversión escrita y no prevista.
+- **La verificación manual no es opcional**: el analizador automático cubre alrededor de un tercio.
+
+---
+
 ## 9. Bitácora (obligatoria)
 
 **Sí, es necesaria.** El chat se pierde; el repositorio permanece. Sin bitácora, dentro

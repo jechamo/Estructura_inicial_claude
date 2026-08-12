@@ -29,10 +29,16 @@ Lo verifica `/sdd-verify` y lo exige `release-manager` antes de `/sdd-ship`.
 - [ ] *Mutation score* del core medido y reportado como **número** en `evidence.md`, no como
       adjetivo. Cobertura alta con *mutation score* bajo = suite decorativa
 - [ ] Si la funcionalidad tenía interfaz: `design.md` existe, con los seis estados por pantalla y
-      accesibilidad verificada
+      las tablas §6 y §6 bis rellenadas, sin marcadores de plantilla
+- [ ] Si `Impacto de usabilidad = aplicable`: cada `UX-*` aplicable tiene tarea, test y evidencia
+      ejecutada; cada `no aplica`, motivo material; y existe el informe parseable en
+      `docs/design/reports/` sin CRÍTICO/ALTO ni controles no ejecutados
+- [ ] **Verificación manual de accesibilidad hecha, no supuesta**: recorrido completo sin ratón con
+      el foco siempre visible, lectura con lector de pantalla y zoom al 200 %. El analizador
+      automático cubre alrededor de un tercio de los problemas: es el suelo, no la prueba
 - [ ] Todos los requisitos *must* de la spec entregados. Lo que quede fuera es lo que la spec ya
       marcó como *should*, *could* o *won't*, no lo que dio menos pereza
-- [ ] `code-reviewer` → veredicto ✅
+- [ ] `code-reviewer` → veredicto ✅, y veredicto de usabilidad sin CRÍTICO ni ALTO
 - [ ] `refactor-specialist` → sin violaciones SOLID sin justificar
 - [ ] `security-auditor` → sin hallazgos CRÍTICO ni ALTO
 - [ ] Sin nuevas violaciones del umbral de complejidad cognitiva declarado por el proyecto

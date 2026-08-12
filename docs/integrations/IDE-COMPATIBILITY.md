@@ -47,6 +47,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 |---|---|---|---|---|---|---|---|
 | Lee `AGENTS.md` | ✅ vía `CLAUDE.md` | ✅ vía `copilot-instructions` | ✅ | ✅ vía `.cursor/rules` | ✅ vía `GEMINI.md` | ✅ **nativo** | ✅ nativo, cada sesión |
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ | ❌ |
+| Doctrina de usabilidad al editar UI | 🟡 vía skills `/front` | ✅ `usability.instructions.md` | ✅ | ✅ `40-usability.mdc` | 🟡 según activación | ❌ vía `AGENTS.md` | ❌ vía `AGENTS.md` |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | 🟡 `.agents/agents/` | ✅ `.codex/agents/*.toml` | ❌ sin formato |
 | Comandos `/` | ✅ 26 skills | ✅ 26 skills | ✅ skills | ✅ 26 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes | ❌ un solo agente |

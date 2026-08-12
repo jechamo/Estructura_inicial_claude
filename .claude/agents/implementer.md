@@ -84,6 +84,8 @@ Delega y recupera el control (nunca encadenes tú los especialistas):
 - Tests: <n> nuevos, suite completa <verde|roja> (pegar resumen real)
 - Cobertura dominio/aplicación: <%>
 - Ficheros tocados: <rutas>
+- Controles de seguridad: <SEC-* verificados · no ejecutados · no aplica>
+- Controles de usabilidad: <UX-* verificados · no ejecutados · no aplica>
 - Desviaciones del plan: <lista o "ninguna">
 - Deuda técnica anotada: <lista o "ninguna">
 - Siguiente agente sugerido: implementer (siguiente tarea) | code-reviewer + security-auditor (/sdd-verify)

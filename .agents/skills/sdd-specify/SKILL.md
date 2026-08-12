@@ -54,6 +54,11 @@ Secciones obligatorias:
    autorización, PII, pagos, ficheros, administración, multi-tenant, integraciones o agentes/LLM.
    `security-pending` solo preserva contexto brownfield histórico; nunca exime una spec sensible
    nueva. En esta fase se declara impacto y comportamiento, no librerías ni controles técnicos.
+   Declara también `Impacto de usabilidad` con uno de estos valores exactos:
+   `aplicable | sin-ui · <motivo material> | ux-pending`. Es `aplicable` si la spec toca una
+   pantalla, un formulario, un texto que lee una persona o una espera que se nota (> 300 ms).
+   `sin-ui` necesita un motivo material: "no procede" no lo es. `ux-pending` solo preserva
+   contexto brownfield; nunca exime una spec nueva con interfaz.
 7. **Criterios de aceptación** — numerados `CA-01`…, en Gherkin, ligados a su `RF`.
 8. **Casos límite** — vacío, extremos, concurrencia, sin permisos, sistema externo caído,
    datos corruptos, reintentos.
@@ -144,6 +149,8 @@ donde está el trabajo real.
 - [ ] Hay requisitos no funcionales (no los olvides: es el error más común)
 - [ ] `Impacto de seguridad` usa `sensible`, `no-sensible` o `security-pending`, con señales
       trazadas a RF/CA; no se oculta una spec sensible nueva como `security-pending`
+- [ ] `Impacto de usabilidad` usa `aplicable`, `sin-ui · motivo` o `ux-pending`, con las cuatro
+      señales trazadas a RF/CA; un `sin-ui` sin motivo material no vale
 - [ ] Hay "fuera de alcance"
 - [ ] No hay ninguna decisión técnica
 - [ ] Los marcadores `[NEEDS CLARIFICATION]` están donde deben
@@ -158,6 +165,7 @@ donde está el trabajo real.
 - Corte vertical y cobertura de producto: <FEATURE-MAP · OBJ-* · PRD-RF-* · UC-*>
 - Requisitos: <n> RF · <n> RNF · <n> CA
 - Impacto de seguridad: <sensible/no-sensible/security-pending> · señales: <RF/CA>
+- Impacto de usabilidad: <aplicable/sin-ui · motivo/ux-pending> · señales: <RF/CA>
 - Reparto MoSCoW: must <n>% · should <n>% · could <n>% · won't <n> requisitos
 - Preguntas hechas al usuario: <n> · confirmadas: <n>
 - Marcadores pendientes: <n>

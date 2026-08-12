@@ -149,11 +149,20 @@ Detalle completo en `docs/design/USABILITY-CHECKLIST.md`.
 - Imágenes con `alt` con intención; decorativas con `alt=""`.
 - Compruébalo con axe en el test, no a ojo.
 
+Criterio completo en `docs/design/A11Y-CHECKLIST.md`.
+El analizador automático detecta alrededor de un tercio de los problemas: es el suelo, no la
+prueba. Lo que falta se encuentra **desconectando el ratón** y recorriendo el flujo entero.
+
+Si la tarea trae `Controles de usabilidad: UX-*`, cada uno necesita su test y su evidencia. Un
+control sin salida real no está verificado; se declara **no ejecutado** con riesgo y propietario.
+
 ## Rendimiento, con medición
 
 Sin medición previa no se optimiza. Objetivo declarado o no hay tarea.
 
-- **Core Web Vitals**: LCP, INP, CLS. Presupuesto de bundle declarado y verificado en CI.
+- **Core Web Vitals**: LCP, INP, CLS. Presupuesto de bundle declarado y verificado en CI. Son el
+  contraste objetivo de los umbrales percibidos que fija `plan.md` §9.3: si la sensación es buena
+  y la métrica es mala, gana la métrica — alguien con peor red está viendo otra cosa.
 - División de código por ruta. `import()` para lo que no se ve al entrar.
 - Imágenes: formato moderno, tamaño correcto, `width`/`height` para no mover el layout, `lazy`
   salvo la primera visible.
@@ -184,6 +193,8 @@ Sin medición previa no se optimiza. Objetivo declarado o no hay tarea.
 - [ ] Presupuesto de rendimiento respetado
 - [ ] Formularios, mensajes de error y microcopy contra el checklist de usabilidad
 - [ ] Toda acción responde en menos de 100 ms
+- [ ] Recorrido completo **sin ratón** hecho a mano, no supuesto
+- [ ] Cada `UX-*` de la tarea con test y evidencia, o declarado no ejecutado con riesgo
 - [ ] Sin lógica de negocio ni secretos en el cliente
 
 ## Stack concreto

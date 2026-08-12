@@ -20,6 +20,9 @@ Agente responsable: `@planner`, con consulta a los especialistas.
 - Lee `Impacto de seguridad`: `sensible | no-sensible | security-pending`. Si falta o una spec
   sensible nueva intenta usar `security-pending`, devuelve a `/sdd-specify`; no normalices el
   hueco desde el plan.
+- Lee `Impacto de usabilidad`: `aplicable | sin-ui · motivo | ux-pending`. Si falta, o una spec
+  nueva con interfaz intenta usar `ux-pending`, o el `sin-ui` no trae motivo material, devuelve a
+  `/sdd-specify`; no normalices el hueco desde el plan.
 - Lee `Impacto de documentación`: `aplicable · DOC-* | no-aplica · motivo | docs-pending`.
   Si aplica, cruza cada `DOC-ID` con `.sdd/docs.json` y añade fuente, artefacto, generación,
   propietario, tarea, gate/comprobación y evidencia. Una spec nueva no aprueba `docs-pending`.
@@ -90,6 +93,10 @@ qué se automatiza en CI, criterio de "suficiente".
    con las cuatro preguntas de `TEST-STRATEGY.md` §0 y anota la respuesta
 9. Seguridad: impacto, nivel ASVS, amenazas y matriz
    `control → decisión/justificación → tarea → test → evidencia`
+9 bis. Usabilidad: impacto, umbrales de velocidad percibida, dónde se usa actualización optimista
+   y dónde **no**, y matriz `UX-<AREA>-NNN → decisión → tarea → test → evidencia` con áreas
+   `A11Y`, `FORM`, `COPY` y `PERF`. Consulta a `@ux-designer` y `@frontend-expert` antes de
+   decidir el cómo; el marco es WCAG 2.2 AA más las diez heurísticas
 10. Rendimiento: objetivos, presupuesto declarado, consultas críticas, caché
 11. Observabilidad: logs, métricas, trazas, **clasificación de errores, salud por versión y
     alertas con umbral y playbook**
@@ -120,6 +127,7 @@ Recorre esta matriz y anota cada discrepancia:
 | Todo ↔ "fuera de alcance" | Nada del plan implementa algo declarado fuera de alcance |
 | Producto ↔ spec ↔ plan | La cadena `OBJ → PRD-RF → UC → RF → CA` llega a componentes y tests |
 | Seguridad ↔ plan ↔ test | Cada control aplicable llega a tarea, caso de abuso y evidencia; cada `no aplica` tiene motivo material |
+| Usabilidad ↔ diseño ↔ test | Cada `UX-*` aplicable llega a tarea, caso hostil y evidencia; las tablas §6 y §6 bis de `design.md` no conservan marcadores |
 
 **Corrige los huecos antes de trocear.** Si un hueco revela que la spec era incompleta,
 vuelve a `spec-analyst`: no lo rellenes tú desde el plan, porque entonces habrás decidido
@@ -145,6 +153,11 @@ Checklist de conformidad:
 - [ ] Cada control aplicable tiene cadena completa y cada `no aplica` tiene motivo material
 - [ ] Si aplica JWT/cookie/bearer, las decisiones siguen `docs/security/AUTH-TOKENS.md`; JWT no se
       adopta por defecto ni se fija una librería universal
+- [ ] `Impacto de usabilidad` está clasificado; si es `aplicable`, la tabla usa exactamente
+      `Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia`
+- [ ] Los umbrales de velocidad percibida están fijados si `PERF` aplica, y toda actualización
+      optimista declara su reversión escrita — nunca en pagos, altas, contraseñas ni borrados
+- [ ] El gate `a11y` está previsto, o su ausencia queda declarada como control no ejecutado
 
 **Si el plan viola la constitución → para y llama a `@architect`.** O se ajusta el plan, o
 se escribe el ADR que cambia la regla. Nunca se viola en silencio.
@@ -170,6 +183,7 @@ explícita. Una recomendación técnica del `planner` no sustituye este gate.
 - Conformidad: OK | requiere ADR-XXXX
 - Cobertura: <OBJ-* → PRD-RF-* → UC-* → RF-* → CA-* → test previsto>
 - Seguridad: <sensible/no-sensible/security-pending> · <SEC-* y huecos>
+- Usabilidad: <aplicable/sin-ui · motivo/ux-pending> · <UX-* y huecos>
 - Gate humano del plan: approved · <actor · fecha · alcance>
 - Siguiente agente sugerido: planner — comando: /sdd-tasks
 ```

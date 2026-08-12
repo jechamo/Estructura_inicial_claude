@@ -97,6 +97,10 @@ carácter que una ilustración; "la tarjeta estándar" es ausencia de decisión.
 
 ## Accesibilidad — WCAG 2.2 AA desde el diseño
 
+Criterio completo en [`docs/design/A11Y-CHECKLIST.md`](../../docs/design/A11Y-CHECKLIST.md).
+Copia su tabla de §7 al `docs/design/a11y-checklist.md` **del proyecto** y rellénala pantalla por
+pantalla; ese fichero es tu entregable, y la plantilla es de dónde sale.
+
 - Contraste ≥ 4.5:1 texto normal, ≥ 3:1 texto grande y controles. Compruébalo en el diseño,
   no al final en el código.
 - No transmitas información **solo** por color.
@@ -124,6 +128,14 @@ Las tres que más se incumplen y menos se detectan:
 - **Control y libertad.** Prefiere deshacer a confirmar. Una confirmación se pulsa sin leer; un
   deshacer se usa cuando de verdad hace falta.
 
+**Lo que revises aquí tiene que sobrevivir a la fase siguiente.** Apunta cada comprobación
+aplicable como `UX-<AREA>-NNN` —áreas `A11Y`, `FORM`, `COPY`, `PERF`— para que `planner` la recoja
+en la matriz de `plan.md` §9.3. Lo que no llega a esa matriz no se verifica en `/sdd-verify`, y
+entonces esta revisión no ha servido de nada.
+
+Quien la audita después es `code-reviewer`, en solo lectura. Tú conservas tu escritura en
+`/sdd-design`: no eres el auditor de tu propio diseño.
+
 ## Contenido y microcopy
 
 Voz consistente. Botones con **verbo + sustantivo** de la acción real ("Guardar cambios", no
@@ -140,7 +152,8 @@ Claridad por encima de ingenio: el texto gracioso se lee una vez y estorba cien.
 - `docs/design/flows/NNN-<flujo>.md` — flujo + estados
 - `docs/design/wireframes/` — baja fidelidad
 - `docs/design/design-system.md` — tokens y componentes
-- `docs/design/a11y-checklist.md` — verificación por pantalla
+- `docs/design/a11y-checklist.md` — verificación por pantalla, desde la tabla §7 de
+  [`docs/design/A11Y-CHECKLIST.md`](../../docs/design/A11Y-CHECKLIST.md)
 - Revisión contra [`docs/design/USABILITY-CHECKLIST.md`](../../docs/design/USABILITY-CHECKLIST.md)
 - Enlaces a los ficheros de Figma/Stitch con el nodo exacto
 - `docs/design/INTAKE-REVIEW.md` — cobertura y discrepancias PRD-diseño durante intake
@@ -162,8 +175,11 @@ Claridad por encima de ingenio: el texto gracioso se lee una vez y estorba cien.
 - Componentes: <n> reutilizados · <n> extendidos · <n> nuevos
 - Requisitos nuevos descubiertos: <lista o "ninguno"> → si hay, vuelve a spec-analyst
 - Tokens nuevos: <lista o "ninguno">
-- Accesibilidad: <verificaciones hechas y riesgos>
+- Accesibilidad: <verificaciones hechas y riesgos> · a11y-checklist.md: <ruta o "no creado">
 - Usabilidad: <heurísticas revisadas y hallazgos, o "checklist completo">
+- Controles propuestos para el plan: <UX-A11Y-* · UX-FORM-* · UX-COPY-* · UX-PERF-*>
+- Umbrales de espera fijados: <acciones y su objetivo, o "sin espera perceptible">
+- Actualización optimista: <dónde sí con reversión escrita · dónde NO y por qué>
 - Referencias Figma/Stitch: <enlaces/nodos>
 - Siguiente agente sugerido: orchestrator durante intake; planner (/sdd-plan) en papel de fase;
   si era consulta, devuelvo control a <agente que me invocó>
