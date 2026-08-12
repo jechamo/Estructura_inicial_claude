@@ -59,6 +59,33 @@ resuelve el linter.
 ### Seguridad (superficial; el profundo lo hace `@security-auditor`)
 - Input externo sin validar, SQL concatenado, secretos, PII en logs, autorización solo en UI.
 
+### Usabilidad y accesibilidad — auditoría de fase, si el impacto es `aplicable`
+
+Este es el **único punto del circuito** donde la usabilidad se verifica sobre lo construido, así
+que no se despacha por encima. El marco es **WCAG 2.2 AA**
+([`A11Y-CHECKLIST.md`](../../docs/design/A11Y-CHECKLIST.md)) y las **diez heurísticas**
+([`USABILITY-CHECKLIST.md`](../../docs/design/USABILITY-CHECKLIST.md)).
+
+Recorre la matriz `UX-<AREA>-NNN` de `plan.md` §9.3 control por control:
+
+- Cada control aplicable necesita **salida real**; cada `no aplica`, motivo material.
+- Lo que ningún analizador ve: recorrido **completo sin ratón**, foco siempre visible, diálogos que
+  atrapan y devuelven el foco, lectura con lector de pantalla, zoom al 200 %.
+- Formularios: etiqueta visible, validación al salir del campo, error que dice **cómo se arregla**
+  y que desaparece al reenfocar, protección contra doble envío.
+- Microcopy: botones con verbo + sustantivo, estados de carga contextuales, estados vacíos con
+  salida, confirmaciones específicas.
+- Velocidad percibida: toda acción responde en menos de 100 ms; esqueleto en vez de pantalla en
+  blanco; ninguna actualización optimista en pagos, altas, contraseñas ni borrados irreversibles,
+  y las que existan con **reversión escrita**.
+
+**Aquí eres auditor de solo lectura**, igual que en el resto de tu trabajo: devuelves el HANDOFF
+estructurado y **no escribes el informe**. Lo materializa `@docs-writer`, literalmente, en
+`docs/design/reports/YYYY-MM-DD-NNN-slug.md` con `<!-- sdd-usability-report:v1 -->` y su JSON.
+
+🔴 CRÍTICO o ALTO bloquean la entrega. Un control **no ejecutado** conserva riesgo, propietario y
+siguiente paso: no cuenta como verificado.
+
 ### Legibilidad y mantenimiento
 - Nombres que revelan intención; sin abreviaturas crípticas.
 - Funciones cortas, un nivel de abstracción.
@@ -87,5 +114,11 @@ Cierra siempre con uno de estos, y sé explícito:
 - Veredicto: ✅ | ⚠️ | ❌
 - Bloqueantes: <n>  Mayores: <n>  Menores: <n>
 - Hallazgos principales: <lista con ruta:línea>
-- Siguiente agente sugerido: implementer (arreglar) | security-auditor | release-manager
+- Usabilidad: <sin-ui · motivo | UX-* evaluados: <n> · verificados: <n> · no ejecutados: <n>>
+- Estándares de usabilidad: WCAG 2.2 AA · heurísticas Nielsen
+- Hallazgos de usabilidad: CRÍTICO <n> · ALTO <n> · MEDIO <n> · BAJO <n>
+- Verificación manual a11y: teclado <sí/no> · lector <sí/no> · zoom 200 % <sí/no>
+- Veredicto de usabilidad: BLOCKED | CONDITIONAL | PASS
+- Siguiente agente sugerido: implementer (arreglar) | security-auditor | docs-writer (materializar
+  el informe de usabilidad, literalmente) | release-manager
 ```

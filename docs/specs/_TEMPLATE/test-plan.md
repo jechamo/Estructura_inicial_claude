@@ -65,6 +65,20 @@ Si se elige JWT, incluye algoritmo no permitido y `alg: none`, firma inválida, 
 **reuse detection**, 401/403, IDOR y ausencia de tokens en logs/URLs. Para cookies automáticas,
 prueba la defensa CSRF elegida; `SameSite` es defensa en profundidad, no sustituto universal.
 
+### 5.2 · Casos de uso hostil y accesibilidad
+
+> Obligatorio si `Impacto de usabilidad = aplicable`. Cada control aplicable de `plan.md` §9.3
+> aparece aquí; un `no aplica` conserva la misma justificación material.
+
+| Control | WCAG 2.2 | Heurística | Condición hostil | Nivel | Test | Resultado usable esperado |
+|---|---|---|---|---|---|---|
+| UX-`<AREA>`-NNN | `<criterio o n/a>` | `<H1…H10 o n/a>` | `<solo teclado / lector de pantalla / zoom 200 % / red lenta / error del servidor / doble envío>` | `<unit/integration/e2e>` | `<ruta::caso>` | `<comportamiento observable y comprensible>` |
+
+Condiciones hostiles que conviene no olvidar: navegación **sin ratón** de principio a fin; foco
+visible en todo momento; envío del formulario **dos veces seguidas**; el servidor devuelve error
+justo después de una actualización optimista; la red tarda cinco segundos; el texto se amplía al
+200 %; el campo recibe el valor exacto del límite y el límite más uno.
+
 ## 6. Dobles
 
 | Dependencia | Doble | Por qué |

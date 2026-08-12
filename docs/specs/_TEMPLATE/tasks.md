@@ -33,6 +33,7 @@
 - **Capa**: domain
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01, CA-01
 - **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
+- **Controles de usabilidad**: `UX-<ID>` \| `no aplica (<justificación material>)`
 - **Documentación**: `DOC-<ID>` \| `no aplica (<motivo material>)`
 - **Test que la define**: `tests/domain/<...>.test.ts::debe_<comportamiento>_cuando_<condición>`
 - **Depende de**: ninguna
@@ -49,6 +50,7 @@
 - **Capa**: application
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-01
 - **Controles de seguridad**: `SEC-<ID>` \| `no aplica (<justificación material>)`
+- **Controles de usabilidad**: `UX-<ID>` \| `no aplica (<justificación material>)`
 - **Documentación**: `DOC-<ID>` \| `no aplica (<motivo material>)`
 - **Test que la define**: `…`
 - **Depende de**: T-NNN-01
@@ -67,6 +69,8 @@
 - [ ] Logs, métricas y trazas de los caminos nuevos
 - [ ] Casos de abuso y controles de seguridad aplicables, cada uno con test y evidencia
 - [ ] Auditoría `/security-scan`; `security-auditor` devuelve HANDOFF y `docs-writer` materializa
+- [ ] Controles de usabilidad aplicables, cada uno con test y evidencia
+- [ ] Auditoría de usabilidad en `/sdd-verify`; `code-reviewer` devuelve HANDOFF y `docs-writer` materializa
 - [ ] Documentación de usuario o de API
 - [ ] Retirada del feature flag tras estabilizar
 - [ ] Entrada en `docs/bitacora/DECISIONS.md`

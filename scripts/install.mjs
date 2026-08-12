@@ -74,6 +74,7 @@ const omitidos = [];
 const conflictos = [];
 const retirados = [];
 let contratoSeguridadActual = null;
+let contratoUsabilidadActual = null;
 let contratoDocumentacionActual = null;
 
 function listar(dir, base = dir, out = []) {
@@ -255,6 +256,23 @@ function contratoSeguridad(anterior, modo) {
   };
 }
 
+function contratoUsabilidad(anterior, modo) {
+  const base = {
+    schemaVersion: 1,
+    status: opciones.comando === 'update' && anterior.version
+      ? 'legacy-pending'
+      : modo === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+    standards: { wcag: '2.2', level: 'AA', heuristics: 'nielsen-10' },
+    enforceFromSpec: siguienteSpec(),
+  };
+  if (!anterior.usability || typeof anterior.usability !== 'object') return base;
+  return {
+    ...base,
+    ...anterior.usability,
+    standards: { ...base.standards, ...(anterior.usability.standards || {}) },
+  };
+}
+
 function contratoDocumentacion(anterior, modo) {
   const base = {
     schemaVersion: 1,
@@ -294,6 +312,36 @@ function migrarChecksSeguridad(registroNuevo) {
   escribir(ruta, nuevo);
   fusionados.push(`${ruta} (+security sin configurar)`);
   registroNuevo[ruta] = { hash: hash(nuevo), policy: 'json-security-migration' };
+}
+
+/**
+ * Igual que la de seguridad, pero `a11y` nunca se convierte en gate obligatorio automático: la
+ * plantilla no sabe si el proyecto tiene interfaz ni con qué stack se pinta. Se deja declarado
+ * como pendiente para que aparezca en `detect` y en `configure`, y la persona decida.
+ */
+function migrarChecksUsabilidad(registroNuevo) {
+  const ruta = '.sdd/checks.json';
+  const actual = leer(join(DESTINO, ruta));
+  if (actual === null) return;
+  let checks;
+  try {
+    checks = parseJsonc(actual);
+  } catch (error) {
+    if (!conflictos.some((item) => item.startsWith(`${ruta} `)))
+      registrarConflicto(ruta, SEMILLAS[ruta], `JSON/JSONC no válido: ${error.message}`);
+    return;
+  }
+  const configurados = Object.keys(checks.checks || {});
+  const yaConfigurado = configurados.some((id) => id === 'a11y' || id.startsWith('a11y:'));
+  const pendientes = Array.isArray(checks.unconfigured) ? checks.unconfigured : [];
+  const yaPendiente = pendientes.some((id) => id === 'a11y' || id.startsWith('a11y:'));
+  if (yaConfigurado || yaPendiente) return;
+
+  checks.unconfigured = [...pendientes, 'a11y'];
+  const nuevo = `${JSON.stringify(checks, null, 2)}\n`;
+  escribir(ruta, nuevo);
+  fusionados.push(`${ruta} (+a11y sin configurar)`);
+  registroNuevo[ruta] = { hash: hash(nuevo), policy: 'json-usability-migration' };
 }
 
 /** Conserva gates docs/docs:* reales y solo mantiene `docs` pendiente si no existe ninguno. */
@@ -497,12 +545,15 @@ function instalarProyecto() {
   };
   const security = contratoSeguridad(anterior, modo);
   contratoSeguridadActual = security;
+  const usability = contratoUsabilidad(anterior, modo);
+  contratoUsabilidadActual = usability;
   const documentation = contratoDocumentacion(anterior, modo);
   contratoDocumentacionActual = documentation;
 
   fusionarSemillas(registroNuevo);
   fusionarGitignore(registroNuevo);
   migrarChecksSeguridad(registroNuevo);
+  migrarChecksUsabilidad(registroNuevo);
   migrarChecksDocumentacion(registroNuevo);
   migrarRutasRetiradas(registroNuevo, previos);
 
@@ -538,6 +589,7 @@ function instalarProyecto() {
       source: 'jechamo/Estructura_inicial_claude',
       product,
       security,
+      usability,
       documentation,
       files: registroNuevo,
       ficheros,
@@ -659,6 +711,9 @@ function informar(modo) {
     console.log('\nVS Code: confía en el workspace y ejecuta `Developer: Reload Window` para aplicar una sola superficie de agentes y skills.');
     if (contratoSeguridadActual?.status === 'legacy-pending') {
       console.log(`Seguridad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoSeguridadActual.enforceFromSpec}.`);
+    }
+    if (contratoUsabilidadActual?.status === 'legacy-pending') {
+      console.log(`Usabilidad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoUsabilidadActual.enforceFromSpec}. Las checklists están en docs/design/A11Y-CHECKLIST.md y docs/design/USABILITY-CHECKLIST.md.`);
     }
     if (contratoDocumentacionActual?.status === 'legacy-pending') {
       console.log(`Documentación: legacy-pending; conserva el contrato previo y exige desde la spec ${contratoDocumentacionActual.enforceFromSpec}.`);

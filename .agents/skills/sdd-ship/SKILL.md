@@ -39,6 +39,14 @@ procede del HANDOFF de `security-auditor` (solo lectura) materializado literalme
 `docs-writer`. CRÍTICO/ALTO, MEDIO sin aceptación fechada o control aplicable sin evidencia
 bloquean. No vuelvas a auditar desde `release-manager`: si falta, vuelve a `/sdd-verify`.
 
+Para una spec con `Impacto de usabilidad = aplicable`, exige igualmente
+`docs/design/reports/YYYY-MM-DD-NNN-slug.md` con `<!-- sdd-usability-report:v1 -->` y JSON
+parseable: **WCAG 2.2 AA**, heurísticas, alcance, conteos y veredicto. Procede del HANDOFF de
+`code-reviewer` (solo lectura) materializado literalmente por `docs-writer`. CRÍTICO/ALTO, MEDIO
+sin aceptación fechada o control aplicable sin evidencia bloquean. Un gate `a11y` sin herramienta
+figura como control **no ejecutado** con riesgo y propietario, nunca como verde. Tampoco audites
+esto desde `release-manager`: si falta, vuelve a `/sdd-verify`.
+
 ## Paso 1b — Decisión GO / NO-GO
 
 `evidence.md` §5 arranca en `NO-GO`. Cambiarlo a `GO` **no es una formalidad**: es la
@@ -120,6 +128,7 @@ Deja escrito:
 - Spec: NNN-slug → entregada
 - Gates: <todos verdes | bloqueado por X>
 - Seguridad: <no-sensible | informe · conteos · veredicto · riesgos aceptados>
+- Usabilidad: <sin-ui · motivo | informe · conteos · veredicto · controles no ejecutados>
 - Versión propuesta: vX.Y.Z
 - Resumen ejecutivo: <ruta> · cifras verificadas: sí | "sin medición todavía"
 - PR preparado (NO enviado): <título>

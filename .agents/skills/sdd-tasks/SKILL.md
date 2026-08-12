@@ -23,6 +23,7 @@ no se crea `tasks.md`.
 - Capa: domain | application | infrastructure | interfaces | test | infra | docs
 - Cubre: OBJ-001 → PRD-RF-003 → UC-002 → RF-03 → CA-05
 - Controles de seguridad: SEC-<ID> | no aplica (<justificación material>)
+- Controles de usabilidad: UX-<ID> | no aplica (<justificación material>)
 - Documentación: DOC-<ID> | no aplica (<motivo material>)
 - Test que la define: `tests/domain/order/place_order.test.ts::debe_rechazar_cuando_stock_insuficiente`
 - Depende de: T-NNN-YY  (o "ninguna")
@@ -79,7 +80,15 @@ no se crea `tasks.md`.
 11. Incluye casos de abuso y auditoría `/security-scan verify`. El `security-auditor` es solo
     lectura y devuelve HANDOFF; el agente que lo invocó puede delegar en `docs-writer` la
     materialización literal de `docs/security/reports/YYYY-MM-DD-NNN-slug.md`.
-12. Si `Impacto de documentación = aplicable`, crea una tarea real por artefacto mantenible,
+12. Si `Impacto de usabilidad = aplicable`, **cada tarea de interfaz declara `Controles de
+    usabilidad`**. Todo `UX-*` aplicable de `plan.md` §9.3 aparece al menos en una tarea y conserva
+    test/evidencia. `no aplica` repite la justificación material. Una tarea de UI no está completa
+    sin sus estados: vacío, cargando, parcial, error, sin permiso y éxito no son tareas aparte,
+    son parte de la misma.
+13. Incluye la auditoría de usabilidad de `/sdd-verify`. El `code-reviewer` es solo lectura y
+    devuelve HANDOFF; el agente que lo invocó puede delegar en `docs-writer` la materialización
+    literal de `docs/design/reports/YYYY-MM-DD-NNN-slug.md`.
+14. Si `Impacto de documentación = aplicable`, crea una tarea real por artefacto mantenible,
     dependiente de la estabilización de su fuente. Conserva `DOC-ID`, propietario, artefacto,
     gate y evidencia. Código y docs pueden vivir en commits distintos del mismo PR.
 
@@ -98,6 +107,8 @@ Construye la tabla de trazabilidad y comprueba que **no queda hueco**:
 - [ ] Toda tarea apunta a un `RF` y `CA`, o es transversal justificada
 - [ ] No hay tareas que la spec no pida
 - [ ] Todo control aplicable de seguridad tiene tarea, test y evidencia previstos
+- [ ] Todo control aplicable de usabilidad tiene tarea, test y evidencia previstos
+- [ ] Toda tarea de interfaz cubre los seis estados, no solo el camino feliz
 - [ ] Todo control no aplicable conserva una justificación material
 
 ## Salida
@@ -116,6 +127,7 @@ la tabla de trazabilidad, y las tareas en orden de ejecución.
 - Cobertura: <n>/<n> OBJ · <n>/<n> PRD-RF · <n>/<n> UC · <n>/<n> RF · <n>/<n> CA
 - Terrenos / skills: <resumen y excepciones justificadas>
 - Seguridad: <sensible/no-sensible/security-pending> · <controles cubiertos/total>
+- Usabilidad: <aplicable/sin-ui/ux-pending> · <controles cubiertos/total>
 - Primera tarea a ejecutar: T-NNN-01
 - Siguiente agente sugerido: implementer — comando: /sdd-implement
 ```

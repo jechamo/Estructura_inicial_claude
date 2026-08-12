@@ -13,7 +13,8 @@ docs/
 ├── architecture/       Constitución, ADR, guía de decisión, patrones
 │   ├── adr/            Decisiones estructurales (MADR)
 │   └── CURRENT-STATE   Solo en repos adoptados con /onboard
-├── design/             Dirección visual, revisión de intake, flujos, wireframes, design system
+├── design/             Dirección visual, accesibilidad, usabilidad, flujos, wireframes
+│   └── reports/        Informes de usabilidad de /sdd-verify
 ├── quality/            Estrategia de test, Definition of Done, informes, deuda
 │   └── reports/        Informes de /sdd-verify
 ├── security/           Checklist OWASP, contrato auth/JWT/CSRF, amenazas y seguridad MCP
@@ -49,6 +50,8 @@ Estos **obligan**, no son sugerencias:
 | [`quality/DEFINITION-OF-DONE.md`](./quality/DEFINITION-OF-DONE.md) | Cuándo algo está terminado |
 | [`quality/TEST-STRATEGY.md`](./quality/TEST-STRATEGY.md) | Cómo se prueba |
 | [`design/DIRECCION-VISUAL.md`](./design/DIRECCION-VISUAL.md) | Referencias, personalidad, tipografía, color, densidad y movimiento. **Sin aprobar, `/sdd-design` no dibuja** |
+| [`design/A11Y-CHECKLIST.md`](./design/A11Y-CHECKLIST.md) | WCAG 2.2 AA: qué se verifica, cómo se comprueba y qué se registra por pantalla |
+| [`design/USABILITY-CHECKLIST.md`](./design/USABILITY-CHECKLIST.md) | Heurísticas, formularios, mensajes de error, microcopy y velocidad percibida |
 | [`security/SECURITY-CHECKLIST.md`](./security/SECURITY-CHECKLIST.md) | Qué se audita |
 | [`security/AUTH-TOKENS.md`](./security/AUTH-TOKENS.md) | Decidir y verificar sesiones, JWT, cookies y CSRF sin imponer stack |
 

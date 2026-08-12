@@ -45,3 +45,10 @@ uno lleva su puerta de entrada, su ciclo TDD y su lista de comprobación.
 
 En `.github/instructions/*.instructions.md`, con `applyTo` por glob. Se aplican
 automáticamente según el fichero que estés tocando.
+
+| Fichero | Se aplica a |
+|---|---|
+| `domain.instructions.md` | Dominio y casos de uso |
+| `tests.instructions.md` | Ficheros de test |
+| `security.instructions.md` | Todo el código ejecutable |
+| `usability.instructions.md` | Interfaz: `tsx`, `jsx`, `vue`, `svelte`, `astro`, `html`, `css`, `scss` |

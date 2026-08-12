@@ -32,6 +32,17 @@ Además, busca ambigüedades **no marcadas** en estas categorías, que casi siem
 - Reversión: ¿se puede deshacer?
 - i18n y zonas horarias.
 
+Y si `Impacto de usabilidad = aplicable`, estas cuatro, que se descubren tarde y caras:
+
+- **Estados de la pantalla**: ¿qué se ve mientras carga, si está vacío, si falla, si el usuario no
+  tiene permiso? Una spec que solo describe el camino feliz esconde cuatro pantallas sin diseñar.
+- **Texto real**: ¿qué dice exactamente el botón? ¿y el mensaje de error de cada validación? "Se
+  muestra un error" no es un requisito: es un hueco.
+- **Espera**: ¿cuánto puede tardar esta operación de verdad, con datos reales? De ahí sale si hace
+  falta esqueleto, progreso o estimación.
+- **Reversibilidad**: ¿se puede pintar el resultado antes de que el servidor confirme? Si la
+  respuesta es "depende", hay que resolverla ahora, no en la revisión.
+
 ## Paso 2 — Preguntar
 
 **Máximo 5 preguntas por ronda.** Cada pregunta:
@@ -95,6 +106,8 @@ alcance aprobó. Un especialista no puede autoaprobarla.
 - Confirmación humana: <actor · fecha · alcance>
 - Discrepancias abiertas: 0
 - Marcadores pendientes: 0
+- Impacto de usabilidad: <aplicable/sin-ui · motivo/ux-pending> · huecos de UI resueltos: <n>
 - Estado de la spec: aprobada
-- Siguiente agente sugerido: planner — comando: /sdd-plan
+- Siguiente agente sugerido: ux-designer — comando: /sdd-design (si el impacto es aplicable)
+                              o planner — comando: /sdd-plan
 ```

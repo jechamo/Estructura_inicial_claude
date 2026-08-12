@@ -7,6 +7,34 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+### Added
+- **La usabilidad es exigible, no una recomendación.** Una spec declara `Impacto de usabilidad` y,
+  cuando aplica, cada control `UX-<AREA>-NNN` —accesibilidad, formularios, microcopy y velocidad
+  percibida— enlaza decisión, tarea, test y evidencia. La entrega se bloquea con hallazgos
+  CRÍTICO/ALTO o con controles sin ejecutar, igual que ya ocurría con seguridad.
+- **Checklist de accesibilidad WCAG 2.2 AA** en `docs/design/A11Y-CHECKLIST.md`: los cuatro
+  principios, verificación por pantalla, navegación por teclado y qué se comprueba a mano porque
+  ningún analizador lo ve. Cierra un hueco real: el circuito ya pedía un `a11y-checklist.md` por
+  proyecto que nunca tuvo plantilla de la que salir.
+- **Reglas de usabilidad para Cursor y Copilot.** Al editar una pantalla, un formulario o una hoja
+  de estilos ahora llega la doctrina; antes solo llegaban las de arquitectura, TDD y seguridad.
+- **Informe de usabilidad parseable** en `docs/design/reports/`, con marcador
+  `sdd-usability-report:v1`, estándares, alcance, conteos y veredicto.
+
+### Changed
+- **`/sdd-verify` verifica la usabilidad.** Antes no la mencionaba en absoluto, igual que
+  `/sdd-clarify`, `/sdd-tasks` y `/sdd-ship`. Quien audita es `code-reviewer`, en solo lectura:
+  `ux-designer` conserva su escritura en `/sdd-design` porque nadie audita su propio diseño.
+- **Las tablas de accesibilidad y usabilidad del diseño dejan de ser decorativas.** Existían desde
+  siempre y nada las validaba, así que podían entregarse vacías sin coste.
+- **El gate `a11y` se exige solo cuando hay interfaz**, y sin herramienta configurada se declara
+  como control no ejecutado con riesgo y dueño. La plantilla no presupone ningún stack.
+
+### Fixed
+- **Un resultado verde con emoji se leía como rojo.** La comprobación de evidencia comparaba
+  emojis sin el indicador `u`, y el sustituto alto de 🔴 coincide con el de 🟢. Como las plantillas
+  usan 🟢, cualquier proyecto que siguiera la convención veía bloqueada su entrega sin motivo.
+
 ## [0.6.0] — 2026-08-11
 
 ### Added

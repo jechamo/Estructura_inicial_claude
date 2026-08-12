@@ -137,6 +137,11 @@ tabulación pensado · textos de error concretos y accionables · alternativa pa
 Comprobado **sobre el diseño**. Descubrir en el código que la paleta no cumple contraste significa
 rehacer la paleta y todo lo que la usa.
 
+Criterio completo en `docs/design/A11Y-CHECKLIST.md`.
+Copia su tabla de §7 a `docs/design/a11y-checklist.md` —el fichero del proyecto— y rellénala
+pantalla por pantalla. Cada comprobación aplicable se declara después como `UX-A11Y-NNN` en
+`plan.md` §9.3: lo que no llega a la matriz no se verifica en `/sdd-verify`.
+
 ## Paso 5 bis — Usabilidad
 
 La accesibilidad es el suelo legal. Que además se entienda es otra revisión, y se hace aquí,
@@ -168,9 +173,11 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - [ ] Cada recorrido conserva la cadena de origen `OBJ → PRD-RF → UC → RF → CA`
 - [ ] Toda `DISC-*` de `INTAKE-REVIEW.md` está resuelta o bloquea explícitamente la salida
 - [ ] Componentes clasificados en reutiliza / extiende / nuevo, con los nuevos justificados
-- [ ] Accesibilidad verificada sobre el diseño
+- [ ] Accesibilidad verificada sobre el diseño y registrada en `docs/design/a11y-checklist.md`
 - [ ] Checklist de usabilidad recorrido: heurísticas, formularios, mensajes de error y microcopy
 - [ ] Declarado dónde **no** se usa actualización optimista
+- [ ] Las tablas §6 y §6 bis de `design.md` sin marcadores de plantilla, con estado por fila
+- [ ] Cada comprobación aplicable apuntada como `UX-<AREA>-NNN` para que `/sdd-plan` la recoja
 - [ ] Cero decisiones técnicas: ni framework, ni librería de componentes, ni estructura de
       carpetas. Eso es `/sdd-plan`
 - [ ] Requisitos nuevos descubiertos → **de vuelta a `@spec-analyst`**, no metidos aquí de tapadillo
@@ -189,7 +196,9 @@ Plantilla: `docs/specs/_TEMPLATE/design.md`. En la carpeta de la spec, no en un 
 - Componentes: <n> reutilizados · <n> extendidos · <n> nuevos
 - Requisitos nuevos descubiertos: <lista, o "ninguno"> → si hay, vuelve a /sdd-specify
 - Inconsistencias con el design system: <lista, o "ninguna">
-- Accesibilidad: <qué se verificó y qué riesgo queda>
+- Accesibilidad: <qué se verificó y qué riesgo queda> · a11y-checklist.md: <ruta o "no creado">
+- Usabilidad: <heurísticas recorridas · formularios · microcopy · velocidad percibida>
+- Controles propuestos para el plan: <UX-A11Y-* · UX-FORM-* · UX-COPY-* · UX-PERF-*>
 - Preguntas confirmadas por el usuario: <n> · marcadores pendientes: <n>
 - Siguiente agente sugerido: planner — comando: /sdd-plan
 - Contexto que necesita: spec.md, design.md y la lista de componentes nuevos

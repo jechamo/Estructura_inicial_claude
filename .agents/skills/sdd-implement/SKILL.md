@@ -22,6 +22,11 @@ Anuncia: *"T-042-03 · <título> — test: `<ruta>`"*.
 Lee también `Controles de seguridad`. Si referencia `SEC-*`, conserva la cadena de `plan.md` y
 `test-plan.md`; si dice `no aplica`, verifica que incluya la justificación material aprobada.
 
+Lo mismo con `Controles de usabilidad`. Si referencia `UX-*`, arrastra la cadena hasta la evidencia
+y delega en `@frontend-expert` con `/front`, que aplica las dos checklists. Una tarea de interfaz
+no está hecha con el camino feliz: los seis estados —vacío, cargando, parcial, error, sin permiso,
+éxito— son parte de la misma tarea, no un seguimiento posterior.
+
 ### 1 · 🔴 RED
 - Escribe **solo** el test de esta tarea.
 - Ejecútalo.
@@ -101,6 +106,7 @@ Los especialistas **devuelven el control**; no encadenan ellos la siguiente fase
 - Cobertura dominio/aplicación: <%>
 - Ficheros tocados: <rutas>
 - Controles de seguridad: <SEC-* verificados · no ejecutados · no aplica>
+- Controles de usabilidad: <UX-* verificados · no ejecutados · no aplica>
 - Desviaciones del plan: <lista o "ninguna">
 - Deuda anotada: <lista o "ninguna">
 - Siguiente agente sugerido: implementer (siguiente tarea) | code-reviewer — comando: /sdd-verify

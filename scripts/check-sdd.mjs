@@ -95,10 +95,13 @@ function tieneResultadoConcreto(texto) {
     .test(String(texto || ''));
 }
 
+// El indicador `u` no es decorativo: sin él, la clase [🔴❌] se compila sobre unidades UTF-16 y
+// el sustituto alto de 🔴 (\ud83d) es el mismo que el de 🟢, así que un resultado verde con emoji
+// se leía como rojo. Las plantillas usan 🟢, de modo que el fallo llegaba a cualquier proyecto.
 function tieneResultadoSeguridadVerde(texto) {
   const valor = String(texto || '');
-  if (/\b(?:no ejecutado|bloquead[oa]|rojo|fall(?:o|a|ed)?|error|pendiente|skipped?)\b|[🔴❌]/i.test(valor)) return false;
-  return /\b(?:pass(?:ed)?|verde|green|exit\s*(?:code\s*)?0|0\s+fallos?)\b|[🟢✅]/i.test(valor);
+  if (/\b(?:no ejecutado|bloquead[oa]|rojo|fall(?:o|a|ed)?|error|pendiente|skipped?)\b|[🔴❌]/iu.test(valor)) return false;
+  return /\b(?:pass(?:ed)?|verde|green|exit\s*(?:code\s*)?0|0\s+fallos?)\b|[🟢✅]/iu.test(valor);
 }
 
 function coincideCadena(texto, cadena, { conTarea = false, conTest = false, conResultado = false } = {}) {
@@ -163,6 +166,82 @@ function impactoSeguridad(spec) {
   const valor = celdasMarkdown(linea)[1];
   const limpio = String(valor || '').replace(/[`*]/g, '').trim().toLowerCase();
   return ['sensible', 'no-sensible', 'security-pending'].includes(limpio) ? limpio : null;
+}
+
+// Usabilidad replica deliberadamente la forma de seguridad: mismo tipo de clasificación en la
+// cabecera, misma matriz trazable y mismo informe parseable. Se lee por analogía a propósito.
+function impactoUsabilidad(spec) {
+  // Solo la tabla de cabecera, antes del primer encabezado: el glosario de una spec puede
+  // definir el término y no es una declaración.
+  const cabecera = String(spec || '').split(/^##\s/m)[0];
+  const linea = cabecera.split('\n').find((candidata) =>
+    /^\|\s*\*{0,2}Impacto de usabilidad\*{0,2}\s*\|/i.test(candidata));
+  if (!linea || /\\\|/.test(linea)) return null;
+  const valor = String(celdasMarkdown(linea)[1] || '').replace(/[`*]/g, '').trim();
+  const normalizado = valor.toLowerCase();
+  if (normalizado === 'aplicable') return { estado: 'aplicable', motivo: null, valor };
+  if (normalizado === 'ux-pending') return { estado: 'ux-pending', motivo: null, valor };
+  if (/^sin-ui(?:\s|·|-|:)/i.test(valor)) {
+    const motivo = valor.replace(/^sin-ui\s*(?:·|-|:)?\s*/i, '').trim();
+    return { estado: 'sin-ui', motivo, valor };
+  }
+  return { estado: 'invalido', motivo: null, valor };
+}
+
+function matrizUsabilidad(plan) {
+  const lineas = String(plan || '').split('\n');
+  const cabecera = lineas.findIndex((linea) => {
+    const c = celdasMarkdown(linea).map((x) => x.toLowerCase());
+    return c.length >= 8 && c[0] === 'control' && c[1].includes('wcag') && c[2].includes('heur') &&
+      c[3] === 'aplica' && c[4].includes('decisión') && c[5] === 'tarea' && c[6] === 'test' && c[7] === 'evidencia';
+  });
+  if (cabecera === -1) return [];
+  const filas = [];
+  for (let i = cabecera + 2; i < lineas.length; i++) {
+    const c = celdasMarkdown(lineas[i]);
+    if (!c.length) break;
+    filas.push({
+      control: c[0], wcag: c[1], heuristica: c[2], aplica: c[3].toLowerCase(),
+      decision: c[4], tarea: c[5], test: c[6], evidencia: c[7],
+    });
+  }
+  return filas;
+}
+
+function bloqueInformeUsabilidad(contenido) {
+  const match = String(contenido || '').match(
+    /<!--\s*sdd-usability-report:v1\s*-->\s*```json\s*([\s\S]*?)\s*```/i,
+  );
+  if (!match) return { error: 'falta el bloque <!-- sdd-usability-report:v1 --> seguido de JSON' };
+  try { return { data: JSON.parse(match[1]) }; }
+  catch (error) { return { error: `JSON de usabilidad inválido: ${error.message}` }; }
+}
+
+// Las tablas §6 y §6 bis de design.md existían desde el principio y nadie las validaba, así que
+// se entregaban vacías sin coste. Con impacto aplicable, una fila sin estado es un hueco.
+function tablasDiseñoIncompletas(design) {
+  const lineas = String(design || '').split('\n');
+  const huecos = [];
+  let seccion = null;
+  for (const linea of lineas) {
+    const titulo = linea.match(/^##\s+(.+)$/);
+    if (titulo) {
+      const t = titulo[1].toLowerCase();
+      if (t.includes('accesibilidad')) seccion = 'accesibilidad';
+      else if (t.includes('usabilidad')) seccion = 'usabilidad';
+      else seccion = null;
+      continue;
+    }
+    if (!seccion) continue;
+    const c = celdasMarkdown(linea);
+    if (c.length < 2) continue;
+    const primera = c[0].toLowerCase();
+    if (!primera || primera === 'comprobación' || primera === 'acción' || /^-+$/.test(primera)) continue;
+    if (/^<.+>$/.test(c[0].trim())) continue; // fila de ejemplo de la plantilla
+    const estado = String(c[1] || '').replace(/[`*]/g, '').trim();
+    if (!estado) huecos.push(`${seccion}: '${c[0]}' sin estado`);
+  }
+  return huecos;
 }
 
 function impactoDocumentacion(spec) {
@@ -544,6 +623,12 @@ if (checksRaw) {
 const gateSeguridadConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
   String(id).split(':')[0] === 'security' && typeof check?.command === 'string' && check.command.trim() &&
   check.required === true && check.enabled !== false && (check.speed || 'slow') === 'slow');
+// A diferencia del de seguridad, este gate no se exige: `scan-secrets` sirve a cualquier
+// repositorio, pero un runner de accesibilidad depende de que exista interfaz y de qué stack la
+// pinta. Un gate sin comando no es un control, así que aquí solo se informa de su ausencia.
+const gateA11yConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
+  String(id).split(':')[0] === 'a11y' && typeof check?.command === 'string' && check.command.trim() &&
+  check.enabled !== false);
 
 const docsRaw = leer(join(ROOT, '.sdd/docs.json'));
 let cfgDocs = null;
@@ -683,11 +768,13 @@ const ficherosTest = walk(ROOT, (n) => /\.(test|spec)\.[jt]sx?$/.test(n) || /^te
 const textoTests = ficherosTest.map((p) => leer(p) || '').join('\n');
 let contratoProducto = null;
 let contratoSeguridad = null;
+let contratoUsabilidad = null;
 let contratoDocumentacion = null;
 try {
   const registro = JSON.parse(leer(join(ROOT, '.sdd/installed.json')) || 'null');
   if (registro?.product?.status === 'approved') contratoProducto = registro.product;
   if (registro?.security) contratoSeguridad = registro.security;
+  if (registro?.usability) contratoUsabilidad = registro.usability;
   if (registro?.documentation) contratoDocumentacion = registro.documentation;
 } catch {
   // El error de JSON se informa una sola vez en la seccion de instalacion.
@@ -700,6 +787,7 @@ const idsProducto = {
 const filasFeatureProducto = (leer(join(ROOT, 'docs/product/FEATURE-MAP.md')) || '')
   .split('\n').filter((linea) => /^\|\s*FEAT-\d{3}\s*\|/.test(linea));
 const seguridadPorSpec = new Map();
+const usabilidadPorSpec = new Map();
 
 let tareasHechas = 0;
 
@@ -929,7 +1017,82 @@ for (const s of specs) {
     }
   }
   seguridadPorSpec.set(s, { impacto, controles: controlesSeguridad, tasks: tasks || '', testPlan: '', evidence: '' });
+
+  // ── Usabilidad: mismo contrato que seguridad, sobre WCAG 2.2 AA y las diez heurísticas ──
+  const impactoUX = impactoUsabilidad(spec);
+  const aplicaContratoUsabilidad = contratoUsabilidad && Number.isFinite(numeroSpec) &&
+    /^\d{3}$/.test(String(contratoUsabilidad.enforceFromSpec || '')) &&
+    numeroSpec >= Number(contratoUsabilidad.enforceFromSpec);
+  if (aplicaContratoUsabilidad && !impactoUX) {
+    const mensaje = `${s}: falta Impacto de usabilidad (aplicable | sin-ui · <motivo material> | ux-pending)`;
+    STRICT ? err('usabilidad/impacto', mensaje) : warn('usabilidad/impacto', mensaje);
+  }
+  if (impactoUX?.estado === 'invalido')
+    err('usabilidad/impacto', `${s}: Impacto de usabilidad debe ser aplicable | sin-ui · <motivo> | ux-pending; valor '${impactoUX.valor}'`);
+  if (impactoUX?.estado === 'sin-ui' && !valorConcreto(impactoUX.motivo))
+    err('usabilidad/impacto', `${s}: un Impacto de usabilidad sin-ui necesita un motivo material, no "no procede"`);
+  if (impactoUX?.estado === 'ux-pending' && tienePlan) {
+    const mensaje = `${s}: no puede aprobar plan.md mientras el impacto siga ux-pending`;
+    STRICT ? err('usabilidad/impacto', mensaje) : warn('usabilidad/impacto', mensaje);
+  }
+  const controlesUsabilidad = matrizUsabilidad(plan);
+  if (impactoUX?.estado === 'aplicable' && !controlesUsabilidad.length) {
+    const mensaje = `${s}: una spec con usabilidad aplicable necesita la matriz Control | WCAG 2.2 | Heurística | Aplica | Decisión | Tarea | Test | Evidencia`;
+    STRICT ? err('usabilidad/matriz', mensaje) : warn('usabilidad/matriz', mensaje);
+  }
+  const idsUX = new Set();
+  for (const control of controlesUsabilidad) {
+    if (Object.values(control).some((valor) => /<[^>]+>/.test(String(valor)))) {
+      if (STRICT && impactoUX?.estado === 'aplicable')
+        err('usabilidad/matriz', `${s}: la matriz de usabilidad conserva marcadores de plantilla`);
+      continue;
+    }
+    if (!/^UX-(?:A11Y|FORM|COPY|PERF)-\d{3}$/.test(control.control))
+      err('usabilidad/control', `${s}: ID de control '${control.control}' inválido; usa UX-<A11Y|FORM|COPY|PERF>-NNN`);
+    else if (idsUX.has(control.control)) err('usabilidad/control', `${s}: control duplicado ${control.control}`);
+    idsUX.add(control.control);
+    if (!['sí', 'si', 'no'].includes(control.aplica))
+      err('usabilidad/aplica', `${s}/${control.control}: Aplica debe ser sí | no`);
+    const aplica = ['sí', 'si'].includes(control.aplica);
+    const sinFormato = (valor) => String(valor || '').replace(/[`*]/g, '').trim();
+    if (aplica) {
+      for (const [campo, valor] of Object.entries({
+        decisión: control.decision, tarea: control.tarea, test: control.test, evidencia: control.evidencia,
+      })) {
+        if (!valorConcreto(valor)) err('usabilidad/matriz', `${s}/${control.control}: falta ${campo} concreto`);
+      }
+      // Un control de accesibilidad sin criterio WCAG es una casilla vacía con nombre bonito.
+      // Fuera de A11Y, `n/a` es una respuesta legítima: el microcopy no tiene criterio WCAG.
+      if (control.control.startsWith('UX-A11Y-') && !/2\.2/.test(sinFormato(control.wcag)))
+        err('usabilidad/matriz', `${s}/${control.control}: un control de accesibilidad debe citar un criterio WCAG 2.2`);
+      if (!sinFormato(control.wcag))
+        err('usabilidad/matriz', `${s}/${control.control}: WCAG 2.2 vacío; usa el criterio o n/a`);
+      if (!/^(?:H(?:10|[1-9])|n\/a)/i.test(sinFormato(control.heuristica)))
+        err('usabilidad/matriz', `${s}/${control.control}: Heurística debe ser H1…H10 o n/a`);
+      if (!/^T-\d{3}-\d+$/.test(sinFormato(control.tarea)))
+        err('usabilidad/matriz', `${s}/${control.control}: Tarea debe ser un ID T-NNN-NN`);
+      if (!/[/.][^\s]*::[^\s]+/.test(sinFormato(control.test)))
+        err('usabilidad/matriz', `${s}/${control.control}: Test debe ser una referencia concreta ruta::caso`);
+      if (sinFormato(control.evidencia) !== `evidence.md#${control.control}`)
+        err('usabilidad/matriz', `${s}/${control.control}: Evidencia debe enlazar evidence.md#${control.control}`);
+    } else if (!valorConcreto(control.decision)) {
+      err('usabilidad/matriz', `${s}/${control.control}: un control no aplicable necesita justificación concreta`);
+    }
+  }
+  if (STRICT && impactoUX?.estado === 'aplicable') {
+    const design = leer(join(dir, 'design.md'));
+    if (design) {
+      for (const hueco of tablasDiseñoIncompletas(design))
+        err('diseno/tabla', `${s}: design.md deja una comprobación sin estado — ${hueco}`);
+    }
+  }
+  usabilidadPorSpec.set(s, {
+    impacto: impactoUX, controles: controlesUsabilidad, tasks: tasks || '', testPlan: '', evidence: '',
+  });
+
   if (!tasks) {
+    if (STRICT && impactoUX?.estado === 'aplicable' && controlesUsabilidad.some((c) => ['sí', 'si'].includes(c.aplica)))
+      err('usabilidad/trazabilidad', `${s}: una spec con usabilidad aplicable necesita tasks.md para propagar sus controles`);
     if (STRICT && impacto === 'sensible')
       err('seguridad/trazabilidad', `${s}: una spec sensible necesita tasks.md para propagar sus controles`);
     if (STRICT && impactoDocs?.estado === 'aplicable')
@@ -959,6 +1122,7 @@ for (const s of specs) {
   const evidence = leer(join(dir, 'evidence.md')) || '';
   const testPlan = leer(join(dir, 'test-plan.md')) || '';
   Object.assign(seguridadPorSpec.get(s), { testPlan, evidence });
+  Object.assign(usabilidadPorSpec.get(s), { testPlan, evidence });
   if (impactoDocs?.estado === 'aplicable') {
     const bloquesTareaDocs = tasks.split(/^### /m).slice(1);
     for (const id of impactoDocs.ids) {
@@ -1008,6 +1172,31 @@ for (const s of specs) {
     for (const incidencia of incidencias) {
       const mensaje = `${s}/${control.control}: ${incidencia}`;
       STRICT ? err('seguridad/trazabilidad', mensaje) : warn('seguridad/trazabilidad', mensaje);
+    }
+  }
+  for (const control of controlesUsabilidad.filter((fila) => ['sí', 'si'].includes(fila.aplica))) {
+    const limpiar = (valor) => String(valor || '').replace(/[`*]/g, '').trim();
+    const tareaId = limpiar(control.tarea);
+    const testRef = limpiar(control.test);
+    // Sin tarea o sin test la fila ya se ha reportado como incompleta arriba. Volver a quejarse
+    // aquí produce un mensaje con huecos ("no enlaza , el control y ") que no ayuda a nadie.
+    if (!tareaId || !testRef) continue;
+    const bloqueTarea = tasks.split(/^### /m).slice(1)
+      .find((bloque) => new RegExp(`^${escaparRegex(tareaId)}(?:\\s|[·—-]|$)`).test(bloque));
+    const filaTest = testPlan.split('\n')
+      .find((linea) => linea.includes(control.control) && linea.includes(testRef));
+    const filaEvidence = evidence.split('\n')
+      .find((linea) => linea.includes(control.control) && linea.includes(tareaId) && linea.includes(testRef));
+    control.traza = { tareaId, testRef, bloqueTarea, filaTest, filaEvidence };
+
+    const incidencias = [];
+    if (!bloqueTarea || !bloqueTarea.includes(control.control) || !bloqueTarea.includes(testRef))
+      incidencias.push(`tasks.md no enlaza ${tareaId}, el control y ${testRef}`);
+    if (!filaTest) incidencias.push(`test-plan.md no conserva ${testRef}`);
+    if (!filaEvidence) incidencias.push('evidence.md no enlaza control, tarea y test');
+    for (const incidencia of incidencias) {
+      const mensaje = `${s}/${control.control}: ${incidencia}`;
+      STRICT ? err('usabilidad/trazabilidad', mensaje) : warn('usabilidad/trazabilidad', mensaje);
     }
   }
   for (const ca of unicos) {
@@ -1136,6 +1325,20 @@ if (instalado) {
         err('seguridad/estado', 'security.enforceFromSpec debe ser un ID NNN');
       if (security.status === 'legacy-pending')
         warn('seguridad/legacy-pending', `el baseline histórico no se reinterpreta; el contrato se exige desde la spec ${security.enforceFromSpec}`);
+    }
+    const usability = reg.usability;
+    if (!usability) {
+      warn('usabilidad/estado', 'la instalación es anterior al contrato usability; ejecuta `sdd update`');
+    } else {
+      if (usability.schemaVersion !== 1 || !['bootstrap', 'legacy-pending'].includes(usability.status))
+        err('usabilidad/estado', 'el contrato usability de .sdd/installed.json no tiene versión o estado válidos');
+      if (usability.standards?.wcag !== '2.2' || usability.standards?.level !== 'AA' ||
+          usability.standards?.heuristics !== 'nielsen-10')
+        err('usabilidad/estado', 'usability.standards debe declarar WCAG 2.2, nivel AA y heurísticas nielsen-10');
+      if (!/^\d{3}$/.test(String(usability.enforceFromSpec || '')))
+        err('usabilidad/estado', 'usability.enforceFromSpec debe ser un ID NNN');
+      if (usability.status === 'legacy-pending')
+        warn('usabilidad/legacy-pending', `el baseline histórico no se reinterpreta; el contrato se exige desde la spec ${usability.enforceFromSpec}`);
     }
     const documentation = reg.documentation;
     if (!documentation) {
@@ -1503,6 +1706,111 @@ if (STRICT && soloSpec) {
                   !valorConcreto(riesgo?.justification) || !fechaIsoValida(riesgo?.reviewDate) ||
                   !referenciaDecisionExiste(riesgo?.decisionRef))
                 err('seguridad/riesgo', `${carpeta}: riesgo aceptado sin id, owner, justification, reviewDate o decisionRef`);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ── Puerta de usabilidad, con la misma forma que la de seguridad ──
+    const contratoUX = usabilidadPorSpec.get(carpeta) || { impacto: null, controles: [] };
+    if (contratoUX.impacto?.estado === 'ux-pending')
+      err('usabilidad/impacto', `${carpeta}: no puede declarar GO con Impacto de usabilidad ux-pending`);
+
+    if (contratoUX.impacto?.estado === 'aplicable') {
+      // El gate automático NO se exige como bloqueo: la plantilla no presupone stack y hay
+      // proyectos legítimos sin runner de a11y. Se avisa, porque un analizador ausente significa
+      // que toda la verificación descansa en la manual, y eso conviene que se vea.
+      if (!gateA11yConfigurado)
+        warn('usabilidad/gate', `${carpeta}: GO sin gate a11y configurado; la verificación descansa por completo en la manual`);
+
+      const rutaDeclaradaUX = evidencia.match(
+        /\*\*Informe de usabilidad\*\*\s*:\s*`([^`]+)`/i,
+      )?.[1]?.replace(/\\/g, '/');
+      let rutaInformeUX = null;
+      if (!rutaDeclaradaUX) {
+        err('usabilidad/informe', `${carpeta}: evidence.md debe declarar **Informe de usabilidad** con ruta exacta`);
+      } else if (
+        rutaDeclaradaUX.startsWith('/') || /^[A-Za-z]:\//.test(rutaDeclaradaUX) ||
+        rutaDeclaradaUX.split('/').includes('..') || !rutaDeclaradaUX.startsWith('docs/design/reports/') ||
+        !rutaDeclaradaUX.endsWith('.md')
+      ) {
+        err('usabilidad/informe', `${carpeta}: ruta de informe no permitida: ${rutaDeclaradaUX}`);
+      } else {
+        rutaInformeUX = resolve(ROOT, rutaDeclaradaUX);
+        const raizInformesUX = resolve(ROOT, 'docs/design/reports');
+        if (dirname(rutaInformeUX) !== raizInformesUX)
+          err('usabilidad/informe', `${carpeta}: el informe debe estar directamente en docs/design/reports/`);
+        else if (!existsSync(rutaInformeUX)) err('usabilidad/informe', `${carpeta}: no existe ${rutaDeclaradaUX}`);
+      }
+
+      if (rutaInformeUX && existsSync(rutaInformeUX)) {
+        const parseado = bloqueInformeUsabilidad(leer(rutaInformeUX));
+        if (parseado.error) {
+          err('usabilidad/informe', `${carpeta}: ${parseado.error}`);
+        } else {
+          const informe = parseado.data;
+          if (informe?.schemaVersion !== 1) err('usabilidad/informe', `${carpeta}: schemaVersion debe ser 1`);
+          if (informe?.spec !== carpeta) err('usabilidad/informe', `${carpeta}: el informe declara spec '${informe?.spec}'`);
+          if (informe?.standards?.wcag !== '2.2' || informe?.standards?.level !== 'AA' ||
+              informe?.standards?.heuristics !== 'nielsen-10')
+            err('usabilidad/estandar', `${carpeta}: el informe debe usar WCAG 2.2, nivel AA y heurísticas nielsen-10`);
+          if (!valorConcreto(informe?.scope)) err('usabilidad/informe', `${carpeta}: alcance vacío o pendiente`);
+          if (!Array.isArray(informe?.controlsEvaluated) ||
+              new Set(informe?.controlsEvaluated || []).size !== (informe?.controlsEvaluated || []).length)
+            err('usabilidad/informe', `${carpeta}: controlsEvaluated debe ser un array sin duplicados`);
+          if (!Array.isArray(informe?.controlsNotExecuted))
+            err('usabilidad/informe', `${carpeta}: controlsNotExecuted debe ser un array`);
+          else if (informe.controlsNotExecuted.length) {
+            for (const control of informe.controlsNotExecuted) {
+              if (!['control', 'reason', 'risk', 'owner', 'nextStep'].every((campo) => valorConcreto(control?.[campo])))
+                err('usabilidad/informe', `${carpeta}: cada control no ejecutado necesita control, reason, risk, owner y nextStep`);
+            }
+            err('usabilidad/veredicto', `${carpeta}: GO bloqueado por controles de usabilidad no ejecutados`);
+          }
+          const aplicablesUX = contratoUX.controles
+            .filter((fila) => ['sí', 'si'].includes(fila.aplica)).map((fila) => fila.control);
+          const noEvaluadosUX = aplicablesUX.filter((id) => !informe?.controlsEvaluated?.includes(id));
+          if (noEvaluadosUX.length)
+            err('usabilidad/informe', `${carpeta}: controles aplicables no evaluados: ${noEvaluadosUX.join(', ')}`);
+          for (const control of contratoUX.controles.filter((fila) => ['sí', 'si'].includes(fila.aplica))) {
+            const { tareaId, testRef, bloqueTarea, filaEvidence } = control.traza || {};
+            const estadoTarea = bloqueTarea?.match(/Estado\**:\s*\**\s*([^\n]+)/i)?.[1]
+              ?.replace(/[`*]/g, '').trim().toLowerCase();
+            if (bloqueTarea && !estadoTarea?.startsWith('hecho'))
+              err('usabilidad/trazabilidad', `${carpeta}/${control.control}: la tarea ${tareaId} no está hecha`);
+            if (testRef && !referenciaTestResuelta(testRef))
+              err('usabilidad/trazabilidad', `${carpeta}/${control.control}: no se resuelve el test ${testRef}`);
+            if (filaEvidence && !tieneResultadoSeguridadVerde(filaEvidence))
+              err('usabilidad/trazabilidad', `${carpeta}/${control.control}: evidence.md no aporta un resultado verde ejecutado`);
+          }
+
+          const conteosUX = informe?.openFindings || {};
+          for (const nivel of ['critical', 'high', 'medium', 'low']) {
+            if (!Number.isInteger(conteosUX[nivel]) || conteosUX[nivel] < 0)
+              err('usabilidad/informe', `${carpeta}: openFindings.${nivel} debe ser entero no negativo`);
+          }
+          if (!['PASS', 'CONDITIONAL', 'BLOCKED'].includes(informe?.verdict))
+            err('usabilidad/veredicto', `${carpeta}: veredicto inválido`);
+          if ((conteosUX.critical || 0) > 0 || (conteosUX.high || 0) > 0)
+            err('usabilidad/veredicto', `${carpeta}: GO bloqueado por hallazgos CRÍTICO/ALTO abiertos`);
+          if (informe?.verdict === 'BLOCKED') err('usabilidad/veredicto', `${carpeta}: el informe declara BLOCKED`);
+          if (informe?.verdict === 'PASS' && (conteosUX.medium || 0) > 0)
+            err('usabilidad/veredicto', `${carpeta}: PASS exige cero hallazgos MEDIO abiertos`);
+          if (informe?.verdict === 'CONDITIONAL') {
+            const riesgos = informe?.acceptedRisks;
+            if (!(conteosUX.medium > 0) || !Array.isArray(riesgos) || riesgos.length !== conteosUX.medium)
+              err('usabilidad/riesgo', `${carpeta}: CONDITIONAL exige una aceptación por cada MEDIO abierto`);
+            else {
+              const ids = riesgos.map((riesgo) => riesgo?.id);
+              if (new Set(ids).size !== ids.length)
+                err('usabilidad/riesgo', `${carpeta}: los IDs de riesgos aceptados deben ser únicos`);
+              for (const riesgo of riesgos) {
+                if (!valorConcreto(riesgo?.id) || !valorConcreto(riesgo?.owner) ||
+                    !valorConcreto(riesgo?.justification) || !fechaIsoValida(riesgo?.reviewDate) ||
+                    !referenciaDecisionExiste(riesgo?.decisionRef))
+                  err('usabilidad/riesgo', `${carpeta}: riesgo aceptado sin id, owner, justification, reviewDate o decisionRef`);
               }
             }
           }

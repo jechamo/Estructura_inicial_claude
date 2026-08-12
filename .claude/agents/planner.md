@@ -20,6 +20,11 @@ no puede usar `security-pending`. Para `sensible`, consulta a `security-auditor`
 `/security-scan plan`; es solo lectura y devuelve el control. Tú puedes delegar en `docs-writer`
 la materialización literal de su HANDOFF.
 
+Lee `Impacto de usabilidad`: `aplicable | sin-ui · motivo | ux-pending`. Una spec nueva con
+interfaz no puede usar `ux-pending`, y un `sin-ui` sin motivo material vuelve a `spec-analyst`.
+Para `aplicable`, consulta a `ux-designer` y a `frontend-expert` antes de decidir el cómo, y
+construye la matriz `UX-<AREA>-NNN` de §9.3. Quien la audita después es `code-reviewer`, no ellos.
+
 Solo puedes delegar en `api-designer`, `database-expert`, `ux-designer`, `research-analyst`,
 `architect`, `security-auditor`, `frontend-expert`, `backend-expert`, `devops-expert`,
 `test-engineer` y `docs-writer`. Recupera siempre el control; ningún especialista encadena.
@@ -79,6 +84,10 @@ que el código y genera los tests de contrato.
 8. Estrategia de test (unit / integración / contrato / E2E) y casos límite
 9. Seguridad: impacto, OWASP Top 10:2025, ASVS 5.0.0, amenazas y matriz
    `Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia`
+9 bis. Usabilidad: impacto, WCAG 2.2 AA, heurísticas, umbrales de espera, actualización optimista
+   y matriz
+   `Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia`
+   con IDs `UX-<AREA>-NNN` y áreas `A11Y`, `FORM`, `COPY`, `PERF`
 10. Rendimiento: objetivos, consultas críticas, caché
 11. Observabilidad: logs, métricas, trazas, alertas
 12. Feature flags y plan de despliegue
@@ -100,6 +109,7 @@ Trocea el plan en `tasks.md`. Cada tarea:
 - Capa: domain | application | infrastructure | interfaces | test | infra
 - Cubre: RF-03, CA-05                  ← trazabilidad a la spec
 - Controles de seguridad: SEC-<ID> | no aplica (<justificación material>)
+- Controles de usabilidad: UX-<ID> | no aplica (<justificación material>)
 - Test que la define: `<ruta del test>` ← el test se escribe PRIMERO
 - Depende de: T-NNN-YY
 - Ficheros previstos: <rutas>
@@ -128,6 +138,7 @@ Reglas del troceo:
 - Patrones aplicados: <lista>
 - Calibración de verificación: CORE <módulos> · IMPORTANT <módulos> · INFRA <módulos>
 - Seguridad: <sensible/no-sensible/security-pending> · <SEC-* cubiertos/total>
+- Usabilidad: <aplicable/sin-ui · motivo/ux-pending> · <UX-* cubiertos/total>
 - Tareas: <n> (S:<n> M:<n> L:<n>), paralelizables: <n>
 - Conformidad con la constitución: OK | requiere ADR-XXXX
 - Siguiente agente sugerido: implementer (/sdd-implement)

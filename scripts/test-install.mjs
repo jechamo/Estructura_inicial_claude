@@ -108,6 +108,74 @@ function matriz_seguridad(destino) {
     /Informe de seguridad/.test(evidence) && /Controles de seguridad ejecutados/.test(evidence);
 }
 
+/** La cadena de usabilidad debe existir entera en las plantillas, igual que la de seguridad. */
+function usabilidad_versionada(destino) {
+  const spec = leer(join(destino, 'docs/specs/_TEMPLATE/spec.md')) || '';
+  const plan = leer(join(destino, 'docs/specs/_TEMPLATE/plan.md')) || '';
+  const tasks = leer(join(destino, 'docs/specs/_TEMPLATE/tasks.md')) || '';
+  const tests = leer(join(destino, 'docs/specs/_TEMPLATE/test-plan.md')) || '';
+  const evidence = leer(join(destino, 'docs/specs/_TEMPLATE/evidence.md')) || '';
+  return /Impacto de usabilidad/.test(spec) &&
+    /Clasificación de usabilidad/.test(spec) &&
+    /Control\s*\|\s*WCAG 2\.2\s*\|\s*Heurística\s*\|\s*Aplica\s*\|\s*Decisión \/ justificación\s*\|\s*Tarea\s*\|\s*Test\s*\|\s*Evidencia/.test(plan) &&
+    /Controles de usabilidad/.test(tasks) && /hostil|accesibilidad/i.test(tests) &&
+    /Informe de usabilidad/.test(evidence) && /Controles de usabilidad ejecutados/.test(evidence) &&
+    /sdd-usability-report:v1/.test(evidence);
+}
+
+/** El contrato instalado declara usabilidad con sus estándares y su umbral de exigencia. */
+function contrato_usabilidad_instalado(destino) {
+  let registro;
+  try { registro = JSON.parse(leer(join(destino, '.sdd/installed.json')) || 'null'); }
+  catch { return false; }
+  const u = registro?.usability;
+  return !!u && u.schemaVersion === 1 &&
+    ['bootstrap', 'legacy-pending'].includes(u.status) &&
+    u.standards?.wcag === '2.2' && u.standards?.level === 'AA' &&
+    u.standards?.heuristics === 'nielsen-10' &&
+    /^\d{3}$/.test(String(u.enforceFromSpec || ''));
+}
+
+/** La doctrina y las reglas por glob llegan a los hosts que no leen agentes. */
+function portabilidad_usabilidad(destino) {
+  const indice = leer(join(destino, 'docs/README.md')) || '';
+  const cursor = leer(join(destino, '.cursor/rules/40-usability.mdc')) || '';
+  const copilot = leer(join(destino, '.github/instructions/usability.instructions.md')) || '';
+  const globCubreUI = (texto) => /tsx|jsx|vue|svelte/.test(texto);
+  return /design\/A11Y-CHECKLIST\.md/.test(indice) &&
+    /design\/USABILITY-CHECKLIST\.md/.test(indice) &&
+    existsSync(join(destino, 'docs/design/A11Y-CHECKLIST.md')) &&
+    existsSync(join(destino, 'docs/design/USABILITY-CHECKLIST.md')) &&
+    existsSync(join(destino, 'docs/design/reports')) &&
+    !!cursor && globCubreUI(cursor) && /WCAG 2\.2/.test(cursor) &&
+    !!copilot && globCubreUI(copilot) && /WCAG 2\.2/.test(copilot);
+}
+
+/**
+ * Quien audita usabilidad no puede ser quien la diseña, y no se crea un agente número 21 para
+ * ello: `code-reviewer` ya es de solo lectura y `ux-designer` conserva su escritura.
+ */
+function auditor_usabilidad_no_es_el_disenador(destino) {
+  const revisor = leer(join(destino, '.claude/agents/code-reviewer.md')) || '';
+  const disenador = leer(join(destino, '.claude/agents/ux-designer.md')) || '';
+  const toolsRevisor = revisor.match(/^---\s*\n([\s\S]*?)\n---/)?.[1]?.match(/^tools:\s*(.+)$/m)?.[1] || '';
+  const toolsDisenador = disenador.match(/^---\s*\n([\s\S]*?)\n---/)?.[1]?.match(/^tools:\s*(.+)$/m)?.[1] || '';
+  return /\bRead\b/.test(toolsRevisor) && !/\b(?:Write|Edit|Agent)\b/.test(toolsRevisor) &&
+    /WCAG 2\.2/.test(revisor) && /- Veredicto de usabilidad:/.test(revisor) &&
+    /\bWrite\b/.test(toolsDisenador) &&
+    /code-reviewer/.test(disenador);
+}
+
+/** El HANDOFF conserva la usabilidad después del diseño; si no, se pierde en el primer salto. */
+function handoff_arrastra_usabilidad(destino) {
+  const perfiles = ['planner', 'implementer', 'frontend-expert', 'code-reviewer'];
+  return perfiles.every((nombre) => {
+    const perfil = leer(join(destino, `.claude/agents/${nombre}.md`)) || '';
+    const handoff = perfil.split('### HANDOFF')[1] || '';
+    return /[Uu]sabilidad/.test(handoff);
+  });
+}
+
 function workflow_supply_chain(destino) {
   const ci = leer(join(destino, '.github/workflows/sdd-gates.yml')) || '';
   const referencias = [...ci.matchAll(/uses:\s*[^@\s]+@([^\s#]+)/g)].map((m) => m[1]);
@@ -454,6 +522,17 @@ console.log('\n1 · init sobre un directorio vacío');
     return rutas.every((ruta) => /docs-writer/.test(leer(join(d, ruta)) || ''));
   })());
   comprueba('la doctrina de seguridad es descubrible y portable entre hosts', portabilidad_seguridad(d));
+  comprueba('la cadena de usabilidad llega entera a las plantillas de spec', usabilidad_versionada(d));
+  comprueba('el contrato usability queda declarado en installed.json', contrato_usabilidad_instalado(d));
+  comprueba('la doctrina de usabilidad es descubrible y portable entre hosts', portabilidad_usabilidad(d));
+  comprueba('quien audita usabilidad no es quien la diseña, y no hay agente nuevo',
+    auditor_usabilidad_no_es_el_disenador(d));
+  comprueba('el HANDOFF arrastra la usabilidad más allá del diseño', handoff_arrastra_usabilidad(d));
+  comprueba('a11y queda declarado sin configurar: la plantilla no presupone runner', (() => {
+    const checks = JSON.parse(leer(join(d, '.sdd/checks.json')) || '{}');
+    const pendientes = checks.unconfigured || [];
+    return pendientes.includes('a11y') && !Object.keys(checks.checks || {}).includes('a11y');
+  })());
   comprueba('instala dirección visual mínima y conserva la guía aparte',
     existsSync(join(d, 'docs/design/DIRECTION-GUIDE.md')) &&
     !/frontend-design|theme-factory|canvas-design/.test(leer(join(d, 'docs/design/DIRECCION-VISUAL.md')) || ''));
@@ -694,6 +773,7 @@ function gate_security_e_informe() {
 | Estado | aprobada |
 |---|---|
 | Impacto de seguridad | sensible |
+| Impacto de usabilidad | sin-ui · fixture técnico sin interfaz |
 | Impacto de documentación | no-aplica · fixture técnico del gate de seguridad |
 | RF-01 | El sistema DEBE verificar el gate. | M | 1 |
 ### CA-01 · Gate bloqueante
@@ -964,6 +1044,224 @@ ${JSON.stringify({
 }
 gate_security_e_informe();
 
+/**
+ * El equivalente de usabilidad: la matriz `UX-*` se exige igual que la de seguridad y el informe
+ * bloquea `GO` por los mismos motivos. Si estos casos pasan en verde, toda la capa es decorativa.
+ */
+function matriz_usabilidad_y_gate_a11y() {
+  console.log('\n1 bis-b · matriz de usabilidad, informe y puerta de GO');
+  const d = nuevoDestino();
+  writeFileSync(join(d, 'package.json'), '{"name":"ux-fixture"}\n', 'utf8');
+  sdd(d, 'init');
+
+  const specDir = join(d, 'docs/specs/902-usability-report');
+  mkdirSync(specDir, { recursive: true });
+  mkdirSync(join(d, 'tests'), { recursive: true });
+  writeFileSync(join(d, 'tests/ux.test.mjs'), 'export function formulario() { return "PASS"; }\n', 'utf8');
+
+  const spec = `# 902 · Fixture de usabilidad
+
+| Estado | aprobada |
+|---|---|
+| **Impacto de seguridad** | no-sensible |
+| **Impacto de usabilidad** | aplicable |
+| **Impacto de documentación** | no-aplica · fixture técnico del gate de usabilidad |
+
+| Id | Requisito | Prioridad | Esfuerzo |
+|---|---|---|---|
+| RF-01 | El sistema DEBE validar el formulario al salir del campo. | M | 1 |
+
+### CA-01 · Validación al salir del campo
+`;
+  writeFileSync(join(specDir, 'spec.md'), spec, 'utf8');
+
+  const plan = `# Plan
+
+### 9.3 · Matriz de controles de usabilidad
+
+| Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
+|---|---|---|---|---|---|---|---|
+| UX-FORM-001 | 3.3.1 AA | H5 prevención de errores | sí | Validación en blur con mensaje accionable | T-902-01 | tests/ux.test.mjs::formulario | evidence.md#UX-FORM-001 |
+| UX-PERF-001 | n/a | H1 visibilidad del estado | no | Sin espera perceptible: la validación es local y síncrona | — | — | — |
+`;
+  writeFileSync(join(specDir, 'plan.md'), plan, 'utf8');
+
+  writeFileSync(join(specDir, 'tasks.md'), `# Tareas
+
+### T-902-01 · Validar el formulario al salir del campo
+- **Estado**: hecho
+- **Cubre**: RF-01, CA-01
+- **Controles de usabilidad**: UX-FORM-001 — tests/ux.test.mjs::formulario
+- **Evidencia prevista**: evidence.md#T-902-01
+`, 'utf8');
+
+  writeFileSync(join(specDir, 'test-plan.md'), `# Plan de test
+
+### 5.2 · Casos de uso hostil y accesibilidad
+
+| Control | WCAG 2.2 | Heurística | Condición hostil | Nivel | Test | Resultado usable esperado |
+|---|---|---|---|---|---|---|
+| UX-FORM-001 | 3.3.1 AA | H5 | Envío con el campo vacío y solo teclado | integración | tests/ux.test.mjs::formulario | Error junto al campo que dice cómo se arregla |
+`, 'utf8');
+
+  const informeUX = (cambios = {}) => {
+    const base = {
+      schemaVersion: 1,
+      spec: '902-usability-report',
+      standards: { wcag: '2.2', level: 'AA', heuristics: 'nielsen-10' },
+      scope: 'diff',
+      controlsEvaluated: ['UX-FORM-001'],
+      openFindings: { critical: 0, high: 0, medium: 0, low: 0 },
+      verdict: 'PASS',
+      acceptedRisks: [],
+      controlsNotExecuted: [],
+      ...cambios,
+    };
+    if (typeof cambios.medium === 'number') {
+      base.openFindings = { ...base.openFindings, medium: cambios.medium };
+      delete base.medium;
+    }
+    if (typeof cambios.high === 'number') {
+      base.openFindings = { ...base.openFindings, high: cambios.high };
+      delete base.high;
+    }
+    return `# Informe de usabilidad\n\n<!-- sdd-usability-report:v1 -->\n\`\`\`json\n${JSON.stringify(base, null, 2)}\n\`\`\`\n`;
+  };
+
+  const rutaInforme = join(d, 'docs/design/reports/2026-08-12-902-usability-report.md');
+  mkdirSync(join(d, 'docs/design/reports'), { recursive: true });
+  writeFileSync(rutaInforme, informeUX(), 'utf8');
+  mkdirSync(join(d, 'docs/quality/reports'), { recursive: true });
+  writeFileSync(join(d, 'docs/quality/reports/2026-08-12-902-usability-report.md'), '# Calidad\nPASS\n', 'utf8');
+  // La spec declara impacto de seguridad, así que el gate de entrega también le pide gate e
+  // informe. No es el sujeto de esta prueba: se aportan mínimos y válidos para aislar la parte de
+  // usabilidad y que un fallo aquí signifique de verdad "la usabilidad no bloquea".
+  writeFileSync(join(d, '.sdd/checks.json'), `${JSON.stringify({
+    version: 1,
+    checks: {
+      sdd: { command: 'node scripts/check-sdd.mjs', required: true, speed: 'fast' },
+      security: { command: 'node scripts/scan-secrets.mjs --json', required: true, speed: 'slow' },
+    },
+    unconfigured: ['lint', 'test', 'typecheck', 'build', 'a11y'],
+  }, null, 2)}\n`, 'utf8');
+  mkdirSync(join(d, 'docs/security/reports'), { recursive: true });
+  writeFileSync(join(d, 'docs/security/reports/2026-08-12-902-usability-report.md'),
+    `# Informe de seguridad\n\n<!-- sdd-security-report:v1 -->\n\`\`\`json\n${JSON.stringify({
+      schemaVersion: 1,
+      spec: '902-usability-report',
+      standards: { owaspTop10: '2025', asvs: '5.0.0', level: 'L1' },
+      scope: 'diff',
+      controlsEvaluated: [],
+      openFindings: { critical: 0, high: 0, medium: 0, low: 0 },
+      verdict: 'PASS',
+      acceptedRisks: [],
+      controlsNotExecuted: [],
+    }, null, 2)}\n\`\`\`\n`, 'utf8');
+
+  const evidenciaValida = `# Evidencias
+
+## 1. Ejecuciones
+
+| Fecha/hora | Agente | Verificación | Tarea | Comando ejecutado | Resultado | Artefacto |
+|---|---|---|---|---|---|---|
+| 2026-08-12 10:00 | implementer | declared-direct | T-902-01 | node --test tests/ux.test.mjs | 🟢 1/1 | log |
+
+### 3.2 · Controles de usabilidad ejecutados
+
+| Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |
+|---|---|---|---|---|---|
+| UX-FORM-001 | T-902-01 | tests/ux.test.mjs::formulario | 🟢 verde | log | verificado |
+
+**Informe de usabilidad**: \`docs/design/reports/2026-08-12-902-usability-report.md\`.
+
+**Informe de seguridad**: \`docs/security/reports/2026-08-12-902-usability-report.md\`.
+
+## 5. Decisión de entrega
+
+| Campo | Valor |
+|---|---|
+| **Estado** | \`GO\` |
+`;
+  writeFileSync(join(specDir, 'evidence.md'), evidenciaValida, 'utf8');
+
+  const correr = () => spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--strict', '--spec', '902'], { cwd: d, encoding: 'utf8' });
+
+  const base = correr();
+  comprueba('la cadena completa de usabilidad pasa en verde', base.status === 0, (base.stdout || '').slice(-260));
+  comprueba('sin runner de a11y se avisa, pero no se bloquea la entrega',
+    /usabilidad\/gate/.test(base.stdout || '') && base.status === 0);
+
+  const planValido = leer(join(specDir, 'plan.md')) || '';
+  const rechazaPlan = (titulo, sustituir, por, patron) => {
+    writeFileSync(join(specDir, 'plan.md'), planValido.replace(sustituir, por), 'utf8');
+    const salida = correr();
+    comprueba(titulo, salida.status === 1 && patron.test(salida.stdout || ''), (salida.stdout || '').slice(-200));
+    writeFileSync(join(specDir, 'plan.md'), planValido, 'utf8');
+  };
+  rechazaPlan('un ID de control de usabilidad mal formado bloquea',
+    'UX-FORM-001 | 3.3.1 AA', 'UX-1 | 3.3.1 AA', /usabilidad\/control|inválido/i);
+  rechazaPlan('un control de accesibilidad sin criterio WCAG bloquea',
+    '| UX-FORM-001 | 3.3.1 AA |', '| UX-A11Y-001 | n/a |', /criterio WCAG|usabilidad\/matriz/i);
+  rechazaPlan('un control aplicable sin test concreto bloquea',
+    'tests/ux.test.mjs::formulario | evidence.md#UX-FORM-001', ' | evidence.md#UX-FORM-001',
+    /usabilidad\/matriz|Test debe ser/i);
+  rechazaPlan('un control no aplicable sin justificación material bloquea',
+    'no | Sin espera perceptible: la validación es local y síncrona', 'no | ',
+    /justificación concreta|usabilidad\/matriz/i);
+
+  const specValida = leer(join(specDir, 'spec.md')) || '';
+  writeFileSync(join(specDir, 'spec.md'), specValida.replace(/^\| \*\*Impacto de usabilidad\*\*[^\n]*\n/m, ''), 'utf8');
+  const sinImpacto = correr();
+  comprueba('una spec posterior al umbral no puede omitir Impacto de usabilidad',
+    sinImpacto.status === 1 && /Impacto de usabilidad|usabilidad\/impacto/i.test(sinImpacto.stdout || ''));
+  writeFileSync(join(specDir, 'spec.md'),
+    specValida.replace('| **Impacto de usabilidad** | aplicable |', '| **Impacto de usabilidad** | sin-ui |'), 'utf8');
+  const sinMotivo = correr();
+  comprueba('un sin-ui sin motivo material no vale como clasificación',
+    sinMotivo.status === 1 && /motivo material|usabilidad\/impacto/i.test(sinMotivo.stdout || ''));
+  writeFileSync(join(specDir, 'spec.md'), specValida, 'utf8');
+
+  const rechazaInformeUX = (titulo, cambios, patron) => {
+    writeFileSync(rutaInforme, informeUX(cambios), 'utf8');
+    const salida = correr();
+    comprueba(titulo, salida.status === 1 && patron.test(salida.stdout || ''), (salida.stdout || '').slice(-200));
+    writeFileSync(rutaInforme, informeUX(), 'utf8');
+  };
+  rechazaInformeUX('un estándar de usabilidad degradado bloquea',
+    { standards: { wcag: '2.1', level: 'AA', heuristics: 'nielsen-10' } }, /estándar|estandar|WCAG/i);
+  rechazaInformeUX('un hallazgo ALTO de usabilidad bloquea la entrega', { high: 2 }, /CRÍTICO\/ALTO|veredicto/i);
+  rechazaInformeUX('PASS no admite hallazgos MEDIO de usabilidad', { medium: 1 }, /PASS.*MEDIO|veredicto/i);
+  rechazaInformeUX('un control de usabilidad no ejecutado bloquea GO',
+    { controlsNotExecuted: [{ control: 'UX-FORM-001', reason: 'sin runner', risk: 'regresión invisible', owner: 'ux', nextStep: 'añadir axe' }] },
+    /no ejecutados|veredicto/i);
+  rechazaInformeUX('el informe de usabilidad de otra spec no sirve', { spec: 'otra' }, /declara spec|otra/i);
+  rechazaInformeUX('controlsEvaluated debe cubrir el control aplicable', { controlsEvaluated: [] },
+    /no evaluados|controlsEvaluated/i);
+
+  writeFileSync(rutaInforme, '# Informe\n<!-- sdd-usability-report:v1 -->\n```json\n{ roto }\n```\n', 'utf8');
+  const jsonRoto = correr();
+  comprueba('un informe de usabilidad con JSON inválido bloquea',
+    jsonRoto.status === 1 && /inválido|informe/i.test(jsonRoto.stdout || ''));
+  writeFileSync(rutaInforme, informeUX(), 'utf8');
+
+  writeFileSync(join(specDir, 'evidence.md'), evidenciaValida
+    .replace('docs/design/reports/2026-08-12-902-usability-report.md',
+      'docs/design/reports/../../../fuera.md'), 'utf8');
+  const traversal = correr();
+  comprueba('la ruta del informe de usabilidad rechaza traversal',
+    traversal.status === 1 && /ruta de informe no permitida|usabilidad\/informe/i.test(traversal.stdout || ''));
+  writeFileSync(join(specDir, 'evidence.md'), evidenciaValida, 'utf8');
+
+  writeFileSync(join(specDir, 'evidence.md'),
+    evidenciaValida.replace('**Informe de usabilidad**: `docs/design/reports/2026-08-12-902-usability-report.md`.', ''), 'utf8');
+  const sinDeclarar = correr();
+  comprueba('GO exige declarar el informe de usabilidad en evidence.md',
+    sinDeclarar.status === 1 && /Informe de usabilidad|usabilidad\/informe/i.test(sinDeclarar.stdout || ''));
+  writeFileSync(join(specDir, 'evidence.md'), evidenciaValida, 'utf8');
+}
+matriz_usabilidad_y_gate_a11y();
+
 console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 {
   const d = nuevoDestino();
@@ -976,6 +1274,7 @@ console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 | **Estado** | aprobada |
 |---|---|
 | **Impacto de seguridad** | no-sensible |
+| **Impacto de usabilidad** | sin-ui · fixture técnico de ejecución directa, sin interfaz |
 | **Impacto de documentación** | no-aplica · fixture técnico de ejecución directa |
 
 | Id | Requisito | Prioridad | Esfuerzo |

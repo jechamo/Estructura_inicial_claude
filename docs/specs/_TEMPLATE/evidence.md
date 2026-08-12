@@ -90,6 +90,51 @@ Valores JSON de `verdict`: `BLOCKED`, `CONDITIONAL` o `PASS`. Cada riesgo MEDIO 
 `ADR-*`. Cada control no ejecutado usa `control`, `reason`, `risk`, `owner` y `nextStep`.
 `controlsNotExecuted` no vacío bloquea `GO`; no cuenta como control verificado.
 
+### 3.2 · Controles de usabilidad ejecutados
+
+| Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |
+|---|---|---|---|---|---|
+| UX-`<AREA>`-NNN | T-NNN-XX | `<comando exacto>` | `<salida real resumida>` | `<ruta, log o captura>` | `<verificado/no ejecutado/no aplica>` |
+
+**Informe de usabilidad**: `docs/design/reports/YYYY-MM-DD-NNN-slug.md`.
+
+- Auditor: `code-reviewer` (solo lectura) — `<observed/declared-direct/unverified>`.
+- Materialización: `docs-writer` copia literalmente el HANDOFF estructurado; no cambia hallazgos,
+  conteos ni veredicto.
+- Contrato mínimo del informe:
+
+<!-- sdd-usability-report:v1 -->
+```json
+{
+  "schemaVersion": 1,
+  "spec": "NNN-slug",
+  "standards": {
+    "wcag": "2.2",
+    "level": "AA",
+    "heuristics": "nielsen-10"
+  },
+  "scope": "diff",
+  "controlsEvaluated": ["UX-<AREA>-NNN"],
+  "openFindings": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
+  "verdict": "PASS",
+  "acceptedRisks": [],
+  "controlsNotExecuted": []
+}
+```
+
+Valores JSON de `verdict`: `BLOCKED`, `CONDITIONAL` o `PASS`. Cada riesgo MEDIO aceptado usa
+`id`, `owner`, `justification`, `reviewDate` (`YYYY-MM-DD`) y un `decisionRef` durable `DEC-*` o
+`ADR-*`. Cada control no ejecutado usa `control`, `reason`, `risk`, `owner` y `nextStep`.
+`controlsNotExecuted` no vacío bloquea `GO`; no cuenta como control verificado.
+
+**Verificación manual de accesibilidad** — lo que ningún analizador detecta:
+
+| Comprobación | Quién | Fecha | Resultado |
+|---|---|---|---|
+| Flujo completo solo con teclado, sin ratón | | | |
+| Lectura con lector de pantalla | | | |
+| Zoom al 200 % sin pérdida ni solape | | | |
+
 ## 3 bis. Cobertura, deuda y observabilidad
 
 **Cobertura por tier.** No se reporta cifra global: un porcentaje único deja pasar el 6 % que

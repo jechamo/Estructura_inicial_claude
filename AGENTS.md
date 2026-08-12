@@ -38,6 +38,10 @@ Antigravity y Codex. La política completa y vinculante está en
 12. Toda spec nueva declara `Impacto de seguridad`. Si es `sensible`, cada control aplicable enlaza
     decisión, tarea, test y evidencia; el `security-auditor` sigue siendo de solo lectura y un
     `GO` exige informe parseable sin CRÍTICO/ALTO ni controles no ejecutados.
+13. Toda spec nueva declara `Impacto de usabilidad`. Si es `aplicable`, cada control `UX-*` enlaza
+    decisión, tarea, test y evidencia; quien audita es `code-reviewer` en solo lectura —nadie
+    audita su propio diseño— y un `GO` exige informe parseable sin CRÍTICO/ALTO ni controles no
+    ejecutados. WCAG 2.2 AA es el suelo, no el techo: cumplirlo entero no hace usable un producto.
 
 ## Entrada por situación
 

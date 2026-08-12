@@ -102,6 +102,26 @@ node scripts/sdd-project.mjs run --ci
 `detect` no escribe. `configure --accept-detected` es la aprobación explícita para incorporar
 los comandos encontrados a `.sdd/checks.json`.
 
+## Contratos que se instalan
+
+`.sdd/installed.json` declara tres contratos versionados con su `enforceFromSpec`, de modo que la
+historia previa del proyecto no se reinterpreta y lo nuevo sí se exige:
+
+| Contrato | Estándares | Qué exige desde su umbral |
+|---|---|---|
+| `security` | OWASP Top 10:2025 · ASVS 5.0.0 | `Impacto de seguridad` y matriz `SEC-*` trazable |
+| `usability` | WCAG 2.2 AA · heurísticas de Nielsen | `Impacto de usabilidad` y matriz `UX-*` trazable |
+| `documentation` | `.sdd/docs.json` | `Impacto de documentación` y matriz `DOC-*` trazable |
+
+La doctrina llega con la instalación: [`A11Y-CHECKLIST.md`](../design/A11Y-CHECKLIST.md) es el
+suelo legal y [`USABILITY-CHECKLIST.md`](../design/USABILITY-CHECKLIST.md) es lo que además hace
+que se entienda. Las reglas por glob de `.cursor/rules/` y `.github/instructions/` las entregan al
+editar interfaz en los hosts que no leen agentes.
+
+El gate `a11y` **no se configura solo**: la plantilla no sabe si el proyecto tiene interfaz ni con
+qué stack se pinta. Queda declarado como no configurado y `detect` lo propone cuando encuentra un
+script real (`test:a11y`, `axe`, `pa11y`, `lighthouse`).
+
 ## Qué versionar después de instalar
 
 Sube el circuito compartido: código y tests, `AGENTS.md`, perfiles de los seis hosts, skills,

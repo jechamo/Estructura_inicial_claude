@@ -130,36 +130,44 @@ Qué se degrada o se oculta en pantalla estrecha, y por qué **eso** y no otra c
 
 ## 6. Accesibilidad — WCAG 2.2 AA verificada sobre el diseño
 
-| Comprobación | Estado | Nota |
-|---|---|---|
-| Contraste ≥ 4.5:1 (≥ 3:1 grande y controles) | | |
-| Nada comunicado solo por color | | |
-| Foco visible diseñado | | |
-| Objetivos táctiles ≥ 24×24 px con separación | | |
-| Orden de tabulación pensado | | |
-| Jerarquía de encabezados coherente | | |
-| Errores concretos y asociados a su campo | | |
-| Alternativa para `prefers-reduced-motion` | | |
+Criterio completo en [`docs/design/A11Y-CHECKLIST.md`](../../design/A11Y-CHECKLIST.md). Con
+`Impacto de usabilidad = aplicable`, esta tabla **no puede quedarse con marcadores**: cada fila
+lleva estado, y lo que resulte aplicable se declara como `UX-A11Y-NNN` en `plan.md` §9.3.
+
+> `Estado`: `verificado` · `no ejecutado` · `no aplica` con motivo material.
+
+| Comprobación | Estado | Nota | Control |
+|---|---|---|---|
+| Contraste ≥ 4.5:1 (≥ 3:1 grande y controles) | | | `<UX-A11Y-NNN / no aplica>` |
+| Nada comunicado solo por color | | | |
+| Foco visible diseñado | | | |
+| Objetivos táctiles ≥ 24×24 px con separación | | | |
+| Orden de tabulación pensado y coincidente con el visual | | | |
+| Jerarquía de encabezados coherente | | | |
+| Errores concretos y asociados a su campo | | | |
+| Nombre accesible en controles de solo icono | | | |
+| Alternativa para `prefers-reduced-motion` | | | |
 
 ## 6 bis. Usabilidad
 
 La accesibilidad es el suelo legal; esto es lo que hace que además se entienda. Checklist completo
 en [`docs/design/USABILITY-CHECKLIST.md`](../../design/USABILITY-CHECKLIST.md).
 
-| Comprobación | Estado | Nota |
-|---|---|---|
-| Diez heurísticas recorridas | | |
-| Formularios: etiqueta visible, tipo semántico, validación al salir del campo | | |
-| Mensajes de error: qué está mal → cómo se arregla | | |
-| Toda acción responde en menos de 100 ms | | |
-| Esqueleto con la forma del contenido real mientras carga | | |
+| Comprobación | Estado | Nota | Control |
+|---|---|---|---|
+| Diez heurísticas recorridas | | | `<UX-*-NNN / no aplica>` |
+| Formularios: etiqueta visible, tipo semántico, validación al salir del campo | | | |
+| Mensajes de error: qué está mal → cómo se arregla | | | |
+| Microcopy: botones con verbo + sustantivo; estados vacíos con salida | | | |
+| Toda acción responde en menos de 100 ms | | | |
+| Esqueleto con la forma del contenido real mientras carga | | | |
 
 **Actualización optimista** — dónde se usa y, sobre todo, dónde **no**:
 
-| Acción | ¿Optimista? | Por qué |
-|---|---|---|
-| `<acción reversible>` | Sí, con reversión escrita | Fácil de revertir, fallo raro |
-| `<pago / alta / borrado>` | **No** | Espera confirmación real; el usuario debe poder afirmar que ocurrió |
+| Acción | ¿Optimista? | Reversión escrita | Por qué |
+|---|---|---|---|
+| `<acción reversible>` | Sí | `<cómo se restaura el estado exacto>` | Fácil de revertir, fallo raro |
+| `<pago / alta / borrado>` | **No** | — | Espera confirmación real; el usuario debe poder afirmar que ocurrió |
 
 ## 7. Requisitos descubiertos en el diseño
 
