@@ -3,10 +3,10 @@
 | Campo | Valor |
 |---|---|
 | **ID** | `009-usabilidad-integrada` |
-| **Estado** | borrador |
+| **Estado** | entregada |
 | **Autor** | Jechamo |
 | **Fecha** | 2026-08-12 |
-| **Rama** | `feat/009-usabilidad-integrada` |
+| **Rama** | `main` |
 | **Depende de** | `006-calidad-integrada`, `007-seguridad-jwt-owasp-2025` (patrón de contrato) |
 | **Baseline de producto** | [`docs/product/PRD.md`](../../product/PRD.md) · estado `legacy-pending` |
 | **Fuentes** | [`docs/product/SOURCES.md`](../../product/SOURCES.md) · `SRC-009-01..04` |
@@ -377,11 +377,11 @@ Escenario: design.md con marcadores de plantilla
 
 | Campo | Valor |
 |---|---|
-| **Estado** | `pending` |
-| **Aprobado / rechazado por** | `<persona>` |
-| **Fecha** | `<YYYY-MM-DD>` |
+| **Estado** | `approved` |
+| **Aprobado / rechazado por** | usuario |
+| **Fecha** | 2026-08-13 |
 | **Alcance de la decisión** | RF-01 … RF-10, CA-01 … CA-12, sin discrepancias abiertas |
-| **Condiciones** | `<ninguna / lista>` |
+| **Condiciones** | aprobación retrospectiva explícita tras integrar la implementación; no se presenta como previa al trabajo |
 
 > `/sdd-plan` no comienza mientras haya marcadores, discrepancias abiertas o este gate no esté
 > en `approved`. La aprobación del PRD no sustituye la aprobación funcional de esta spec.

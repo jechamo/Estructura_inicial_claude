@@ -9,6 +9,28 @@
 
 ---
 
+## 2026-08-13 · Atribución inequívoca, rectificación append-only y tags inmutables
+
+- **Tipo**: decisión de trazabilidad y release
+- **Contexto**: el parser histórico no reconocía `- **Estado**: hecho`, por lo que elegía la
+  primera spec cerrada y atribuía allí eventos de sesiones posteriores. Además, la guía mezclaba
+  la versión móvil de Git con la promesa de una release estable todavía no publicada.
+- **Decisión / hecho**: una spec solo está activa cuando un bloque real `T-*` contiene una tarea
+  `pendiente` o `en curso`. Con cero o varias candidatas, el evento va a la auditoría general con
+  `sin-spec-activa` o `spec-activa-ambigua`; no se elige por orden. Los errores históricos se
+  corrigen con eventos `trace-correction`/`trace-attribution` y una nota mensual, sin reescribir
+  los originales. `main` sin `#ref` es intencionadamente móvil; un tag SemVer es reproducible,
+  nuevo e inmutable y solo se crea tras gates y CI verdes.
+- **Alternativas descartadas**: borrar/mover eventos históricos —rompe append-only—; seleccionar
+  la spec más reciente —oculta ambigüedad—; mover un tag existente —rompe reproducibilidad—.
+- **Impacto**: las sesiones `44424dcc` y `61ac795d` conservan su atribución histórica y reciben
+  rectificaciones durables hacia las specs 006 y 009. El instalador y la documentación distinguen
+  claramente última `main` de `v0.6.0`.
+- **Spec**: [`010-trazabilidad-release-latest`](../specs/010-trazabilidad-release-latest/spec.md)
+- **Quién**: usuario + implementer + security-auditor
+
+---
+
 ## 2026-08-12 · Usabilidad como contrato verificable, auditada por quien no la diseñó
 
 - **Tipo**: decisión de proceso, portabilidad y calidad

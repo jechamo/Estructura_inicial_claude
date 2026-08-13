@@ -623,12 +623,11 @@ if (checksRaw) {
 const gateSeguridadConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
   String(id).split(':')[0] === 'security' && typeof check?.command === 'string' && check.command.trim() &&
   check.required === true && check.enabled !== false && (check.speed || 'slow') === 'slow');
-// A diferencia del de seguridad, este gate no se exige: `scan-secrets` sirve a cualquier
-// repositorio, pero un runner de accesibilidad depende de que exista interfaz y de qué stack la
-// pinta. Un gate sin comando no es un control, así que aquí solo se informa de su ausencia.
+// El runner concreto depende del stack. La spec decide si se exige; cuando aplica, solo una
+// configuración bloqueante y lenta cuenta como gate real.
 const gateA11yConfigurado = Object.entries(cfgChecks?.checks || {}).some(([id, check]) =>
   String(id).split(':')[0] === 'a11y' && typeof check?.command === 'string' && check.command.trim() &&
-  check.enabled !== false);
+  check.required === true && check.enabled !== false && (check.speed || 'slow') === 'slow');
 
 const docsRaw = leer(join(ROOT, '.sdd/docs.json'));
 let cfgDocs = null;
@@ -1048,7 +1047,8 @@ for (const s of specs) {
       continue;
     }
     if (!/^UX-(?:A11Y|FORM|COPY|PERF)-\d{3}$/.test(control.control))
-      err('usabilidad/control', `${s}: ID de control '${control.control}' inválido; usa UX-<A11Y|FORM|COPY|PERF>-NNN`);
+      err('usabilidad/control', `docs/specs/${s}/plan.md: el control '${control.control}' no cumple el formato ` +
+        'UX-<A11Y|FORM|COPY|PERF>-NNN. Corrige el ID en la matriz de usabilidad y sus referencias');
     else if (idsUX.has(control.control)) err('usabilidad/control', `${s}: control duplicado ${control.control}`);
     idsUX.add(control.control);
     if (!['sí', 'si', 'no'].includes(control.aplica))
@@ -1719,11 +1719,14 @@ if (STRICT && soloSpec) {
       err('usabilidad/impacto', `${carpeta}: no puede declarar GO con Impacto de usabilidad ux-pending`);
 
     if (contratoUX.impacto?.estado === 'aplicable') {
-      // El gate automático NO se exige como bloqueo: la plantilla no presupone stack y hay
-      // proyectos legítimos sin runner de a11y. Se avisa, porque un analizador ausente significa
-      // que toda la verificación descansa en la manual, y eso conviene que se vea.
-      if (!gateA11yConfigurado)
-        warn('usabilidad/gate', `${carpeta}: GO sin gate a11y configurado; la verificación descansa por completo en la manual`);
+      const controlesConInterfaz = contratoUX.controles.filter((control) =>
+        ['sí', 'si'].includes(control.aplica) && /^UX-(?:A11Y|FORM)-/.test(control.control));
+      // No se presupone herramienta. Se exige cuando la matriz declara una superficie A11Y/FORM;
+      // microcopy de CLI y otros controles sin interfaz no inventan un runner.
+      if (controlesConInterfaz.length && !gateA11yConfigurado)
+        err('usabilidad/gate', `${carpeta}: falta un gate a11y real en .sdd/checks.json. ` +
+          'Añade checks.a11y con command no vacío, required: true, speed: "slow" y enabled distinto de false; ' +
+          'después ejecuta `node scripts/sdd-project.mjs run --slow`');
 
       const rutaDeclaradaUX = evidencia.match(
         /\*\*Informe de usabilidad\*\*\s*:\s*`([^`]+)`/i,

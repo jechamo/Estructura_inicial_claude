@@ -498,6 +498,13 @@ que ejecutara nada. Por eso la evidencia se registra **fuera del modelo**:
 Se escribe en `docs/specs/NNN-slug/execution-log.jsonl` (append-only) o, si no hay spec activa,
 en `.sdd/agent-audit.jsonl`. Ese fichero **no lo edita ningún agente**: los hooks lo bloquean.
 
+Una spec se considera activa únicamente cuando un bloque real `### T-*` declara una tarea
+`pendiente` o `en curso`. Si no hay ninguna candidata se registra `sin-spec-activa`; si hay más
+de una, `spec-activa-ambigua` con la lista, sin elegir por orden. Una atribución histórica errónea
+se rectifica con `node scripts/sdd-project.mjs trace-correct`: añade eventos simétricos y una nota
+mensual, conserva los originales y es idempotente incluso entre procesos concurrentes mediante
+un lock efímero bajo `.sdd/state/`.
+
 Regla: una tarea no pasa a `hecho` sin ejecución registrada, checks ejecutados y evidencia
 concreta en `evidence.md`. **"Pasa" sin ejecución no es un resultado; "no ejecutado" sí lo es.**
 

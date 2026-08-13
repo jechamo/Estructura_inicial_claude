@@ -3,8 +3,11 @@
  * Node >= 18. Sin dependencias externas a propósito: un hook que necesita `npm install`
  * es un hook que algún día no se ejecuta.
  */
-import { readFileSync, existsSync, readdirSync, mkdirSync, appendFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import {
+  readFileSync, existsSync, readdirSync, mkdirSync, appendFileSync, writeFileSync,
+  lstatSync, realpathSync, openSync, closeSync, fstatSync,
+} from 'node:fs';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 /** Lee el JSON que Claude Code envía por stdin. Devuelve {} si no hay nada legible. */
 export async function readHookInput() {
@@ -223,32 +226,130 @@ export function listDirs(path) {
   }
 }
 
-export function appendLine(path, line) {
+function rutaConfinadaSinEnlaces(root, path) {
+  const rootAbs = resolve(root);
+  const target = resolve(path);
+  const rel = relative(rootAbs, target);
+  if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return false;
+  const rootReal = realpathSync(rootAbs);
+  let current = rootAbs;
+  for (const segment of rel.split(/[\\/]+/).filter(Boolean)) {
+    current = join(current, segment);
+    let stat;
+    try { stat = lstatSync(current); }
+    catch (error) {
+      if (error?.code === 'ENOENT') continue;
+      return false;
+    }
+    if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink > 1)) return false;
+    const realRel = relative(rootReal, realpathSync(current));
+    if (realRel === '..' || realRel.startsWith(`..${sep}`) || isAbsolute(realRel)) return false;
+  }
+  return true;
+}
+
+export function appendLine(path, line, root = process.cwd()) {
   try {
-    mkdirSync(resolve(path, '..'), { recursive: true });
-    appendFileSync(path, line + '\n', 'utf8');
+    if (!rutaConfinadaSinEnlaces(root, path)) return false;
+    const parent = resolve(path, '..');
+    mkdirSync(parent, { recursive: true });
+    if (!rutaConfinadaSinEnlaces(root, parent) || !rutaConfinadaSinEnlaces(root, path)) return false;
+    const fd = openSync(path, 'a', 0o600);
+    try {
+      const descriptor = fstatSync(fd);
+      const pathname = lstatSync(path);
+      if (!descriptor.isFile() || pathname.isSymbolicLink() || pathname.nlink > 1 ||
+          descriptor.dev !== pathname.dev || descriptor.ino !== pathname.ino) return false;
+      appendFileSync(fd, line + '\n', 'utf8');
+      return true;
+    } finally {
+      closeSync(fd);
+    }
   } catch {
-    /* la bitácora nunca debe romper la sesión */
+    return false;
   }
 }
 
+/** Extrae únicamente estados declarados dentro de bloques reales `### T-*`. */
+function taskStates(tasks) {
+  const blocks = String(tasks || '').split(/(?=^###\s+T-[\w-]+\b)/gm)
+    .filter((block) => /^###\s+T-[\w-]+\b/m.test(block));
+  return blocks.map((block) => {
+    const match = block.match(
+      /^-\s*(?:\*\*)?Estado(?:\*\*)?\s*:\s*(?:\*\*)?\s*(pendiente|en\s+curso|hecho|bloqueado|cancelado)(?:\s*\*\*)?\s*$/im,
+    );
+    return match ? match[1].toLowerCase().replace(/\s+/g, ' ') : null;
+  });
+}
+
 /**
- * Localiza la spec activa: la que tiene tareas pendientes o en curso.
- * Devuelve { dir, nombre, total, hechas, enCurso } o null.
+ * Conserva la compatibilidad histórica de `SDD_SPECS_DIR` sin convertir una variable de
+ * entorno en una lectura fuera del repositorio. Un valor inválido, absoluto, con traversal o
+ * que atraviese un enlace cae al directorio canónico; los hooks nunca siguen esa ruta hostil.
  */
-export function findActiveSpec(root) {
-  const specsDir = join(root, process.env.SDD_SPECS_DIR || 'docs/specs');
+export function specsDirectory(root) {
+  const rootAbs = resolve(root);
+  const fallback = join(rootAbs, 'docs', 'specs');
+  const fallbackSeguro = () => rutaConfinadaSinEnlaces(rootAbs, fallback) ? fallback : null;
+  const configured = process.env.SDD_SPECS_DIR;
+  if (!configured) return fallbackSeguro();
+  if (isAbsolute(configured) || /[\u0000-\u001f\u007f]/.test(configured)) return fallbackSeguro();
+
+  const target = resolve(rootAbs, configured);
+  const rel = relative(rootAbs, target);
+  if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) return fallbackSeguro();
+
+  const rootReal = realpathSync(rootAbs);
+  let current = rootAbs;
+  for (const segment of rel.split(/[\\/]+/).filter(Boolean)) {
+    current = join(current, segment);
+    let stat;
+    try { stat = lstatSync(current); }
+    catch (error) {
+      if (error?.code === 'ENOENT') continue;
+      return fallbackSeguro();
+    }
+    if (stat.isSymbolicLink()) return fallbackSeguro();
+    const currentReal = realpathSync(current);
+    const realRel = relative(rootReal, currentReal);
+    if (realRel === '..' || realRel.startsWith(`..${sep}`) || isAbsolute(realRel)) return fallbackSeguro();
+  }
+  return target;
+}
+
+/**
+ * Resuelve la atribución sin adivinar. Una spec solo está activa si contiene una tarea
+ * explícitamente `pendiente` o `en curso`; si hay varias candidatas, el evento debe ir a la
+ * auditoría general con el motivo durable `spec-activa-ambigua`.
+ */
+export function resolveActiveSpec(root) {
+  const specsDir = specsDirectory(root);
+  const candidates = [];
   for (const name of listDirs(specsDir)) {
+    if (!/^\d{3}-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) continue;
     const tasks = readIfExists(join(specsDir, name, 'tasks.md'));
     if (!tasks) continue;
-    const total = (tasks.match(/^###\s+T-/gm) || []).length;
-    const hechas = (tasks.match(/^-\s*Estado:\s*hecho/gim) || []).length;
-    const enCurso = (tasks.match(/^-\s*Estado:\s*en curso/gim) || []).length;
-    if (total > hechas) {
-      return { dir: join(specsDir, name), nombre: name, total, hechas, enCurso };
-    }
+    const states = taskStates(tasks);
+    const total = states.length;
+    if (!total) continue;
+    const hechas = states.filter((state) => state === 'hecho').length;
+    const enCurso = states.filter((state) => state === 'en curso').length;
+    const pendientes = states.filter((state) => state === 'pendiente').length;
+    if (pendientes || enCurso) candidates.push({
+      dir: join(specsDir, name), nombre: name, total, hechas, enCurso, pendientes,
+    });
   }
-  return null;
+  if (candidates.length === 1) return { spec: candidates[0], reason: null, candidates };
+  return {
+    spec: null,
+    reason: candidates.length ? 'spec-activa-ambigua' : 'sin-spec-activa',
+    candidates,
+  };
+}
+
+/** Compatibilidad para consumidores que solo necesitan la spec inequívoca o `null`. */
+export function findActiveSpec(root) {
+  return resolveActiveSpec(root).spec;
 }
 
 /**
@@ -258,13 +359,33 @@ export function findActiveSpec(root) {
  * La narración del chat no demuestra qué subagente trabajó. Esto sí deja rastro.
  */
 export function logEjecucion(root, evento) {
-  const spec = findActiveSpec(root);
+  const resolution = resolveActiveSpec(root);
+  const spec = resolution.spec;
   const destino = spec
     ? join(spec.dir, 'execution-log.jsonl')
     : join(root, '.sdd', 'agent-audit.jsonl');
-  const linea = JSON.stringify({ ts: new Date().toISOString(), ...evento });
-  appendLine(destino, linea);
-  return { destino, spec: spec?.nombre ?? null };
+  const linea = JSON.stringify({
+    ts: new Date().toISOString(),
+    ...evento,
+    ...(!spec ? {
+      atribucion: resolution.reason,
+      ...(resolution.candidates.length
+        ? { specsCandidatas: resolution.candidates.map((candidate) => candidate.nombre) }
+        : {}),
+    } : {}),
+  });
+  if (appendLine(destino, linea, root))
+    return { destino, spec: spec?.nombre ?? null, atribucion: resolution.reason };
+
+  const fallback = join(root, '.sdd', 'agent-audit.jsonl');
+  const atribucion = spec ? 'ruta-spec-insegura' : 'ruta-auditoria-insegura';
+  const lineaFallback = JSON.stringify({
+    ts: new Date().toISOString(), ...evento, atribucion,
+    ...(spec ? { specCandidata: spec.nombre } : {}),
+  });
+  if (!spec || !appendLine(fallback, lineaFallback, root))
+    throw new Error('No existe un destino de auditoría confinado y seguro.');
+  return { destino: fallback, spec: null, atribucion };
 }
 
 /**

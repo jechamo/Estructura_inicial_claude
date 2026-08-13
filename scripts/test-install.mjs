@@ -9,8 +9,8 @@
  *
  * Node >= 18, sin dependencias.
  */
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, symlinkSync, linkSync } from 'node:fs';
 import { join, dirname, resolve, parse } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -52,6 +52,18 @@ function sddDesde(origenTrabajo, ...argumentos) {
     cwd: origenTrabajo,
     encoding: 'utf8',
   });
+}
+
+/** Repos Git efímeros aislados de hooks, firma y configuración personal de la máquina. */
+function gitFixture(destino, ...argumentos) {
+  const hooksVacios = join(destino, '.git', 'sdd-no-hooks');
+  mkdirSync(hooksVacios, { recursive: true });
+  return spawnSync('git', [
+    '-c', `core.hooksPath=${hooksVacios}`, '-c', 'commit.gpgSign=false',
+    '-c', 'core.excludesFile=',
+    '-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
+    ...argumentos,
+  ], { cwd: destino, encoding: 'utf8' });
 }
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
@@ -115,12 +127,21 @@ function usabilidad_versionada(destino) {
   const tasks = leer(join(destino, 'docs/specs/_TEMPLATE/tasks.md')) || '';
   const tests = leer(join(destino, 'docs/specs/_TEMPLATE/test-plan.md')) || '';
   const evidence = leer(join(destino, 'docs/specs/_TEMPLATE/evidence.md')) || '';
+  const brownfield = nuevoDestino();
+  writeFileSync(join(brownfield, 'package.json'), '{"name":"ux-copy-fixture"}\n', 'utf8');
+  const instalacionBrownfield = sdd(brownfield, 'init');
+  const salida = instalacionBrownfield.stdout || '';
+  const avisoAccionable = instalacionBrownfield.status === 0 &&
+    /Estado de usabilidad:\s*adopci[oó]n pendiente/i.test(salida) &&
+    /Umbral:[^\n]*WCAG 2\.2 AA[^\n]*Nielsen[^\n]*spec \d{3}/i.test(salida) &&
+    /Acci[oó]n:[^\n]*(?:\/sdd-intake|A11Y-CHECKLIST\.md)/i.test(salida) &&
+    !/Usabilidad:\s*legacy-pending/i.test(salida);
   return /Impacto de usabilidad/.test(spec) &&
     /Clasificación de usabilidad/.test(spec) &&
     /Control\s*\|\s*WCAG 2\.2\s*\|\s*Heurística\s*\|\s*Aplica\s*\|\s*Decisión \/ justificación\s*\|\s*Tarea\s*\|\s*Test\s*\|\s*Evidencia/.test(plan) &&
     /Controles de usabilidad/.test(tasks) && /hostil|accesibilidad/i.test(tests) &&
     /Informe de usabilidad/.test(evidence) && /Controles de usabilidad ejecutados/.test(evidence) &&
-    /sdd-usability-report:v1/.test(evidence);
+    /sdd-usability-report:v1/.test(evidence) && avisoAccionable;
 }
 
 /** El contrato instalado declara usabilidad con sus estándares y su umbral de exigencia. */
@@ -207,6 +228,502 @@ function contrato_auditor_solo_lectura(destino) {
   return /\bRead\b/.test(tools) && !/\b(?:Write|Edit|Agent)\b/.test(tools) &&
     /auditor de seguridad de solo lectura/i.test(perfil) && /### HANDOFF/.test(perfil) &&
     camposHandoff.every((campo) => perfil.includes(`- ${campo}:`));
+}
+
+function ejecutaTraceCorrect(destino, ...argumentos) {
+  return spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'trace-correct', ...argumentos, '--json'], {
+    cwd: destino,
+    encoding: 'utf8',
+  });
+}
+
+function ejecutaTraceCorrectConEntorno(destino, entorno, ...argumentos) {
+  return spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'trace-correct', ...argumentos, '--json'], {
+    cwd: destino,
+    encoding: 'utf8',
+    env: { ...process.env, ...entorno },
+  });
+}
+
+function ejecutaTraceCorrectAsyncConEntorno(destino, entorno, ...argumentos) {
+  return new Promise((resolvePromise) => {
+    const child = spawn(process.execPath,
+      ['scripts/sdd-project.mjs', 'trace-correct', ...argumentos, '--json'], {
+        cwd: destino,
+        env: { ...process.env, ...entorno },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('close', (status) => resolvePromise({ status, stdout, stderr }));
+  });
+}
+
+function ultimaSalidaJson(resultado) {
+  try {
+    const lineas = (resultado.stdout || '').trim().split(/\r?\n/).filter(Boolean);
+    return JSON.parse(lineas.at(-1) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function preparaSpecDeTraza(destino, nombre, eventos = []) {
+  const dir = join(destino, 'docs', 'specs', nombre);
+  mkdirSync(dir, { recursive: true });
+  const ruta = join(dir, 'execution-log.jsonl');
+  const contenido = eventos.map((evento) => JSON.stringify(evento)).join('\n');
+  writeFileSync(ruta, contenido ? `${contenido}\n` : '', 'utf8');
+  return ruta;
+}
+
+// trace_correct_append_only_e_idempotente
+console.log('\ntrace-correct · rectificación append-only e idempotente');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const sesion = 'abc12345';
+  const motivo = 'Corrige atribución: "spec equivocada" validada';
+  const origen = preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+    { ts: '2026-08-13T10:05:00.000Z', evento: 'subagent-stop', agente: 'test-engineer', sesion },
+    { ts: '2026-08-13T11:00:00.000Z', evento: 'subagent-start', agente: 'code-reviewer', sesion: 'otra0001' },
+  ]);
+  const destino = preparaSpecDeTraza(d, '011-destino', [
+    { ts: '2026-08-12T09:00:00.000Z', evento: 'subagent-stop', agente: 'planner', sesion: 'previa01' },
+  ]);
+  const bitacora = join(d, 'docs', 'bitacora', 'sessions', '2026-08.md');
+  mkdirSync(dirname(bitacora), { recursive: true });
+  writeFileSync(bitacora, '# Sesiones de agente — 2026-08\n\n- línea previa intacta\n', 'utf8');
+  const origenAntes = leer(origen);
+  const destinoAntes = leer(destino);
+  const bitacoraAntes = leer(bitacora);
+
+  const primera = ejecutaTraceCorrect(d,
+    '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', motivo);
+  const salidaPrimera = ultimaSalidaJson(primera);
+  const eventosOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const eventosDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const correccion = eventosOrigen.find((evento) => evento.evento === 'trace-correction');
+  const atribucion = eventosDestino.find((evento) => evento.evento === 'trace-attribution');
+  const lineasBitacora = (leer(bitacora) || '').split(/\r?\n/).filter(Boolean);
+
+  comprueba('debe_conservar_eventos_originales_cuando_rectifica_una_sesion',
+    primera.status === 0 && (leer(origen) || '').startsWith(origenAntes) &&
+    (leer(destino) || '').startsWith(destinoAntes) && (leer(bitacora) || '').startsWith(bitacoraAntes),
+    `${primera.stdout || ''}${primera.stderr || ''}`.slice(-240));
+  comprueba('debe_devolver_el_contrato_json_estable_cuando_rectifica',
+    salidaPrimera?.status === 'corrected' && salidaPrimera?.eventsMatched === 2 &&
+    ['status', 'fromSpec', 'toSpec', 'session', 'eventsMatched', 'writes']
+      .every((campo) => Object.hasOwn(salidaPrimera, campo)) && salidaPrimera.session === sesion,
+    JSON.stringify(salidaPrimera));
+  comprueba('debe_anadir_correccion_y_atribucion_simetrica_cuando_rectifica',
+    correccion?.correctionId && correccion.correctionId === atribucion?.correctionId &&
+    correccion.fromSpec === salidaPrimera?.fromSpec && correccion.toSpec === salidaPrimera?.toSpec &&
+    atribucion.fromSpec === salidaPrimera?.fromSpec && atribucion.toSpec === salidaPrimera?.toSpec &&
+    correccion.session === sesion && atribucion.session === sesion &&
+    correccion.reason === motivo && atribucion.reason === motivo &&
+    correccion.eventsMatched === 2 && atribucion.eventsMatched === 2,
+    JSON.stringify({ correccion, atribucion }));
+  comprueba('debe_anadir_una_sola_linea_de_bitacora_cuando_los_eventos_comparten_mes',
+    correccion?.correctionId &&
+    lineasBitacora.filter((linea) => linea.includes(correccion.correctionId)).length === 1 &&
+    lineasBitacora.filter((linea) => linea.includes(correccion.correctionId))[0]?.includes(sesion),
+    (leer(bitacora) || '').slice(-300));
+
+  const bytesTrasPrimera = [leer(origen), leer(destino), leer(bitacora)];
+  const segunda = ejecutaTraceCorrect(d,
+    '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', motivo);
+  const salidaSegunda = ultimaSalidaJson(segunda);
+  comprueba('debe_ser_byte_idempotente_cuando_se_repite_la_misma_rectificacion',
+    segunda.status === 0 && salidaSegunda?.status === 'already-corrected' &&
+    salidaSegunda?.eventsMatched === 2 &&
+    [leer(origen), leer(destino), leer(bitacora)].every((contenido, indice) => contenido === bytesTrasPrimera[indice]),
+    `${segunda.stdout || ''}${segunda.stderr || ''}`.slice(-240));
+}
+
+// trace_correct_converge_fallo_parcial_y_concurrencia
+// Incluye este bloque concurrente y el bloque de reanudación parcial inmediatamente posterior.
+// trace_correct_idempotencia_concurrente
+console.log('\ntrace-correct · idempotencia entre procesos concurrentes');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const preload = join(d, 'delay-trace-append.cjs');
+  writeFileSync(preload, [
+    "const fs = require('node:fs');",
+    'const appendOriginal = fs.appendFileSync;',
+    'const wait = new Int32Array(new SharedArrayBuffer(4));',
+    'fs.appendFileSync = function (file, ...args) {',
+    '  Atomics.wait(wait, 0, 0, 300);',
+    '  return appendOriginal.call(this, file, ...args);',
+    '};',
+    "require('node:module').syncBuiltinESMExports();",
+  ].join('\n'), 'utf8');
+  const sesion = 'concurrente1';
+  const motivo = 'rectificación concurrente determinista';
+  const origen = preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  const destino = preparaSpecDeTraza(d, '011-destino');
+  const bitacora = join(d, 'docs', 'bitacora', 'sessions', '2026-08.md');
+  const args = ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', motivo];
+  const entorno = { NODE_OPTIONS: `--require=${preload}` };
+  const resultados = await Promise.all([
+    ejecutaTraceCorrectAsyncConEntorno(d, entorno, ...args),
+    ejecutaTraceCorrectAsyncConEntorno(d, entorno, ...args),
+  ]);
+  const eventosOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const eventosDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const salidas = resultados.map(ultimaSalidaJson);
+  comprueba('debe_serializar_rectificaciones_concurrentes_sin_duplicar_ningun_append',
+    resultados.every((resultado) => resultado.status === 0) &&
+    salidas.filter((salida) => salida?.status === 'corrected').length === 1 &&
+    salidas.filter((salida) => salida?.status === 'already-corrected').length === 1 &&
+    eventosOrigen.filter((evento) => evento.evento === 'trace-correction' && evento.session === sesion).length === 1 &&
+    eventosDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesion).length === 1 &&
+    (leer(bitacora) || '').split(/\r?\n/).filter((linea) => linea.includes(sesion)).length === 1,
+    JSON.stringify({ resultados, salidas, eventosOrigen, eventosDestino, bitacora: leer(bitacora) }));
+}
+
+// trace_correct_reanuda_fallo_parcial
+console.log('\ntrace-correct · reintento seguro tras fallo parcial de append');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const preload = join(d, 'fail-trace-append.cjs');
+  writeFileSync(preload, [
+    "const fs = require('node:fs');",
+    'const appendOriginal = fs.appendFileSync;',
+    'fs.appendFileSync = function (file, ...args) {',
+    "  const normalized = String(file).replace(/\\\\/g, '/');",
+    '  if (process.env.SDD_TEST_FAIL_APPEND && normalized.includes(process.env.SDD_TEST_FAIL_APPEND)) {',
+    "    throw new Error('fallo de append inyectado por el test');",
+    '  }',
+    '  return appendOriginal.call(this, file, ...args);',
+    '};',
+    "require('node:module').syncBuiltinESMExports();",
+  ].join('\n'), 'utf8');
+  const argsDe = (sesion) => [
+    '--from-spec', '010', '--to-spec', '011', '--session', sesion,
+    '--reason', `rectifica ${sesion}`,
+  ];
+  const sesionDestino = 'parcial1';
+  const sesionBitacora = 'parcial2';
+  const origen = preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion: sesionDestino },
+    { ts: '2026-08-13T11:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion: sesionBitacora },
+  ]);
+  const destino = preparaSpecDeTraza(d, '011-destino');
+  const bitacora = join(d, 'docs', 'bitacora', 'sessions', '2026-08.md');
+  mkdirSync(dirname(bitacora), { recursive: true });
+  writeFileSync(bitacora, '# Sesiones de agente — 2026-08\n', 'utf8');
+  const entornoBase = { NODE_OPTIONS: `--require=${preload}` };
+
+  const fallaDestino = ejecutaTraceCorrectConEntorno(d,
+    { ...entornoBase, SDD_TEST_FAIL_APPEND: '011-destino/execution-log.jsonl' }, ...argsDe(sesionDestino));
+  const trasFalloDestinoOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const trasFalloDestinoDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  comprueba('debe_conservar_solo_la_correccion_cuando_falla_el_append_del_destino',
+    fallaDestino.status === 1 &&
+    trasFalloDestinoOrigen.filter((evento) => evento.evento === 'trace-correction' && evento.session === sesionDestino).length === 1 &&
+    trasFalloDestinoDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesionDestino).length === 0,
+    `${fallaDestino.stdout || ''}${fallaDestino.stderr || ''}`.slice(-240));
+
+  const reanudaDestino = ejecutaTraceCorrect(d, ...argsDe(sesionDestino));
+  const trasReanudarDestinoOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const trasReanudarDestinoDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  comprueba('debe_completar_destino_sin_duplicar_origen_cuando_reintenta',
+    reanudaDestino.status === 0 && ultimaSalidaJson(reanudaDestino)?.status === 'corrected' &&
+    trasReanudarDestinoOrigen.filter((evento) => evento.evento === 'trace-correction' && evento.session === sesionDestino).length === 1 &&
+    trasReanudarDestinoDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesionDestino).length === 1,
+    `${reanudaDestino.stdout || ''}${reanudaDestino.stderr || ''}`.slice(-240));
+
+  const fallaBitacora = ejecutaTraceCorrectConEntorno(d,
+    { ...entornoBase, SDD_TEST_FAIL_APPEND: 'sessions/2026-08.md' }, ...argsDe(sesionBitacora));
+  const trasFalloBitacoraOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const trasFalloBitacoraDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  comprueba('debe_conservar_ambos_eventos_cuando_falla_el_append_de_bitacora',
+    fallaBitacora.status === 1 &&
+    trasFalloBitacoraOrigen.filter((evento) => evento.evento === 'trace-correction' && evento.session === sesionBitacora).length === 1 &&
+    trasFalloBitacoraDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesionBitacora).length === 1 &&
+    !(leer(bitacora) || '').includes(sesionBitacora),
+    `${fallaBitacora.stdout || ''}${fallaBitacora.stderr || ''}`.slice(-240));
+
+  const reanudaBitacora = ejecutaTraceCorrect(d, ...argsDe(sesionBitacora));
+  const trasReanudarBitacoraOrigen = (leer(origen) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  const trasReanudarBitacoraDestino = (leer(destino) || '').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+  comprueba('debe_completar_bitacora_sin_duplicar_eventos_cuando_reintenta',
+    reanudaBitacora.status === 0 && ultimaSalidaJson(reanudaBitacora)?.status === 'corrected' &&
+    trasReanudarBitacoraOrigen.filter((evento) => evento.evento === 'trace-correction' && evento.session === sesionBitacora).length === 1 &&
+    trasReanudarBitacoraDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesionBitacora).length === 1 &&
+    (leer(bitacora) || '').split(/\r?\n/).filter((linea) => linea.includes(sesionBitacora)).length === 1,
+    `${reanudaBitacora.stdout || ''}${reanudaBitacora.stderr || ''}`.slice(-240));
+}
+
+// trace_correct_seguridad_rutas_hooks_y_lock
+// Agrupa las regresiones de directorio/log confinado (suite de hooks) y propiedad/stale del lock.
+// trace_correct_no_borra_lock_reemplazado
+console.log('\ntrace-correct · propiedad del lock al liberar');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const sesion = 'lockowner1';
+  preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  preparaSpecDeTraza(d, '011-destino');
+  const preload = join(d, 'replace-trace-lock.cjs');
+  const lockPath = join(d, '.sdd', 'state', 'trace-correct.lock');
+  writeFileSync(preload, [
+    "const fs = require('node:fs');",
+    'const fstatOriginal = fs.fstatSync;',
+    'let replaced = false;',
+    'fs.fstatSync = function (fd) {',
+    '  const result = fstatOriginal.call(this, fd);',
+    '  if (!replaced && process.env.SDD_TEST_LOCK_PATH && fs.existsSync(process.env.SDD_TEST_LOCK_PATH)) {',
+    '    replaced = true;',
+    '    fs.unlinkSync(process.env.SDD_TEST_LOCK_PATH);',
+    "    fs.writeFileSync(process.env.SDD_TEST_LOCK_PATH, 'foreign-lock\\n', 'utf8');",
+    '  }',
+    '  return result;',
+    '};',
+    "require('node:module').syncBuiltinESMExports();",
+  ].join('\n'), 'utf8');
+  const resultado = ejecutaTraceCorrectConEntorno(d, {
+    NODE_OPTIONS: `--require=${preload}`,
+    SDD_TEST_LOCK_PATH: lockPath,
+  }, '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'prueba propiedad lock');
+  comprueba('debe_fallar_cerrado_y_conservar_un_lock_ajeno_que_reemplaza_al_adquirido',
+    resultado.status === 1 && leer(lockPath) === 'foreign-lock\n' &&
+    /lock|reemplaz|propiet|identidad|otro proceso/i.test(`${resultado.stdout}${resultado.stderr}`),
+    `${resultado.stdout || ''}${resultado.stderr || ''} lock=${JSON.stringify(leer(lockPath))}`.slice(-400));
+
+  const stale = nuevoDestino();
+  sdd(stale, 'init');
+  preparaSpecDeTraza(stale, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  const staleOrigen = join(stale, 'docs', 'specs', '010-origen', 'execution-log.jsonl');
+  const staleDestino = preparaSpecDeTraza(stale, '011-destino');
+  const staleLock = join(stale, '.sdd', 'state', 'trace-correct.lock');
+  mkdirSync(dirname(staleLock), { recursive: true });
+  writeFileSync(staleLock, '{"pid":999999,"token":"stale","createdAt":"2000-01-01T00:00:00.000Z"}\n', 'utf8');
+  const bytesAntes = [leer(staleOrigen), leer(staleDestino), leer(staleLock)];
+  const bloqueado = ejecutaTraceCorrectConEntorno(stale, { SDD_TRACE_LOCK_TIMEOUT_MS: '100' },
+    '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'no roba stale');
+  comprueba('debe_fallar_cerrado_sin_robar_un_lock_stale_ni_escribir_trazas',
+    bloqueado.status === 1 &&
+    [leer(staleOrigen), leer(staleDestino), leer(staleLock)].every((valor, i) => valor === bytesAntes[i]) &&
+    /lock|obtener|segundo/i.test(`${bloqueado.stdout}${bloqueado.stderr}`),
+    `${bloqueado.stdout || ''}${bloqueado.stderr || ''}`.slice(-300));
+}
+
+// trace_correct_rechaza_entrada_hostil
+console.log('\ntrace-correct · entrada hostil rechazada antes de escribir');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const sesion = 'abc12345';
+  const origen = preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  const destino = preparaSpecDeTraza(d, '011-destino');
+  preparaSpecDeTraza(d, '012-duplicada-a');
+  preparaSpecDeTraza(d, '012-duplicada-b');
+  preparaSpecDeTraza(d, '015-sesion-exacta', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion: `${sesion}-extra` },
+  ]);
+  preparaSpecDeTraza(d, '016-destino-exacto');
+  const bitacora = join(d, 'docs', 'bitacora', 'sessions', '2026-08.md');
+  const estadoAntes = () => JSON.stringify([leer(origen), leer(destino), leer(bitacora)]);
+  const rechazaSinEscribir = (argumentos, patron) => {
+    const antes = estadoAntes();
+    const resultado = ejecutaTraceCorrect(d, ...argumentos);
+    const salida = `${resultado.stdout || ''}\n${resultado.stderr || ''}`;
+    return resultado.status === 1 && !/Comando desconocido/i.test(salida) && patron.test(salida) &&
+      estadoAntes() === antes;
+  };
+
+  comprueba('debe_rechazar_traversal_cuando_el_origen_no_es_un_id',
+    rechazaSinEscribir(
+      ['--from-spec', '../010', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica'],
+      /id|ruta|path|traversal|spec/i));
+  comprueba('debe_rechazar_ruta_absoluta_cuando_el_destino_no_es_un_id',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', 'C:\\fuera\\011', '--session', sesion, '--reason', 'rectifica'],
+      /id|ruta|path|absolut|spec/i));
+  comprueba('debe_rechazar_id_inexistente_cuando_no_resuelve_una_spec',
+    rechazaSinEscribir(
+      ['--from-spec', '099', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica'],
+      /no existe|resolver|spec|id/i));
+  comprueba('debe_rechazar_id_ambiguo_cuando_resuelve_varias_specs',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '012', '--session', sesion, '--reason', 'rectifica'],
+      /ambigu|múltiples|varias|resolver|spec/i));
+  comprueba('debe_rechazar_sesion_inexistente_antes_de_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', 'ausente1', '--reason', 'rectifica'],
+      /sesi[oó]n|session|evento/i));
+  comprueba('debe_exigir_match_exacto_cuando_otra_sesion_comparte_prefijo',
+    rechazaSinEscribir(
+      ['--from-spec', '015', '--to-spec', '016', '--session', sesion, '--reason', 'rectifica'],
+      /sesi[oó]n|session|evento|exact/i));
+  comprueba('debe_rechazar_origen_igual_a_destino_antes_de_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '010', '--session', sesion, '--reason', 'rectifica'],
+      /origen|destino|from|to|distint/i));
+  comprueba('debe_rechazar_motivo_vacio_antes_de_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', ''],
+      /motivo|reason|vac[ií]o|obligatori/i));
+  comprueba('debe_rechazar_bandera_usada_como_valor_sin_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', '--json'],
+      /reason|valor|requiere|argumento/i));
+  comprueba('debe_rechazar_crlf_en_el_motivo_antes_de_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'linea uno\r\nlinea dos'],
+      /motivo|reason|control|salto|cr|lf/i));
+  comprueba('debe_rechazar_caracteres_de_control_en_el_motivo_antes_de_escribir',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'control\u0007bell'],
+      /motivo|reason|control|car[aá]cter/i));
+  comprueba('debe_rechazar_motivo_que_supera_el_limite_en_bytes',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'ñ'.repeat(251)],
+      /500 bytes|motivo|reason|m[aá]ximo/i));
+  comprueba('debe_rechazar_sesion_con_caracteres_de_control',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', 'abc\ndef', '--reason', 'rectifica'],
+      /session|sesi[oó]n|ASCII|caracter/i));
+
+  const antesNul = estadoAntes();
+  let errorNul = null;
+  try {
+    ejecutaTraceCorrect(d,
+      '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'nul\u0000hostil');
+  } catch (error) {
+    errorNul = error;
+  }
+  comprueba('debe_rechazar_nul_en_la_frontera_de_proceso_sin_escribir',
+    errorNul?.code === 'ERR_INVALID_ARG_VALUE' && estadoAntes() === antesNul,
+    errorNul?.message || 'spawnSync aceptó un argumento con NUL');
+
+  const fuera = nuevoDestino();
+  const specFuera = join(fuera, '013-fuera');
+  mkdirSync(specFuera, { recursive: true });
+  writeFileSync(join(specFuera, 'execution-log.jsonl'),
+    `${JSON.stringify({ ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion })}\n`, 'utf8');
+  const enlaceSpec = join(d, 'docs', 'specs', '013-enlace');
+  symlinkSync(specFuera, enlaceSpec, process.platform === 'win32' ? 'junction' : 'dir');
+  comprueba('debe_rechazar_spec_que_escapa_mediante_symlink_o_junction',
+    rechazaSinEscribir(
+      ['--from-spec', '013', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica'],
+      /symlink|junction|enlace|escapa|fuera|ruta|spec/i));
+
+  const logFuera = join(fuera, 'origen.jsonl');
+  writeFileSync(logFuera,
+    `${JSON.stringify({ ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion })}\n`, 'utf8');
+  const specLogEnlace = join(d, 'docs', 'specs', '014-log-enlace');
+  mkdirSync(specLogEnlace, { recursive: true });
+  try {
+    symlinkSync(logFuera, join(specLogEnlace, 'execution-log.jsonl'), 'file');
+  } catch (error) {
+    if (error?.code !== 'EPERM') throw error;
+    // Windows sin Developer Mode no permite symlinks de fichero. Un hardlink tampoco puede
+    // aceptarse: append sobre él modificaría el sentinel externo con una ruta aparentemente local.
+    linkSync(logFuera, join(specLogEnlace, 'execution-log.jsonl'));
+  }
+  const sentinelLog = leer(logFuera);
+  comprueba('debe_rechazar_execution_log_enlazado_sin_tocar_el_sentinel_externo',
+    rechazaSinEscribir(
+      ['--from-spec', '014', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica'],
+      /symlink|junction|hardlink|enlace|escapa|fuera|ruta|log/i) && leer(logFuera) === sentinelLog);
+
+  preparaSpecDeTraza(d, '017-ts-invalido', [
+    { ts: '../../fuera', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  preparaSpecDeTraza(d, '018-ts-destino');
+  comprueba('debe_rechazar_timestamp_invalido_antes_de_derivar_la_bitacora',
+    rechazaSinEscribir(
+      ['--from-spec', '017', '--to-spec', '018', '--session', sesion, '--reason', 'rectifica'],
+      /timestamp|fecha|ISO|bit[aá]cora/i));
+
+  const logMalformado = preparaSpecDeTraza(d, '019-jsonl-roto', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  writeFileSync(logMalformado, `${leer(logMalformado)}{ roto }\n`, 'utf8');
+  preparaSpecDeTraza(d, '020-jsonl-destino');
+  comprueba('debe_rechazar_jsonl_malformado_sin_intentar_repararlo',
+    rechazaSinEscribir(
+      ['--from-spec', '019', '--to-spec', '020', '--session', sesion, '--reason', 'rectifica'],
+      /JSONL|inv[aá]lid|l[ií]nea/i));
+
+  const sessionsFuera = join(fuera, 'sessions');
+  mkdirSync(sessionsFuera, { recursive: true });
+  const sessionsDentro = join(d, 'docs', 'bitacora', 'sessions');
+  rmSync(sessionsDentro, { recursive: true, force: true });
+  symlinkSync(sessionsFuera, sessionsDentro, process.platform === 'win32' ? 'junction' : 'dir');
+  comprueba('debe_rechazar_bitacora_que_escapa_mediante_symlink_o_junction',
+    rechazaSinEscribir(
+      ['--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica'],
+      /symlink|junction|enlace|escapa|fuera|ruta|bit[aá]cora|session/i));
+
+  const dColgante = nuevoDestino();
+  sdd(dColgante, 'init');
+  preparaSpecDeTraza(dColgante, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  const destinoColgante = join(dColgante, 'docs', 'specs', '011-destino');
+  mkdirSync(destinoColgante, { recursive: true });
+  const objetivoColgante = join(fuera, 'destino-aun-no-existe.jsonl');
+  const enlaceColgante = join(destinoColgante, 'execution-log.jsonl');
+  let pruebaEnlaceColgante = true;
+  try { symlinkSync(objetivoColgante, enlaceColgante, 'file'); }
+  catch (error) {
+    if (error?.code === 'EPERM') pruebaEnlaceColgante = false;
+    else throw error;
+  }
+  if (pruebaEnlaceColgante) {
+    const salidaColgante = ejecutaTraceCorrect(dColgante,
+      '--from-spec', '010', '--to-spec', '011', '--session', sesion, '--reason', 'rectifica');
+    comprueba('debe_rechazar_symlink_colgante_antes_de_crear_el_destino_externo',
+      salidaColgante.status === 1 && !existsSync(objetivoColgante),
+      `${salidaColgante.stdout || ''}${salidaColgante.stderr || ''}`.slice(-200));
+  } else {
+    comprueba('symlink colgante de fichero no ejecutado sin privilegios Windows', true);
+  }
+}
+
+// instalacion_main_movil_y_tag_estable
+console.log('\ntrace-correct · contrato documental de main móvil y tag estable');
+{
+  const readme = leer(join(ORIGEN, 'README.md')) || '';
+  const guia = leer(join(ORIGEN, 'docs/guides/INSTALACION.md')) || '';
+  const comandoMovil = 'github:jechamo/Estructura_inicial_claude init';
+  const comandoEstable = 'github:jechamo/Estructura_inicial_claude#v0.6.0 init';
+  comprueba('debe_mostrar_main_sin_ref_como_opcion_movil_principal',
+    readme.includes(comandoMovil) && guia.includes(comandoMovil) &&
+    /última|main|móvil/i.test(readme) && /última|main|móvil/i.test(guia));
+  comprueba('debe_mantener_el_tag_como_opcion_estable_y_reproducible',
+    readme.includes(comandoEstable) && guia.includes(comandoEstable) &&
+    /estable|reproducible|inmutable/i.test(`${readme}\n${guia}`));
+}
+
+// release_rechaza_tag_existente_o_ci_rojo
+console.log('\nrelease · contrato inmutable y fail-closed');
+{
+  const ship = leer(join(ORIGEN, '.agents/skills/sdd-ship/SKILL.md')) || '';
+  comprueba('debe_prohibir_mover_o_forzar_un_tag_existente',
+    /no se mueve|no mover|inmutable/i.test(`${ship}\n${leer(join(ORIGEN, 'docs/specs/010-trazabilidad-release-latest/spec.md')) || ''}`) &&
+    /push --force|force/i.test(ship));
+  comprueba('debe_condicionar_tag_a_gates_y_ci_verdes',
+    /CI.*verde|gates.*verde/i.test(leer(join(ORIGEN, 'docs/specs/010-trazabilidad-release-latest/spec.md')) || ''));
 }
 
 // ─── 1 · Instalación limpia ──────────────────────────────────────────────────
@@ -1048,7 +1565,7 @@ gate_security_e_informe();
  * El equivalente de usabilidad: la matriz `UX-*` se exige igual que la de seguridad y el informe
  * bloquea `GO` por los mismos motivos. Si estos casos pasan en verde, toda la capa es decorativa.
  */
-function matriz_usabilidad_y_gate_a11y() {
+function matriz_usabilidad() {
   console.log('\n1 bis-b · matriz de usabilidad, informe y puerta de GO');
   const d = nuevoDestino();
   writeFileSync(join(d, 'package.json'), '{"name":"ux-fixture"}\n', 'utf8');
@@ -1141,8 +1658,9 @@ function matriz_usabilidad_y_gate_a11y() {
     checks: {
       sdd: { command: 'node scripts/check-sdd.mjs', required: true, speed: 'fast' },
       security: { command: 'node scripts/scan-secrets.mjs --json', required: true, speed: 'slow' },
+      a11y: { command: 'node tests/ux.test.mjs', required: false, speed: 'slow', enabled: true },
     },
-    unconfigured: ['lint', 'test', 'typecheck', 'build', 'a11y'],
+    unconfigured: ['lint', 'test', 'typecheck', 'build'],
   }, null, 2)}\n`, 'utf8');
   mkdirSync(join(d, 'docs/security/reports'), { recursive: true });
   writeFileSync(join(d, 'docs/security/reports/2026-08-12-902-usability-report.md'),
@@ -1187,10 +1705,53 @@ function matriz_usabilidad_y_gate_a11y() {
   const correr = () => spawnSync(process.execPath,
     ['scripts/check-sdd.mjs', '--strict', '--spec', '902'], { cwd: d, encoding: 'utf8' });
 
+  const sinGateA11y = correr();
+  comprueba('GO con UX-FORM aplicable sin gate a11y real bloquea la entrega',
+    sinGateA11y.status === 1 &&
+    /usabilidad\/gate/.test(sinGateA11y.stdout || '') &&
+    /\.sdd\/checks\.json/.test(sinGateA11y.stdout || '') &&
+    /a11y/.test(sinGateA11y.stdout || '') &&
+    /required[^\n]*true|obligatorio/i.test(sinGateA11y.stdout || '') &&
+    /configura|añade|define/i.test(sinGateA11y.stdout || ''),
+    (sinGateA11y.stdout || '').slice(-420));
+
+  writeFileSync(join(specDir, 'spec.md'),
+    spec.replace('| **Impacto de usabilidad** | aplicable |',
+      '| **Impacto de usabilidad** | sin-ui · fixture CLI sin interfaz renderizada |'), 'utf8');
+  const sinUi = correr();
+  comprueba('un sin-ui material no exige gate a11y',
+    sinUi.status === 0 && !/usabilidad\/gate/.test(sinUi.stdout || ''),
+    (sinUi.stdout || '').slice(-260));
+  writeFileSync(join(specDir, 'spec.md'), spec, 'utf8');
+
+  const rutasConControl = ['plan.md', 'tasks.md', 'test-plan.md', 'evidence.md'];
+  for (const ruta of rutasConControl) {
+    const absoluta = join(specDir, ruta);
+    writeFileSync(absoluta, (leer(absoluta) || '').replaceAll('UX-FORM-001', 'UX-COPY-001'), 'utf8');
+  }
+  writeFileSync(rutaInforme, (leer(rutaInforme) || '').replaceAll('UX-FORM-001', 'UX-COPY-001'), 'utf8');
+  const soloMicrocopy = correr();
+  comprueba('una spec aplicable solo de microcopy CLI no exige gate a11y',
+    soloMicrocopy.status === 0 && !/usabilidad\/gate/.test(soloMicrocopy.stdout || ''),
+    (soloMicrocopy.stdout || '').slice(-260));
+  writeFileSync(join(specDir, 'plan.md'), plan, 'utf8');
+  writeFileSync(join(specDir, 'tasks.md'), (leer(join(specDir, 'tasks.md')) || '')
+    .replaceAll('UX-COPY-001', 'UX-FORM-001'), 'utf8');
+  writeFileSync(join(specDir, 'test-plan.md'), (leer(join(specDir, 'test-plan.md')) || '')
+    .replaceAll('UX-COPY-001', 'UX-FORM-001'), 'utf8');
+  writeFileSync(join(specDir, 'evidence.md'), evidenciaValida, 'utf8');
+  writeFileSync(rutaInforme, informeUX(), 'utf8');
+
+  const checksConA11y = JSON.parse(leer(join(d, '.sdd/checks.json')) || '{}');
+  checksConA11y.checks.a11y = {
+    command: 'node tests/ux.test.mjs', required: true, speed: 'slow', enabled: true,
+  };
+  checksConA11y.unconfigured = (checksConA11y.unconfigured || []).filter((gate) => gate !== 'a11y');
+  writeFileSync(join(d, '.sdd/checks.json'), `${JSON.stringify(checksConA11y, null, 2)}\n`, 'utf8');
+
   const base = correr();
-  comprueba('la cadena completa de usabilidad pasa en verde', base.status === 0, (base.stdout || '').slice(-260));
-  comprueba('sin runner de a11y se avisa, pero no se bloquea la entrega',
-    /usabilidad\/gate/.test(base.stdout || '') && base.status === 0);
+  comprueba('la cadena completa de usabilidad pasa con gate a11y real',
+    base.status === 0, (base.stdout || '').slice(-260));
 
   const planValido = leer(join(specDir, 'plan.md')) || '';
   const rechazaPlan = (titulo, sustituir, por, patron) => {
@@ -1200,7 +1761,8 @@ function matriz_usabilidad_y_gate_a11y() {
     writeFileSync(join(specDir, 'plan.md'), planValido, 'utf8');
   };
   rechazaPlan('un ID de control de usabilidad mal formado bloquea',
-    'UX-FORM-001 | 3.3.1 AA', 'UX-1 | 3.3.1 AA', /usabilidad\/control|inválido/i);
+    'UX-FORM-001 | 3.3.1 AA', 'UX-1 | 3.3.1 AA',
+    /docs\/specs\/902-usability-report\/plan\.md[\s\S]*UX-1[\s\S]*UX-<A11Y\|FORM\|COPY\|PERF>-NNN[\s\S]*(?:corrige|sustituye)/i);
   rechazaPlan('un control de accesibilidad sin criterio WCAG bloquea',
     '| UX-FORM-001 | 3.3.1 AA |', '| UX-A11Y-001 | n/a |', /criterio WCAG|usabilidad\/matriz/i);
   rechazaPlan('un control aplicable sin test concreto bloquea',
@@ -1260,7 +1822,7 @@ function matriz_usabilidad_y_gate_a11y() {
     sinDeclarar.status === 1 && /Informe de usabilidad|usabilidad\/informe/i.test(sinDeclarar.stdout || ''));
   writeFileSync(join(specDir, 'evidence.md'), evidenciaValida, 'utf8');
 }
-matriz_usabilidad_y_gate_a11y();
+matriz_usabilidad();
 
 console.log('\n1 ter · evidencia declared-direct en un host sin hooks');
 {
@@ -1801,17 +2363,16 @@ console.log('\n4 quinquies · migración conservadora de documentación');
 
   rmSync(join(d, 'docs/specs/003-previa'), { recursive: true, force: true });
   rmSync(join(d, 'docs/specs/011-previa'), { recursive: true, force: true });
-  spawnSync('git', ['init', '-q', '.'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['add', '-A'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push'],
-    { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
-    'commit', '-q', '-m', 'adopta SDD'], { cwd: d, encoding: 'utf8' });
-  const base = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  gitFixture(d, 'init', '-q', '.');
+  gitFixture(d, 'add', '-A');
+  gitFixture(d, 'update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push');
+  const commitAdopcion = gitFixture(d, 'commit', '--no-verify', '-q', '-m', 'adopta SDD');
+  const base = gitFixture(d, 'rev-parse', 'HEAD').stdout.trim();
   const legado = spawnSync(process.execPath,
     ['scripts/check-sdd.mjs', '--docs-diff', '--base', base], { cwd: d, encoding: 'utf8' });
   comprueba('el primer PR brownfield queda N/A verificable antes del umbral documental',
-    legado.status === 0 && /legacy-pending|N\/A|spec 012/i.test(legado.stdout || ''));
+    legado.status === 0 && /legacy-pending|N\/A|spec 012/i.test(legado.stdout || ''),
+    `${commitAdopcion.stdout || ''}\n${commitAdopcion.stderr || ''}\n${legado.stdout || ''}\n${legado.stderr || ''}`.trim());
 
   mkdirSync(join(d, 'docs/specs/012-nueva'), { recursive: true });
   const cruzaUmbral = spawnSync(process.execPath,
@@ -2057,15 +2618,14 @@ console.log('\n5 bis · contrato documental y diff base-aware');
     generadoSinBuild.status === 0, `${generadoSinBuild.stdout}${generadoSinBuild.stderr}`.slice(-220));
 
   guardaContrato(contratoValido);
-  spawnSync('git', ['init', '-q', '.'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['add', '-A'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push'],
-    { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
-    'commit', '-q', '-m', 'baseline'], { cwd: d, encoding: 'utf8' });
-  const base = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: d, encoding: 'utf8' }).stdout.trim();
+  gitFixture(d, 'init', '-q', '.');
+  gitFixture(d, 'add', '-A');
+  gitFixture(d, 'update-index', '--chmod=+x', '.sdd/githooks/pre-commit', '.sdd/githooks/pre-push');
+  const commitBaselineDocs = gitFixture(d, 'commit', '--no-verify', '-q', '-m', 'baseline');
+  const base = gitFixture(d, 'rev-parse', 'HEAD').stdout.trim();
   comprueba('el fixture documental materializa un SHA base real',
-    /^[0-9a-f]{40,64}$/i.test(base), 'git rev-parse HEAD no devolvió un SHA');
+    commitBaselineDocs.status === 0 && /^[0-9a-f]{40,64}$/i.test(base),
+    `${commitBaselineDocs.stderr || ''} git rev-parse HEAD no devolvió un SHA`);
 
   guardaContrato({ schemaVersion: 1, mode: 'audit', documentSets: [] });
   const contratoSinAprobar = checkDocs('--docs-diff', '--base', base);
@@ -2079,16 +2639,15 @@ console.log('\n5 bis · contrato documental y diff base-aware');
   comprueba('docs-diff detecta fuente pública cambiada sin su artefacto',
     sinDocs.status === 1 && /DOC-PUBLIC|document|artefacto|diff|base/i.test(sinDocs.stdout || ''));
 
-  spawnSync('git', ['add', 'src/public.mjs', 'CHANGELOG.md'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
-    'commit', '-q', '-m', 'cambio de código'], { cwd: d, encoding: 'utf8' });
+  gitFixture(d, 'add', 'src/public.mjs', 'CHANGELOG.md');
+  const commitCodigo = gitFixture(d, 'commit', '--no-verify', '-q', '-m', 'cambio de código');
   writeFileSync(join(d, 'docs/guides/public.md'), '# API pública\n\nValor documentado: 2.\n', 'utf8');
-  spawnSync('git', ['add', 'docs/guides/public.md'], { cwd: d, encoding: 'utf8' });
-  spawnSync('git', ['-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
-    'commit', '-q', '-m', 'documenta el cambio'], { cwd: d, encoding: 'utf8' });
+  gitFixture(d, 'add', 'docs/guides/public.md');
+  const commitDocs = gitFixture(d, 'commit', '--no-verify', '-q', '-m', 'documenta el cambio');
   const mismoPr = checkDocs('--docs-diff', '--base', base);
   comprueba('código y documentación pueden vivir en commits distintos del mismo PR',
-    mismoPr.status === 0, `${mismoPr.stdout}${mismoPr.stderr}`.slice(-220));
+    commitCodigo.status === 0 && commitDocs.status === 0 && mismoPr.status === 0,
+    `${commitCodigo.stderr}${commitDocs.stderr}${mismoPr.stdout}${mismoPr.stderr}`.slice(-400));
 
   const baseInvalida = checkDocs('--docs-diff', '--base', 'f'.repeat(40));
   comprueba('docs-diff falla cerrado cuando no puede resolver el SHA base',

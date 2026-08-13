@@ -12,9 +12,10 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, mkdtempSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, mkdtempSync, symlinkSync, linkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { findActiveSpec } from '../.sdd/hooks/_lib.mjs';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -82,6 +83,176 @@ const preguntar = (prompt) => ({ session_id: SESION, cwd: ROOT, prompt });
 function agenteActivo(nombre) {
   mkdirSync(join(ROOT, '.sdd', 'state'), { recursive: true });
   writeFileSync(ESTADO, JSON.stringify(nombre ? [nombre] : []), 'utf8');
+}
+
+function proyectoTemporal(prefijo = 'sdd-hook-trace-') {
+  return mkdtempSync(join(tmpdir(), prefijo));
+}
+
+function escribeTareas(root, spec, contenido) {
+  const dir = join(root, 'docs', 'specs', spec);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'tasks.md'), contenido, 'utf8');
+  return dir;
+}
+
+function ejecutaHookEn(root, hook, argumento, payload, env = {}) {
+  return spawnSync(process.execPath, [join(ROOT, '.sdd', 'hooks', hook), ...(argumento ? [argumento] : [])], {
+    cwd: root,
+    input: JSON.stringify({ cwd: root, ...payload }),
+    encoding: 'utf8',
+    env: { ...process.env, ...env },
+  });
+}
+
+function lineasJson(ruta) {
+  if (!existsSync(ruta)) return [];
+  return readFileSync(ruta, 'utf8').split(/\r?\n/).filter(Boolean).map((linea) => JSON.parse(linea));
+}
+
+// spec_activa_respeta_estados
+console.log('\ntrazabilidad · detección determinista de spec activa');
+{
+  const plainPendiente = proyectoTemporal();
+  const boldPendiente = proyectoTemporal();
+  const plainEnCurso = proyectoTemporal();
+  const boldEnCurso = proyectoTemporal();
+  const estadosCerrados = proyectoTemporal();
+  const sinTareasReales = proyectoTemporal();
+  try {
+    escribeTareas(plainPendiente, '010-plain-pendiente', '### T-010-01\n- Estado: pendiente\n');
+    escribeTareas(boldPendiente, '010-bold-pendiente', '### T-010-01\n- **Estado:** pendiente\n');
+    escribeTareas(plainEnCurso, '010-plain-en-curso', '### T-010-01\n- Estado: en curso\n');
+    escribeTareas(boldEnCurso, '010-bold-en-curso', '### T-010-01\n- **Estado:** en curso\n');
+    escribeTareas(estadosCerrados, '010-hecha', '### T-010-01\n- **Estado:** hecho\n');
+    escribeTareas(estadosCerrados, '011-bloqueada', '### T-011-01\n- Estado: bloqueado\n');
+    escribeTareas(estadosCerrados, '012-cancelada', '### T-012-01\n- Estado: cancelado\n');
+    escribeTareas(sinTareasReales, '_TEMPLATE', '### T-000-01\n- Estado: pendiente\n');
+    escribeTareas(sinTareasReales, '010-sin-tareas', '# Tareas\n\n- **Estado:** pendiente\n');
+
+    const activaPlainPendiente = findActiveSpec(plainPendiente);
+    const activaBoldPendiente = findActiveSpec(boldPendiente);
+    const activaPlainEnCurso = findActiveSpec(plainEnCurso);
+    const activaBoldEnCurso = findActiveSpec(boldEnCurso);
+
+    comprueba('debe_reconocer_estado_plain_cuando_la_tarea_esta_pendiente',
+      activaPlainPendiente?.nombre, '010-plain-pendiente');
+    comprueba('debe_reconocer_estado_bold_cuando_la_tarea_esta_pendiente',
+      activaBoldPendiente?.nombre, '010-bold-pendiente');
+    comprueba('debe_reconocer_estado_plain_cuando_la_tarea_esta_en_curso',
+      activaPlainEnCurso?.nombre, '010-plain-en-curso');
+    comprueba('debe_contar_estado_bold_cuando_la_tarea_esta_en_curso',
+      activaBoldEnCurso?.enCurso, 1);
+    comprueba('debe_ignorar_estados_no_activos_cuando_no_hay_pendientes_ni_en_curso',
+      findActiveSpec(estadosCerrados), null);
+    comprueba('debe_ignorar_template_y_specs_sin_bloques_de_tarea',
+      findActiveSpec(sinTareasReales), null);
+  } finally {
+    for (const root of [plainPendiente, boldPendiente, plainEnCurso, boldEnCurso, estadosCerrados, sinTareasReales]) {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+}
+
+// spec_activa_respeta_directorio_configurado_sin_escapar
+console.log('\ntrazabilidad · directorio de specs configurable y confinado');
+{
+  const proyecto = proyectoTemporal();
+  const fuera = proyectoTemporal('sdd-hook-trace-outside-');
+  const specsPersonalizadas = join(proyecto, 'custom', 'specs');
+  const specPersonalizada = join(specsPersonalizadas, '010-personalizada');
+  const specFuera = join(fuera, '011-fuera');
+  try {
+    mkdirSync(specPersonalizada, { recursive: true });
+    writeFileSync(join(specPersonalizada, 'tasks.md'), '### T-010-01\n- Estado: pendiente\n', 'utf8');
+    mkdirSync(specFuera, { recursive: true });
+    writeFileSync(join(specFuera, 'tasks.md'), '### T-011-01\n- Estado: pendiente\n', 'utf8');
+
+    const configurada = ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start', {
+      session_id: 'custom01', agent_type: 'test-engineer',
+    }, { SDD_SPECS_DIR: 'custom/specs' });
+    const logConfigurado = join(specPersonalizada, 'execution-log.jsonl');
+    comprueba('debe_atribuir_al_directorio_relativo_configurado',
+      configurada.status === 0 && existsSync(logConfigurado) &&
+      lineasJson(logConfigurado).some((evento) => evento.sesion === 'custom01'), true);
+
+    const traversal = ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start', {
+      session_id: 'outside1', agent_type: 'test-engineer',
+    }, { SDD_SPECS_DIR: `../${fuera.split(/[\\/]/).at(-1)}` });
+    comprueba('debe_rechazar_override_que_escapa_sin_escribir_fuera_del_repo',
+      traversal.status === 0 && !existsSync(join(specFuera, 'execution-log.jsonl')), true);
+
+    mkdirSync(join(proyecto, 'docs'), { recursive: true });
+    symlinkSync(fuera, join(proyecto, 'docs', 'specs'), process.platform === 'win32' ? 'junction' : 'dir');
+    const canonicaEnlazada = ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start', {
+      session_id: 'outside2', agent_type: 'test-engineer',
+    }, { SDD_SPECS_DIR: '' });
+    comprueba('debe_rechazar_directorio_canonico_enlazado_sin_escribir_fuera_del_repo',
+      canonicaEnlazada.status === 0 && !existsSync(join(specFuera, 'execution-log.jsonl')), true);
+
+    rmSync(join(proyecto, 'docs', 'specs'), { recursive: true, force: true });
+    const specConLogEnlazado = escribeTareas(proyecto, '012-log-enlazado', '### T-012-01\n- Estado: pendiente\n');
+    const logFuera = join(fuera, 'sentinel.jsonl');
+    writeFileSync(logFuera, '{"sentinel":true}\n', 'utf8');
+    try { symlinkSync(logFuera, join(specConLogEnlazado, 'execution-log.jsonl'), 'file'); }
+    catch (error) {
+      if (error?.code !== 'EPERM') throw error;
+      linkSync(logFuera, join(specConLogEnlazado, 'execution-log.jsonl'));
+    }
+    const logAntes = readFileSync(logFuera, 'utf8');
+    const logEnlazado = ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start', {
+      session_id: 'outside3', agent_type: 'test-engineer',
+    });
+    const auditSeguro = join(proyecto, '.sdd', 'agent-audit.jsonl');
+    comprueba('debe_rechazar_execution_log_enlazado_y_degradar_a_auditoria_segura',
+      logEnlazado.status === 0 && readFileSync(logFuera, 'utf8') === logAntes &&
+      lineasJson(auditSeguro).some((evento) => evento.atribucion === 'ruta-spec-insegura'), true);
+  } finally {
+    rmSync(proyecto, { recursive: true, force: true });
+    rmSync(fuera, { recursive: true, force: true });
+  }
+}
+
+// spec_activa_ambigua_no_se_atribuye
+console.log('\ntrazabilidad · atribución inequívoca o auditoría general');
+{
+  const variasAbiertas = proyectoTemporal();
+  const ningunaAbierta = proyectoTemporal();
+  try {
+    const primera = escribeTareas(variasAbiertas, '010-primera', '### T-010-01\n- Estado: pendiente\n');
+    const segunda = escribeTareas(variasAbiertas, '011-segunda', '### T-011-01\n- **Estado:** en curso\n');
+    const ambigua = ejecutaHookEn(variasAbiertas, 'subagent-log.mjs', 'start', {
+      session_id: 'ambigua1',
+      agent_type: 'test-engineer',
+    });
+    const auditAmbiguo = join(variasAbiertas, '.sdd', 'agent-audit.jsonl');
+    const textoAmbiguo = existsSync(auditAmbiguo) ? readFileSync(auditAmbiguo, 'utf8') : '';
+
+    comprueba('debe_usar_agent_audit_cuando_hay_varias_specs_abiertas',
+      ambigua.status === 0 && existsSync(auditAmbiguo) &&
+      !existsSync(join(primera, 'execution-log.jsonl')) && !existsSync(join(segunda, 'execution-log.jsonl')),
+      true);
+    comprueba('debe_declarar_atribucion_ambigua_cuando_hay_varias_specs_abiertas',
+      /spec-activa-ambigua/.test(textoAmbiguo), true);
+
+    escribeTareas(ningunaAbierta, '010-cerrada', '### T-010-01\n- Estado: hecho\n');
+    escribeTareas(ningunaAbierta, '_TEMPLATE', '### T-000-01\n- Estado: pendiente\n');
+    mkdirSync(join(ningunaAbierta, 'docs', 'specs', '011-sin-tasks'), { recursive: true });
+    const sinActiva = ejecutaHookEn(ningunaAbierta, 'subagent-log.mjs', 'start', {
+      session_id: 'sinactiv',
+      agent_type: 'test-engineer',
+    });
+    const auditSinActiva = join(ningunaAbierta, '.sdd', 'agent-audit.jsonl');
+    const textoSinActiva = existsSync(auditSinActiva) ? readFileSync(auditSinActiva, 'utf8') : '';
+
+    comprueba('debe_usar_agent_audit_cuando_no_hay_spec_abierta',
+      sinActiva.status === 0 && existsSync(auditSinActiva), true);
+    comprueba('debe_declarar_sin_spec_activa_cuando_no_hay_candidatas',
+      /sin-spec-activa/.test(textoSinActiva), true);
+  } finally {
+    rmSync(variasAbiertas, { recursive: true, force: true });
+    rmSync(ningunaAbierta, { recursive: true, force: true });
+  }
 }
 
 // ─── guard-write: secretos y artefactos ──────────────────────────────────────
@@ -226,11 +397,14 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
   try {
     spawnSync('git', ['init', '-q', '.'], { cwd: proyecto, encoding: 'utf8' });
     mkdirSync(join(proyecto, '.sdd/state'), { recursive: true });
+    mkdirSync(join(proyecto, '.sdd/hooks'), { recursive: true });
     mkdirSync(join(proyecto, 'scripts'), { recursive: true });
     mkdirSync(join(proyecto, 'scripts/lib'), { recursive: true });
     writeFileSync(join(proyecto, '.gitignore'), '.sdd/state/\n', 'utf8');
     writeFileSync(join(proyecto, 'scripts/sdd-project.mjs'),
       readFileSync(join(process.cwd(), 'scripts/sdd-project.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, '.sdd/hooks/_lib.mjs'),
+      readFileSync(join(process.cwd(), '.sdd/hooks/_lib.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/docs-contract.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/docs-contract.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({

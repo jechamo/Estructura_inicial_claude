@@ -12,15 +12,20 @@
  *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
  *   node scripts/sdd-project.mjs docs-status [--json]
  *   node scripts/sdd-project.mjs approve-docs --approved-by <persona> [--json]
+ *   node scripts/sdd-project.mjs trace-correct --from-spec NNN --to-spec NNN --session <id> --reason <texto> [--json]
  *
  * Detectar no equivale a aprobar: `detect` nunca escribe. `configure` requiere la bandera
  * explícita y conserva cualquier comando ya definido por el proyecto.
  */
-import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync } from 'node:fs';
+import {
+  existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync,
+  appendFileSync, lstatSync, realpathSync, openSync, closeSync, unlinkSync, fstatSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { validateDocsConfig } from './lib/docs-contract.mjs';
+import { PATRONES_SECRETO } from '../.sdd/hooks/_lib.mjs';
 
 const ROOT = process.cwd();
 const argv = process.argv.slice(2);
@@ -67,6 +72,230 @@ const PRODUCT_FILES = [
 
 const leer = (ruta) => (existsSync(ruta) ? readFileSync(ruta, 'utf8') : null);
 const hash = (contenido) => createHash('sha256').update(contenido).digest('hex').slice(0, 16);
+
+function opcion(nombre) {
+  const indice = argv.indexOf(nombre);
+  return indice >= 0 ? argv[indice + 1] : null;
+}
+
+function validarArgumentosTraceCorrect() {
+  const conValor = new Set(['--from-spec', '--to-spec', '--session', '--reason']);
+  const sinValor = new Set(['--json']);
+  const vistos = new Set();
+  for (let i = indiceComando + 1; i < argv.length; i++) {
+    const token = argv[i];
+    if (sinValor.has(token)) {
+      if (vistos.has(token)) throw new Error(`Argumento duplicado: ${token}.`);
+      vistos.add(token);
+      continue;
+    }
+    if (!conValor.has(token)) throw new Error(`Argumento desconocido para trace-correct: ${token}.`);
+    if (vistos.has(token)) throw new Error(`Argumento duplicado: ${token}.`);
+    const valor = argv[i + 1];
+    if (valor === undefined || valor.startsWith('--')) throw new Error(`${token} requiere un valor.`);
+    vistos.add(token);
+    i += 1;
+  }
+  for (const obligatorio of conValor) if (!vistos.has(obligatorio))
+    throw new Error(`trace-correct requiere ${obligatorio}.`);
+}
+
+function validarRutaSinEnlaces(ruta, base = ROOT) {
+  const raiz = realpathSync(base);
+  const relativa = ruta.slice(base.length).replace(/^[\\/]+/, '').split(/[\\/]+/).filter(Boolean);
+  let actual = base;
+  for (const segmento of relativa) {
+    actual = join(actual, segmento);
+    let stat;
+    try { stat = lstatSync(actual); }
+    catch (error) {
+      if (error?.code === 'ENOENT') continue;
+      throw error;
+    }
+    if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink > 1))
+      throw new Error(`Ruta no permitida: contiene symlink, junction o hardlink (${actual}).`);
+    const real = realpathSync(actual);
+    const prefijo = `${raiz}${process.platform === 'win32' ? '\\' : '/'}`;
+    if (real !== raiz && !real.startsWith(prefijo))
+      throw new Error(`Ruta no permitida: escapa del proyecto (${actual}).`);
+  }
+}
+
+function resolverSpecPorId(valor, etiqueta) {
+  const id = String(valor || '');
+  if (!/^\d{3}$/.test(id))
+    throw new Error(`${etiqueta} debe ser un ID de spec de tres dígitos, no una ruta.`);
+  const specsDir = join(ROOT, 'docs', 'specs');
+  validarRutaSinEnlaces(specsDir);
+  const candidatas = nombres('docs/specs', (entrada) => entrada.isDirectory() && entrada.name.startsWith(`${id}-`));
+  if (!candidatas.length) throw new Error(`No existe una spec que resuelva el ID ${id}.`);
+  if (candidatas.length !== 1) throw new Error(`El ID ${id} es ambiguo: resuelve varias specs.`);
+  const nombre = candidatas[0];
+  if (!new RegExp(`^${id}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(nombre))
+    throw new Error(`La spec ${nombre} no usa un nombre canónico seguro.`);
+  const dir = join(specsDir, nombre);
+  validarRutaSinEnlaces(dir);
+  const log = join(dir, 'execution-log.jsonl');
+  validarRutaSinEnlaces(log);
+  return { id, nombre, dir, log };
+}
+
+function leerJsonlEstricto(ruta) {
+  return (leer(ruta) || '').split(/\r?\n/).filter(Boolean).map((linea, indice) => {
+    try { return JSON.parse(linea); }
+    catch { throw new Error(`${ruta}: línea JSONL inválida ${indice + 1}; no se modifica el log.`); }
+  });
+}
+
+function appendJsonlSeguro(ruta, evento) {
+  validarRutaSinEnlaces(ruta);
+  appendFileSync(ruta, `${JSON.stringify(evento)}\n`, 'utf8');
+}
+
+const TRACE_LOCK_WAIT = new Int32Array(new SharedArrayBuffer(4));
+
+/**
+ * Serializa el comando completo entre procesos. El lock es global porque dos correcciones
+ * distintas también pueden compartir logs o bitácora. `wx` aporta exclusión atómica; quien
+ * pierde la carrera espera, relee todo bajo el lock y converge mediante los IDs durables.
+ */
+function adquirirBloqueoTraceCorrect() {
+  const stateDir = join(ROOT, '.sdd', 'state');
+  validarRutaSinEnlaces(join(ROOT, '.sdd'));
+  validarRutaSinEnlaces(stateDir);
+  mkdirSync(stateDir, { recursive: true });
+  validarRutaSinEnlaces(stateDir);
+  const lockPath = join(stateDir, 'trace-correct.lock');
+  const requestedTimeout = Number(process.env.SDD_TRACE_LOCK_TIMEOUT_MS || 15_000);
+  const timeout = Number.isFinite(requestedTimeout) ? Math.min(15_000, Math.max(100, requestedTimeout)) : 15_000;
+  const deadline = Date.now() + timeout;
+
+  while (true) {
+    try {
+      const fd = openSync(lockPath, 'wx', 0o600);
+      const token = randomBytes(16).toString('hex');
+      try {
+        writeFileSync(fd, `${JSON.stringify({ pid: process.pid, token, createdAt: new Date().toISOString() })}\n`, 'utf8');
+        return { fd, lockPath, token, identity: fstatSync(fd) };
+      } catch (error) {
+        try { closeSync(fd); } catch { /* conservar el error original */ }
+        try { unlinkSync(lockPath); } catch { /* no ocultar el error original */ }
+        throw error;
+      }
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      validarRutaSinEnlaces(lockPath);
+      if (Date.now() >= deadline)
+        throw new Error(`trace-correct no pudo obtener el lock exclusivo en ${timeout} ms; no se escribió nada. Revisa manualmente ${lockPath} y no lo borres si otro proceso sigue activo.`);
+      Atomics.wait(TRACE_LOCK_WAIT, 0, 0, 25);
+    }
+  }
+}
+
+function liberarBloqueoTraceCorrect(lock) {
+  let pathname;
+  try {
+    const descriptor = fstatSync(lock.fd);
+    pathname = lstatSync(lock.lockPath);
+    const contenido = readFileSync(lock.lockPath, 'utf8');
+    if (pathname.isSymbolicLink() || pathname.nlink > 1 ||
+        descriptor.dev !== pathname.dev || descriptor.ino !== pathname.ino ||
+        descriptor.dev !== lock.identity.dev || descriptor.ino !== lock.identity.ino ||
+        !contenido.includes(lock.token))
+      throw new Error('El lock de trace-correct fue reemplazado o ya no pertenece a este proceso; no se elimina.');
+  } finally {
+    closeSync(lock.fd);
+  }
+  const actual = lstatSync(lock.lockPath);
+  if (actual.isSymbolicLink() || actual.nlink > 1 || actual.dev !== pathname.dev || actual.ino !== pathname.ino ||
+      !readFileSync(lock.lockPath, 'utf8').includes(lock.token))
+    throw new Error('El lock de trace-correct cambió durante la liberación; no se elimina.');
+  unlinkSync(lock.lockPath);
+}
+
+function corregirTraza() {
+  validarArgumentosTraceCorrect();
+  const from = resolverSpecPorId(opcion('--from-spec'), '--from-spec');
+  const to = resolverSpecPorId(opcion('--to-spec'), '--to-spec');
+  if (from.nombre === to.nombre) throw new Error('La spec de origen y la de destino deben ser distintas.');
+
+  const session = String(opcion('--session') || '');
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$/.test(session))
+    throw new Error('session debe usar 3-64 caracteres ASCII alfanuméricos, guion o guion bajo.');
+  const reason = String(opcion('--reason') || '').trim();
+  if (!reason) throw new Error('reason/motivo es obligatorio y no puede estar vacío.');
+  if (Buffer.byteLength(reason, 'utf8') > 500 || /[\u0000-\u001f\u007f]/.test(reason))
+    throw new Error('reason/motivo debe ocupar como máximo 500 bytes y no contener controles, CR, LF o NUL.');
+  if (PATRONES_SECRETO.some(({ re }) => re.test(reason)))
+    throw new Error('reason/motivo parece contener una credencial; usa una descripción sin secretos.');
+
+  const lock = adquirirBloqueoTraceCorrect();
+  try {
+
+  const sourceEvents = leerJsonlEstricto(from.log);
+  const destinationEvents = leerJsonlEstricto(to.log);
+  // Los hooks históricos usan `sesion`; el contrato nuevo expone `session`. La búsqueda acepta
+  // ambas claves con igualdad exacta para poder rectificar el historial sin reescribirlo.
+  const matched = sourceEvents.filter((event) =>
+    (event?.sesion === session || event?.session === session) &&
+    !['trace-correction', 'trace-attribution'].includes(event?.evento));
+  if (!matched.length) throw new Error('La sesión indicada no tiene eventos exactos en la spec de origen.');
+  const months = [...new Set(matched.map((event) => {
+    if (typeof event.ts !== 'string' || !/^\d{4}-\d{2}-\d{2}T/.test(event.ts) || Number.isNaN(Date.parse(event.ts)))
+      throw new Error('Un evento fuente no tiene timestamp ISO válido; no puede derivarse la bitácora mensual.');
+    return event.ts.slice(0, 7);
+  }))].sort();
+  const correctionId = `TRACE-${createHash('sha256')
+    .update(JSON.stringify({ from: from.nombre, to: to.nombre, session, reason, events: matched }))
+    .digest('hex').slice(0, 16)}`;
+  const baseEvent = {
+    correctionId, fromSpec: from.nombre, toSpec: to.nombre, session, reason,
+    eventsMatched: matched.length,
+  };
+  const hasCorrection = sourceEvents.some((event) =>
+    event?.evento === 'trace-correction' && event?.correctionId === correctionId);
+  const hasAttribution = destinationEvents.some((event) =>
+    event?.evento === 'trace-attribution' && event?.correctionId === correctionId);
+
+  const sessionsDir = join(ROOT, 'docs', 'bitacora', 'sessions');
+  validarRutaSinEnlaces(join(ROOT, 'docs', 'bitacora'));
+  validarRutaSinEnlaces(sessionsDir);
+  mkdirSync(sessionsDir, { recursive: true });
+  validarRutaSinEnlaces(sessionsDir);
+  const diaryPaths = months.map((month) => join(sessionsDir, `${month}.md`));
+  for (const path of diaryPaths) validarRutaSinEnlaces(path);
+  const reasonMarkdown = reason.replace(/\\/g, '\\\\').replace(/`/g, '\\`')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\|/g, '\\|');
+  const diaryLine = (month) => `- Rectificación \`${correctionId}\` · sesión \`${session}\` · ${from.nombre} → ${to.nombre} · ${reasonMarkdown} · eventos ${matched.length} · mes ${month}`;
+  const diaryMissing = diaryPaths.filter((path, index) =>
+    !(leer(path) || '').split(/\r?\n/).includes(diaryLine(months[index])));
+
+  const writes = [];
+  const now = new Date().toISOString();
+  if (!hasCorrection) {
+    appendJsonlSeguro(from.log, { ts: now, evento: 'trace-correction', ...baseEvent });
+    writes.push(`docs/specs/${from.nombre}/execution-log.jsonl`);
+  }
+  if (!hasAttribution) {
+    appendJsonlSeguro(to.log, { ts: now, evento: 'trace-attribution', ...baseEvent });
+    writes.push(`docs/specs/${to.nombre}/execution-log.jsonl`);
+  }
+  for (const path of diaryMissing) {
+    validarRutaSinEnlaces(path);
+    const month = path.slice(-10, -3);
+    if (!existsSync(path)) appendFileSync(path, `# Sesiones de agente — ${month}\n\n`, 'utf8');
+    appendFileSync(path, `${diaryLine(month)}\n`, 'utf8');
+    writes.push(`docs/bitacora/sessions/${month}.md`);
+  }
+
+  imprimir({
+    status: writes.length ? 'corrected' : 'already-corrected', fromSpec: from.nombre,
+    toSpec: to.nombre, session, eventsMatched: matched.length, writes,
+  });
+  } finally {
+    liberarBloqueoTraceCorrect(lock);
+  }
+}
 
 function packageManager() {
   if (existsSync(join(ROOT, 'pnpm-lock.yaml'))) return 'pnpm';
@@ -801,6 +1030,7 @@ try {
   else if (comando === 'approve-product') aprobarProducto();
   else if (comando === 'docs-status') imprimir(estadoDocumentacion());
   else if (comando === 'approve-docs') aprobarDocumentacion();
+  else if (comando === 'trace-correct') corregirTraza();
   else if (comando === 'new-spec') nuevaSpec();
   else if (comando === 'new-adr') nuevoAdr();
   else if (comando === 'verify') verificar();

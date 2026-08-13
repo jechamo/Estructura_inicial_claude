@@ -757,7 +757,9 @@ function informar(modo) {
       console.log(`Seguridad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoSeguridadActual.enforceFromSpec}.`);
     }
     if (contratoUsabilidadActual?.status === 'legacy-pending') {
-      console.log(`Usabilidad: legacy-pending; conserva la historia y exige el contrato nuevo desde la spec ${contratoUsabilidadActual.enforceFromSpec}. Las checklists están en docs/design/A11Y-CHECKLIST.md y docs/design/USABILITY-CHECKLIST.md.`);
+      console.log('Estado de usabilidad: adopción pendiente; la trazabilidad histórica se conserva sin reinterpretarla.');
+      console.log(`Umbral: WCAG 2.2 AA y Nielsen 10 serán obligatorios desde la spec ${contratoUsabilidadActual.enforceFromSpec}.`);
+      console.log('Acción: revisa docs/design/A11Y-CHECKLIST.md y docs/design/USABILITY-CHECKLIST.md, y ejecuta /sdd-intake antes de iniciar esa spec.');
     }
     if (contratoDocumentacionActual?.status === 'legacy-pending') {
       console.log(`Documentación: legacy-pending; conserva el contrato previo y exige desde la spec ${contratoDocumentacionActual.enforceFromSpec}.`);

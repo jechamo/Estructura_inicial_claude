@@ -7,6 +7,8 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+## [0.6.0] — 2026-08-13
+
 ### Added
 - **La usabilidad es exigible, no una recomendación.** Una spec declara `Impacto de usabilidad` y,
   cuando aplica, cada control `UX-<AREA>-NNN` —accesibilidad, formularios, microcopy y velocidad
@@ -20,6 +22,13 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   de estilos ahora llega la doctrina; antes solo llegaban las de arquitectura, TDD y seguridad.
 - **Informe de usabilidad parseable** en `docs/design/reports/`, con marcador
   `sdd-usability-report:v1`, estándares, alcance, conteos y veredicto.
+- **Documentación viva con `/docs-sync`.** Permite crear el baseline documental de un proyecto,
+  actualizar la documentación asociada a una spec, atender cambios editoriales sin ejecutar todo
+  el circuito SDD/TDD y auditar divergencias sin escribir.
+- **Contrato documental portable en `.sdd/docs.json`.** Cada proyecto declara sus fuentes,
+  artefactos, propietario y gate opcional sin instalar herramientas que el stack no utiliza.
+- **Trazabilidad rectificable sin reescritura.** `trace-correct` conserva los eventos originales,
+  añade la atribución correcta y deja constancia legible e idempotente en la bitácora.
 
 ### Changed
 - **`/sdd-verify` verifica la usabilidad.** Antes no la mencionaba en absoluto, igual que
@@ -29,29 +38,25 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   siempre y nada las validaba, así que podían entregarse vacías sin coste.
 - **El gate `a11y` se exige solo cuando hay interfaz**, y sin herramienta configurada se declara
   como control no ejecutado con riesgo y dueño. La plantilla no presupone ningún stack.
+- **La instalación sin `#ref` sigue la última `main`; el tag permanece reproducible.** La guía
+  distingue explícitamente la opción móvil de `#v0.6.0`, estable e inmutable.
+- **Los hooks ya no adivinan una spec activa.** Solo atribuyen cuando existe exactamente una spec
+  con tareas `pendiente` o `en curso`; cero o varias candidatas quedan auditadas con el motivo.
+- **La documentación aplicable forma parte de la misma entrega que el cambio.** Specs, tareas,
+  tests y evidencias enlazan `DOC-ID`; una corrección exclusivamente documental conserva el flujo
+  ligero.
 
 ### Fixed
 - **Un resultado verde con emoji se leía como rojo.** La comprobación de evidencia comparaba
   emojis sin el indicador `u`, y el sustituto alto de 🔴 coincide con el de 🟢. Como las plantillas
   usan 🟢, cualquier proyecto que siguiera la convención veía bloqueada su entrega sin motivo.
+- **Los estados Markdown en negrita ya no se interpretan como tareas abiertas.** El parser trabaja
+  por bloques `T-*`, reconoce estados plain/bold y evita atribuir sesiones nuevas a specs cerradas.
 
-## [0.6.0] — 2026-08-13
-
-### Added
-- **Documentación viva con `/docs-sync`.** Permite crear el baseline documental de un proyecto,
-  actualizar la documentación asociada a una spec, atender cambios editoriales sin ejecutar todo
-  el circuito SDD/TDD y auditar divergencias sin escribir.
-- **Contrato documental portable en `.sdd/docs.json`.** Cada proyecto declara sus fuentes,
-  artefactos, propietario y gate opcional para OpenAPI, Storybook, TypeDoc, enlaces u otras
-  superficies reales, sin instalar herramientas que el stack no utiliza.
+### Portability
 - **El circuito completo viaja con el repositorio.** Los 20 agentes y 26 skills quedan disponibles
   de forma coherente en seis superficies: Claude, VS Code/GitHub, Cursor, Codex,
   Gemini/Antigravity y el formato compartido de Agent Skills.
-
-### Changed
-- **La documentación aplicable forma parte de la misma entrega que el cambio.** Specs, tareas,
-  tests y evidencias enlazan `DOC-ID`; la entrega se bloquea si queda documentación oficial
-  pendiente, pero una corrección exclusivamente documental conserva un circuito ligero.
 - **Greenfield y brownfield conservan su contexto.** Los proyectos nuevos nacen en estado
   `bootstrap`; los existentes se actualizan como `legacy-pending` y mantienen íntegros sus README,
   guías, contratos y decisiones hasta aprobar su propio baseline.

@@ -6,7 +6,7 @@
 import { join } from 'node:path';
 import {
   readHookInput, projectRoot, inject, readIfExists,
-  findActiveSpec, lastDecisions, listDirs,
+  findActiveSpec, lastDecisions, listDirs, specsDirectory,
 } from './_lib.mjs';
 
 const input = await readHookInput();
@@ -39,7 +39,7 @@ if (!constitution) {
       '👉 Continúa con `/sdd-implement` o revisa con `/sdd-status`.',
     );
   } else {
-    const specs = listDirs(join(root, process.env.SDD_SPECS_DIR || 'docs/specs'));
+    const specs = listDirs(specsDirectory(root));
     lineas.push(
       specs.length
         ? `📋 Specs: ${specs.length} · ninguna con tareas pendientes.`

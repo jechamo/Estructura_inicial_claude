@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) |
-| **Estado** | borrador |
+| **Estado** | entregado |
 | **Fecha** | 2026-08-12 |
 | **Arquitectura vigente** | Plantilla y CLI sin dependencias de runtime · [`constitution.md`](../../architecture/constitution.md) |
 | **ADR relacionados** | — |
@@ -28,8 +28,8 @@ agentes. No se crea ningún agente ni ninguna skill: se amplían los existentes.
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | `scripts/check-sdd.mjs::impactoUsabilidad` | `scripts/test-install.mjs::usabilidad_versionada` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-02 | CA-02, CA-03 | `scripts/check-sdd.mjs` matriz `UX-*` | `scripts/test-install.mjs::matriz_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-03 | CA-04 | `docs/specs/_TEMPLATE/tasks.md` | `scripts/test-install.mjs::matriz_usabilidad` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | `docs/specs/_TEMPLATE/evidence.md` | `scripts/test-install.mjs::gate_a11y_e_informe` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-06, CA-07 | `scripts/check-sdd.mjs` puerta de `GO` | `scripts/test-install.mjs::gate_a11y_e_informe` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | `docs/specs/_TEMPLATE/evidence.md` | `scripts/test-install.mjs::matriz_usabilidad` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-06, CA-07 | `scripts/check-sdd.mjs` puerta de `GO` | `scripts/test-install.mjs::matriz_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-06 | CA-08 | `docs/design/A11Y-CHECKLIST.md` | `scripts/test-install.mjs::portabilidad_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-07 | CA-09 | `.cursor/rules/40-usability.mdc` | `scripts/test-install.mjs::portabilidad_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-08 | CA-10 | `.claude/agents/*.md` bloques HANDOFF | `scripts/check-sdd.mjs::handoff/ausente` |
@@ -208,7 +208,7 @@ navegador; esta spec no tiene superficie de autenticación.
 
 | Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
 |---|---|---|---|---|---|---|---|
-| SEC-PATH-001 | ASVS 5.0.0 V12 | A01:2025 | sí | La ruta del informe de usabilidad se valida sin `..` y directamente bajo `docs/design/reports/`, igual que la de seguridad | T-009-09 | `scripts/test-install.mjs::gate_a11y_e_informe` | `evidence.md#SEC-PATH-001` |
+| SEC-PATH-001 | ASVS 5.0.0 V12 | A01:2025 | sí | La ruta del informe de usabilidad se valida sin `..` y directamente bajo `docs/design/reports/`, igual que la de seguridad | T-009-09 | `scripts/test-install.mjs::matriz_usabilidad` | `evidence.md#SEC-PATH-001` |
 
 ### 9.2 · Auditoría prevista
 
@@ -228,7 +228,7 @@ Consultas críticas: ninguna. Caché e invalidación: no aplica.
 
 ## 10 bis. Documentación
 
-**Impacto heredado de `spec.md`**: `aplicable · DOC-009-01, DOC-009-02`.
+**Impacto heredado de `spec.md`**: `aplicable · DOC-TRACE, DOC-VCS, DOC-HOSTS`.
 
 | DOC-ID | Superficie | Aplica / motivo | Fuente de verdad | Artefacto | Generado / manual | Propietario | Tarea | Gate / comprobación | Evidencia |
 |---|---|---|---|---|---|---|---|---|---|
@@ -324,11 +324,11 @@ instalación que ya hubiera recibido `VERSION_MANIFIESTO` 6 conserva el bloque `
 
 | Campo | Valor |
 |---|---|
-| **Estado** | `pending` |
-| **Persona** | `<quién decide>` |
-| **Fecha** | `<YYYY-MM-DD>` |
+| **Estado** | `approved` |
+| **Persona** | usuario |
+| **Fecha** | 2026-08-13 |
 | **Alcance aprobado** | Doctrina, plantillas, skills, agentes, reglas de IDE, gates, validación, instalador y tests |
-| **Condiciones / riesgos aceptados** | `<ninguno / lista>` |
+| **Condiciones / riesgos aceptados** | aprobación retrospectiva explícita; gates materiales antes de publicar v0.6.0 |
 
 > `/sdd-tasks` no comienza con este gate pendiente, con discrepancias abiertas o con un gate de
 > producto, spec o diseño incompatible.

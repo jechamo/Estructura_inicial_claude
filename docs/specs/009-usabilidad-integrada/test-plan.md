@@ -20,9 +20,9 @@ pa11y, lighthouse): la plantilla no las empaqueta y no presupone stack.
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-02 | CA-02 | T-009-09 | Control aplicable sin trazabilidad completa bloquea | integración | `scripts/test-install.mjs::matriz_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-02 | CA-03 | T-009-09 | ID de control mal formado se rechaza | unitario | `scripts/test-install.mjs::matriz_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-03 | CA-04 | T-009-03 | Los controles llegan a las tareas | integración | `scripts/test-install.mjs::matriz_usabilidad` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | T-009-04 | El informe es parseable | contrato | `scripts/test-install.mjs::gate_a11y_e_informe` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-06 | T-009-09 | Un hallazgo ALTO impide la entrega | integración | `scripts/test-install.mjs::gate_a11y_e_informe` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-07 | T-009-09 | Un control no ejecutado impide la entrega | integración | `scripts/test-install.mjs::gate_a11y_e_informe` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | T-009-04 | El informe es parseable | contrato | `scripts/test-install.mjs::matriz_usabilidad` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-06 | T-009-09 | Un hallazgo ALTO impide la entrega | integración | `scripts/test-install.mjs::matriz_usabilidad` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-05 | CA-07 | T-009-09 | Un control no ejecutado impide la entrega | integración | `scripts/test-install.mjs::matriz_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-06 | CA-08 | T-009-01 | La doctrina se distribuye | E2E | `scripts/test-install.mjs::portabilidad_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-07 | CA-09 | T-009-06, T-009-07 | Las seis superficies reciben la doctrina | contrato | `scripts/test-install.mjs::portabilidad_usabilidad` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-08 | CA-10 | T-009-05 | El HANDOFF conserva la usabilidad | contrato | `scripts/test-install.mjs::portabilidad_usabilidad` |
@@ -71,10 +71,10 @@ Instalación real en directorio temporal.
 | Matriz con marcadores de plantilla sin sustituir | `matriz_usabilidad` — error | pendiente |
 | Dos controles con el mismo identificador | `matriz_usabilidad` — error de duplicado | pendiente |
 | `Aplica = no` sin justificación material | `matriz_usabilidad` — error | pendiente |
-| Informe con JSON malformado | `gate_a11y_e_informe` — error de esquema, no excepción | pendiente |
-| Informe fuera de `docs/design/reports/` o con `..` | `gate_a11y_e_informe` — rechazado | pendiente |
-| `verdict: PASS` con `openFindings.medium > 0` | `gate_a11y_e_informe` — rechazado | pendiente |
-| `controlsNotExecuted` no vacío con `GO` | `gate_a11y_e_informe` — bloquea | pendiente |
+| Informe con JSON malformado | `matriz_usabilidad` — error de esquema, no excepción | verde |
+| Informe fuera de `docs/design/reports/` o con `..` | `matriz_usabilidad` — rechazado | verde |
+| `verdict: PASS` con `openFindings.medium > 0` | `matriz_usabilidad` — rechazado | verde |
+| `controlsNotExecuted` no vacío con `GO` | `matriz_usabilidad` — bloquea | verde |
 | `design.md` con tabla §6 en blanco e impacto `aplicable` | `matriz_usabilidad` — error `diseno/tabla` | pendiente |
 | Proyecto sin runner de a11y | `test-hooks.mjs` — el sello no rompe | pendiente |
 | Superficie de agente incompleta tras editar seis hosts | `portabilidad_usabilidad` — `superficie/incompleta` | pendiente |
@@ -90,7 +90,7 @@ Instalación real en directorio temporal.
 
 | Control | ASVS | OWASP | Caso de abuso / condición negativa | Nivel | Test | Resultado seguro esperado |
 |---|---|---|---|---|---|---|
-| SEC-PATH-001 | ASVS 5.0.0 V12 | A01:2025 | Ruta de informe con `..` o fuera de `docs/design/reports/` | integración | `scripts/test-install.mjs::gate_a11y_e_informe` | Rechazo cerrado y observable; el informe no se acepta |
+| SEC-PATH-001 | ASVS 5.0.0 V12 | A01:2025 | Ruta de informe con `..` o fuera de `docs/design/reports/` | integración | `scripts/test-install.mjs::matriz_usabilidad` | Rechazo cerrado y observable; el informe no se acepta |
 
 ### 5.2 · Casos de uso hostil y accesibilidad
 
@@ -128,11 +128,11 @@ La documentación puede vivir en otro commit del mismo PR. `NO EJECUTADO` no equ
 
 | Módulo / ruta | Tier | Umbral | Alcanzado |
 |---|---|---:|---:|
-| `scripts/check-sdd.mjs` | CORE | 100 % de los caminos nuevos | |
-| `scripts/install.mjs` | CORE | 100 % de los caminos nuevos | |
-| `scripts/lib/manifiesto.mjs` | CORE | 100 % de los caminos nuevos | |
-| `scripts/sdd-project.mjs` | IMPORTANT | 80 % | |
-| `.sdd/hooks/guard-bash.mjs` | IMPORTANT | 80 % | |
+| `scripts/check-sdd.mjs` | CORE | 100 % de los caminos nuevos | caminos contractuales 009 ejercitados |
+| `scripts/install.mjs` | CORE | 100 % de los caminos nuevos | instalación/migración ejercitadas |
+| `scripts/lib/manifiesto.mjs` | CORE | 100 % de los caminos nuevos | paquete e instalación ejercitados |
+| `scripts/sdd-project.mjs` | IMPORTANT | 80 % | fast/slow/detect ejercitados |
+| `.sdd/hooks/guard-bash.mjs` | IMPORTANT | 80 % | suite de hooks verde |
 | `docs/**`, `.cursor/rules/**`, `.github/instructions/**` | INFRASTRUCTURE | excluido | — |
 
 Este repositorio no tiene runner de cobertura configurado: el umbral se verifica por **caminos

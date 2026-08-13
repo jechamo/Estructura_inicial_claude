@@ -17,11 +17,17 @@ pero la delegación real y los hooks dependen de lo que cada host expone. La mat
 
 ## Instalar
 
-Instálalo por proyecto desde una versión etiquetada. El mismo comando vale para greenfield y
-brownfield, y el destino puede no existir:
+Sin `#referencia`, npm usa la rama predeterminada del repositorio: aquí es `main`. Esta es la
+opción móvil para obtener inmediatamente la última versión disponible:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mode auto
+```
+
+Para CI, automatizaciones o una instalación reproducible, fija el tag estable e inmutable:
+
+```powershell
 npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto
 ```
 

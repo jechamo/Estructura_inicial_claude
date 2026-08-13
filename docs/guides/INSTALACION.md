@@ -5,10 +5,17 @@ versionado dentro del repositorio. Requiere Node 18 o posterior y no instala dep
 
 ## Comando recomendado
 
-Usa una versión etiquetada; evita instalar directamente desde una rama móvil:
+Sin `#referencia`, npm descarga la rama predeterminada (`main`). Úsalo cuando quieras la última
+versión disponible aunque cambie entre ejecuciones:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mode auto
+```
+
+Para CI, producción o una instalación reproducible, usa el tag estable e inmutable:
+
+```powershell
 npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto
 ```
 

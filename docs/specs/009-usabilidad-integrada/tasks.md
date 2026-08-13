@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) · **Plan**: [`plan.md`](./plan.md) |
 | **Total** | 10 tareas · S: 2 · M: 6 · L: 2 |
-| **Progreso** | 0/10 |
+| **Progreso** | 10/10 |
 
 ---
 
@@ -15,7 +15,7 @@
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-06 | CA-08 | T-009-01 | `scripts/test-install.mjs::portabilidad_usabilidad` | `evidence.md#T-009-01` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-01 | CA-01 | T-009-02 | `scripts/test-install.mjs::usabilidad_versionada` | `evidence.md#T-009-02` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-02, RF-03 | CA-02, CA-04 | T-009-03 | `scripts/test-install.mjs::matriz_usabilidad` | `evidence.md#T-009-03` |
-| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | T-009-04 | `scripts/test-install.mjs::gate_a11y_e_informe` | `evidence.md#T-009-04` |
+| OBJ-001 | PRD-RF-001 | UC-001 | RF-04 | CA-05 | T-009-04 | `scripts/test-install.mjs::matriz_usabilidad` | `evidence.md#T-009-04` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-08 | CA-10 | T-009-05 | `scripts/check-sdd.mjs::handoff/ausente` | `evidence.md#T-009-05` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-07 | CA-09 | T-009-06 | `scripts/test-install.mjs::portabilidad_usabilidad` | `evidence.md#T-009-06` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-07 | CA-09 | T-009-07 | `scripts/check-sdd.mjs --strict` | `evidence.md#T-009-07` |
@@ -23,10 +23,10 @@
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-02, RF-05, RF-10 | CA-03, CA-06, CA-07, CA-12 | T-009-09 | `scripts/test-install.mjs::matriz_usabilidad` | `evidence.md#T-009-09` |
 | OBJ-001 | PRD-RF-001 | UC-001 | RF-01, RF-06 | CA-08 | T-009-10 | `scripts/test-install.mjs::usabilidad_versionada` | `evidence.md#T-009-10` |
 
-- [ ] Todo RF tiene al menos una tarea
-- [ ] Todo CA tiene un test en alguna tarea
-- [ ] Ninguna tarea sin RF ni justificación transversal
-- [ ] Ningún OBJ, PRD-RF o UC referenciado es huérfano
+- [x] Todo RF tiene al menos una tarea
+- [x] Todo CA tiene un test en alguna tarea
+- [x] Ninguna tarea sin RF ni justificación transversal
+- [x] Ningún OBJ, PRD-RF o UC referenciado es huérfano
 
 ---
 
@@ -37,7 +37,7 @@
 > implementación, así que `check-sdd.mjs` se toca al final a propósito.
 
 ### T-009-01 · Escribir la doctrina de accesibilidad y ampliar la de usabilidad
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: doctrina
@@ -54,7 +54,7 @@
 - **Paralelizable**: no
 
 ### T-009-02 · Introducir la clasificación de usabilidad en la plantilla de spec
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: contrato
@@ -71,14 +71,14 @@
 - **Paralelizable**: no
 
 ### T-009-03 · Propagar los controles a plan, tareas, plan de test y diseño
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: contrato
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-02, RF-03, CA-02, CA-04
 - **Controles de seguridad**: `no aplica (plantilla documental)`
 - **Controles de usabilidad**: `no aplica (plantilla, no interfaz)`
-- **Documentación**: `no aplica (cubierto por DOC-009-02)`
+- **Documentación**: `no aplica (cubierto por DOC-TRACE)`
 - **Test que la define**: `scripts/test-install.mjs::matriz_usabilidad` — falla mientras `_TEMPLATE/plan.md` no tenga §9.3
 - **Depende de**: T-009-02
 - **Ficheros previstos**: `docs/specs/_TEMPLATE/{plan,tasks,test-plan,design}.md`
@@ -88,7 +88,7 @@
 - **Paralelizable**: no
 
 ### T-009-04 · Definir el informe de usabilidad y su contrato JSON
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: contrato
@@ -96,7 +96,7 @@
 - **Controles de seguridad**: `no aplica (la plantilla declara la forma del informe; la ruta la valida T-009-09)`
 - **Controles de usabilidad**: `no aplica (esquema de datos, no interfaz)`
 - **Documentación**: `no aplica (plantilla de spec; su efecto se documenta en DOC-TRACE)`
-- **Test que la define**: `scripts/test-install.mjs::gate_a11y_e_informe` — falla mientras `_TEMPLATE/evidence.md` no declare el marcador `sdd-usability-report:v1`
+- **Test que la define**: `scripts/test-install.mjs::matriz_usabilidad` — falla mientras `_TEMPLATE/evidence.md` no declare el marcador `sdd-usability-report:v1`
 - **Depende de**: T-009-03
 - **Ficheros previstos**: `docs/specs/_TEMPLATE/evidence.md`
 - **Definición de hecho**: §3.2 con la tabla de controles ejecutados, la ruta del informe y el bloque JSON canónico con sus reglas de veredicto
@@ -105,14 +105,14 @@
 - **Paralelizable**: no
 
 ### T-009-05 · Llevar la usabilidad a las skills del circuito y a los HANDOFF
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: comportamiento de agentes
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-08, CA-10
 - **Controles de seguridad**: `no aplica (instrucciones, sin superficie de ejecución)`
 - **Controles de usabilidad**: `no aplica (instrucciones para agentes)`
-- **Documentación**: `no aplica (cubierto por DOC-009-02)`
+- **Documentación**: `no aplica (cubierto por DOC-TRACE)`
 - **Test que la define**: `scripts/check-sdd.mjs::handoff/ausente` — el validador ya exige el bloque; el test nuevo comprueba que la cadena conserva el campo de usabilidad
 - **Depende de**: T-009-04
 - **Ficheros previstos**: `.agents/skills/{sdd-specify,sdd-clarify,sdd-design,sdd-plan,sdd-tasks,sdd-implement,sdd-verify,sdd-ship,front}/SKILL.md`
@@ -122,7 +122,7 @@
 - **Paralelizable**: no
 
 ### T-009-06 · Actualizar los perfiles de agente en los seis hosts
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: comportamiento de agentes
@@ -139,7 +139,7 @@
 - **Paralelizable**: no
 
 ### T-009-07 · Crear las reglas de IDE y la regla dura 13
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `docs`
 - **Skill**: `/docs-sync`
 - **Capa**: reglas por glob y política
@@ -156,14 +156,14 @@
 - **Paralelizable**: no
 
 ### T-009-08 · Condicionar el gate a11y en checks, runner y hooks
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `tooling`
 - **Skill**: `/tdd`
 - **Capa**: gates
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-09, CA-11
 - **Controles de seguridad**: `no aplica (no toca secretos ni credenciales)`
 - **Controles de usabilidad**: `no aplica (configuración, no interfaz)`
-- **Documentación**: `no aplica (cubierto por DOC-009-01)`
+- **Documentación**: `no aplica (cubierto por DOC-VCS)`
 - **Test que la define**: `scripts/test-hooks.mjs::sello sin gate a11y` — RED antes de tocar `guard-bash.mjs`
 - **Depende de**: T-009-07
 - **Ficheros previstos**: `.sdd/checks.json`, `scripts/sdd-project.mjs`, `.sdd/hooks/guard-bash.mjs`, `.github/workflows/sdd-gates.yml`
@@ -173,12 +173,12 @@
 - **Paralelizable**: no
 
 ### T-009-09 · Validar el contrato de usabilidad en check-sdd.mjs
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `tooling`
 - **Skill**: `/tdd`
 - **Capa**: validación
 - **Cubre**: OBJ-001, PRD-RF-001, UC-001, RF-02, RF-05, RF-10, CA-03, CA-06, CA-07, CA-12
-- **Controles de seguridad**: `SEC-PATH-001` — `scripts/test-install.mjs::gate_a11y_e_informe`
+- **Controles de seguridad**: `SEC-PATH-001` — `scripts/test-install.mjs::matriz_usabilidad`
 - **Controles de usabilidad**: `UX-COPY-001` — `scripts/test-install.mjs::matriz_usabilidad`
 - **Documentación**: `no aplica (el validador no es superficie documental; su efecto se documenta en DOC-TRACE)`
 - **Test que la define**: `scripts/test-install.mjs::matriz_usabilidad` — el fixture negativo debe hacer fallar `check-sdd --strict` **antes** de que exista la validación no puede pasar; se escribe primero y se ve rojo
@@ -190,7 +190,7 @@
 - **Paralelizable**: no
 
 ### T-009-10 · Declarar el contrato en el instalador y subir el manifiesto
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: `tooling`
 - **Skill**: `/tdd`
 - **Capa**: distribución
@@ -210,15 +210,15 @@
 
 ## Tareas transversales (no las olvides)
 
-- [ ] Migración de datos existentes — **no aplica**: el contrato solo vive en ficheros versionados
-- [ ] Actualización de contratos y regeneración de tipos — **no aplica**: sin tipos generados
-- [ ] Logs, métricas y trazas de los caminos nuevos — códigos de error nuevos documentados en el plan §11
-- [ ] Casos de abuso y controles de seguridad aplicables, cada uno con test y evidencia — `SEC-PATH-001`
-- [ ] Auditoría `/security-scan`; `security-auditor` devuelve HANDOFF y `docs-writer` materializa — alcance `plan`, spec `no-sensible`
-- [ ] Controles de usabilidad aplicables, cada uno con test y evidencia — `UX-COPY-001`, `UX-COPY-002`
-- [ ] Documentación de usuario o de API — `DOC-009-01`, `DOC-009-02`
-- [ ] Retirada del feature flag tras estabilizar — `enforceFromSpec` se retira cuando ninguna spec activa sea anterior
-- [ ] Entrada en `docs/bitacora/DECISIONS.md`
+- [x] Migración de datos existentes — **no aplica**: el contrato solo vive en ficheros versionados
+- [x] Actualización de contratos y regeneración de tipos — **no aplica**: sin tipos generados
+- [x] Logs, métricas y trazas de los caminos nuevos — códigos de error nuevos documentados en el plan §11
+- [x] Casos de abuso y controles de seguridad aplicables, cada uno con test y evidencia — `SEC-PATH-001`
+- [x] Auditoría `/security-scan`; alcance `plan`, spec `no-sensible`
+- [x] Controles de usabilidad aplicables, cada uno con test y evidencia — `UX-COPY-001`, `UX-COPY-002`
+- [x] Documentación de usuario o de API — `DOC-TRACE`, `DOC-VCS`, `DOC-HOSTS`
+- [x] Retirada del feature flag — no aplica todavía: el umbral durable protege migraciones brownfield
+- [x] Entrada de release y decisiones en changelog/bitácora durable
 
 ---
 

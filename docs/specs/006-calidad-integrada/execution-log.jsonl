@@ -1,0 +1,1 @@
+{"ts":"2026-08-13T14:19:21.889Z","evento":"trace-attribution","correctionId":"TRACE-98ae08f85bb3c310","fromSpec":"001-agentes-codex","toSpec":"006-calidad-integrada","session":"44424dcc","reason":"El parser histórico no reconocía estados Markdown en negrita y atribuyó la sesión a una spec cerrada.","eventsMatched":5}

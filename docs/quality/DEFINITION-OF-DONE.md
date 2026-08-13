@@ -83,6 +83,10 @@ voluntad, se olvida.
 | Contrato, enlaces, placeholders y co-cambio documental contra SHA base | `check-sdd --docs-diff --base <SHA>` + gates `docs:*` configurados | Sí |
 | Skills de terceros fijadas y con licencia verificada | `scripts/skills-sync.mjs --check` | Sí |
 
+En este repositorio de plantilla, el workflow de calidad ejecuta además `--strict` sobre las specs
+entregadas que definen contratos vivos, incluidas 009 y 010. La matriz portable valida Node
+18/20/22 en Windows y Linux; un tag se crea únicamente después de observar verde el SHA exacto.
+
 ---
 
 ## Regla final

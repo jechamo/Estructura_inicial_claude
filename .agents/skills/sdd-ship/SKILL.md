@@ -12,6 +12,9 @@ Agente responsable: `@release-manager`.
 **No ejecutas `git push`, ni abres PR, ni mergeas, ni etiquetas, ni despliegas** sin que el
 usuario lo pida explícitamente en este turno. Preparas todo y muestras los comandos.
 
+Un tag publicado es inmutable: nunca se mueve, borra ni vuelve a empujar con `--force`. Si el tag
+objetivo ya existe local o remotamente, la entrega se bloquea incluso cuando apunte al mismo SHA.
+
 ## Paso 1 — Gates
 
 Bloquea la entrega si queda un `DOC-ID` aplicable pendiente, un artefacto oficial sin evidencia o

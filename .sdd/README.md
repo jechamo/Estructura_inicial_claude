@@ -20,3 +20,21 @@ reescribir su propio registro, el registro no serviría como evidencia de nada.
 
 `verificacion: observed` significa que un hook del host vio el ciclo real del subagente.
 Es el único nivel que no depende de lo que el modelo afirme en el chat.
+
+## Atribución y rectificaciones
+
+Una spec solo está activa si un bloque real `### T-*` declara una tarea `pendiente` o
+`en curso`. Si no hay ninguna, el evento se registra aquí con `sin-spec-activa`; si hay varias,
+se registra con `spec-activa-ambigua` y la lista de candidatas. El hook nunca elige por orden.
+
+Si una versión anterior atribuyó una sesión a una spec incorrecta, no se borra ni reescribe el
+historial. Se añade una rectificación idempotente:
+
+```powershell
+node scripts/sdd-project.mjs trace-correct --from-spec 001 --to-spec 009 --session <id> --reason "motivo verificable"
+```
+
+El comando añade `trace-correction` al origen, `trace-attribution` al destino y una nota a la
+bitácora mensual. Solo acepta IDs `NNN`, valida la sesión y rechaza rutas, enlaces y entradas
+hostiles antes de escribir. Un lock efímero en `.sdd/state/` serializa procesos concurrentes:
+quien espera relee el resultado durable y no duplica ningún append.

@@ -59,6 +59,17 @@ Escribe en `docs/specs/NNN-slug/execution-log.jsonl`, o en `.sdd/agent-audit.jso
 spec activa. `guard-write.mjs` **impide que un agente reescriba esos ficheros**: si el propio
 agente pudiera editar su registro, el registro no serviría de nada.
 
+La selección se hace por bloques `### T-*`: una única spec con tareas `pendiente` o `en curso`
+recibe el evento. Con cero candidatas se declara `sin-spec-activa`; con varias,
+`spec-activa-ambigua`. `_TEMPLATE`, carpetas no canónicas y tareas ya hechas no participan.
+
+`SDD_SPECS_DIR` puede señalar una carpeta relativa personalizada. El resolver la confina al
+repositorio y descarta rutas absolutas, traversal y enlaces que escapen de la raíz.
+
+Una atribución histórica errónea se corrige de forma append-only con
+`node scripts/sdd-project.mjs trace-correct`; consulta [`.sdd/README.md`](../README.md) para el
+contrato y el ejemplo. Nunca edites un JSONL a mano.
+
 Donde el host no emita esos eventos, la trazabilidad degrada a `declared-direct` y hay que
 documentarlo. Eso es una limitación real, no un fallo de la plantilla.
 
