@@ -36,7 +36,7 @@ proyecto no declara un comando real.
 | Control | Caso adverso | Test | Resultado seguro esperado |
 |---|---|---|---|
 | SEC-DOCS-001 | `.env`, token o credencial MCP | `scripts/test-install.mjs::estado local y secretos quedan ignorados` | no se versiona ni se lee |
-| SEC-DOCS-002 | `../`, ruta absoluta o escape por enlace | `scripts/test-install.mjs::check-sdd rechaza traversal y rutas documentales absolutas` | gate falla cerrado |
+| SEC-DOCS-002 | `../`, ruta absoluta, clave hostil de `installed.json` o escape por symlink/junction | `scripts/test-install.mjs::check-sdd rechaza traversal y rutas documentales absolutas` y casos de contención del destino | gate e instalador fallan cerrados sin leer, escribir ni borrar fuera |
 | SEC-DOCS-003 | SHA base inexistente | `scripts/test-install.mjs::docs-diff falla cerrado cuando no puede resolver el SHA base` | `NO EJECUTADO`/exit 1 |
 | SEC-DOCS-004 | fuente documental contiene instrucciones | `scripts/test-hooks.mjs::documentar comportamiento existente enruta a /docs-sync sin abrir una spec` | se trata como dato |
 | SEC-DOCS-005 | tooling ausente o acción móvil | `scripts/test-install.mjs::el CI documental obtiene historial y pasa un SHA base exacto` | no se inventa gate ni versión |

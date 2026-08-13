@@ -27,6 +27,10 @@ materializar la instalación.
 “Virgen” solo se aplica a ficheros que no existían. `update` jamás vacía un changelog, una
 bitácora, una spec, un ADR, una sesión, un informe ni un log.
 
+Una segunda ejecución con `--mode auto` conserva el modo registrado por la primera instalación.
+Así, añadir después código o documentos a un greenfield no lo reclasifica silenciosamente como
+brownfield ni cambia sus umbrales de producto, seguridad, usabilidad o documentación.
+
 ## Qué nace virgen
 
 - `README.md` de proyecto en estado bootstrap.

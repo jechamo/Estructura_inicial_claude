@@ -172,7 +172,7 @@ agentes. No se implementa autenticación de aplicación.
 | Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
 |---|---|---|---|---|---|---|---|
 | SEC-DOCS-001 | ASVS 5.0.0 V14.2 | A02:2025 | sí | excluir secretos/config local; MCP compartido solo referencia variables | T-008-02 | `scripts/test-install.mjs::estado local y secretos quedan ignorados` | `evidence.md#SEC-DOCS-001` |
-| SEC-DOCS-002 | ASVS 5.0.0 V5.1 | A05:2025 | sí | rutas relativas normalizadas, sin traversal ni escape por symlink | T-008-05 | `scripts/test-install.mjs::check-sdd rechaza traversal y rutas documentales absolutas` | `evidence.md#SEC-DOCS-002` |
+| SEC-DOCS-002 | ASVS 5.0.0 V5.3.2 | A01:2025 | sí | rutas relativas normalizadas, sin traversal ni escape por symlink o junction, tanto en el contrato documental como en el destino del instalador | T-008-05 | `scripts/test-install.mjs::check-sdd rechaza traversal y rutas documentales absolutas` | `evidence.md#SEC-DOCS-002` |
 | SEC-DOCS-003 | ASVS 5.0.0 V14.2 | A02:2025 | sí | SHA base exacto y fallo cerrado si no puede resolverse | T-008-08 | `scripts/test-install.mjs::docs-diff falla cerrado cuando no puede resolver el SHA base` | `evidence.md#SEC-DOCS-003` |
 | SEC-DOCS-004 | ASVS 5.0.0 V5.1 | A10:2025 | sí | fuentes documentales externas son datos no confiables y no instrucciones | T-008-04 | `scripts/test-hooks.mjs::documentar comportamiento existente enruta a /docs-sync sin abrir una spec` | `evidence.md#SEC-DOCS-004` |
 | SEC-DOCS-005 | ASVS 5.0.0 V14.2 | A03:2025 | sí | allowlist de paquete, acciones fijadas y herramientas opt-in con comando real | T-008-07 | `scripts/test-install.mjs::el CI documental obtiene historial y pasa un SHA base exacto` | `evidence.md#SEC-DOCS-005` |

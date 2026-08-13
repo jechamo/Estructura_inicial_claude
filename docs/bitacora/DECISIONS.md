@@ -85,6 +85,10 @@
   excluyen secretos, credenciales, `.env`, configuración personal, confianza del IDE,
   `.sdd/state/`, conflictos, cachés y resultados temporales. Los MCP compartidos solo pueden
   referenciar variables de entorno, nunca contener credenciales.
+- **Contención del destino**: un repositorio brownfield y su `.sdd/installed.json` se consideran
+  entrada no confiable. El instalador rechaza rutas absolutas, traversal, bytes NUL y claves de
+  registro que escapen; tampoco sigue symlinks o junctions internos al leer, escribir o retirar
+  ficheros. La operación falla cerrada antes de afectar rutas externas al proyecto.
 - **Hooks Git**: los hooks se distribuyen como ficheros versionados, pero su activación es manual
   y opt-in. El instalador no ejecuta `git add`, commit, push, `chmod`, Husky ni cambia
   `core.hooksPath`; muestra los comandos y los ficheros que conviene revisar. Esta decisión

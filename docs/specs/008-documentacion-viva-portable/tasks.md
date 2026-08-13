@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) · **Plan**: [`plan.md`](./plan.md) |
 | **Total** | 9 tareas · S: 2 · M: 5 · L: 2 |
-| **Progreso** | 1/9 |
+| **Progreso** | 9/9 |
 
 ## Trazabilidad
 
@@ -36,7 +36,7 @@
 - **Paralelizable**: no
 
 ### T-008-02 · Declarar el contrato Git portable
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/sdd-implement`
 - **Capa**: infrastructure
@@ -53,7 +53,7 @@
 - **Paralelizable**: no
 
 ### T-008-03 · Extender las plantillas con trazabilidad DOC
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: docs
 - **Skill**: `/docs-sync`
 - **Capa**: docs
@@ -69,7 +69,7 @@
 - **Paralelizable**: [P] con T-008-04 sobre ficheros disjuntos
 
 ### T-008-04 · Crear `/docs-sync` y su enrutado ligero
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: docs
 - **Skill**: `/skill-creator`
 - **Capa**: interfaces
@@ -86,7 +86,7 @@
 - **Paralelizable**: [P] con T-008-03 sobre ficheros disjuntos
 
 ### T-008-05 · Implementar el gate documental universal
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/sdd-implement`
 - **Capa**: application
@@ -103,7 +103,7 @@
 - **Paralelizable**: no
 
 ### T-008-06 · Migrar el estado documental de forma conservadora
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/sdd-implement`
 - **Capa**: infrastructure
@@ -119,7 +119,7 @@
 - **Paralelizable**: no
 
 ### T-008-07 · Sincronizar agentes y adaptadores de seis hosts
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/sdd-implement`
 - **Capa**: interfaces
@@ -136,7 +136,7 @@
 - **Paralelizable**: [P] tras T-008-04 con propietario exclusivo de hosts
 
 ### T-008-08 · Hacer CI y pre-push base-aware
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: infra
 - **Skill**: `/sdd-implement`
 - **Capa**: infrastructure
@@ -153,7 +153,7 @@
 - **Paralelizable**: no
 
 ### T-008-09 · Actualizar documentación oficial y preparar la entrega
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: docs
 - **Skill**: `/docs-sync`
 - **Capa**: docs

@@ -8,7 +8,7 @@
  *   sdd global [--dry-run]
  */
 import {
-  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync,
+  readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync, lstatSync,
 } from 'node:fs';
 import { join, dirname, relative, resolve, sep, parse as parsePath } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,7 +58,6 @@ try {
 }
 
 const DESTINO = resolve(opciones.destino || process.cwd());
-const REGISTRO = join(DESTINO, '.sdd', 'installed.json');
 const VERSION = (() => {
   try { return JSON.parse(readFileSync(join(ORIGEN, 'package.json'), 'utf8')).version || '0.0.0'; }
   catch { return '0.0.0'; }
@@ -77,6 +76,42 @@ let contratoSeguridadActual = null;
 let contratoUsabilidadActual = null;
 let contratoDocumentacionActual = null;
 
+/**
+ * Resuelve una ruta controlada por la plantilla o por installed.json sin permitir que escape del
+ * destino. También rechaza symlinks y junctions ya existentes en cualquier prefijo interno: de
+ * otro modo una ruta textual segura como `.sdd/checks.json` podría terminar fuera del proyecto.
+ */
+function rutaDestinoSegura(ruta) {
+  if (typeof ruta !== 'string' || !ruta.trim() || ruta.includes('\0'))
+    throw new Error('Ruta de destino no válida: valor vacío o byte NUL');
+  const portable = ruta.replace(/\\/g, '/');
+  const segmentos = portable.split('/');
+  if (portable.startsWith('/') || /^[A-Za-z]:\//.test(portable) || portable.startsWith('//') ||
+      segmentos.some((segmento) => !segmento || segmento === '.' || segmento === '..'))
+    throw new Error(`Ruta fuera del destino o con traversal: ${ruta}`);
+
+  const absoluta = resolve(DESTINO, ...segmentos);
+  const prefijo = `${DESTINO}${sep}`;
+  if (absoluta !== DESTINO && !absoluta.startsWith(prefijo))
+    throw new Error(`Ruta fuera del destino: ${ruta}`);
+
+  let actual = DESTINO;
+  for (const segmento of segmentos) {
+    actual = join(actual, segmento);
+    if (existsSync(actual) && lstatSync(actual).isSymbolicLink())
+      throw new Error(`Enlace simbólico o junction no permitido dentro del destino: ${ruta}`);
+  }
+  return absoluta;
+}
+
+function validarRutasRegistro(registro) {
+  for (const grupo of ['files', 'ficheros']) {
+    const entradas = registro?.[grupo];
+    if (!entradas || typeof entradas !== 'object' || Array.isArray(entradas)) continue;
+    for (const ruta of Object.keys(entradas)) rutaDestinoSegura(ruta);
+  }
+}
+
 function listar(dir, base = dir, out = []) {
   if (!existsSync(dir)) return out;
   for (const entrada of readdirSync(dir, { withFileTypes: true })) {
@@ -91,8 +126,10 @@ function listar(dir, base = dir, out = []) {
 function escribir(ruta, contenido) {
   escritos.push(ruta);
   if (opciones.dry) return;
-  const absoluta = join(DESTINO, ruta);
+  let absoluta = rutaDestinoSegura(ruta);
   mkdirSync(dirname(absoluta), { recursive: true });
+  // Repite la comprobación después de crear prefijos para no confiar en el estado previo.
+  absoluta = rutaDestinoSegura(ruta);
   writeFileSync(absoluta, contenido, 'utf8');
 }
 
@@ -182,7 +219,7 @@ function tomlPareceValido(contenido) {
 
 function fusionarSemillas(registroNuevo) {
   for (const [ruta, semilla] of Object.entries(SEMILLAS)) {
-    const actual = leer(join(DESTINO, ruta));
+    const actual = leer(rutaDestinoSegura(ruta));
     if (ruta === '.sdd/docs.json' && actual !== null) {
       try {
         JSON.parse(actual);
@@ -211,7 +248,7 @@ function fusionarSemillas(registroNuevo) {
 
 function fusionarGitignore(registroNuevo) {
   const ruta = '.gitignore';
-  const actual = leer(join(DESTINO, ruta));
+  const actual = leer(rutaDestinoSegura(ruta));
   const faltan = APENDICE_GITIGNORE.lineas.filter(
     (linea) => !(actual || '').split(/\r?\n/).some((x) => x.trim() === linea),
   );
@@ -229,7 +266,7 @@ function fusionarGitignore(registroNuevo) {
 
 /** Devuelve el primer ID de spec que no pertenece a la historia previa del destino. */
 function siguienteSpec() {
-  const dir = join(DESTINO, 'docs', 'specs');
+  const dir = rutaDestinoSegura('docs/specs');
   if (!existsSync(dir)) return '001';
   const ids = readdirSync(dir, { withFileTypes: true })
     .filter((entrada) => entrada.isDirectory())
@@ -292,7 +329,7 @@ function contratoDocumentacion(anterior, modo) {
  */
 function migrarChecksSeguridad(registroNuevo) {
   const ruta = '.sdd/checks.json';
-  const actual = leer(join(DESTINO, ruta));
+  const actual = leer(rutaDestinoSegura(ruta));
   if (actual === null) return;
   let checks;
   try {
@@ -321,7 +358,7 @@ function migrarChecksSeguridad(registroNuevo) {
  */
 function migrarChecksUsabilidad(registroNuevo) {
   const ruta = '.sdd/checks.json';
-  const actual = leer(join(DESTINO, ruta));
+  const actual = leer(rutaDestinoSegura(ruta));
   if (actual === null) return;
   let checks;
   try {
@@ -347,7 +384,7 @@ function migrarChecksUsabilidad(registroNuevo) {
 /** Conserva gates docs/docs:* reales y solo mantiene `docs` pendiente si no existe ninguno. */
 function migrarChecksDocumentacion(registroNuevo) {
   const ruta = '.sdd/checks.json';
-  const actual = leer(join(DESTINO, ruta));
+  const actual = leer(rutaDestinoSegura(ruta));
   if (actual === null) return;
   let checks;
   try {
@@ -381,7 +418,7 @@ function migrarRutasRetiradas(registroNuevo, previos) {
   for (const ruta of RUTAS_RETIRADAS) {
     const previo = previos[ruta];
     if (!previo) continue;
-    const absoluta = join(DESTINO, ruta);
+    const absoluta = rutaDestinoSegura(ruta);
     const actual = leer(absoluta);
     if (actual === null) {
       delete registroNuevo[ruta];
@@ -399,7 +436,8 @@ function migrarRutasRetiradas(registroNuevo, previos) {
 }
 
 function cargarRegistro() {
-  try { return JSON.parse(leer(REGISTRO) || '{}'); }
+  const contenido = leer(rutaDestinoSegura('.sdd/installed.json'));
+  try { return JSON.parse(contenido || '{}'); }
   catch { return {}; }
 }
 
@@ -453,7 +491,7 @@ function instalarMcp(registroNuevo) {
       secciones.push('');
     }
     const ruta = '.codex/config.toml';
-    const actual = leer(join(DESTINO, ruta)) || '';
+    const actual = leer(rutaDestinoSegura(ruta)) || '';
     const inicio = '# sdd:mcp:start';
     const fin = '# sdd:mcp:end';
     const bloque = `${inicio}\n${secciones.join('\n').trim()}\n${fin}`;
@@ -474,7 +512,7 @@ function instalarMcp(registroNuevo) {
 }
 
 function instalarFichero(ruta, contenido, registroNuevo, previos) {
-  const absoluta = join(DESTINO, ruta);
+  const absoluta = rutaDestinoSegura(ruta);
   const actual = leer(absoluta);
   const previo = previos[ruta];
 
@@ -528,11 +566,14 @@ function instalarProyecto() {
   if (DESTINO === resolve(homedir()))
     throw new Error('No puedes instalar la plantilla directamente sobre el directorio personal.');
   const anterior = cargarRegistro();
+  validarRutasRegistro(anterior);
   const previos = anterior.files || Object.fromEntries(
     Object.entries(anterior.ficheros || {}).map(([ruta, h]) => [ruta, { hash: h, policy: 'legacy' }]),
   );
   const registroNuevo = { ...previos };
-  const modo = opciones.comando === 'update' ? (anterior.mode || 'brownfield') : detectarModo();
+  const modo = anterior.mode && opciones.modo === 'auto'
+    ? anterior.mode
+    : opciones.comando === 'update' ? (anterior.mode || 'brownfield') : detectarModo();
   const product = anterior.product || {
     schemaVersion: 1,
     status: opciones.comando === 'update' && anterior.version
@@ -567,13 +608,15 @@ function instalarProyecto() {
 
   for (const dir of DIRECTORIOS_VIRGENES) {
     const gitkeep = `${dir}/.gitkeep`;
-    if (!existsSync(join(DESTINO, gitkeep))) escribir(gitkeep, '');
+    if (!existsSync(rutaDestinoSegura(gitkeep))) escribir(gitkeep, '');
   }
 
   if (!opciones.dry) {
-    mkdirSync(dirname(REGISTRO), { recursive: true });
+    let registroSeguro = rutaDestinoSegura('.sdd/installed.json');
+    mkdirSync(dirname(registroSeguro), { recursive: true });
+    registroSeguro = rutaDestinoSegura('.sdd/installed.json');
     for (const [ruta, meta] of Object.entries(registroNuevo)) {
-      const actual = leer(join(DESTINO, ruta));
+      const actual = leer(rutaDestinoSegura(ruta));
       if (actual !== null) meta.hash = hash(actual);
       if (ruta in BLOQUES_GESTIONADOS) meta.policy = 'managed-block';
       else if (JSON_FUSIONABLES.includes(ruta)) meta.policy = 'json-merge';
@@ -601,7 +644,7 @@ function instalarProyecto() {
     };
     if (anterior.updatedAt && sinFecha(anterior) === sinFecha(siguiente))
       siguiente.updatedAt = anterior.updatedAt;
-    writeFileSync(REGISTRO, `${JSON.stringify(siguiente, null, 2)}\n`, 'utf8');
+    writeFileSync(registroSeguro, `${JSON.stringify(siguiente, null, 2)}\n`, 'utf8');
   }
 
   informar(modo);
@@ -610,6 +653,7 @@ function instalarProyecto() {
 
 function comprobar() {
   const registro = cargarRegistro();
+  validarRutasRegistro(registro);
   if (!registro.version) {
     console.log('Este proyecto no tiene la estructura SDD instalada.');
     console.log('  → sdd init [directorio] --mode auto');
@@ -618,7 +662,7 @@ function comprobar() {
   const cambios = [];
   const ausentes = [];
   for (const [ruta, meta] of Object.entries(registro.files || {})) {
-    const actual = leer(join(DESTINO, ruta));
+    const actual = leer(rutaDestinoSegura(ruta));
     if (actual === null) ausentes.push(ruta);
     else if (hash(actual) !== meta.hash) cambios.push(ruta);
   }

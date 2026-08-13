@@ -1536,6 +1536,35 @@ console.log('\n2 bis · destino explícito y modos');
   comprueba('dry-run con destino explícito no crea el directorio', dry.status === 0 && !existsSync(seco));
 }
 
+console.log('\n2 bis bis · contención del destino');
+{
+  const base = nuevoDestino();
+  const destino = join(base, 'proyecto-con-enlace');
+  const fuera = join(base, 'fuera-del-proyecto');
+  mkdirSync(destino, { recursive: true });
+  mkdirSync(fuera, { recursive: true });
+  symlinkSync(fuera, join(destino, '.sdd'), process.platform === 'win32' ? 'junction' : 'dir');
+
+  const enlazado = sddDesde(ORIGEN, 'init', destino, '--mode', 'brownfield');
+  comprueba('el instalador rechaza un symlink o junction dentro del destino',
+    enlazado.status !== 0 && !existsSync(join(fuera, 'installed.json')) &&
+    /enlace|symlink|junction/i.test(`${enlazado.stdout}\n${enlazado.stderr}`),
+    `${enlazado.stdout}\n${enlazado.stderr}`.slice(-240));
+
+  const manipulado = nuevoDestino();
+  mkdirSync(join(manipulado, '.sdd'), { recursive: true });
+  writeFileSync(join(manipulado, '.sdd/installed.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    version: '0.5.0',
+    mode: 'brownfield',
+    files: { '../fuera.md': { hash: '0123456789abcdef', policy: 'managed' } },
+  }, null, 2)}\n`, 'utf8');
+  const registroHostil = sddDesde(ORIGEN, 'update', manipulado);
+  comprueba('el instalador rechaza rutas manipuladas en installed.json antes de usarlas',
+    registroHostil.status !== 0 && /ruta|fuera|traversal/i.test(`${registroHostil.stdout}\n${registroHostil.stderr}`),
+    `${registroHostil.stdout}\n${registroHostil.stderr}`.slice(-240));
+}
+
 // ─── 2 ter · MCP opt-in, selectivo y fijado ──────────────────────────────────
 console.log('\n2 ter · MCP explícito');
 {

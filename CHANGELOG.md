@@ -35,7 +35,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   emojis sin el indicador `u`, y el sustituto alto de 🔴 coincide con el de 🟢. Como las plantillas
   usan 🟢, cualquier proyecto que siguiera la convención veía bloqueada su entrega sin motivo.
 
-## [0.6.0] — 2026-08-11
+## [0.6.0] — 2026-08-13
 
 ### Added
 - **Documentación viva con `/docs-sync`.** Permite crear el baseline documental de un proyecto,
@@ -67,6 +67,8 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 - Las rutas del contrato documental se validan para impedir traversal, destinos absolutos y
   enlaces fuera del repositorio; los artefactos oficiales también se comprueban para evitar
   secretos, placeholders y referencias rotas antes de la entrega.
+- El instalador rechaza rutas hostiles de `.sdd/installed.json` y cualquier symlink o junction
+  dentro del destino antes de leer, escribir o retirar artefactos gestionados.
 
 ## [0.5.0] — 2026-08-11
 
