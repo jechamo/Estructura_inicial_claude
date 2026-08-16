@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "spec-design",
+  "configuration": "candidate-011",
+  "prompt": "Prepara una spec nueva para recuperación de contraseña y su fase de diseño sin rellenar requisitos ni UI.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-specify/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 9489,
+      "sha256": "e8b7c863422ab35edecf77c45cc357934cce1c49b3723c8ddc3918e0ac9e5123"
+    },
+    {
+      "path": ".agents/skills/sdd-design/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 2206,
+      "sha256": "930d5e137e1ff26122b93ec064912ea5913789ef5d231318313fd1ad9015bd1c"
+    }
+  ],
+  "commands": [
+    {
+      "label": "new-spec positiva",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "new-spec",
+        "recuperacion-contrasena",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 176,
+      "stdout": "{\"created\":true,\"dryRun\":false,\"spec\":\"001-recuperacion-contrasena\",\"path\":\"docs/specs/001-recuperacion-contrasena\",\"productStatus\":\"approved\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [
+          "docs/specs/001-recuperacion-contrasena/clarifications.md",
+          "docs/specs/001-recuperacion-contrasena/spec.md"
+        ],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "scaffold design positivo",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "scaffold",
+        "--spec",
+        "001",
+        "--phase",
+        "design",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 182,
+      "stdout": "{\"schemaVersion\":1,\"spec\":\"001-recuperacion-contrasena\",\"phase\":\"design\",\"dryRun\":false,\"created\":true,\"files\":[\"docs/specs/001-recuperacion-contrasena/design.md\"],\"decisions\":\"pending-human-input\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [
+          "docs/specs/001-recuperacion-contrasena/design.md"
+        ],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "scaffold design rechaza overwrite",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "scaffold",
+        "--spec",
+        "001",
+        "--phase",
+        "design",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 1,
+      "signal": null,
+      "durationMs": 175,
+      "stdout": "",
+      "stderr": "Scaffold conservador: ya existe docs/specs/001-recuperacion-contrasena/design.md; no se sobrescribe.\n",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": true,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": true
+  }
+}

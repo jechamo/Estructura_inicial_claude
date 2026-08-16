@@ -169,6 +169,12 @@ Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y rec
 en `conflicts`. Las semillas de estado virgen pasan a ser propiedad del proyecto desde su creación
 y nunca se reinician.
 
+Desde la candidata `0.7.0`, la instalación añade `.sdd/generators.json` vacío y los comandos
+deterministas `status`, `scaffold`, `trace-status` y `generate`. El registro brownfield se conserva
+íntegro y un JSON inválido recibe una propuesta en `.sdd/conflicts/`; nunca se activa un generador
+ni se instala una dependencia por detección. El runner limita el tiempo y confina las rutas
+declaradas, pero el programa que una persona aprueba sigue ejecutándose con sus permisos.
+
 ## Capa global opcional
 
 `global` instala perfiles y skills para descubrirlos fuera de proyectos preparados, pero no es

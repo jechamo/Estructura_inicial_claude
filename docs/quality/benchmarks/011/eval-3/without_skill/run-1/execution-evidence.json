@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "spec-design",
+  "configuration": "v0.6.0",
+  "prompt": "Prepara una spec nueva para recuperación de contraseña y su fase de diseño sin rellenar requisitos ni UI.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-specify/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 9361,
+      "sha256": "d2a2756b3584fcb581d1b7c74ab4e241530bf8cbe530210c96c4374dbbba52a3"
+    },
+    {
+      "path": ".agents/skills/sdd-design/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 11078,
+      "sha256": "a10bcce34df0ec20aef5812d34707315a318951d481aad6530a5e3bc1b63ea2f"
+    }
+  ],
+  "commands": [
+    {
+      "label": "new-spec baseline",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "new-spec",
+        "recuperacion-contrasena",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 172,
+      "stdout": "{\"created\":true,\"dryRun\":false,\"spec\":\"001-recuperacion-contrasena\",\"path\":\"docs/specs/001-recuperacion-contrasena\",\"productStatus\":\"approved\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [
+          "docs/specs/001-recuperacion-contrasena/clarifications.md",
+          "docs/specs/001-recuperacion-contrasena/spec.md"
+        ],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [
+    "Instanciar design.md desde _TEMPLATE (operación manual pedida por la skill v0.6.0)."
+  ],
+  "artifactChecks": {
+    "spec": true,
+    "design": true,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": true
+  }
+}

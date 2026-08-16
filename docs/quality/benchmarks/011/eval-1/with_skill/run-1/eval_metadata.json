@@ -1,0 +1,7 @@
+{
+  "eval_id": 1,
+  "eval_name": "status",
+  "configuration": "candidate-011",
+  "run_number": 1,
+  "prompt": "Explica el estado del proyecto, specs abiertas, tareas y siguiente paso sin modificar nada."
+}

@@ -1,0 +1,60 @@
+{
+  "skill_name": "sdd-deterministic-workflows",
+  "evals": [
+    {
+      "id": 1,
+      "name": "status",
+      "prompt": "Explica el estado del proyecto, specs abiertas, tareas y siguiente paso sin modificar nada.",
+      "expected_output": "Snapshot correcto, ambigüedad honesta y siguiente skill sin inventar.",
+      "expectations": [
+        "No modifica el repositorio al consultar el estado.",
+        "Distingue cero, una o varias specs abiertas sin elegir de forma arbitraria.",
+        "Expone tareas y siguiente paso a partir de hechos verificables."
+      ]
+    },
+    {
+      "id": 2,
+      "name": "adr",
+      "prompt": "Prepara el esqueleto para documentar la decisión de usar un registro opt-in de generadores deterministas, sin shell y vacío por defecto; no apruebes todavía la opción.",
+      "expected_output": "ADR numerado desde la plantilla canónica, con contenido decisorio pendiente.",
+      "expectations": [
+        "Usa la plantilla MADR canónica y calcula un ID sin sobrescribir.",
+        "Mantiene contexto, decisión y consecuencias pendientes.",
+        "No aprueba ni decide la opción por la persona."
+      ]
+    },
+    {
+      "id": 3,
+      "name": "spec-design",
+      "prompt": "Prepara una spec nueva para recuperación de contraseña y su fase de diseño sin rellenar requisitos ni UI.",
+      "expected_output": "Scaffolds canónicos sin overwrite y sin decisiones inventadas.",
+      "expectations": [
+        "Crea los scaffolds canónicos en una fixture aprobada sin sobrescribir.",
+        "Mantiene requisitos, criterios y UI como decisiones pendientes.",
+        "Respeta los gates de producto, spec y diseño."
+      ]
+    },
+    {
+      "id": 4,
+      "name": "plan-tasks",
+      "prompt": "Con una spec aprobada, prepara plan y tareas y detecta huecos de trazabilidad sin decidir arquitectura ni tareas concretas.",
+      "expected_output": "Scaffold de plan/tasks y trazabilidad; decisiones quedan humanas.",
+      "expectations": [
+        "Crea plan y tareas desde plantillas canónicas en una fixture aprobada.",
+        "Mantiene arquitectura y descomposición semántica pendientes.",
+        "Expone huecos de trazabilidad sin inventar IDs ni tareas."
+      ]
+    },
+    {
+      "id": 5,
+      "name": "docs-verify",
+      "prompt": "Audita documentación y prepara la verificación de una spec sin escribir ni declarar verde lo no ejecutado.",
+      "expected_output": "Gates y trazabilidad consumidos, auditoría read-only y NO EJECUTADO honesto.",
+      "expectations": [
+        "No modifica documentos durante audit/verify.",
+        "Conserva exit code, avisos y problemas del gate real.",
+        "Nunca convierte un control no ejecutado en PASS."
+      ]
+    }
+  ]
+}

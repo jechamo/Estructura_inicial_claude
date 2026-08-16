@@ -152,6 +152,11 @@ gate si el proyecto ya dispone de un comando real:
 `node scripts/sdd-project.mjs detect --json` propone únicamente comandos detectados. Revisa la
 propuesta antes de incorporarla con `configure --accept-detected`.
 
+`/docs-sync audit` consume `node scripts/check-sdd.mjs --json` y, cuando hay una spec concreta,
+`node scripts/sdd-project.mjs trace-status --spec NNN --json`. Estas salidas conservan el
+veredicto real y permiten localizar deriva sin releer todo el árbol ni modificar documentos. El
+scaffold de `evidence.md` solo crea la estructura después de los gates; no declara resultados.
+
 ## Trabajo en paralelo
 
 El orquestador puede paralelizar inventarios y auditorías de solo lectura. Las escrituras se
@@ -169,4 +174,3 @@ Un agente especialista siempre devuelve `HANDOFF` al invocador; no encadena otro
 Un `git clone` recupera documentación, historia SDD, agentes, skills, reglas y hooks versionados.
 En el nuevo equipo todavía debes instalar el IDE y sus extensiones, configurar credenciales
 locales, confiar en el workspace, recargar la ventana y activar los hooks Git si los quieres usar.
-

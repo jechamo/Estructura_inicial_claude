@@ -7,6 +7,30 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+## [0.7.0] — 2026-08-16
+
+### Added
+- **Snapshots deterministas para agentes.** `status --json`, `trace-status` y `check-sdd --json`
+  exponen estado, fases, tareas, trazabilidad y gates sin obligar al modelo a reconstruirlos leyendo
+  todo el repositorio.
+- **Scaffolding conservador por fase.** `scaffold` instancia las plantillas canónicas de diseño,
+  plan, tareas y evidencia, admite `--dry-run` y nunca sobrescribe contenido ni aprueba decisiones.
+- **Generadores opt-in y neutrales al stack.** `.sdd/generators.json` nace vacío; cada proyecto puede
+  registrar programas ya aprobados con argv separado, inputs/outputs declarados y ejecución sin shell.
+- **Benchmark reproducible de skills.** Cinco casos emparejados conservan el 100 % de las
+  expectativas y documentan el proxy usado cuando el host no expone tokens reales.
+
+### Changed
+- **Menos contexto mecánico en las skills.** Estado, ADR, specify, design, plan, tasks, verify y
+  documentación consumen los nuevos comandos; checklists extensas de frontend, diseño, plan y
+  verificación se cargan desde `references/` únicamente cuando afectan a la tarea.
+
+### Fixed
+- **Los metadatos tras un estado ya no rompen el conteo.** `hecho · evidencia` se interpreta como
+  tarea terminada en vez de estado desconocido.
+- **Los globs JSONC ya no se confunden con comentarios.** Rutas como las usadas por contratos
+  documentales se preservan al validar o fusionar configuración.
+
 ## [0.6.0] — 2026-08-13
 
 ### Added

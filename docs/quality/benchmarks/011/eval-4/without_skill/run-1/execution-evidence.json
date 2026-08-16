@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "plan-tasks",
+  "configuration": "v0.6.0",
+  "prompt": "Con una spec aprobada, prepara plan y tareas y detecta huecos de trazabilidad sin decidir arquitectura ni tareas concretas.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-plan/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 10156,
+      "sha256": "3983d6cd36bcab6de8d1bfcb53eeb2c3eb6f7cad9b879719bb34b96ff37b22e6"
+    },
+    {
+      "path": ".agents/skills/sdd-tasks/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 7072,
+      "sha256": "7c97c61dee650b710e7ec1a12f64c225cdda06951472abbd98b6652ca8cca401"
+    }
+  ],
+  "commands": [],
+  "fixtureActions": [
+    "Instanciar plan/research/data-model/contracts desde _TEMPLATE.",
+    "Instanciar tasks/test-plan desde _TEMPLATE; la inspección de trazabilidad era manual."
+  ],
+  "artifactChecks": {
+    "spec": true,
+    "design": true,
+    "plan": true,
+    "tasks": true,
+    "semanticPlaceholdersRemain": true
+  }
+}

@@ -5,6 +5,7 @@ Estado y auditoría del circuito SDD.
 | Fichero | Qué es |
 |---|---|
 | `agent-audit.jsonl` | Eventos de subagente que no pudieron asociarse a una spec activa. Append-only, lo escriben los hooks. |
+| `generators.json` | Registro versionado y opt-in de generadores existentes; nace vacío. |
 
 Cuando hay una spec activa, los eventos van a `docs/specs/NNN-slug/execution-log.jsonl`.
 Este fichero es la red de seguridad para no perder ninguno.
@@ -38,3 +39,18 @@ El comando añade `trace-correction` al origen, `trace-attribution` al destino y
 bitácora mensual. Solo acepta IDs `NNN`, valida la sesión y rechaza rutas, enlaces y entradas
 hostiles antes de escribir. Un lock efímero en `.sdd/state/` serializa procesos concurrentes:
 quien espera relee el resultado durable y no duplica ningún append.
+
+## Generadores deterministas
+
+`.sdd/generators.json` declara `program`, `args`, `inputs`, `outputs`, `owner` y un `timeoutMs`
+opcional entre 1 y 300 segundos. Se ejecutan con `shell:false` y 120 segundos de límite por defecto;
+un gestor de paquetes solo puede invocar un script `run` ya instalado. Nunca se descargan
+dependencias ni se activa un generador por detección automática.
+
+```powershell
+node scripts/sdd-project.mjs generate <id> --dry-run
+node scripts/sdd-project.mjs generate <id>
+```
+
+La huella local vive en `.sdd/state/generators/`: si los outputs cambian sin una generación
+registrada, el CLI bloquea por drift. El registro sí se versiona; el estado efímero, no.

@@ -63,6 +63,23 @@ Si prefieres saltarte el router:
 | Solo quiero corregir o sincronizar documentación | `/docs-sync update` |
 | No sé en qué punto estoy | `/sdd-status` |
 
+### Automatización determinista
+
+Las skills delegan mecánica repetitiva en el mismo CLI portable de Node:
+
+```bash
+node scripts/sdd-project.mjs status --json [--spec NNN]
+node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify --dry-run
+node scripts/sdd-project.mjs trace-status --spec NNN --json
+node scripts/check-sdd.mjs --json --strict --spec NNN
+node scripts/sdd-project.mjs generate <id> --dry-run
+```
+
+El CLI hace inventario, numera, instancia plantillas y calcula cobertura; **no decide** requisitos,
+arquitectura, tareas, DTO ni veredictos. Los generadores son opt-in en `.sdd/generators.json`, no
+usan shell, tienen timeout acotado y no instalan dependencias. El CLI confina las rutas declaradas, pero no es un sandbox
+del sistema operativo: solo se registran ejecutables confiables y aprobados por el proyecto.
+
 ---
 
 ## El circuito SDD

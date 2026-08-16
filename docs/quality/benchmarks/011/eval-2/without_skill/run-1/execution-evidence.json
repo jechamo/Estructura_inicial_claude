@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "adr",
+  "configuration": "v0.6.0",
+  "prompt": "Prepara el esqueleto para documentar la decisión de usar un registro opt-in de generadores deterministas, sin shell y vacío por defecto; no apruebes todavía la opción.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/adr/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 2696,
+      "sha256": "5fbde05f8ca6b1d10df300ca3d6de40bfd4b2e3841354b5492464bfdaf2d8bbe"
+    }
+  ],
+  "commands": [
+    {
+      "label": "new-adr baseline dry-run",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "new-adr",
+        "registro-opt-in-generadores",
+        "--dry-run",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 165,
+      "stdout": "{\"created\":false,\"dryRun\":true,\"adr\":\"ADR-0001\",\"path\":\"docs/architecture/adr/ADR-0001-registro-opt-in-generadores.md\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": null,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": null
+  }
+}

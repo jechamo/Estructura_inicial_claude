@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "metric": "estimated_tokens_from_utf8_bytes",
+  "formula": "ceil((skillSourceBytes + persistedOutputBytes) / 4)",
+  "skillSourceBytes": 14305,
+  "persistedOutputBytes": 695,
+  "estimatedTokens": 3750,
+  "actualModelTokensAvailable": false
+}

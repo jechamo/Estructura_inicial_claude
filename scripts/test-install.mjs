@@ -57,13 +57,35 @@ function sddDesde(origenTrabajo, ...argumentos) {
 /** Repos Git efímeros aislados de hooks, firma y configuración personal de la máquina. */
 function gitFixture(destino, ...argumentos) {
   const hooksVacios = join(destino, '.git', 'sdd-no-hooks');
-  mkdirSync(hooksVacios, { recursive: true });
-  return spawnSync('git', [
+  // No crear `.git` antes de `git init`: en Windows eso produce repositorios parcialmente
+  // inicializados de forma intermitente. Las llamadas posteriores ya pueden crear el hooksPath.
+  if (existsSync(join(destino, '.git'))) mkdirSync(hooksVacios, { recursive: true });
+  const configNula = process.platform === 'win32' ? 'NUL' : '/dev/null';
+  const entornoGit = { ...process.env };
+  for (const clave of Object.keys(entornoGit)) {
+    if (/^GIT_CONFIG_(?:COUNT|KEY_\d+|VALUE_\d+)$/i.test(clave)) delete entornoGit[clave];
+  }
+  const argv = [
     '-c', `core.hooksPath=${hooksVacios}`, '-c', 'commit.gpgSign=false',
-    '-c', 'core.excludesFile=',
+    '-c', 'core.excludesFile=', '-c', 'safe.directory=*',
     '-c', 'user.name=SDD Test', '-c', 'user.email=sdd@example.invalid',
     ...argumentos,
-  ], { cwd: destino, encoding: 'utf8' });
+  ];
+  const opciones = {
+    cwd: destino,
+    encoding: 'utf8',
+    env: {
+      ...entornoGit,
+      // Codex y algunos CI inyectan GIT_CONFIG_COUNT/KEY/VALUE para el workspace principal.
+      // Un fixture efÃ­mero debe ignorar por completo esa configuraciÃ³n heredada.
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_CONFIG_GLOBAL: configNula,
+    },
+  };
+  const primera = spawnSync('git', argv, opciones);
+  // Windows puede bloquear fugazmente index.lock mientras el antivirus inspecciona el fixture.
+  // Un segundo intento del mismo argv es seguro en estos repos efÃ­meros e independientes.
+  return primera.status === 0 ? primera : spawnSync('git', argv, opciones);
 }
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
@@ -279,6 +301,431 @@ function preparaSpecDeTraza(destino, nombre, eventos = []) {
   const contenido = eventos.map((evento) => JSON.stringify(evento)).join('\n');
   writeFileSync(ruta, contenido ? `${contenido}\n` : '', 'utf8');
   return ruta;
+}
+
+function ejecutarProyecto(destino, ...argumentos) {
+  return spawnSync(process.execPath, ['scripts/sdd-project.mjs', ...argumentos], {
+    cwd: destino,
+    encoding: 'utf8',
+  });
+}
+
+function jsonSalida(resultado) {
+  try { return JSON.parse((resultado.stdout || '').trim()); }
+  catch { return null; }
+}
+
+function escribirSpecEstado(destino, nombre, estadoTarea = null, extras = {}) {
+  const dir = join(destino, 'docs', 'specs', nombre);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'spec.md'), `# ${nombre}\n\n| **Estado** | ${extras.estadoSpec || 'aprobada'} |\n`, 'utf8');
+  if (extras.plan) writeFileSync(join(dir, 'plan.md'), '# Plan\n', 'utf8');
+  if (estadoTarea) writeFileSync(join(dir, 'tasks.md'), [
+    '# Tareas', '', `### T-${nombre.slice(0, 3)}-01 · fixture`,
+    `- **Estado**: ${estadoTarea}`, '- **Test que la define**: `tests/fixture.test.mjs::caso`', '',
+  ].join('\n'), 'utf8');
+  return dir;
+}
+
+function estado_y_gate_json_versionados() {
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  const vacio = ejecutarProyecto(d, 'status', '--json');
+  const snapshotVacio = jsonSalida(vacio);
+
+  escribirSpecEstado(d, '101-cerrada', 'hecho · evidencia: gate verde', { estadoSpec: 'entregada' });
+  escribirSpecEstado(d, '102-abierta', 'en curso', { plan: true });
+  const una = ejecutarProyecto(d, 'status', '--json', '--spec', '102');
+  const snapshotUna = jsonSalida(una);
+  escribirSpecEstado(d, '103-otra-abierta', 'pendiente');
+  const varias = ejecutarProyecto(d, 'status', '--json');
+  const snapshotVarias = jsonSalida(varias);
+
+  comprueba('status JSON v1 distingue cero, una y varias specs activas',
+    vacio.status === 0 && snapshotVacio?.schemaVersion === 1 && snapshotVacio.specs?.total === 0 &&
+    una.status === 0 && snapshotUna?.specs?.items?.length === 1 &&
+    snapshotUna.specs.items[0]?.id === '102' && snapshotUna.specs.items[0]?.phase === 'implement' &&
+    snapshotUna.specs.items[0]?.tasks?.inProgress === 1 &&
+    varias.status === 0 && snapshotVarias?.specs?.activeCount === 2 &&
+    snapshotVarias.specs.items.find((item) => item.id === '101')?.tasks?.done === 1 &&
+    snapshotVarias.specs.items.find((item) => item.id === '101')?.tasks?.unknown === 0 &&
+    snapshotVarias?.next?.skill === '/sdd-intake',
+    `${vacio.stderr}${una.stderr}${varias.stderr}`.slice(-500));
+
+  const dBloqueada = nuevoDestino();
+  sdd(dBloqueada, 'init', '--mode', 'greenfield');
+  const registroRuta = join(dBloqueada, '.sdd', 'installed.json');
+  const registro = JSON.parse(leer(registroRuta) || '{}');
+  registro.product = { ...(registro.product || {}), status: 'approved' };
+  writeFileSync(registroRuta, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
+  writeFileSync(join(dBloqueada, 'docs', 'architecture', 'constitution.md'),
+    '# Constitucion\n\n| Estado | approved |\n', 'utf8');
+  escribirSpecEstado(dBloqueada, '104-bloqueada', 'bloqueada', { plan: true });
+  const bloqueada = ejecutarProyecto(dBloqueada, 'status', '--json');
+  const snapshotBloqueada = jsonSalida(bloqueada);
+  comprueba('status mantiene activa una spec bloqueada y muestra el siguiente paso correcto',
+    bloqueada.status === 0 && snapshotBloqueada?.specs?.activeCount === 1 &&
+    snapshotBloqueada.specs.active?.includes('104-bloqueada') &&
+    snapshotBloqueada.specs.items?.[0]?.tasks?.blocked === 1 &&
+    snapshotBloqueada.next?.skill === '/sdd-implement' &&
+    snapshotBloqueada.next?.reason === 'spec-104-implement',
+    `${bloqueada.stdout}${bloqueada.stderr}`.slice(-500));
+
+  const gate = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--json'], { cwd: d, encoding: 'utf8' });
+  const salidaGate = jsonSalida(gate);
+  comprueba('check-sdd --json conserva un contrato v1 y el veredicto real',
+    salidaGate?.schemaVersion === 1 && typeof salidaGate.ok === 'boolean' &&
+    salidaGate.mode === 'normal' && Array.isArray(salidaGate.warnings) &&
+    Array.isArray(salidaGate.problems) && salidaGate.counts?.problems === salidaGate.problems.length &&
+    gate.status === (salidaGate.ok ? 0 : 1), `${gate.stdout}${gate.stderr}`.slice(-500));
+}
+
+function scaffold_conservador_y_traza() {
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  const dir = escribirSpecEstado(d, '111-salida-determinista', null);
+  writeFileSync(join(dir, 'spec.md'), [
+    '# 111 · Salida determinista', '',
+    '| **Estado** | aprobada |', '',
+    '| OBJ-101 | PRD-RF-101 | UC-101 | RF-01 | SRC-001 |',
+    '| OBJ-101 | PRD-RF-101 | UC-101 | RF-02 | SRC-001 |',
+    '', '## CA-01 · Contrato observable', '',
+  ].join('\n'), 'utf8');
+
+  const dry = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'design', '--dry-run', '--json');
+  const dryJson = jsonSalida(dry);
+  const antes = existsSync(join(dir, 'design.md'));
+  const crea = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'design', '--json');
+  const contenido = leer(join(dir, 'design.md')) || '';
+  const hashPrimero = hash(contenido);
+  const repetido = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'design', '--json');
+  const noSobrescrito = hash(leer(join(dir, 'design.md')) || '') === hashPrimero;
+  const planAntesGate = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'plan', '--json');
+  const aprobarUltimoGate = (ruta, estado) => {
+    const actual = leer(ruta) || '';
+    const marcador = '| **Estado** |';
+    const inicio = actual.lastIndexOf(marcador);
+    const fin = actual.indexOf('\n', inicio);
+    writeFileSync(ruta, `${actual.slice(0, inicio)}${marcador} \`${estado}\` |${actual.slice(fin)}`, 'utf8');
+  };
+  aprobarUltimoGate(join(dir, 'design.md'), 'approved');
+  const plan = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'plan', '--json');
+  const tasksAntesGate = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'tasks', '--json');
+  aprobarUltimoGate(join(dir, 'plan.md'), 'approved');
+  const tasks = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'tasks', '--json');
+  const verifyAntesGate = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'verify', '--json');
+  writeFileSync(join(dir, 'tasks.md'),
+    (leer(join(dir, 'tasks.md')) || '').replace(/- \*\*Estado\*\*:\s*pendiente/g, '- **Estado**: hecho'), 'utf8');
+  const verify = ejecutarProyecto(d, 'scaffold', '--spec', '111', '--phase', 'verify', '--json');
+
+  comprueba('scaffold es dry-run, sustituye identidad y nunca sobrescribe',
+    dry.status === 0 && dryJson?.schemaVersion === 1 && dryJson?.created === false && !antes &&
+    crea.status === 0 && /# 111 · Diseño — Salida Determinista/.test(contenido) &&
+    !/NNN-slug|YYYY-MM-DD/.test(contenido.split('\n').slice(0, 12).join('\n')) &&
+    repetido.status === 1 && noSobrescrito && planAntesGate.status === 1 &&
+    tasksAntesGate.status === 1 && verifyAntesGate.status === 1 &&
+    plan.status === 0 && existsSync(join(dir, 'plan.md')) && existsSync(join(dir, 'data-model.md')) &&
+    existsSync(join(dir, 'research.md')) && existsSync(join(dir, 'contracts', '.gitkeep')) &&
+    tasks.status === 0 && existsSync(join(dir, 'tasks.md')) && existsSync(join(dir, 'test-plan.md')) &&
+    verify.status === 0 && existsSync(join(dir, 'evidence.md')),
+    `${dry.stderr}${crea.stderr}${repetido.stderr}${plan.stderr}${tasks.stderr}${verify.stderr}`.slice(-500));
+
+  writeFileSync(join(dir, 'tasks.md'), [
+    '# Tareas', '',
+    '| OBJ-101 | PRD-RF-101 | UC-101 | RF-01 | CA-01 | T-111-01 | `tests/trace.test.mjs::cubre_rf_01` | `evidence.md#T-111-01` |',
+    '', '### T-111-01 · cubrir', '- **Estado**: pendiente',
+    '- **Test que la define**: `tests/trace.test.mjs::cubre_rf_01`', '',
+  ].join('\n'), 'utf8');
+  writeFileSync(join(dir, 'plan.md'), [
+    '# Plan', '',
+    '| SEC-AUTO-101 | ASVS | A01 | sí | confinar | T-111-01 | `tests/trace.test.mjs::cubre_rf_01` | `evidence.md#SEC-AUTO-101` |',
+    '| DOC-AUTO | guide | sí | spec | docs/guide.md | manual | docs-writer | T-111-01 | check | `evidence.md#DOC-AUTO` |',
+  ].join('\n'), 'utf8');
+  const traza = ejecutarProyecto(d, 'trace-status', '--spec', '111', '--json');
+  const traceJson = jsonSalida(traza);
+  comprueba('trace-status extrae familias y declara huérfanos sin inventar tareas',
+    traza.status === 0 && traceJson?.schemaVersion === 1 && traceJson?.spec === '111-salida-determinista' &&
+    traceJson.families?.RF?.declared?.includes('RF-01') && traceJson.families?.RF?.declared?.includes('RF-02') &&
+    traceJson.families?.RF?.covered?.includes('RF-01') && traceJson.families?.RF?.orphans?.includes('RF-02') &&
+    traceJson.families?.SEC?.declared?.includes('SEC-AUTO-101') &&
+    traceJson.families?.DOC?.declared?.includes('DOC-AUTO') &&
+    !traceJson.families?.DOC?.declared?.includes('DOC-ID'), `${traza.stdout}${traza.stderr}`.slice(-500));
+
+  const sinMotivo = escribirSpecEstado(d, '112-sin-ui-sin-motivo', null);
+  writeFileSync(join(sinMotivo, 'spec.md'), [
+    '# 112 - Sin UI sin motivo', '',
+    '| **Estado** | aprobada |',
+    '| **Impacto de usabilidad** | sin-ui |', '',
+  ].join('\n'), 'utf8');
+  const omisionInvalida = ejecutarProyecto(d, 'scaffold', '--spec', '112', '--phase', 'plan', '--json');
+
+  const conMotivo = escribirSpecEstado(d, '113-sin-ui-justificada', null);
+  writeFileSync(join(conMotivo, 'spec.md'), [
+    '# 113 - Sin UI justificada', '',
+    '| **Estado** | aprobada |',
+    '| **Impacto de usabilidad** | sin-ui - cambio de CLI sin interfaz renderizada |', '',
+  ].join('\n'), 'utf8');
+  const omisionValida = ejecutarProyecto(d, 'scaffold', '--spec', '113', '--phase', 'plan', '--json');
+  comprueba('scaffold solo omite diseno cuando sin-ui tiene un motivo material',
+    omisionInvalida.status === 1 && !existsSync(join(sinMotivo, 'plan.md')) &&
+    omisionValida.status === 0 && existsSync(join(conMotivo, 'plan.md')),
+    `${omisionInvalida.stdout}${omisionInvalida.stderr}${omisionValida.stdout}${omisionValida.stderr}`.slice(-500));
+}
+
+function registrarGeneradorFixture(destino, entrada) {
+  writeFileSync(join(destino, '.sdd', 'generators.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    generators: [entrada],
+  }, null, 2)}\n`, 'utf8');
+}
+
+function generadores_opt_in_y_drift() {
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  const inicial = JSON.parse(leer(join(d, '.sdd/generators.json')) || '{}');
+  mkdirSync(join(d, 'tools'), { recursive: true });
+  mkdirSync(join(d, 'docs', 'api'), { recursive: true });
+  writeFileSync(join(d, 'docs/api/openapi.yaml'), 'openapi: 3.1.0\n', 'utf8');
+  writeFileSync(join(d, 'tools/generate-fixture.mjs'), [
+    "import { mkdirSync, writeFileSync } from 'node:fs';",
+    "mkdirSync('src/generated', { recursive: true });",
+    "writeFileSync('src/generated/api.ts', 'export type Api = string;\\n', 'utf8');",
+  ].join('\n'), 'utf8');
+  registrarGeneradorFixture(d, {
+    id: 'api-types', program: 'node', args: ['tools/generate-fixture.mjs'],
+    inputs: ['docs/api/openapi.yaml'], outputs: ['src/generated/**'], owner: 'api-designer',
+  });
+
+  const dry = ejecutarProyecto(d, 'generate', 'api-types', '--dry-run', '--json');
+  const salidaDry = jsonSalida(dry);
+  const outputTrasDryRun = existsSync(join(d, 'src/generated/api.ts'));
+  const ejecutado = ejecutarProyecto(d, 'generate', 'api-types', '--json');
+  const salida = jsonSalida(ejecutado);
+  const estable = ejecutarProyecto(d, 'generate', 'api-types', '--json');
+  mkdirSync(join(d, 'src/generated'), { recursive: true });
+  writeFileSync(join(d, 'src/generated/api.ts'), 'edición manual\n', 'utf8');
+  const drift = ejecutarProyecto(d, 'generate', 'api-types', '--json');
+  comprueba('generadores son opt-in, observables, idempotentes y detectan drift manual',
+    inicial.schemaVersion === 1 && Array.isArray(inicial.generators) && inicial.generators.length === 0 &&
+    dry.status === 0 && salidaDry?.trustBoundary === 'approved-program-not-os-sandboxed' && !outputTrasDryRun &&
+    ejecutado.status === 0 && salida?.schemaVersion === 1 && salida?.status === 'generated' &&
+    existsSync(join(d, 'src/generated/api.ts')) && estable.status === 0 &&
+    jsonSalida(estable)?.status === 'up-to-date' && drift.status === 1 &&
+    /drift|modificad|output/i.test(`${drift.stdout}${drift.stderr}`),
+    `${dry.stderr}${ejecutado.stderr}${estable.stderr}${drift.stderr}`.slice(-500));
+
+  registrarGeneradorFixture(d, {
+    id: 'sin-input', program: 'node', args: ['tools/generate-fixture.mjs'],
+    inputs: ['docs/api/no-existe.yaml'], outputs: ['src/generated/**'], owner: 'api-designer',
+  });
+  const ausente = ejecutarProyecto(d, 'generate', 'sin-input', '--json');
+  registrarGeneradorFixture(d, {
+    id: 'falla', program: 'node', args: ['-e', 'process.exit(7)'],
+    inputs: ['docs/api/openapi.yaml'], outputs: ['src/generated/**'], owner: 'api-designer',
+  });
+  const falla = ejecutarProyecto(d, 'generate', 'falla', '--json');
+  registrarGeneradorFixture(d, {
+    id: 'cuelga', program: 'node', args: ['-e', 'setInterval(function(){},1000)'],
+    inputs: ['docs/api/openapi.yaml'], outputs: ['src/never/**'], owner: 'api-designer',
+    timeoutMs: 1000,
+  });
+  const inicioTimeout = Date.now();
+  const timeout = ejecutarProyecto(d, 'generate', 'cuelga', '--json');
+  const duracionTimeout = Date.now() - inicioTimeout;
+  comprueba('generadores ausentes o fallidos no simulan éxito',
+    ausente.status === 1 && falla.status === 1 &&
+    /input|entrada|existe/i.test(`${ausente.stdout}${ausente.stderr}`) &&
+    /fall|exit|código|7/i.test(`${falla.stdout}${falla.stderr}`) &&
+    timeout.status === 1 && /timeout|tiempo/i.test(`${timeout.stdout}${timeout.stderr}`) &&
+    duracionTimeout < 5000 && !existsSync(join(d, '.sdd/state/generators/cuelga.json')));
+}
+
+function generadores_sin_shell() {
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  mkdirSync(join(d, 'docs/api'), { recursive: true });
+  writeFileSync(join(d, 'docs/api/openapi.yaml'), 'openapi: 3.1.0\n', 'utf8');
+  const casos = [
+    { id: 'shell', program: process.platform === 'win32' ? 'cmd' : 'sh', args: ['-c', 'echo pwn'] },
+    { id: 'meta', program: 'node', args: ['-e', 'process.exit(0); echo pwn'] },
+    { id: 'instala', program: 'npm', args: ['install', 'paquete'] },
+  ];
+  const resultados = casos.map((caso) => {
+    registrarGeneradorFixture(d, {
+      ...caso, inputs: ['docs/api/openapi.yaml'], outputs: ['src/generated/**'], owner: 'api-designer',
+    });
+    return ejecutarProyecto(d, 'generate', caso.id, '--json');
+  });
+  comprueba('generadores rechazan shells, metacaracteres e instalación implícita',
+    resultados.every((r) => r.status === 1) &&
+    resultados.every((r) => /shell|programa|argumento|instal|permitid/i.test(`${r.stdout}${r.stderr}`)),
+    resultados.map((r) => `${r.stdout}${r.stderr}`).join('\n').slice(-700));
+}
+
+function automatizacion_rutas_confinadas() {
+  const d = nuevoDestino();
+  const fuera = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  mkdirSync(join(d, 'docs/api'), { recursive: true });
+  writeFileSync(join(d, 'docs/api/openapi.yaml'), 'openapi: 3.1.0\n', 'utf8');
+  writeFileSync(join(fuera, 'sentinel.txt'), 'intacto\n', 'utf8');
+  registrarGeneradorFixture(d, {
+    id: 'escape', program: 'node', args: ['tools/no.mjs'], inputs: ['docs/api/openapi.yaml'],
+    outputs: ['../escape.ts'], owner: 'api-designer',
+  });
+  const traversal = ejecutarProyecto(d, 'generate', 'escape', '--json');
+  mkdirSync(join(d, 'src'), { recursive: true });
+  symlinkSync(fuera, join(d, 'src/generated'), process.platform === 'win32' ? 'junction' : 'dir');
+  registrarGeneradorFixture(d, {
+    id: 'link', program: 'node', args: ['tools/no.mjs'], inputs: ['docs/api/openapi.yaml'],
+    outputs: ['src/generated/**'], owner: 'api-designer',
+  });
+  const enlace = ejecutarProyecto(d, 'generate', 'link', '--dry-run', '--json');
+  const rutasHostiles = [
+    resolve(fuera, 'absoluta.ts'),
+    '/tmp/sdd-escape.ts',
+    '\\\\server\\share\\escape.ts',
+    '..\\escape-mixto.ts',
+  ].map((output, indice) => {
+    registrarGeneradorFixture(d, {
+      id: `ruta-${indice}`, program: 'node', args: ['tools/no.mjs'], inputs: ['docs/api/openapi.yaml'],
+      outputs: [output], owner: 'api-designer',
+    });
+    return ejecutarProyecto(d, 'generate', `ruta-${indice}`, '--dry-run', '--json');
+  });
+  const originalHardlink = join(d, 'docs/api/hardlink-original.yaml');
+  const copiaHardlink = join(d, 'docs/api/hardlink-copia.yaml');
+  writeFileSync(originalHardlink, 'openapi: 3.1.0\n', 'utf8');
+  let hardlinkSeguro = false;
+  let hardlinkDetalle = '';
+  try {
+    linkSync(originalHardlink, copiaHardlink);
+    registrarGeneradorFixture(d, {
+      id: 'hardlink', program: 'node', args: ['tools/no.mjs'], inputs: ['docs/api/hardlink-copia.yaml'],
+      outputs: ['src/hardlink/**'], owner: 'api-designer',
+    });
+    const hardlink = ejecutarProyecto(d, 'generate', 'hardlink', '--dry-run', '--json');
+    hardlinkSeguro = hardlink.status === 1 && /regular|segur|enlace|ruta/i.test(`${hardlink.stdout}${hardlink.stderr}`);
+    hardlinkDetalle = `${hardlink.stdout}${hardlink.stderr}`;
+  } catch (error) {
+    hardlinkSeguro = ['EPERM', 'EACCES', 'ENOTSUP'].includes(error?.code);
+    hardlinkDetalle = `SKIP verificable: ${error?.code || error?.message}`;
+  }
+  const scaffoldHostil = ejecutarProyecto(d, 'scaffold', '--spec', '../011', '--phase', 'plan', '--json');
+  comprueba('automatizaciones confinan IDs, outputs y enlaces al repositorio',
+    traversal.status === 1 && enlace.status === 1 && rutasHostiles.every((r) => r.status === 1) &&
+    hardlinkSeguro && scaffoldHostil.status === 1 &&
+    leer(join(fuera, 'sentinel.txt')) === 'intacto\n' && !existsSync(join(dirname(d), 'escape.ts')),
+    `${traversal.stdout}${traversal.stderr}${enlace.stdout}${enlace.stderr}${hardlinkDetalle}${scaffoldHostil.stderr}`.slice(-700));
+}
+
+function generadores_versionados() {
+  const green = nuevoDestino();
+  sdd(green, 'init', '--mode', 'greenfield');
+  const semilla = leer(join(green, '.sdd/generators.json'));
+  const brown = nuevoDestino();
+  mkdirSync(join(brown, '.sdd'), { recursive: true });
+  const propio = '{"schemaVersion":1,"generators":[{"id":"propio","custom":true}]}\n';
+  writeFileSync(join(brown, '.sdd/generators.json'), propio, 'utf8');
+  sdd(brown, 'init', '--mode', 'brownfield');
+  const primera = leer(join(brown, '.sdd/generators.json'));
+  sdd(brown, 'update');
+  const segunda = leer(join(brown, '.sdd/generators.json'));
+  comprueba('generators.json se instala vacío y preserva brownfield/update',
+    JSON.parse(semilla || '{}').generators?.length === 0 && primera === propio && segunda === propio &&
+    JSON.parse(leer(join(green, '.sdd/installed.json')) || '{}').files?.['.sdd/generators.json']);
+
+  const paquete = JSON.parse(readFileSync(join(ORIGEN, 'package.json'), 'utf8'));
+  comprueba('el paquete declara el registro portable de generadores',
+    paquete.files?.includes('.sdd/generators.json'));
+}
+
+function skills_consumen_snapshots() {
+  const status = leer(join(ORIGEN, '.agents/skills/sdd-status/SKILL.md')) || '';
+  const adr = leer(join(ORIGEN, '.agents/skills/adr/SKILL.md')) || '';
+  const specify = leer(join(ORIGEN, '.agents/skills/sdd-specify/SKILL.md')) || '';
+  const plan = leer(join(ORIGEN, '.agents/skills/sdd-plan/SKILL.md')) || '';
+  const tasks = leer(join(ORIGEN, '.agents/skills/sdd-tasks/SKILL.md')) || '';
+  const verify = leer(join(ORIGEN, '.agents/skills/sdd-verify/SKILL.md')) || '';
+  const docs = leer(join(ORIGEN, '.agents/skills/docs-sync/SKILL.md')) || '';
+  comprueba('skills consumen snapshots/scaffolds y ADR deja una sola plantilla',
+    /sdd-project\.mjs status --json/.test(status) &&
+    /sdd-project\.mjs new-adr/.test(adr) && !/## Plantilla \(MADR\)/.test(adr) &&
+    /new-spec/.test(specify) && /scaffold/.test(plan) && /scaffold/.test(tasks) &&
+    /check-sdd\.mjs --json/.test(verify) && /check-sdd\.mjs --json/.test(docs));
+}
+
+function automatizacion_documentada() {
+  const readme = leer(join(ORIGEN, 'README.md')) || '';
+  const guia = leer(join(ORIGEN, 'docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md')) || '';
+  const sdd = leer(join(ORIGEN, '.sdd/README.md')) || '';
+  comprueba('automatización documenta comandos, límites y registro opt-in',
+    /trace-status/.test(`${readme}${guia}`) && /scaffold/.test(`${readme}${guia}`) &&
+    /generators\.json/.test(`${guia}${sdd}`) && /sin shell|shell:false/i.test(`${guia}${sdd}`) &&
+    /no (?:decide|genera).*requisit|no automatiza/i.test(`${readme}${guia}`));
+
+  const gate = spawnSync(process.execPath,
+    ['scripts/check-sdd.mjs', '--json', '--strict', '--spec', '011'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  const salida = jsonSalida(gate);
+  comprueba('JSONC conserva globs documentales sin confundirlos con comentarios',
+    Array.isArray(salida?.problems) && !salida.problems.some((problema) =>
+      problema.regla === 'docs/contrato' && /DOC-(?:AUTO|SKILLS).*no está declarado/.test(problema.msg)));
+}
+
+function benchmark_tiene_calidad_y_umbral() {
+  const ruta = join(ORIGEN, 'docs/quality/benchmarks/011/benchmark.json');
+  let benchmark = null;
+  try { benchmark = JSON.parse(leer(ruta) || 'null'); } catch { /* fallo expresado abajo */ }
+  const casos = benchmark?.cases || [];
+  const raiz = join(ORIGEN, 'docs/quality/benchmarks/011');
+  const evals = JSON.parse(leer(join(raiz, 'evals.json')) || '{}').evals || [];
+  const runsAuditables = evals.every((evaluacion) => ['without_skill', 'with_skill'].every((configuracion) => {
+    const dir = join(raiz, `eval-${evaluacion.id}`, configuracion, 'run-1');
+    try {
+      const grading = JSON.parse(leer(join(dir, 'grading.json')) || '{}');
+      const execution = JSON.parse(leer(join(dir, 'execution-evidence.json')) || '{}');
+      const measurement = JSON.parse(leer(join(dir, 'measurement.json')) || '{}');
+      const outputBytes = readFileSync(join(dir, 'outputs/result.md')).length;
+      const skillBytes = (execution.skillSources || []).reduce((total, source) => total + source.bytes, 0);
+      return JSON.stringify(grading.expectations?.map((item) => item.text)) === JSON.stringify(evaluacion.expectations) &&
+        (execution.commands || []).every((command) => Number.isInteger(command.exitCode) &&
+          typeof command.stdout === 'string' && typeof command.stderr === 'string' && Array.isArray(command.args)) &&
+        measurement.persistedOutputBytes === outputBytes && measurement.skillSourceBytes === skillBytes &&
+        measurement.estimatedTokens === Math.ceil((skillBytes + outputBytes) / 4);
+    } catch { return false; }
+  }));
+  const candidato3 = JSON.parse(leer(join(raiz, 'eval-3/with_skill/run-1/execution-evidence.json')) || '{}');
+  const candidato4 = JSON.parse(leer(join(raiz, 'eval-4/with_skill/run-1/execution-evidence.json')) || '{}');
+  const candidato1 = JSON.parse(leer(join(raiz, 'eval-1/with_skill/run-1/execution-evidence.json')) || '{}');
+  const candidato5 = JSON.parse(leer(join(raiz, 'eval-5/with_skill/run-1/execution-evidence.json')) || '{}');
+  const jsonComando = (command) => {
+    try { return JSON.parse(String(command?.stdout || '').trim().split(/\r?\n/).filter(Boolean).at(-1) || '{}'); }
+    catch { return null; }
+  };
+  const sinMutacion = (command, permitirEstado = false) => ['created', 'modified', 'deleted'].every((kind) =>
+    (command?.changedFiles?.[kind] || []).every((path) => permitirEstado && path.startsWith('.sdd/state/')));
+  const estados = (candidato1.commands || []).map(jsonComando);
+  const estadoMaterial = estados.map((salida) => salida?.specs?.activeCount).join(',') === '0,1,2' &&
+    estados[2]?.specs?.ambiguous === true && (candidato1.commands || []).every((command) => sinMutacion(command));
+  const checkDocs = candidato5.commands?.find((command) => command.label === 'check-sdd JSON');
+  const slow = candidato5.commands?.find((command) => command.label === 'slow gates no ejecutados');
+  const verifyMaterial = checkDocs?.exitCode === 1 && jsonComando(checkDocs)?.ok === false &&
+    slow?.exitCode === 0 && jsonComando(slow)?.status === 'unconfigured' && !/: PASS/.test(slow?.stdout || '') &&
+    (candidato5.commands || []).every((command) => sinMutacion(command, true));
+  const positivo3 = candidato3.commands?.some((c) => c.label === 'scaffold design positivo' && c.exitCode === 0) &&
+    candidato3.commands?.some((c) => /rechaza overwrite/.test(c.label) && c.exitCode !== 0);
+  const positivo4 = ['scaffold plan positivo', 'scaffold tasks positivo', 'trace-status positivo']
+    .every((label) => candidato4.commands?.some((c) => c.label === label && c.exitCode === 0));
+  const agregado = JSON.parse(leer(join(raiz, 'skill-creator-benchmark.json')) || '{}');
+  comprueba('benchmark compara baseline/candidata y conserva solo mejoras justificadas',
+    benchmark?.schemaVersion === 1 && benchmark?.baseline === 'v0.6.0' && casos.length >= 5 &&
+    casos.every((c) => c.baseline && c.candidate && c.qualityMaintained === true &&
+      (c.accepted === false || c.tokenReductionPct >= 20 || c.timeReductionPct >= 30)) &&
+    typeof benchmark?.summary?.fixedCost === 'string' && runsAuditables && estadoMaterial && verifyMaterial &&
+    positivo3 && positivo4 &&
+    existsSync(join(raiz, 'run-benchmark.mjs')) && agregado.metadata?.runs_per_configuration === 1 &&
+    agregado.metadata?.executor_model === 'not-exposed-by-collaboration-api');
 }
 
 // trace_correct_append_only_e_idempotente
@@ -2669,6 +3116,17 @@ console.log('\n5 bis · contrato documental y diff base-aware');
   comprueba('docs-diff detecta artefactos eliminados o renombrados sin actualizar el contrato',
     eliminado.status === 1 && /DOC-PUBLIC|elimin|renombr|artefacto|document/i.test(eliminado.stdout || ''));
 }
+
+console.log('\n5 ter · automatización determinista y reducción de tokens');
+estado_y_gate_json_versionados();
+scaffold_conservador_y_traza();
+generadores_opt_in_y_drift();
+generadores_sin_shell();
+automatizacion_rutas_confinadas();
+generadores_versionados();
+skills_consumen_snapshots();
+automatizacion_documentada();
+benchmark_tiene_calidad_y_umbral();
 
 // ─── 6 · No instalarse sobre sí misma ────────────────────────────────────────
 console.log('\n6 · protección contra instalarse encima de la plantilla');

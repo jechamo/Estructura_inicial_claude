@@ -1,0 +1,7 @@
+{
+  "eval_id": 2,
+  "eval_name": "adr",
+  "configuration": "candidate-011",
+  "run_number": 1,
+  "prompt": "Prepara el esqueleto para documentar la decisión de usar un registro opt-in de generadores deterministas, sin shell y vacío por defecto; no apruebes todavía la opción."
+}

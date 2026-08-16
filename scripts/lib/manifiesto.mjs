@@ -5,7 +5,7 @@
  * reusable y qué parte debe nacer sin contexto en cada proyecto destino.
  */
 
-export const VERSION_MANIFIESTO = 6;
+export const VERSION_MANIFIESTO = 7;
 
 // Artefactos publicados por versiones anteriores que ahora duplican Agent Skills. Una
 // actualización solo los elimina cuando installed.json demuestra propiedad y el hash sigue
@@ -395,6 +395,11 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "documentSets": []
 }
 `,
+  '.sdd/generators.json': `{
+  "schemaVersion": 1,
+  "generators": []
+}
+`,
   '.env.example': `# Variables de aplicación
 # Añade solo nombres y explicaciones. Nunca incluyas valores reales ni credenciales.
 
@@ -437,7 +442,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   'docs/architecture/constitution.md', 'docs/design/DIRECCION-VISUAL.md',
   'docs/security/THREAT-MODEL.md', 'docs/bitacora/DECISIONS.md',
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
-  '.sdd/checks.json', '.sdd/docs.json', '.sdd/installed.json', '.env.example',
+  '.sdd/checks.json', '.sdd/docs.json', '.sdd/generators.json', '.sdd/installed.json', '.env.example',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
   '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
@@ -451,7 +456,8 @@ const EXCLUSIONES_EXACTAS = new Set([
 export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   const r = ruta.replaceAll('\\', '/');
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
-  if (r.startsWith('scripts/lib/') && r !== 'scripts/lib/docs-contract.mjs') return false;
+  if (r.startsWith('scripts/lib/') && !['scripts/lib/docs-contract.mjs', 'scripts/lib/jsonc.mjs'].includes(r)) return false;
+  if (r.startsWith('docs/quality/benchmarks/')) return false;
   if (EXCLUSIONES_EXACTAS.has(r)) {
     if (conMcp && ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'].includes(r)) return true;
     return false;

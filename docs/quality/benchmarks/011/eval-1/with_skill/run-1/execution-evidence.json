@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "status",
+  "configuration": "candidate-011",
+  "prompt": "Explica el estado del proyecto, specs abiertas, tareas y siguiente paso sin modificar nada.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-status/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 969,
+      "sha256": "6de7f4c15d2ff18c0171afbf756858b2337e06f93f5967b278e7df48b1f0c983"
+    }
+  ],
+  "commands": [
+    {
+      "label": "status zero specs",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "status",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 241,
+      "stdout": "{\"schemaVersion\":1,\"product\":{\"schemaVersion\":1,\"status\":\"approved\",\"approvedAt\":null,\"approvedBy\":\"Fixture benchmark 011\",\"enforceFromSpec\":null,\"hashes\":{}},\"architecture\":{\"exists\":true,\"status\":\"declared\"},\"specs\":{\"total\":0,\"activeCount\":0,\"active\":[],\"ambiguous\":false,\"items\":[]},\"checks\":{\"version\":1,\"checks\":{\"sdd\":{\"command\":\"node scripts/check-sdd.mjs\",\"required\":true,\"speed\":\"fast\"}},\"unconfigured\":[\"lint\",\"test\",\"typecheck\",\"build\",\"smells\",\"coverage\",\"e2e\",\"visual\",\"a11y\",\"security\",\"deps-audit\",\"docs\",\"mutation\"]},\"security\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"owaspTop10\":\"2025\",\"asvs\":\"5.0.0\",\"level\":\"L2\"},\"enforceFromSpec\":\"001\"},\"usability\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"wcag\":\"2.2\",\"level\":\"AA\",\"heuristics\":\"nielsen-10\"},\"enforceFromSpec\":\"001\"},\"documentation\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"enforceFromSpec\":\"001\"},\"git\":{\"available\":false,\"dirty\":null,\"changedFiles\":[]},\"next\":{\"skill\":\"/docs-sync bootstrap\",\"reason\":\"documentation-baseline-pending\"}}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "status one spec",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "status",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 244,
+      "stdout": "{\"schemaVersion\":1,\"product\":{\"schemaVersion\":1,\"status\":\"approved\",\"approvedAt\":null,\"approvedBy\":\"Fixture benchmark 011\",\"enforceFromSpec\":null,\"hashes\":{}},\"architecture\":{\"exists\":true,\"status\":\"declared\"},\"specs\":{\"total\":1,\"activeCount\":1,\"active\":[\"001-recuperacion-contrasena\"],\"ambiguous\":false,\"items\":[{\"id\":\"001\",\"name\":\"001-recuperacion-contrasena\",\"state\":\"aprobada\",\"phase\":\"implement\",\"tasks\":{\"total\":2,\"done\":0,\"pending\":2,\"inProgress\":0,\"blocked\":0,\"unknown\":0,\"items\":[{\"id\":\"T-001-01\",\"title\":\"<título imperativo>\",\"status\":\"pendiente\"},{\"id\":\"T-001-02\",\"title\":\"<título>\",\"status\":\"pendiente\"}]},\"artifacts\":{\"spec\":true,\"clarifications\":true,\"design\":true,\"plan\":true,\"datamodel\":true,\"tasks\":true,\"testplan\":true,\"evidence\":false,\"research\":true,\"contracts\":true},\"active\":true}]},\"checks\":{\"version\":1,\"checks\":{\"sdd\":{\"command\":\"node scripts/check-sdd.mjs\",\"required\":true,\"speed\":\"fast\"}},\"unconfigured\":[\"lint\",\"test\",\"typecheck\",\"build\",\"smells\",\"coverage\",\"e2e\",\"visual\",\"a11y\",\"security\",\"deps-audit\",\"docs\",\"mutation\"]},\"security\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"owaspTop10\":\"2025\",\"asvs\":\"5.0.0\",\"level\":\"L2\"},\"enforceFromSpec\":\"001\"},\"usability\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"wcag\":\"2.2\",\"level\":\"AA\",\"heuristics\":\"nielsen-10\"},\"enforceFromSpec\":\"001\"},\"documentation\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"enforceFromSpec\":\"001\"},\"git\":{\"available\":false,\"dirty\":null,\"changedFiles\":[]},\"next\":{\"skill\":\"/sdd-implement\",\"reason\":\"spec-001-implement\"}}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "status multiple specs",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "status",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 229,
+      "stdout": "{\"schemaVersion\":1,\"product\":{\"schemaVersion\":1,\"status\":\"approved\",\"approvedAt\":null,\"approvedBy\":\"Fixture benchmark 011\",\"enforceFromSpec\":null,\"hashes\":{}},\"architecture\":{\"exists\":true,\"status\":\"declared\"},\"specs\":{\"total\":2,\"activeCount\":2,\"active\":[\"001-recuperacion-contrasena\",\"002-segunda-activa\"],\"ambiguous\":true,\"items\":[{\"id\":\"001\",\"name\":\"001-recuperacion-contrasena\",\"state\":\"aprobada\",\"phase\":\"implement\",\"tasks\":{\"total\":2,\"done\":0,\"pending\":2,\"inProgress\":0,\"blocked\":0,\"unknown\":0,\"items\":[{\"id\":\"T-001-01\",\"title\":\"<título imperativo>\",\"status\":\"pendiente\"},{\"id\":\"T-001-02\",\"title\":\"<título>\",\"status\":\"pendiente\"}]},\"artifacts\":{\"spec\":true,\"clarifications\":true,\"design\":true,\"plan\":true,\"datamodel\":true,\"tasks\":true,\"testplan\":true,\"evidence\":false,\"research\":true,\"contracts\":true},\"active\":true},{\"id\":\"002\",\"name\":\"002-segunda-activa\",\"state\":\"borrador \\\\\",\"phase\":\"implement\",\"tasks\":{\"total\":2,\"done\":0,\"pending\":2,\"inProgress\":0,\"blocked\":0,\"unknown\":0,\"items\":[{\"id\":\"T-001-01\",\"title\":\"<título imperativo>\",\"status\":\"pendiente\"},{\"id\":\"T-001-02\",\"title\":\"<título>\",\"status\":\"pendiente\"}]},\"artifacts\":{\"spec\":true,\"clarifications\":true,\"design\":false,\"plan\":false,\"datamodel\":false,\"tasks\":true,\"testplan\":false,\"evidence\":false,\"research\":false,\"contracts\":false},\"active\":true}]},\"checks\":{\"version\":1,\"checks\":{\"sdd\":{\"command\":\"node scripts/check-sdd.mjs\",\"required\":true,\"speed\":\"fast\"}},\"unconfigured\":[\"lint\",\"test\",\"typecheck\",\"build\",\"smells\",\"coverage\",\"e2e\",\"visual\",\"a11y\",\"security\",\"deps-audit\",\"docs\",\"mutation\"]},\"security\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"owaspTop10\":\"2025\",\"asvs\":\"5.0.0\",\"level\":\"L2\"},\"enforceFromSpec\":\"001\"},\"usability\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"standards\":{\"wcag\":\"2.2\",\"level\":\"AA\",\"heuristics\":\"nielsen-10\"},\"enforceFromSpec\":\"001\"},\"documentation\":{\"schemaVersion\":1,\"status\":\"bootstrap\",\"enforceFromSpec\":\"001\"},\"git\":{\"available\":false,\"dirty\":null,\"changedFiles\":[]},\"next\":{\"skill\":\"/sdd-status\",\"reason\":\"multiple-active-specs-require-human-priority\"}}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": null,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": null
+  }
+}

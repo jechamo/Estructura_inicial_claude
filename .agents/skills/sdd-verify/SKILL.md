@@ -5,197 +5,48 @@ description: "Verifica el trabajo antes de entregar. Ejecuta todos los gates de 
 
 # /sdd-verify — Validar
 
-Agentes: `@code-reviewer`, `@security-auditor`, `@refactor-specialist`, `@test-engineer`.
+Coordina `code-reviewer` read-only; consulta security-auditor, refactor-specialist y test-engineer según impacto.
 
-## Paso 1 — Verificación automática
+## Preparar y ejecutar
 
-Ejecuta y **pega la salida real** de cada uno:
-
-```bash
-node scripts/check-sdd.mjs --strict
-node scripts/sdd-project.mjs run --slow
-```
-
-```
-suite de tests completa
-cobertura
-lint + formato
-typecheck
-build
-auditoría de dependencias (npm audit / pip-audit / …)
-```
-
-`check-sdd --strict` es el gate que **no marca el modelo**: comprueba contra el sistema de
-ficheros que toda tarea `hecho` tiene evidencia y ejecución registrada, que ningún criterio
-de aceptación quedó sin test, que no se planificó sobre ambigüedades y que el log de
-ejecución no se ha manipulado. Si sale con código 1, **para**.
-
-También contrasta `Impacto de documentación`, matriz `DOC-ID`, tareas, artefactos y evidencia.
-Ejecuta gates `docs`/`docs:*`; ausente o `NO EJECUTADO` no equivale a verde. El co-cambio del PR
-se valida con `--docs-diff --base <SHA>` en pre-push y CI.
-
-Si algo está en rojo, **para aquí**. No se revisa código que no compila ni pasa tests.
-
-## Paso 2 — Trazabilidad
-
-Construye la tabla y comprueba que está completa:
-
-| RF | CA | Test | Estado |
-|---|---|---|---|
-| RF-01 | CA-01 | `ruta::nombre` | ✅ |
-
-- [ ] Todo `CA` de la spec tiene un test que lo verifica
-- [ ] Todas las tareas del alcance están en `hecho`
-- [ ] No hay código sin tarea asociada
-
-## Paso 3 — Revisión (`@code-reviewer`)
-
-Sobre el diff de la rama. Veredicto ✅ / ⚠️ / ❌ con hallazgos por gravedad y `ruta:línea`.
-
-## Paso 4 — Diseño (`@refactor-specialist`)
-
-Auditoría SOLID, DRY, KISS, YAGNI y patrones. Cada violación: o se arregla, o se justifica
-por escrito en el PR y en la bitácora.
-
-## Paso 5 — Seguridad (`@security-auditor`)
-
-Si `Impacto de seguridad = sensible`, ejecuta `/security-scan verify` contra **OWASP Top
-10:2025** y **ASVS 5.0.0** al nivel de la constitución. Comprueba la matriz exacta:
-
-| Control | ASVS | OWASP | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
-|---|---|---|---|---|---|---|---|
-
-Cada control aplicable necesita salida real; cada `no aplica`, motivo material. `security-pending`
-solo cubre historia brownfield, no una spec sensible nueva.
-
-`security-auditor` es **solo lectura**: devuelve HANDOFF con estándares, alcance, controles,
-evidencias, hallazgos, conteos y veredicto. El coordinador puede delegar en `@docs-writer` la
-materialización **literal** —sin reinterpretar— en
-`docs/security/reports/YYYY-MM-DD-NNN-slug.md`, con `<!-- sdd-security-report:v1 -->` y su JSON.
-
-**CRÍTICO o ALTO ⇒ bloquea la entrega.** MEDIO requiere responsable, justificación y fecha de
-revisión para `APTO CON CONDICIONES`. Un control no ejecutado conserva riesgo, propietario y paso.
-
-## Paso 5 bis — Usabilidad y accesibilidad (`@code-reviewer`)
-
-Si `Impacto de usabilidad = aplicable`, audita contra **WCAG 2.2 AA**
-(`docs/design/A11Y-CHECKLIST.md`) y las **diez heurísticas**
-(`docs/design/USABILITY-CHECKLIST.md`). Comprueba la matriz exacta de `plan.md` §9.3:
-
-| Control | WCAG 2.2 | Heurística | Aplica | Decisión / justificación | Tarea | Test | Evidencia |
-|---|---|---|---|---|---|---|---|
-
-Cada control aplicable necesita salida real; cada `no aplica`, motivo material. `ux-pending` solo
-cubre historia brownfield, no una spec nueva con interfaz.
-
-**Lo que un analizador automático no ve, y por eso se hace a mano:**
-
-- [ ] Recorrido **completo sin ratón**: `Tab`, `Shift+Tab`, `Enter`, `Espacio`, `Escape`. Si en
-      algún momento no se sabe dónde está el foco, es un bloqueante, no una observación
-- [ ] Los diálogos retienen el foco y lo devuelven al cerrarse
-- [ ] Lectura con lector de pantalla de los flujos críticos
-- [ ] Zoom al 200 % sin pérdida ni solape
-- [ ] Formularios: etiqueta visible, validación al salir del campo, error que dice **cómo se
-      arregla**, y el error desaparece al reenfocar
-- [ ] Botones con **verbo + sustantivo**; estados vacíos con salida; confirmaciones específicas
-- [ ] Toda acción responde en **menos de 100 ms**, aunque solo sea cambiando el estado del control
-- [ ] Ninguna actualización optimista en pagos, altas, cambios de contraseña ni borrados
-      irreversibles; las que existan tienen **reversión escrita**, no prevista
-
-Gate `a11y`: ejecútalo si está configurado y **pega la salida**. Si el proyecto no tiene
-herramienta, decláralo como **control no ejecutado** con riesgo, propietario y siguiente paso.
-Ausente no equivale a verde.
-
-`code-reviewer` es **solo lectura**: devuelve HANDOFF con estándares, alcance, controles,
-evidencias, hallazgos, conteos y veredicto. El coordinador puede delegar en `@docs-writer` la
-materialización **literal** —sin reinterpretar— en
-`docs/design/reports/YYYY-MM-DD-NNN-slug.md`, con `<!-- sdd-usability-report:v1 -->` y su JSON.
-
-**CRÍTICO o ALTO ⇒ bloquea la entrega.** MEDIO requiere responsable, justificación y fecha de
-revisión para `APTO CON CONDICIONES`. Un control no ejecutado conserva riesgo, propietario y paso.
-
-## Paso 6 — Calidad de la suite (`@test-engineer`)
-
-- ¿Hay tests sin assert o con asserts triviales?
-- ¿Los tests fallan si rompes el código a propósito? (comprobación puntual)
-- ¿Casos límite cubiertos, no solo el camino feliz?
-- ¿Sin `.only`, `.skip` ni tests flaky?
-- Mutation testing en el core, si está configurado.
-- ¿Hay tests que mockean justo lo que dicen probar? Esos pasan siempre y no prueban nada.
-
-## Paso 6 bis — Calibración de la verificación
-
-Comprobaciones **de solo lectura** contra `plan.md` y la configuración del runner. Quien coordina
-esta fase es un auditor sin escritura ni delegación: aquí no se llama a nadie, se comprueba.
-
-- [ ] Cada módulo nuevo o modificado tiene **tier declarado** en `plan.md`
-- [ ] **Lista los que no lo tienen**: esos debían verificarse al 100 %. Si no lo están, es un
-      bloqueo, no una observación
-- [ ] Ningún módulo que maneje **dinero, datos críticos o permisos** está clasificado por debajo de
-      CORE. Esta es la vía de escape obvia del sistema de tiers y hay que buscarla a propósito:
-      bajar de tier es más barato que escribir tests
-- [ ] Cada módulo cumple el umbral de su tier. Si el runner solo admite umbral global, la
-      limitación está declarada en `evidence.md`, no disimulada
-- [ ] Gate `smells` en verde, o declarado como no configurado en este proyecto
-
-## Paso 6 ter — Observabilidad, métricas y deuda
-
-- [ ] Los caminos nuevos capturan y **clasifican** sus errores
-- [ ] Salud por versión visible y regla de reversión escrita
-- [ ] Rastro de eventos de negocio **sin datos personales** — lo cruza `@security-auditor`
-- [ ] Toda alerta añadida tiene umbral de aviso, umbral crítico y playbook
-- [ ] Métricas de nivel 1 recogidas (`docs/quality/METRICS.md`)
-- [ ] Ratio de deuda medido, no estimado:
+Si falta evidence, crea solo el esqueleto:
 
 ```bash
-node scripts/sdd-project.mjs debt --json
+node scripts/sdd-project.mjs scaffold --spec NNN --phase verify --json
+node scripts/sdd-project.mjs trace-status --spec NNN --json
+node scripts/check-sdd.mjs --json --strict --spec NNN
+node scripts/sdd-project.mjs run --slow --json
 ```
 
-## Paso 7 — Evidencia y trazabilidad de ejecución
+Pega o persiste la salida real. Si un gate requerido falla o queda NO EJECUTADO, para; no revises como entregable código que no compila/pasa.
 
-- [ ] `evidence.md` tiene una fila por ejecución, con comando, resultado y artefacto
-- [ ] La sección **"controles no ejecutados"** está rellenada o justificadamente vacía
-- [ ] Cada tarea `hecho` tiene su evento en `execution-log.jsonl`
-- [ ] Las delegaciones aparecen como `observed`; si alguna es `declared-direct` o
-      `unverified`, está documentado por qué
-- [ ] La decisión de entrega de `evidence.md` §5 sigue en `NO-GO` hasta que un humano la cambie
-- [ ] El informe de seguridad es material y parseable; estándares, nivel, alcance, conteos y
-      veredicto coinciden con el HANDOFF literal del auditor
-- [ ] El informe de usabilidad cumple lo mismo, y la verificación manual de teclado y lector de
-      pantalla está firmada por alguien, no supuesta
+## Verificar por excepción
 
-## Paso 8 — Operación
+Usa `trace-status` para abrir solo familias huérfanas/no resueltas. Comprueba que todo CA tiene test, todas las tareas de alcance están hechas y no hay código sin tarea.
 
-- [ ] Logs estructurados, sin PII, en los caminos nuevos
-- [ ] Métricas y trazas
-- [ ] Migraciones reversibles y compatibles con la versión anterior desplegada
-- [ ] Feature flag donde el plan lo pedía
-- [ ] Plan de reversión escrito
-- [ ] Documentación y contratos actualizados
-- [ ] Bitácora actualizada si hubo decisiones
+Carga [`references/review-checklists.md`](references/review-checklists.md) solo para los impactos reales:
+
+- siempre: diff, calidad de suite y evidencia;
+- sensible: seguridad OWASP/ASVS e informe parseable;
+- UI: WCAG/Nielsen, a11y automático y manual;
+- cambios operativos: observabilidad, métricas, deuda, migración y reversión.
+
+`security-auditor` y `code-reviewer` son read-only. `docs-writer` puede materializar literalmente sus HANDOFF; no reinterpreta veredictos. CRÍTICO/ALTO bloquea. MEDIO exige aceptación durable. Ausente/no ejecutado nunca equivale a verde.
 
 ## Informe
 
-Escribe `docs/quality/reports/YYYY-MM-DD-NNN-slug.md` con el resultado de cada gate y la
-salida real de las herramientas.
+Materializa `docs/quality/reports/YYYY-MM-DD-NNN-slug.md` y actualiza `evidence.md` con comando, resultado y artefacto. Mantén NO-GO hasta aprobación humana.
 
 ## Cierre
 
-```
+```markdown
 ### HANDOFF
-- Agente origen: code-reviewer (coordinando verificación)
-- Gates automáticos: <verde | rojo, cuál>
-- Trazabilidad: <n>/<n> CA cubiertos
-- Revisión: ✅ | ⚠️ | ❌  (bloqueantes: <n>)
-- Diseño: <n> violaciones sin justificar
-- Cobertura: CORE <n/n> · IMPORTANT <n/n> · sin tier declarado <n> (deben estar al 100 %)
-- Observabilidad: <instrumentada | huecos> · alertas sin playbook: <n>
-- Deuda: <ratio> · marcadores <n>
-- Seguridad: CRÍTICO <n> · ALTO <n> · MEDIO <n>
-- Informe de seguridad: <ruta> · OWASP Top 10:2025 · ASVS 5.0.0 <nivel> · <veredicto>
-- Usabilidad: UX-… <n> aplicables · <n> verificados · <n> no ejecutados
-- Informe de usabilidad: <ruta> · WCAG 2.2 AA · heurísticas Nielsen · <veredicto>
-- Verificación manual a11y: teclado <sí/no> · lector <sí/no> · zoom 200 % <sí/no>
+- Agente origen: code-reviewer
+- Gates y trazabilidad: <resultado · CA cubiertos>
+- Revisión/diseño/suite: <hallazgos>
+- Cobertura y tiers: <CORE/IMPORTANT/sin tier>
+- Seguridad/usabilidad: <conteos · informes · controles no ejecutados>
+- Observabilidad/deuda: <resultado>
 - Veredicto: APTO PARA ENTREGA | REQUIERE CAMBIOS
-- Siguiente agente sugerido: implementer (arreglar) | release-manager — comando: /sdd-ship
+- Siguiente agente sugerido: implementer | release-manager — /sdd-ship
 ```

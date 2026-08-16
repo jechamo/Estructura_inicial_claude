@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "plan-tasks",
+  "configuration": "candidate-011",
+  "prompt": "Con una spec aprobada, prepara plan y tareas y detecta huecos de trazabilidad sin decidir arquitectura ni tareas concretas.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-plan/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 2668,
+      "sha256": "83b9b325d95a8be6baa4c73f43eaab021adf155f5c5947e3b8ca112bdc0dec95"
+    },
+    {
+      "path": ".agents/skills/sdd-tasks/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 7454,
+      "sha256": "b336914e84af818bf1a7ecb0f9c6825529cdd8606bff6d8d395d228a76de5482"
+    }
+  ],
+  "commands": [
+    {
+      "label": "scaffold plan positivo",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "scaffold",
+        "--spec",
+        "001",
+        "--phase",
+        "plan",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 247,
+      "stdout": "{\"schemaVersion\":1,\"spec\":\"001-recuperacion-contrasena\",\"phase\":\"plan\",\"dryRun\":false,\"created\":true,\"files\":[\"docs/specs/001-recuperacion-contrasena/plan.md\",\"docs/specs/001-recuperacion-contrasena/data-model.md\",\"docs/specs/001-recuperacion-contrasena/research.md\",\"docs/specs/001-recuperacion-contrasena/contracts/.gitkeep\"],\"decisions\":\"pending-human-input\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [
+          "docs/specs/001-recuperacion-contrasena/contracts/.gitkeep",
+          "docs/specs/001-recuperacion-contrasena/data-model.md",
+          "docs/specs/001-recuperacion-contrasena/plan.md",
+          "docs/specs/001-recuperacion-contrasena/research.md"
+        ],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "scaffold tasks positivo",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "scaffold",
+        "--spec",
+        "001",
+        "--phase",
+        "tasks",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 200,
+      "stdout": "{\"schemaVersion\":1,\"spec\":\"001-recuperacion-contrasena\",\"phase\":\"tasks\",\"dryRun\":false,\"created\":true,\"files\":[\"docs/specs/001-recuperacion-contrasena/tasks.md\",\"docs/specs/001-recuperacion-contrasena/test-plan.md\"],\"decisions\":\"pending-human-input\"}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [
+          "docs/specs/001-recuperacion-contrasena/tasks.md",
+          "docs/specs/001-recuperacion-contrasena/test-plan.md"
+        ],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "trace-status positivo",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "trace-status",
+        "--spec",
+        "001",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 178,
+      "stdout": "{\"schemaVersion\":1,\"spec\":\"001-recuperacion-contrasena\",\"complete\":false,\"missing\":5,\"families\":{\"OBJ\":{\"declared\":[\"OBJ-001\"],\"referenced\":[\"OBJ-001\"],\"covered\":[\"OBJ-001\"],\"orphans\":[],\"unresolved\":[]},\"PRD-RF\":{\"declared\":[\"PRD-RF-001\"],\"referenced\":[\"PRD-RF-001\"],\"covered\":[\"PRD-RF-001\"],\"orphans\":[],\"unresolved\":[]},\"UC\":{\"declared\":[\"UC-001\"],\"referenced\":[\"UC-001\"],\"covered\":[\"UC-001\"],\"orphans\":[],\"unresolved\":[]},\"RF\":{\"declared\":[\"RF-01\",\"RF-02\"],\"referenced\":[\"RF-01\"],\"covered\":[\"RF-01\"],\"orphans\":[\"RF-02\"],\"unresolved\":[]},\"CA\":{\"declared\":[\"CA-01\"],\"referenced\":[\"CA-01\"],\"covered\":[\"CA-01\"],\"orphans\":[],\"unresolved\":[]},\"SEC\":{\"declared\":[],\"referenced\":[],\"covered\":[],\"orphans\":[],\"unresolved\":[]},\"UX\":{\"declared\":[\"UX-A11Y-001\",\"UX-COPY-001\",\"UX-FORM-001\",\"UX-PERF-001\"],\"referenced\":[],\"covered\":[],\"orphans\":[\"UX-A11Y-001\",\"UX-COPY-001\",\"UX-FORM-001\",\"UX-PERF-001\"],\"unresolved\":[]},\"DOC\":{\"declared\":[],\"referenced\":[],\"covered\":[],\"orphans\":[],\"unresolved\":[]}}}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": true,
+    "plan": true,
+    "tasks": true,
+    "semanticPlaceholdersRemain": true
+  }
+}

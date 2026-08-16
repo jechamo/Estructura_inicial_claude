@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "text": "Usa la plantilla MADR canónica y calcula un ID sin sobrescribir.",
+      "passed": true,
+      "evidence": "outputs/result.md punto 1; execution-evidence.json conserva la ejecución material."
+    },
+    {
+      "text": "Mantiene contexto, decisión y consecuencias pendientes.",
+      "passed": true,
+      "evidence": "outputs/result.md punto 2; execution-evidence.json conserva la ejecución material."
+    },
+    {
+      "text": "No aprueba ni decide la opción por la persona.",
+      "passed": true,
+      "evidence": "outputs/result.md punto 3; execution-evidence.json conserva la ejecución material."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1
+  },
+  "execution_metrics": {
+    "total_tool_calls": 1,
+    "output_chars": 766,
+    "errors_encountered": 0
+  }
+}

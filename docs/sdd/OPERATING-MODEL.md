@@ -562,6 +562,15 @@ Reglas duras:
 
 Catálogo completo: `docs/agents/CATALOG.md`. Diagramas: `README.md`.
 
+### Automatización determinista del contexto
+
+Las skills deben consumir primero los snapshots versionados del CLI: `status --json`,
+`trace-status --spec NNN --json` y `check-sdd --json`. `scaffold` instancia exclusivamente las
+plantillas canónicas y se detiene ante un gate pendiente o un destino existente. Los generadores
+de `.sdd/generators.json` nacen desactivados, usan argv sin shell y solo mecanizan un contrato que
+ya decidió una persona. Ningún comando elige requisitos, arquitectura, campos de DTO, tareas,
+amenazas, usabilidad o veredictos.
+
 ---
 
 ## 11. Convenciones de código

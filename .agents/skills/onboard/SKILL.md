@@ -37,9 +37,11 @@ concretos es parte de tu trabajo en la fase 3.
 5. **Puntos de entrada**: rutas HTTP, CLI, consumidores de cola, cron, webhooks.
 6. **Datos**: esquema, migraciones, ORM, dónde se construyen las consultas.
 7. **Tests**: qué hay, qué cubren, cuánto tardan, qué no está probado.
-8. **Historia**: `git log` — zonas calientes (los ficheros que cambian siempre suelen ser
+8. **Generación existente**: scripts que ya generan OpenAPI, DTO, tipos, clientes o docs. Propón
+   entradas para `.sdd/generators.json`, pero no las actives ni apruebes automáticamente.
+9. **Historia**: `git log` — zonas calientes (los ficheros que cambian siempre suelen ser
    los peor diseñados), autores, ritmo.
-9. **Riesgos**: dependencias sin mantenimiento o con CVEs, secretos en el repo, versiones EOL,
+10. **Riesgos**: dependencias sin mantenimiento o con CVEs, secretos en el repo, versiones EOL,
    TODOs antiguos, código muerto, ausencia de CI.
 
 Entregable: `docs/architecture/CURRENT-STATE.md` con el mapa, diagrama C4 nivel 2 en mermaid,

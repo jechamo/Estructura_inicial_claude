@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "baseline": "v0.6.0",
+  "candidate": "spec-011",
+  "measurement": {
+    "tokens": "Proxy reproducible: ceil((bytes UTF-8 exactos de SKILL.md activadas + bytes exactos del outputs/result.md persistido) / 4).",
+    "time": "Duración material registrada, no elegible: una sola ejecución local no permite comparación estable.",
+    "quality": "Expectativas funcionales comunes; execution-evidence.json conserva procesos y artefactos reales."
+  },
+  "cases": [
+    {
+      "id": 1,
+      "name": "status",
+      "baseline": "835 tokens estimados",
+      "candidate": "425 tokens estimados",
+      "qualityMaintained": true,
+      "tokenReductionPct": 49.1,
+      "timeReductionPct": null,
+      "accepted": true
+    },
+    {
+      "id": 2,
+      "name": "adr",
+      "baseline": "870 tokens estimados",
+      "candidate": "493 tokens estimados",
+      "qualityMaintained": true,
+      "tokenReductionPct": 43.33,
+      "timeReductionPct": null,
+      "accepted": true
+    },
+    {
+      "id": 3,
+      "name": "spec-design",
+      "baseline": "5293 tokens estimados",
+      "candidate": "3108 tokens estimados",
+      "qualityMaintained": true,
+      "tokenReductionPct": 41.28,
+      "timeReductionPct": null,
+      "accepted": true
+    },
+    {
+      "id": 4,
+      "name": "plan-tasks",
+      "baseline": "4496 tokens estimados",
+      "candidate": "2721 tokens estimados",
+      "qualityMaintained": true,
+      "tokenReductionPct": 39.48,
+      "timeReductionPct": null,
+      "accepted": true
+    },
+    {
+      "id": 5,
+      "name": "docs-verify",
+      "baseline": "3750 tokens estimados",
+      "candidate": "1976 tokens estimados",
+      "qualityMaintained": true,
+      "tokenReductionPct": 47.31,
+      "timeReductionPct": null,
+      "accepted": true
+    }
+  ],
+  "summary": {
+    "medianTokenReductionPct": 43.33,
+    "medianTimeReductionPct": null,
+    "qualityPassRate": 1,
+    "fixedCost": "No se automatizan lectura semántica, decisiones, clarificaciones, TDD, auditorías ni evidencia; ese coste sigue siendo necesario para mantener calidad."
+  }
+}

@@ -13,6 +13,9 @@ Agente responsable: `@planner`.
 El gate humano del plan consta como `approved`, con actor, fecha y alcance. Sin esa confirmación,
 no se crea `tasks.md`.
 
+Ejecuta `node scripts/sdd-project.mjs scaffold --spec NNN --phase tasks --json`. Completa el
+esqueleto canónico; el CLI no descompone el plan, no inventa tareas y nunca sobrescribe.
+
 ## Formato de tarea
 
 ```markdown
@@ -93,6 +96,10 @@ no se crea `tasks.md`.
     gate y evidencia. Código y docs pueden vivir en commits distintos del mismo PR.
 
 ## Verificación de cobertura
+
+Ejecuta `node scripts/sdd-project.mjs trace-status --spec NNN --json` y resuelve todos los
+huérfanos reales. El snapshot detecta IDs; decidir el corte atómico sigue siendo trabajo del
+`planner`.
 
 Construye la tabla de trazabilidad y comprueba que **no queda hueco**:
 

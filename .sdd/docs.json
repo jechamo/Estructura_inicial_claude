@@ -62,6 +62,33 @@
       "generated": false,
       "gate": null,
       "owner": "release-manager"
+    },
+    {
+      "id": "DOC-AUTO",
+      "kind": "developer-readme",
+      "sources": ["scripts/sdd-project.mjs", "scripts/check-sdd.mjs"],
+      "artifacts": ["README.md", "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-SKILLS",
+      "kind": "developer-readme",
+      "sources": [".agents/skills/**/SKILL.md", ".agents/skills/**/references/*.md"],
+      "artifacts": ["docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-GEN",
+      "kind": "operations",
+      "sources": [".sdd/generators.json", "scripts/sdd-project.mjs"],
+      "artifacts": [".sdd/README.md", "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "generated": false,
+      "gate": null,
+      "owner": "implementer"
     }
   ]
 }

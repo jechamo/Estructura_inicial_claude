@@ -25,8 +25,9 @@ Si no existe constitución y el repo está vacío → avisa: falta `/sdd-init`.
 
 ## Paso 1 — Numeración y carpeta
 
-Siguiente número libre en `docs/specs/`. Formato `NNN-slug-en-kebab-case`.
-Copia `docs/specs/_TEMPLATE/` a `docs/specs/NNN-slug/`.
+Ejecuta `node scripts/sdd-project.mjs new-spec <slug-en-kebab-case> --json`. El CLI calcula el
+número y copia solo `spec.md`/`clarifications.md` desde la plantilla canónica sin aprobar nada.
+Usa la ruta devuelta; no renumeres ni recrees el esqueleto a mano.
 
 Si se trabaja con git, propón crear la rama `feature/NNN-slug` (no la crees sin permiso).
 

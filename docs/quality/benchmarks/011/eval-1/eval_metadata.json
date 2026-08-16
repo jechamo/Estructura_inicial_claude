@@ -1,0 +1,7 @@
+{
+  "eval_id": 1,
+  "eval_name": "status",
+  "prompt": "Explica el estado del proyecto, specs abiertas, tareas y siguiente paso sin modificar nada.",
+  "metric": "estimated_tokens_from_utf8_bytes",
+  "formula": "ceil((skillSourceBytes + persistedOutputBytes) / 4)"
+}

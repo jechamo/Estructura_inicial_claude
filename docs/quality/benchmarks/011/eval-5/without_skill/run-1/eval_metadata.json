@@ -1,0 +1,7 @@
+{
+  "eval_id": 5,
+  "eval_name": "docs-verify",
+  "configuration": "v0.6.0",
+  "run_number": 1,
+  "prompt": "Audita documentación y prepara la verificación de una spec sin escribir ni declarar verde lo no ejecutado."
+}

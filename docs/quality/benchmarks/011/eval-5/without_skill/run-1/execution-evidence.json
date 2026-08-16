@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "docs-verify",
+  "configuration": "v0.6.0",
+  "prompt": "Audita documentación y prepara la verificación de una spec sin escribir ni declarar verde lo no ejecutado.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/docs-sync/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 4806,
+      "sha256": "d0b82436c6419dbf761ad72cb9c55eb17ea282e373f1954400103453e0397bbb"
+    },
+    {
+      "path": ".agents/skills/sdd-verify/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 9499,
+      "sha256": "2c39c3a8033ccb05de7c7166d370afa538615f0297f671644b1b4f250b01a6d0"
+    }
+  ],
+  "commands": [
+    {
+      "label": "check-sdd baseline",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/check-sdd.mjs"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 1,
+      "signal": null,
+      "durationMs": 380,
+      "stdout": "check-sdd (normal) · 2 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)\n\nAvisos:\n  ~ [producto/cadena-spec] 001-recuperacion-contrasena: RF sin cadena completa de producto: RF-02\n  ~ [docs/impacto] 001-recuperacion-contrasena: falta Impacto de documentación (aplicable · DOC-* | no-aplica · motivo | docs-pending)\n  ~ [seguridad/impacto] 001-recuperacion-contrasena: falta Impacto de seguridad (sensible | no-sensible | security-pending)\n  ~ [usabilidad/impacto] 001-recuperacion-contrasena: falta Impacto de usabilidad (aplicable | sin-ui · <motivo material> | ux-pending)\n  ~ [producto/cadena-tarea] 001-recuperacion-contrasena: ninguna tarea enlaza completa la cadena de PRD-RF-001/CA-01 con su test\n  ~ [producto/cadena-spec] 002-segunda-activa: RF sin cadena completa de producto: RF-02\n  ~ [docs/impacto] 002-segunda-activa: falta Impacto de documentación (aplicable · DOC-* | no-aplica · motivo | docs-pending)\n  ~ [seguridad/impacto] 002-segunda-activa: falta Impacto de seguridad (sensible | no-sensible | security-pending)\n  ~ [usabilidad/impacto] 002-segunda-activa: falta Impacto de usabilidad (aplicable | sin-ui · <motivo material> | ux-pending)\n  ~ [producto/cadena-tarea] 002-segunda-activa: ninguna tarea enlaza completa la cadena de PRD-RF-001/CA-01 con su test\n  ~ [producto/drift] baseline de producto aprobado con drift/hash distinto: docs/product/PRD.md, docs/product/USE-CASES.md, docs/product/FEATURE-MAP.md, docs/product/SOURCES.md\n  ~ [docs/bootstrap] el baseline documental necesita `/docs-sync bootstrap` y aprobación humana\n\nProblemas:\n  ✗ [spec/clarify] 001-recuperacion-contrasena: 1 marcador(es) [NEEDS CLARIFICATION] y ya existe plan.md — se planificó sobre ambigüedad\n  ✗ [design/clarify] 001-recuperacion-contrasena: 1 marcador(es) [NEEDS CLARIFICATION] en design.md y ya existe plan.md\n  ✗ [spec/clarify] 002-segunda-activa: 1 marcador(es) [NEEDS CLARIFICATION] y ya existe plan.md — se planificó sobre ambigüedad\n  ✗ [design/clarify] 002-segunda-activa: 1 marcador(es) [NEEDS CLARIFICATION] en design.md y ya existe plan.md\n  ✗ [producto/aprobacion] un producto approved necesita fecha, persona y enforceFromSpec\n\n5 problema(s). El circuito SDD no está en un estado entregable.\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "slow gates baseline no ejecutados",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "run",
+        "--slow",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 154,
+      "stdout": "{\"ok\":true,\"status\":\"unconfigured\",\"speed\":\"slow\",\"results\":[],\"skipped\":[\"sdd\"],\"unconfigured\":[\"coverage\",\"e2e\",\"visual\",\"a11y\",\"security\",\"deps-audit\",\"docs\",\"mutation\"]}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": null,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": null
+  }
+}

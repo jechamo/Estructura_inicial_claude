@@ -17,12 +17,14 @@ import { join, relative, resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { validateDocsConfig, normalizeDocPath, matchesDocPattern } from './lib/docs-contract.mjs';
+import { parseJsonc } from './lib/jsonc.mjs';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
 const STRICT = args.includes('--strict');
 const VIRGIN = args.includes('--virgin');
 const DOCS_DIFF = args.includes('--docs-diff');
+const JSON_OUT = args.includes('--json');
 const indiceBaseDocs = args.indexOf('--base');
 const BASE_DOCS = indiceBaseDocs >= 0 ? args[indiceBaseDocs + 1] : null;
 const soloSpec = (args[args.indexOf('--spec') + 1] || '').replace(/^--.*/, '');
@@ -60,13 +62,6 @@ function walk(dir, filtro, out = []) {
     else if (filtro(e.name)) out.push(p);
   }
   return out;
-}
-
-function parseJsonc(texto) {
-  return JSON.parse(texto
-    .replace(/^\s*\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/,(\s*[}\]])/g, '$1'));
 }
 
 function primerId(texto, patron) {
@@ -1828,6 +1823,32 @@ if (STRICT && soloSpec) {
 // ─────────────────────────────────────────────────────────────────────────────
 const modo = VIRGIN ? 'virgen' : STRICT ? 'estricto' : 'normal';
 const nSkills = dirs(SKILLS_DIR).length;
+if (JSON_OUT) {
+  const salida = {
+    schemaVersion: 1,
+    ok: problemas.length === 0,
+    mode: modo,
+    scope: {
+      spec: soloSpec || null,
+      virgin: VIRGIN,
+      strict: STRICT,
+      docsDiff: DOCS_DIFF,
+      base: BASE_DOCS || null,
+    },
+    counts: {
+      specs: specs.length,
+      tasksDone: tareasHechas,
+      agents: nombresAgentes.size,
+      skills: nSkills,
+      warnings: avisos.length,
+      problems: problemas.length,
+    },
+    warnings: avisos,
+    problems: problemas,
+  };
+  console.log(JSON.stringify(salida));
+  if (problemas.length) process.exitCode = 1;
+} else {
 console.log(
   `check-sdd (${modo}) · ${specs.length} spec(s) · ${tareasHechas} tarea(s) hecha(s) · ` +
     `${nombresAgentes.size} agente(s) · ${nSkills} skill(s)\n`,
@@ -1843,11 +1864,10 @@ if (problemas.length) {
   console.log('Problemas:');
   for (const p of problemas) console.log(`  ✗ [${p.regla}] ${p.msg}`);
   console.log(`\n${problemas.length} problema(s). El circuito SDD no está en un estado entregable.`);
-  process.exit(1);
+  process.exitCode = 1;
+} else console.log(
+    STRICT
+      ? '✅ Estricto: estructura, trazabilidad y evidencia verificadas.'
+      : '✅ Estructura y coherencia correctas. Usa --strict antes de entregar.',
+  );
 }
-
-console.log(
-  STRICT
-    ? '✅ Estricto: estructura, trazabilidad y evidencia verificadas.'
-    : '✅ Estructura y coherencia correctas. Usa --strict antes de entregar.',
-);

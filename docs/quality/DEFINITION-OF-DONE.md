@@ -80,6 +80,9 @@ voluntad, se olvida.
 | Auditoría de seguridad | `security-auditor` | Sí (CRÍTICO/ALTO) |
 | Trazabilidad spec ↔ test | `/sdd-verify` + `scripts/check-sdd.mjs --strict` | Sí |
 | Evidencia y ejecución de toda tarea `hecho` | `scripts/check-sdd.mjs --strict` | Sí |
+| Snapshot de estado y cobertura de IDs | `sdd-project.mjs status --json` + `trace-status --json` | Sí, como entrada verificable; no sustituye el análisis |
+| Scaffolds sin overwrite ni salto de gate | `sdd-project.mjs scaffold` + suite de instalación | Sí |
+| Generadores registrados sin shell, con timeout y drift | `sdd-project.mjs generate` + controles SEC-AUTO | Sí cuando el proyecto los activa |
 | Contrato, enlaces, placeholders y co-cambio documental contra SHA base | `check-sdd --docs-diff --base <SHA>` + gates `docs:*` configurados | Sí |
 | Skills de terceros fijadas y con licencia verificada | `scripts/skills-sync.mjs --check` | Sí |
 

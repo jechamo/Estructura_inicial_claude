@@ -19,6 +19,7 @@ import {
   BLOQUES_GESTIONADOS, SEMILLAS, BASE_GITIGNORE, APENDICE_GITIGNORE,
   RUTAS_RETIRADAS, debeCopiar,
 } from './lib/manifiesto.mjs';
+import { parseJsonc } from './lib/jsonc.mjs';
 
 const ORIGEN = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const COMANDOS = new Set(['init', 'update', 'check', 'global']);
@@ -139,13 +140,6 @@ function registrarConflicto(ruta, contenido, motivo = 'contenido local distinto'
   escribir(salida, contenido);
 }
 
-function parseJsonc(texto) {
-  return JSON.parse(texto
-    .replace(/^\s*\/\/.*$/gm, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/,(\s*[}\]])/g, '$1'));
-}
-
 function claveArray(valor) {
   return valor && typeof valor === 'object'
     ? JSON.stringify(valor, Object.keys(valor).sort())
@@ -220,12 +214,15 @@ function tomlPareceValido(contenido) {
 function fusionarSemillas(registroNuevo) {
   for (const [ruta, semilla] of Object.entries(SEMILLAS)) {
     const actual = leer(rutaDestinoSegura(ruta));
-    if (ruta === '.sdd/docs.json' && actual !== null) {
+    if (['.sdd/docs.json', '.sdd/generators.json'].includes(ruta) && actual !== null) {
       try {
-        JSON.parse(actual);
+        const parsed = JSON.parse(actual);
+        if (ruta === '.sdd/generators.json' &&
+            (parsed?.schemaVersion !== 1 || !Array.isArray(parsed.generators)))
+          throw new Error('requiere schemaVersion 1 y generators array');
         omitidos.push(ruta);
       } catch (error) {
-        registrarConflicto(ruta, semilla, `JSON documental no valido: ${error.message}`);
+        registrarConflicto(ruta, semilla, `JSON ${ruta === '.sdd/docs.json' ? 'documental' : 'de generadores'} no valido: ${error.message}`);
       }
       continue;
     }

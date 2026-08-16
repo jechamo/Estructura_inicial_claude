@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "docs-verify",
+  "configuration": "candidate-011",
+  "prompt": "Audita documentación y prepara la verificación de una spec sin escribir ni declarar verde lo no ejecutado.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/docs-sync/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 4997,
+      "sha256": "a467631727f6b4a901a8cc9beda97e00d40cb8e1c49e6d959ce3d0f95ac16d94"
+    },
+    {
+      "path": ".agents/skills/sdd-verify/SKILL.md",
+      "ref": "working-tree",
+      "bytes": 2205,
+      "sha256": "81616e98edfd5127ff78521d4ab3cd79bfe84ff95c0c1430955dfe44d6794321"
+    }
+  ],
+  "commands": [
+    {
+      "label": "check-sdd JSON",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/check-sdd.mjs",
+        "--json",
+        "--spec",
+        "001"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 1,
+      "signal": null,
+      "durationMs": 403,
+      "stdout": "{\"schemaVersion\":1,\"ok\":false,\"mode\":\"normal\",\"scope\":{\"spec\":\"001\",\"virgin\":false,\"strict\":false,\"docsDiff\":false,\"base\":null},\"counts\":{\"specs\":1,\"tasksDone\":0,\"agents\":20,\"skills\":26,\"warnings\":7,\"problems\":3},\"warnings\":[{\"regla\":\"producto/cadena-spec\",\"msg\":\"001-recuperacion-contrasena: RF sin cadena completa de producto: RF-02\"},{\"regla\":\"docs/impacto\",\"msg\":\"001-recuperacion-contrasena: falta Impacto de documentación (aplicable · DOC-* | no-aplica · motivo | docs-pending)\"},{\"regla\":\"seguridad/impacto\",\"msg\":\"001-recuperacion-contrasena: falta Impacto de seguridad (sensible | no-sensible | security-pending)\"},{\"regla\":\"usabilidad/impacto\",\"msg\":\"001-recuperacion-contrasena: falta Impacto de usabilidad (aplicable | sin-ui · <motivo material> | ux-pending)\"},{\"regla\":\"producto/cadena-tarea\",\"msg\":\"001-recuperacion-contrasena: ninguna tarea enlaza completa la cadena de PRD-RF-001/CA-01 con su test\"},{\"regla\":\"producto/drift\",\"msg\":\"baseline de producto aprobado con drift/hash distinto: docs/product/PRD.md, docs/product/USE-CASES.md, docs/product/FEATURE-MAP.md, docs/product/SOURCES.md\"},{\"regla\":\"docs/bootstrap\",\"msg\":\"el baseline documental necesita `/docs-sync bootstrap` y aprobación humana\"}],\"problems\":[{\"regla\":\"spec/clarify\",\"msg\":\"001-recuperacion-contrasena: 1 marcador(es) [NEEDS CLARIFICATION] y ya existe plan.md — se planificó sobre ambigüedad\"},{\"regla\":\"design/clarify\",\"msg\":\"001-recuperacion-contrasena: 1 marcador(es) [NEEDS CLARIFICATION] en design.md y ya existe plan.md\"},{\"regla\":\"producto/aprobacion\",\"msg\":\"un producto approved necesita fecha, persona y enforceFromSpec\"}]}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "slow gates no ejecutados",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "scripts/sdd-project.mjs",
+        "run",
+        "--slow",
+        "--json"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 180,
+      "stdout": "{\"ok\":true,\"status\":\"unconfigured\",\"speed\":\"slow\",\"results\":[],\"skipped\":[\"sdd\"],\"unconfigured\":[\"coverage\",\"e2e\",\"visual\",\"a11y\",\"security\",\"deps-audit\",\"docs\",\"mutation\"]}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": null,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": null
+  }
+}

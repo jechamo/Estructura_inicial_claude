@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "evaluation": "status",
+  "configuration": "v0.6.0",
+  "prompt": "Explica el estado del proyecto, specs abiertas, tareas y siguiente paso sin modificar nada.",
+  "skillSources": [
+    {
+      "path": ".agents/skills/sdd-status/SKILL.md",
+      "ref": "v0.6.0",
+      "bytes": 2617,
+      "sha256": "d30cb24d3fb2caea061b50605c3dc2ae3f9f8a59a1e0e4d90828ce66b4d1a79e"
+    }
+  ],
+  "commands": [
+    {
+      "label": "status baseline zero specs",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "-e",
+        "const fs=require('node:fs');const dirs=fs.readdirSync('docs/specs').filter(x=>/^\\d{3}-/.test(x));const active=dirs.filter(d=>{const p='docs/specs/'+d+'/tasks.md';return fs.existsSync(p)&&/- (?:\\*\\*)?Estado(?:\\*\\*)?: (?:pendiente|en curso)/i.test(fs.readFileSync(p,'utf8'))});process.stdout.write(JSON.stringify({activeCount:active.length,active,ambiguous:active.length>1,manualInspection:true})+'\\n');"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 152,
+      "stdout": "{\"activeCount\":0,\"active\":[],\"ambiguous\":false,\"manualInspection\":true}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "status baseline one spec",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "-e",
+        "const fs=require('node:fs');const dirs=fs.readdirSync('docs/specs').filter(x=>/^\\d{3}-/.test(x));const active=dirs.filter(d=>{const p='docs/specs/'+d+'/tasks.md';return fs.existsSync(p)&&/- (?:\\*\\*)?Estado(?:\\*\\*)?: (?:pendiente|en curso)/i.test(fs.readFileSync(p,'utf8'))});process.stdout.write(JSON.stringify({activeCount:active.length,active,ambiguous:active.length>1,manualInspection:true})+'\\n');"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 130,
+      "stdout": "{\"activeCount\":1,\"active\":[\"001-recuperacion-contrasena\"],\"ambiguous\":false,\"manualInspection\":true}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    },
+    {
+      "label": "status baseline multiple specs",
+      "program": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "-e",
+        "const fs=require('node:fs');const dirs=fs.readdirSync('docs/specs').filter(x=>/^\\d{3}-/.test(x));const active=dirs.filter(d=>{const p='docs/specs/'+d+'/tasks.md';return fs.existsSync(p)&&/- (?:\\*\\*)?Estado(?:\\*\\*)?: (?:pendiente|en curso)/i.test(fs.readFileSync(p,'utf8'))});process.stdout.write(JSON.stringify({activeCount:active.length,active,ambiguous:active.length>1,manualInspection:true})+'\\n');"
+      ],
+      "cwd": "<fixture>",
+      "exitCode": 0,
+      "signal": null,
+      "durationMs": 140,
+      "stdout": "{\"activeCount\":2,\"active\":[\"001-recuperacion-contrasena\",\"002-segunda-activa\"],\"ambiguous\":true,\"manualInspection\":true}\n",
+      "stderr": "",
+      "changedFiles": {
+        "created": [],
+        "modified": [],
+        "deleted": []
+      }
+    }
+  ],
+  "fixtureActions": [],
+  "artifactChecks": {
+    "spec": true,
+    "design": null,
+    "plan": null,
+    "tasks": null,
+    "semanticPlaceholdersRemain": null
+  }
+}

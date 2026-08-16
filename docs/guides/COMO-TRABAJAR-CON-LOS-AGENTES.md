@@ -175,6 +175,27 @@ formato del host obliga —los agentes—, y siempre como envoltorio fino que re
 | Algo se ha caído en producción | `/respond-incident` | — |
 | Revalidar formatos y estándares | `/sdd-refresh` | `research-analyst` |
 
+### Qué automatiza el CLI y qué sigue razonando el agente
+
+```bash
+node scripts/sdd-project.mjs status --json [--spec NNN]
+node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
+node scripts/sdd-project.mjs trace-status --spec NNN --json
+node scripts/check-sdd.mjs --json [--strict] [--spec NNN]
+```
+
+Esto evita releer el árbol, copiar plantillas y contar IDs a mano. El agente sigue decidiendo
+requisitos, arquitectura, controles, descomposición de tareas y veredictos. Las skills grandes
+cargan `references/` solo cuando el área afecta a la tarea.
+
+Generación de DTO/tipos/clientes no es universal. Cada proyecto puede aprobar una entrada en
+`.sdd/generators.json` y ejecutar `node scripts/sdd-project.mjs generate <id> --dry-run` antes de
+la ejecución real. El runner usa programa+argv con `shell:false`, no instala dependencias,
+confina las rutas declaradas de inputs/outputs y detecta edición manual de código generado. El
+programa aprobado sigue siendo código de confianza que se ejecuta con los permisos del usuario:
+no queda aislado por el sistema operativo. `/onboard` solo propone generadores que ya existen; la
+persona los aprueba.
+
 ### PRD o proyecto nuevo → `/sdd-intake`
 
 Indica al `orchestrator` dónde está el PRD y, si existe, el diseño de Stitch/Figma o un boceto.

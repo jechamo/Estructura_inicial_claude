@@ -7,7 +7,10 @@
  *   node scripts/sdd-project.mjs run [--ci] [--fast|--slow]
  *   node scripts/sdd-project.mjs debt [--json]
  *   node scripts/sdd-project.mjs skills-export [--json]
- *   node scripts/sdd-project.mjs status [--json]
+ *   node scripts/sdd-project.mjs status [--json] [--spec NNN]
+ *   node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
+ *   node scripts/sdd-project.mjs trace-status --spec NNN [--json]
+ *   node scripts/sdd-project.mjs generate <id> [--dry-run] [--json]
  *   node scripts/sdd-project.mjs product-status [--json]
  *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
  *   node scripts/sdd-project.mjs docs-status [--json]
@@ -21,10 +24,10 @@ import {
   existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, cpSync,
   appendFileSync, lstatSync, realpathSync, openSync, closeSync, unlinkSync, fstatSync,
 } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { validateDocsConfig } from './lib/docs-contract.mjs';
+import { validateDocsConfig, matchesDocPattern } from './lib/docs-contract.mjs';
 import { PATRONES_SECRETO } from '../.sdd/hooks/_lib.mjs';
 
 const ROOT = process.cwd();
@@ -36,6 +39,7 @@ const JSON_OUT = argv.includes('--json');
 const DRY = argv.includes('--dry-run');
 const CHECKS_PATH = join(ROOT, '.sdd', 'checks.json');
 const DOCS_PATH = join(ROOT, '.sdd', 'docs.json');
+const GENERATORS_PATH = join(ROOT, '.sdd', 'generators.json');
 
 /**
  * Vocabulario cerrado de gates. Un identificador libre convierte `checks.json` en un cajón de
@@ -76,6 +80,33 @@ const hash = (contenido) => createHash('sha256').update(contenido).digest('hex')
 function opcion(nombre) {
   const indice = argv.indexOf(nombre);
   return indice >= 0 ? argv[indice + 1] : null;
+}
+
+function validarArgumentos({ valores = [], banderas = [], operandoPermitido = false } = {}) {
+  const conValor = new Set(valores);
+  const sinValor = new Set(banderas);
+  const vistos = new Set();
+  let operandos = 0;
+  for (let i = indiceComando + 1; i < argv.length; i++) {
+    const token = argv[i];
+    if (!token.startsWith('--')) {
+      if (!operandoPermitido || operandos) throw new Error(`Argumento inesperado para ${comando}: ${token}.`);
+      operandos += 1;
+      continue;
+    }
+    if (sinValor.has(token)) {
+      if (vistos.has(token)) throw new Error(`Argumento duplicado: ${token}.`);
+      vistos.add(token);
+      continue;
+    }
+    if (!conValor.has(token)) throw new Error(`Argumento desconocido para ${comando}: ${token}.`);
+    if (vistos.has(token)) throw new Error(`Argumento duplicado: ${token}.`);
+    const valor = argv[i + 1];
+    if (valor === undefined || valor.startsWith('--')) throw new Error(`${token} requiere un valor.`);
+    vistos.add(token);
+    i += 1;
+  }
+  return { vistos, operandos };
 }
 
 function validarArgumentosTraceCorrect() {
@@ -782,6 +813,445 @@ function nuevoAdr() {
   imprimir({ created: !DRY, dryRun: DRY, adr: `ADR-${numero}`, path: ruta });
 }
 
+function idSpecRequerido() {
+  const valor = String(opcion('--spec') || '');
+  if (!/^\d{3}$/.test(valor)) throw new Error('--spec requiere un ID de tres dígitos, no una ruta.');
+  return valor;
+}
+
+function tituloDesdeSpec(nombre) {
+  return nombre.replace(/^\d{3}-/, '').split('-')
+    .map((parte) => parte ? parte[0].toUpperCase() + parte.slice(1) : '')
+    .join(' ');
+}
+
+function instanciarPlantilla(contenido, spec) {
+  const fecha = new Date().toISOString().slice(0, 10);
+  return contenido
+    .replaceAll('NNN-slug', spec.nombre)
+    .replaceAll('T-NNN', `T-${spec.id}`)
+    .replaceAll('UX-<AREA>-NNN', `UX-<AREA>-${spec.id}`)
+    .replace(/\bNNN\b/g, spec.id)
+    .replaceAll('<Título de la funcionalidad>', tituloDesdeSpec(spec.nombre))
+    .replaceAll('<YYYY-MM-DD>', fecha)
+    .replaceAll('YYYY-MM-DD', fecha);
+}
+
+const FASES_SCAFFOLD = {
+  design: [['design.md', 'design.md']],
+  plan: [
+    ['plan.md', 'plan.md'],
+    ['data-model.md', 'data-model.md'],
+    ['research.md', 'research.md'],
+    ['contracts/.gitkeep', 'contracts/.gitkeep'],
+  ],
+  tasks: [['tasks.md', 'tasks.md'], ['test-plan.md', 'test-plan.md']],
+  verify: [['evidence.md', 'evidence.md']],
+};
+
+function estadoGate(texto, titulo) {
+  const contenido = String(texto || '');
+  const inicio = contenido.search(titulo);
+  if (inicio < 0) return null;
+  return contenido.slice(inicio).match(/^\|\s*\*{0,2}Estado\*{0,2}\s*\|\s*`?([^|`\n]+)`?\s*\|/im)?.[1]
+    ?.replace(/\*+/g, '').trim().toLowerCase() || null;
+}
+
+function impactoSinUiJustificado(specTexto) {
+  const valor = String(specTexto || '').match(
+    /^\|\s*\*{0,2}Impacto de usabilidad\*{0,2}\s*\|\s*([^|\n]+?)\s*\|/im,
+  )?.[1]?.replace(/[`*]/g, '').trim() || '';
+  const motivo = valor.match(/^sin-ui\s*(?:\u00b7|\u2014|-)\s*(.+)$/i)?.[1]?.trim() || '';
+  return motivo.length >= 8 && !/^(?:motivo|pendiente|tbd|todo|por definir|no aplica)$/i.test(motivo);
+}
+
+function validarGateScaffold(spec, phase) {
+  const specTexto = leer(join(spec.dir, 'spec.md')) || '';
+  if (!/^(?:aprobada|approved|en implementaci[oó]n|implementada)/i.test(estadoSpec(specTexto)))
+    throw new Error(`Gate de scaffold: la spec ${spec.id} debe estar aprobada antes de crear ${phase}.`);
+  if (phase === 'design') return;
+
+  if (phase === 'plan') {
+    const design = leer(join(spec.dir, 'design.md'));
+    const sinUi = impactoSinUiJustificado(specTexto);
+    if (!design && sinUi) return;
+    const estado = estadoGate(design, /##\s+\d+\.\s+Gate humano de dise[ñn]o/i);
+    if (!/^(?:approved|aprobado|skipped-no-ui)/i.test(estado || ''))
+      throw new Error('Gate de scaffold: plan requiere diseño aprobado o skipped-no-ui justificado.');
+    return;
+  }
+
+  if (phase === 'tasks') {
+    const plan = leer(join(spec.dir, 'plan.md'));
+    const estado = estadoGate(plan, /##\s+\d+\.\s+Gate humano del plan t[eé]cnico/i);
+    if (!/^(?:approved|aprobado)/i.test(estado || ''))
+      throw new Error('Gate de scaffold: tasks requiere el plan técnico aprobado.');
+    return;
+  }
+
+  if (phase === 'verify') {
+    const tareas = estadoTareas(leer(join(spec.dir, 'tasks.md')) || '');
+    if (!tareas.total || tareas.done !== tareas.total)
+      throw new Error('Gate de scaffold: verify requiere todas las tareas explícitamente terminadas.');
+  }
+}
+
+function scaffold() {
+  validarArgumentos({ valores: ['--spec', '--phase'], banderas: ['--dry-run', '--json'] });
+  const spec = resolverSpecPorId(idSpecRequerido(), '--spec');
+  const phase = String(opcion('--phase') || '');
+  const ficheros = FASES_SCAFFOLD[phase];
+  if (!ficheros) throw new Error('--phase debe ser design, plan, tasks o verify.');
+  validarGateScaffold(spec, phase);
+  const operaciones = ficheros.map(([origenRel, destinoRel]) => {
+    const origen = join(ROOT, 'docs/specs/_TEMPLATE', origenRel);
+    const destino = join(spec.dir, destinoRel);
+    if (!existsSync(origen)) throw new Error(`Falta la plantilla canónica: docs/specs/_TEMPLATE/${origenRel}`);
+    validarRutaSinEnlaces(origen);
+    validarRutaSinEnlaces(destino);
+    if (existsSync(destino)) throw new Error(`Scaffold conservador: ya existe docs/specs/${spec.nombre}/${destinoRel}; no se sobrescribe.`);
+    const contenido = readFileSync(origen, 'utf8');
+    return { destino, destinoRel, contenido: instanciarPlantilla(contenido, spec) };
+  });
+  if (!DRY) for (const operacion of operaciones) {
+    mkdirSync(dirname(operacion.destino), { recursive: true });
+    validarRutaSinEnlaces(dirname(operacion.destino));
+    writeFileSync(operacion.destino, operacion.contenido, 'utf8');
+  }
+  imprimir({
+    schemaVersion: 1,
+    spec: spec.nombre,
+    phase,
+    dryRun: DRY,
+    created: !DRY,
+    files: operaciones.map((x) => `docs/specs/${spec.nombre}/${x.destinoRel}`),
+    decisions: 'pending-human-input',
+  });
+}
+
+function estadoTareas(texto) {
+  const bloques = String(texto || '').split(/(?=^###\s+T-\d{3}-\d+\b)/gm)
+    .filter((bloque) => /^###\s+T-\d{3}-\d+\b/m.test(bloque));
+  const items = bloques.map((bloque) => {
+    const cabecera = bloque.match(/^###\s+(T-\d{3}-\d+)\s*[·—-]?\s*([^\n]*)/m);
+    const estado = bloque.match(/^-\s+(?:\*\*)?Estado(?:\*\*)?\s*:\s*([^\n]+)/im)?.[1]
+      ?.replace(/[`*]/g, '').split(/\s*(?:\u00b7|\u2014|\|)\s*/, 1)[0].trim().toLowerCase() || 'sin-estado';
+    return { id: cabecera?.[1] || null, title: cabecera?.[2]?.trim() || '', status: estado };
+  });
+  const cuenta = (patron) => items.filter((item) => patron.test(item.status)).length;
+  return {
+    total: items.length,
+    done: cuenta(/^(?:hecho|completad[oa]|done)$/i),
+    pending: cuenta(/^pendiente$/i),
+    inProgress: cuenta(/^en curso$/i),
+    blocked: cuenta(/^bloquead[oa]$/i),
+    unknown: items.filter((item) => !/^(?:hecho|completad[oa]|done|pendiente|en curso|bloquead[oa])$/i.test(item.status)).length,
+    items,
+  };
+}
+
+function estadoSpec(texto) {
+  return String(texto || '').match(/^\|\s*\*{0,2}Estado\*{0,2}\s*\|\s*`?([^|`\n]+)`?\s*\|/im)?.[1]
+    ?.replace(/\*+/g, '').trim().toLowerCase() || 'desconocido';
+}
+
+function faseSpec(spec, tareas, artefactos) {
+  if (/entregad[ao]|released|cerrad[ao]/i.test(spec.state)) return 'delivered';
+  if (tareas.pending || tareas.inProgress || tareas.blocked) return 'implement';
+  if (artefactos.evidence) return 'verify';
+  if (artefactos.tasks) return 'verify';
+  if (artefactos.plan) return 'tasks';
+  if (artefactos.design) return 'plan';
+  if (artefactos.spec) return 'design';
+  return 'specify';
+}
+
+function snapshotSpecs(filtro = null) {
+  const nombresSpecs = nombres('docs/specs', (entrada) =>
+    entrada.isDirectory() && /^\d{3}-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entrada.name));
+  const todos = nombresSpecs.map((nombre) => {
+    const id = nombre.slice(0, 3);
+    const dir = join(ROOT, 'docs/specs', nombre);
+    validarRutaSinEnlaces(dir);
+    const artefactos = Object.fromEntries([
+      'spec', 'clarifications', 'design', 'plan', 'data-model', 'tasks', 'test-plan', 'evidence', 'research',
+    ].map((idArtefacto) => [idArtefacto.replace('-', ''), existsSync(join(dir, `${idArtefacto}.md`))]));
+    artefactos.contracts = existsSync(join(dir, 'contracts'));
+    const specTexto = leer(join(dir, 'spec.md')) || '';
+    const tareas = estadoTareas(leer(join(dir, 'tasks.md')) || '');
+    const item = { id, name: nombre, state: estadoSpec(specTexto), phase: null, tasks: tareas, artifacts: artefactos };
+    item.phase = faseSpec(item, tareas, artefactos);
+    item.active = tareas.pending > 0 || tareas.inProgress > 0 || tareas.blocked > 0;
+    return item;
+  });
+  const items = filtro ? todos.filter((item) => item.id === filtro) : todos;
+  if (filtro && !items.length) throw new Error(`No existe una spec que resuelva el ID ${filtro}.`);
+  const abiertasGlobales = todos.filter((item) => item.active);
+  return {
+    total: items.length,
+    activeCount: abiertasGlobales.length,
+    active: abiertasGlobales.map((item) => item.name),
+    ambiguous: abiertasGlobales.length > 1,
+    items,
+  };
+}
+
+function gitSnapshot() {
+  const resultado = spawnSync('git', ['status', '--porcelain'], { cwd: ROOT, encoding: 'utf8' });
+  if (resultado.status !== 0) return { available: false, dirty: null, changedFiles: [] };
+  const lineas = (resultado.stdout || '').split(/\r?\n/).filter(Boolean);
+  return { available: true, dirty: lineas.length > 0, changedFiles: lineas.map((linea) => linea.slice(3)) };
+}
+
+function snapshotEstado() {
+  validarArgumentos({ valores: ['--spec'], banderas: ['--json'] });
+  const filtro = opcion('--spec') ? idSpecRequerido() : null;
+  let registro;
+  try { registro = cargarInstalacion(); } catch { registro = { mode: 'template' }; }
+  const product = registro.product || {
+    schemaVersion: 1, status: registro.mode === 'greenfield' ? 'bootstrap' : 'legacy-pending',
+  };
+  const specs = snapshotSpecs(filtro);
+  const constitucion = leer(join(ROOT, 'docs/architecture/constitution.md'));
+  const architecture = {
+    exists: constitucion !== null,
+    status: constitucion?.match(/^\|\s*Estado\s*\|\s*([^|\n]+)/im)?.[1]?.trim() || (constitucion ? 'declared' : 'missing'),
+  };
+  let next;
+  if (product.status === 'bootstrap' || product.status === 'pending' || product.status === 'pending-approval')
+    next = { skill: '/sdd-intake', reason: 'product-baseline-not-approved' };
+  else if (product.status === 'approved' && (!architecture.exists || /bootstrap/i.test(architecture.status)))
+    next = { skill: '/sdd-init', reason: 'greenfield-architecture-pending' };
+  else if (specs.activeCount > 1)
+    next = { skill: '/sdd-status', reason: 'multiple-active-specs-require-human-priority' };
+  else if (specs.activeCount === 1) {
+    const activa = specs.items.find((item) => item.active) || snapshotSpecs().items.find((item) => item.active);
+    const porFase = { design: '/sdd-design', plan: '/sdd-plan', tasks: '/sdd-tasks', implement: '/sdd-implement', verify: '/sdd-verify' };
+    next = { skill: porFase[activa?.phase] || '/sdd-status', reason: `spec-${activa?.id || 'active'}-${activa?.phase || 'unknown'}` };
+  } else if (registro.documentation?.status === 'bootstrap')
+    next = { skill: '/docs-sync bootstrap', reason: 'documentation-baseline-pending' };
+  else next = { skill: '/sdd-specify', reason: 'no-active-spec' };
+  return {
+    schemaVersion: 1,
+    product,
+    architecture,
+    specs,
+    checks: cargarChecks(),
+    security: registro.security || null,
+    usability: registro.usability || null,
+    documentation: registro.documentation || null,
+    git: gitSnapshot(),
+    next,
+  };
+}
+
+const FAMILIAS_TRAZA = {
+  OBJ: /\bOBJ-\d{3}\b/g,
+  'PRD-RF': /\bPRD-RF-\d{3}\b/g,
+  UC: /\bUC-\d{3}\b/g,
+  RF: /\bRF-\d+\b/g,
+  CA: /\bCA-\d+\b/g,
+  SEC: /\bSEC-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g,
+  UX: /\bUX-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g,
+  DOC: /\bDOC-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/g,
+};
+
+function extraerIdsFamilia(texto, familia) {
+  const encontrados = [...String(texto || '').matchAll(FAMILIAS_TRAZA[familia])]
+    .filter((match) => familia !== 'RF' || String(texto).slice(Math.max(0, match.index - 4), match.index) !== 'PRD-')
+    .map((match) => match[0])
+    .filter((id) => !['SEC-ID', 'UX-ID', 'DOC-ID'].includes(id));
+  return [...new Set(encontrados)].sort();
+}
+
+function contieneId(texto, id) {
+  return new RegExp(`(?:^|[^A-Z0-9-])${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[^A-Z0-9-])`, 'm')
+    .test(String(texto || ''));
+}
+
+function traceStatus() {
+  validarArgumentos({ valores: ['--spec'], banderas: ['--json'] });
+  const spec = resolverSpecPorId(idSpecRequerido(), '--spec');
+  const specTexto = leer(join(spec.dir, 'spec.md')) || '';
+  const planTexto = leer(join(spec.dir, 'plan.md')) || '';
+  const ejecucion = ['tasks.md', 'test-plan.md', 'evidence.md']
+    .map((ruta) => leer(join(spec.dir, ruta)) || '').join('\n');
+  const families = {};
+  for (const familia of Object.keys(FAMILIAS_TRAZA)) {
+    const fuente = ['SEC', 'UX', 'DOC'].includes(familia) ? `${specTexto}\n${planTexto}` : specTexto;
+    const declared = extraerIdsFamilia(fuente, familia);
+    const referenced = extraerIdsFamilia(ejecucion, familia);
+    const covered = declared.filter((id) => contieneId(ejecucion, id));
+    families[familia] = {
+      declared,
+      referenced,
+      covered,
+      orphans: declared.filter((id) => !covered.includes(id)),
+      unresolved: referenced.filter((id) => !declared.includes(id)),
+    };
+  }
+  const missing = Object.values(families).reduce((total, family) => total + family.orphans.length + family.unresolved.length, 0);
+  imprimir({ schemaVersion: 1, spec: spec.nombre, complete: missing === 0, missing, families });
+}
+
+function normalizarPatronProyecto(valor, etiqueta) {
+  if (typeof valor !== 'string' || !valor.trim() || /[\u0000-\u001f\u007f]/.test(valor))
+    throw new Error(`${etiqueta} debe ser una ruta relativa no vacía y sin controles.`);
+  const ruta = valor.replace(/\\/g, '/').replace(/^\.\//, '');
+  if (isAbsolute(ruta) || /^[A-Za-z]:\//.test(ruta) || ruta.startsWith('//'))
+    throw new Error(`${etiqueta} no admite rutas absolutas ni UNC.`);
+  if (/[\[\]{}]/.test(ruta)) throw new Error(`${etiqueta} usa un glob no soportado; solo *, ** y ?.`);
+  const segmentos = ruta.split('/');
+  if (segmentos.some((parte) => !parte || parte === '.' || parte === '..'))
+    throw new Error(`${etiqueta} contiene traversal o segmentos vacíos.`);
+  if (['.git', '.sdd', 'node_modules'].includes(segmentos[0]) || /^\.env(?:\.|$)/i.test(segmentos.at(-1)))
+    throw new Error(`${etiqueta} apunta a estado interno, dependencias o secretos.`);
+  const primerGlob = ruta.search(/[?*]/);
+  const prefijo = (primerGlob < 0 ? ruta : ruta.slice(0, primerGlob)).replace(/\/$/, '');
+  if (prefijo) resolverRutaProyecto(prefijo, etiqueta);
+  return ruta;
+}
+
+function resolverRutaProyecto(ruta, etiqueta) {
+  const absoluta = resolve(ROOT, ruta);
+  const rel = relative(ROOT, absoluta);
+  if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))
+    throw new Error(`${etiqueta} escapa de la raíz del proyecto.`);
+  validarRutaSinEnlaces(absoluta);
+  return absoluta;
+}
+
+function recorrerFicheros(dir = ROOT, salida = []) {
+  for (const entrada of readdirSync(dir, { withFileTypes: true })) {
+    if (['.git', 'node_modules'].includes(entrada.name) || (dir === ROOT && entrada.name === '.sdd')) continue;
+    const absoluta = join(dir, entrada.name);
+    if (entrada.isSymbolicLink()) continue;
+    if (entrada.isDirectory()) recorrerFicheros(absoluta, salida);
+    else if (entrada.isFile()) salida.push(relative(ROOT, absoluta).replace(/\\/g, '/'));
+  }
+  return salida;
+}
+
+function resolverPatrones(patrones, { exigirCadaUno = true } = {}) {
+  let todos = null;
+  const salida = new Set();
+  for (const patronOriginal of patrones) {
+    const patron = normalizarPatronProyecto(patronOriginal, 'ruta de generador');
+    let coincidencias;
+    if (/[?*]/.test(patron)) {
+      todos ||= recorrerFicheros();
+      coincidencias = todos.filter((ruta) => matchesDocPattern(ruta, patron));
+    } else coincidencias = existsSync(resolverRutaProyecto(patron, 'ruta de generador')) ? [patron] : [];
+    for (const ruta of coincidencias) {
+      const absoluta = resolverRutaProyecto(ruta, 'ruta de generador');
+      const stat = lstatSync(absoluta);
+      if (!stat.isFile() || stat.nlink > 1) throw new Error(`Ruta de generador no es un fichero regular seguro: ${ruta}.`);
+      salida.add(ruta);
+    }
+    if (exigirCadaUno && !coincidencias.length) throw new Error(`La entrada/salida declarada no existe: ${patron}.`);
+  }
+  return [...salida].sort();
+}
+
+function hashRutas(rutas) {
+  const huella = createHash('sha256');
+  for (const ruta of rutas) huella.update(ruta).update('\0').update(readFileSync(resolverRutaProyecto(ruta, 'hash de generador'))).update('\0');
+  return huella.digest('hex');
+}
+
+function validarGenerador(entrada, idsVistos) {
+  if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) throw new Error('Cada generador debe ser un objeto.');
+  const claves = Object.keys(entrada);
+  const permitidas = ['id', 'program', 'args', 'inputs', 'outputs', 'owner', 'timeoutMs'];
+  const desconocidas = claves.filter((clave) => !permitidas.includes(clave));
+  if (desconocidas.length) throw new Error(`Generador con claves desconocidas: ${desconocidas.join(', ')}.`);
+  if (!/^[a-z][a-z0-9-]{1,63}$/.test(String(entrada.id || ''))) throw new Error('ID de generador no canónico.');
+  if (idsVistos.has(entrada.id)) throw new Error(`ID de generador duplicado: ${entrada.id}.`);
+  idsVistos.add(entrada.id);
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(String(entrada.program || '')))
+    throw new Error(`${entrada.id}: programa debe ser un ejecutable por nombre, sin ruta ni shell.`);
+  if (/^(?:sh|bash|zsh|fish|cmd|powershell|pwsh|wscript|cscript|npx)$/i.test(entrada.program))
+    throw new Error(`${entrada.id}: programa de shell o instalación implícita no permitido.`);
+  if (!Array.isArray(entrada.args) || entrada.args.some((arg) => typeof arg !== 'string' || !arg ||
+      Buffer.byteLength(arg, 'utf8') > 500 || /[\u0000-\u001f\u007f;&|`<>]|\$\(/.test(arg)))
+    throw new Error(`${entrada.id}: argumento hostil o no canónico.`);
+  if (/^(?:npm|pnpm|yarn|bun)$/i.test(entrada.program) && !/^run$/.test(String(entrada.args[0] || '')))
+    throw new Error(`${entrada.id}: gestores de paquetes solo pueden ejecutar scripts existentes con run; no instalar dependencias.`);
+  if (!Array.isArray(entrada.inputs) || !entrada.inputs.length || !Array.isArray(entrada.outputs) || !entrada.outputs.length)
+    throw new Error(`${entrada.id}: inputs y outputs deben ser arrays no vacíos.`);
+  for (const input of entrada.inputs) normalizarPatronProyecto(input, `${entrada.id}.inputs`);
+  for (const output of entrada.outputs) normalizarPatronProyecto(output, `${entrada.id}.outputs`);
+  if (!/^[a-z][a-z0-9-]{1,63}$/.test(String(entrada.owner || '')) ||
+      !existsSync(join(ROOT, '.claude/agents', `${entrada.owner}.md`)))
+    throw new Error(`${entrada.id}: owner debe ser un agente instalado.`);
+  if (entrada.timeoutMs !== undefined &&
+      (!Number.isInteger(entrada.timeoutMs) || entrada.timeoutMs < 1_000 || entrada.timeoutMs > 300_000))
+    throw new Error(`${entrada.id}: timeoutMs debe ser un entero entre 1000 y 300000.`);
+  return entrada;
+}
+
+function cargarGeneradores() {
+  const contenido = leer(GENERATORS_PATH);
+  if (contenido === null) throw new Error('Falta .sdd/generators.json; actualiza la instalación SDD.');
+  let config;
+  try { config = JSON.parse(contenido); }
+  catch (error) { throw new Error(`.sdd/generators.json no es JSON válido: ${error.message}`); }
+  if (config?.schemaVersion !== 1 || !Array.isArray(config.generators))
+    throw new Error('.sdd/generators.json requiere schemaVersion 1 y generators array.');
+  const vistos = new Set();
+  return { ...config, generators: config.generators.map((entrada) => validarGenerador(entrada, vistos)) };
+}
+
+function generar() {
+  validarArgumentos({ banderas: ['--dry-run', '--json'], operandoPermitido: true });
+  if (!operando) throw new Error('generate requiere el ID de un generador aprobado.');
+  const config = cargarGeneradores();
+  const generador = config.generators.find((entrada) => entrada.id === operando);
+  if (!generador) throw new Error(`Generador no registrado: ${operando}.`);
+  const trustBoundary = 'approved-program-not-os-sandboxed';
+  const inputs = resolverPatrones(generador.inputs);
+  const outputsAntes = resolverPatrones(generador.outputs, { exigirCadaUno: false });
+  const inputsHash = hashRutas(inputs);
+  const outputsHashAntes = outputsAntes.length ? hashRutas(outputsAntes) : null;
+  const stateDir = resolverRutaProyecto('.sdd/state/generators', 'estado de generador');
+  const statePath = join(stateDir, `${generador.id}.json`);
+  validarRutaSinEnlaces(statePath);
+  let previo = null;
+  if (existsSync(statePath)) {
+    try { previo = JSON.parse(readFileSync(statePath, 'utf8')); }
+    catch (error) { throw new Error(`Estado de ${generador.id} inválido; no se ejecuta: ${error.message}`); }
+    if (previo.outputsHash !== outputsHashAntes)
+      throw new Error(`${generador.id}: output drift detectado; revisa cambios manuales antes de regenerar.`);
+    if (previo.inputsHash === inputsHash) {
+      imprimir({ schemaVersion: 1, id: generador.id, status: 'up-to-date', dryRun: DRY, trustBoundary, inputs, outputs: outputsAntes });
+      return;
+    }
+  }
+  if (DRY) {
+    imprimir({ schemaVersion: 1, id: generador.id, status: 'planned', dryRun: true, trustBoundary, program: generador.program, args: generador.args, inputs, outputs: generador.outputs });
+    return;
+  }
+  const inicio = Date.now();
+  const timeoutMs = generador.timeoutMs ?? 120_000;
+  const resultado = spawnSync(generador.program, generador.args, {
+    cwd: ROOT,
+    shell: false,
+    encoding: 'utf8',
+    timeout: timeoutMs,
+    killSignal: 'SIGTERM',
+  });
+  if (resultado.error?.code === 'ETIMEDOUT')
+    throw new Error(`${generador.id}: timeout tras ${timeoutMs} ms; no se materializa estado ni éxito.`);
+  if (resultado.error) throw new Error(`${generador.id}: no se pudo iniciar ${generador.program}: ${resultado.error.message}`);
+  if (resultado.status !== 0) throw new Error(`${generador.id}: el generador falló con exit code ${resultado.status}.`);
+  const outputs = resolverPatrones(generador.outputs);
+  const outputsHash = hashRutas(outputs);
+  mkdirSync(stateDir, { recursive: true });
+  validarRutaSinEnlaces(stateDir);
+  writeFileSync(statePath, `${JSON.stringify({ schemaVersion: 1, id: generador.id, inputsHash, outputsHash, outputs }, null, 2)}\n`, 'utf8');
+  imprimir({ schemaVersion: 1, id: generador.id, status: 'generated', dryRun: false, trustBoundary, durationMs: Date.now() - inicio, inputs, outputs });
+}
+
 function verificar() {
   const argumentos = [join(ROOT, 'scripts/check-sdd.mjs')];
   if (argv.includes('--strict')) argumentos.push('--strict');
@@ -1033,15 +1503,15 @@ try {
   else if (comando === 'trace-correct') corregirTraza();
   else if (comando === 'new-spec') nuevaSpec();
   else if (comando === 'new-adr') nuevoAdr();
+  else if (comando === 'scaffold') scaffold();
+  else if (comando === 'trace-status') traceStatus();
+  else if (comando === 'generate') generar();
   else if (comando === 'verify') verificar();
   else if (comando === 'configure') configurar();
   else if (comando === 'run') ejecutarChecks();
   else if (comando === 'debt') informeDeuda();
   else if (comando === 'skills-export') exportarSkills();
-  else if (comando === 'status') imprimir({
-    detection: detectar(), checks: cargarChecks(), product: estadoProducto(), security: estadoSeguridad(),
-    usability: estadoUsabilidad(), documentation: estadoDocumentacion(), debt: medirDeuda(),
-  });
+  else if (comando === 'status') imprimir(snapshotEstado());
   else throw new Error(`Comando desconocido: ${comando}`);
 } catch (error) {
   console.error(error.message);

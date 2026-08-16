@@ -61,6 +61,9 @@ Modo estrictamente read-only. Compara fuentes y artefactos declarados, revisa en
 placeholders, propietario y gate, y entrega un informe de deriva. No modifiques ficheros, no
 repares automáticamente y no conviertas un control no ejecutado en éxito.
 
+Empieza con `node scripts/check-sdd.mjs --json` y, si se audita una spec, añade `--spec NNN`.
+Consume avisos/problemas del snapshot; abre documentos concretos solo para explicar la deriva.
+
 ## Propiedad y concurrencia
 
 `docs-writer` mantiene `README.md`, `CONTRIBUTING.md`, `docs/README.md`, `docs/guides/**` y

@@ -1,0 +1,7 @@
+{
+  "eval_id": 4,
+  "eval_name": "plan-tasks",
+  "configuration": "candidate-011",
+  "run_number": 1,
+  "prompt": "Con una spec aprobada, prepara plan y tareas y detecta huecos de trazabilidad sin decidir arquitectura ni tareas concretas."
+}
