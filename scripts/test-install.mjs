@@ -1164,7 +1164,8 @@ console.log('\ntrace-correct · contrato documental de main móvil y tag estable
   const readme = leer(join(ORIGEN, 'README.md')) || '';
   const guia = leer(join(ORIGEN, 'docs/guides/INSTALACION.md')) || '';
   const comandoMovil = 'github:jechamo/Estructura_inicial_claude init';
-  const comandoEstable = 'github:jechamo/Estructura_inicial_claude#v0.6.0 init';
+  // El tag se deriva de package.json: si se fija a mano, cada release rompe esta prueba.
+  const comandoEstable = `github:jechamo/Estructura_inicial_claude#v${VERSION} init`;
   comprueba('debe_mostrar_main_sin_ref_como_opcion_movil_principal',
     readme.includes(comandoMovil) && guia.includes(comandoMovil) &&
     /última|main|móvil/i.test(readme) && /última|main|móvil/i.test(guia));
@@ -3127,6 +3128,153 @@ generadores_versionados();
 skills_consumen_snapshots();
 automatizacion_documentada();
 benchmark_tiene_calidad_y_umbral();
+
+// ─── 5 quater · autocumplimiento del CLI y de los gates (spec 012) ───────────
+
+/** El CLI en la plantilla, donde `.sdd/installed.json` no existe. Es el punto ciego histórico. */
+function enPlantilla(...argumentos) {
+  return spawnSync(process.execPath, ['scripts/sdd-project.mjs', ...argumentos], {
+    cwd: ORIGEN, encoding: 'utf8',
+  });
+}
+
+function cli_degrada_sin_estado_instalado() {
+  console.log('\n  · degradación sin estado instalado');
+  // El fixture reproduce el punto ciego histórico: un proyecto con el CLI pero sin registro.
+  // Se construye aquí y no sobre la plantilla para que la prueba no dependa de si este
+  // repositorio tiene o no su propio baseline aprobado.
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  const registro = join(d, '.sdd', 'installed.json');
+  comprueba('el fixture parte de una instalación real', existsSync(registro));
+  rmSync(registro, { force: true });
+
+  const producto = ejecutarProyecto(d, 'product-status', '--json');
+  comprueba('product-status responde sin .sdd/installed.json',
+    producto.status === 0 && Boolean(jsonSalida(producto)?.status),
+    `${producto.status} ${producto.stderr}`.slice(-200));
+  const documentacion = ejecutarProyecto(d, 'docs-status', '--json');
+  comprueba('docs-status responde sin .sdd/installed.json',
+    documentacion.status === 0 && typeof jsonSalida(documentacion)?.status === 'string',
+    `${documentacion.status} ${documentacion.stderr}`.slice(-200));
+  comprueba('la degradación no inventa una aprobación',
+    !['approved', 'aprobado'].includes(String(jsonSalida(producto)?.status || '').toLowerCase()));
+  comprueba('la degradación no escribe estado en disco', !existsSync(registro));
+
+  // SEC-CLI-001 · aprobar sin baseline válido no debe conceder estado, pero tampoco debe morir
+  // por la ausencia del registro: el motivo del rechazo tiene que ser el baseline.
+  const aprobar = ejecutarProyecto(d, 'approve-product', '--approved-by', 'Persona Real', '--json');
+  const salida = `${aprobar.stdout}${aprobar.stderr}`;
+  comprueba('approve-product sin registro no falla por el registro ausente',
+    !/No existe \.sdd\/installed\.json/i.test(salida), salida.slice(-200));
+  comprueba('approve-product rechaza un baseline con marcadores sin escribir el registro',
+    aprobar.status === 1 && !existsSync(registro), `status=${aprobar.status}`);
+
+  // Un registro corrupto es un problema real y no debe confundirse con "aún no instalado".
+  writeFileSync(registro, '{ esto no es json', 'utf8');
+  const corrupto = ejecutarProyecto(d, 'product-status', '--json');
+  comprueba('un .sdd/installed.json corrupto sigue fallando', corrupto.status === 1);
+}
+
+function cli_error_json_es_maquina_legible() {
+  console.log('\n  · contrato de error del CLI');
+  const d = nuevoDestino();
+  sdd(d, 'init', '--mode', 'greenfield');
+  writeFileSync(join(d, '.sdd', 'installed.json'), '{ roto', 'utf8');
+
+  const conJson = ejecutarProyecto(d, 'product-status', '--json');
+  let cuerpo = null;
+  try { cuerpo = JSON.parse((conJson.stderr || '').trim()); } catch { /* aserción inferior */ }
+  comprueba('el error con --json sale por stderr como JSON',
+    conJson.status === 1 && cuerpo?.ok === false && typeof cuerpo?.error === 'string' && cuerpo.error.length > 0,
+    `${conJson.status} ${(conJson.stderr || '').slice(0, 120)}`);
+  comprueba('el error JSON identifica el comando', cuerpo?.command === 'product-status');
+  comprueba('stdout no se contamina cuando el comando falla', (conJson.stdout || '').trim() === '');
+  // SEC-CLI-002 · el error describe el fallo, no el sistema de ficheros del host.
+  const serializado = JSON.stringify(cuerpo || {});
+  comprueba('el error JSON no filtra rutas absolutas ni trazas',
+    !/[A-Za-z]:\\\\|\/(?:home|Users)\/|at\s+\w+\s+\(/.test(serializado), serializado.slice(0, 160));
+
+  const sinJson = ejecutarProyecto(d, 'product-status');
+  comprueba('sin --json el error sigue siendo una frase humana',
+    sinJson.status === 1 && (sinJson.stderr || '').trim().length > 0 &&
+    !(sinJson.stderr || '').trim().startsWith('{'));
+}
+
+function cli_ayuda_explica_comandos() {
+  console.log('\n  · ayuda del CLI');
+  const comandos = ['status', 'new-spec', 'approve-product', 'product-status', 'docs-status', 'run'];
+  for (const bandera of ['--help', '-h', 'help']) {
+    const r = enPlantilla(bandera);
+    const texto = `${r.stdout}${r.stderr}`;
+    comprueba(`${bandera} imprime el uso y sale con 0`,
+      r.status === 0 && comandos.every((c) => texto.includes(c)),
+      `${r.status} ${texto.slice(0, 120)}`);
+  }
+  const desnudo = enPlantilla();
+  comprueba('la invocación sin argumentos sigue resolviendo a status',
+    desnudo.status === 0 && !/uso|usage/i.test((desnudo.stdout || '').split('\n')[0] || ''));
+  const desconocido = enPlantilla('comando-que-no-existe');
+  comprueba('un comando desconocido sigue fallando', desconocido.status === 1);
+}
+
+function gates_declarados_son_ejecutables() {
+  console.log('\n  · gates propios ejecutables');
+  const checks = JSON.parse(leer(join(ORIGEN, '.sdd', 'checks.json')) || '{}');
+  const configurados = Object.keys(checks.checks || {});
+  const scripts = JSON.parse(readFileSync(join(ORIGEN, 'package.json'), 'utf8')).scripts || {};
+  comprueba('el repositorio configura sus propios gates rápidos',
+    ['sdd', 'lint', 'test', 'build'].every((id) => configurados.includes(id)),
+    configurados.join(','));
+  comprueba('el gate de seguridad sigue obligatorio y lento',
+    checks.checks?.security?.required === true && checks.checks?.security?.speed === 'slow');
+  comprueba('e2e existe y no carga el ciclo rápido',
+    checks.checks?.e2e && checks.checks.e2e.speed === 'slow');
+  for (const [id, definicion] of Object.entries(checks.checks || {})) {
+    const comando = String(definicion.command || '');
+    const script = (comando.match(/^npm run ([\w:-]+)$/) || [])[1];
+    const fichero = (comando.match(/node (scripts\/[\w.-]+\.mjs)/) || [])[1];
+    comprueba(`el gate ${id} apunta a algo que existe`,
+      script ? Boolean(scripts[script]) : Boolean(fichero && existsSync(join(ORIGEN, fichero))),
+      comando);
+  }
+  // `run` hereda stdio de los gates, así que su salida no es JSON puro ni puede serlo.
+  const rapido = enPlantilla('run', '--fast');
+  const texto = `${rapido.stdout}${rapido.stderr}`;
+  comprueba('run --fast ejecuta los gates propios en verde',
+    rapido.status === 0 && ['sdd', 'lint', 'test', 'build'].every((id) => new RegExp(`✓ ${id} —`).test(texto)),
+    `${rapido.status} ${texto.slice(-200)}`);
+  comprueba('run --fast no arrastra los gates lentos',
+    /omitidos por velocidad:[^\n]*e2e/.test(texto) && /omitidos por velocidad:[^\n]*security/.test(texto),
+    texto.slice(-200));
+  // SEC-CLI-003 · no se amplía la superficie: el runner sigue siendo el existente.
+  comprueba('ningún gate invoca una shell',
+    Object.values(checks.checks || {}).every((d) => !/[|&;><`$]/.test(String(d.command || ''))));
+}
+
+function gates_no_configurados_tienen_motivo() {
+  console.log('\n  · motivos de los gates no configurados');
+  const checks = JSON.parse(leer(join(ORIGEN, '.sdd', 'checks.json')) || '{}');
+  const estrategia = leer(join(ORIGEN, 'docs', 'quality', 'TEST-STRATEGY.md')) || '';
+  const configurados = new Set(Object.keys(checks.checks || {}));
+  for (const id of checks.unconfigured || []) {
+    comprueba(`el gate ${id} no está a la vez configurado`, !configurados.has(id));
+    const fila = estrategia.split('\n').find((linea) => new RegExp(`\\|\\s*\`?${id}\`?\\s*\\|`).test(linea));
+    const motivo = (fila || '').split('|').slice(2).join(' ').trim();
+    comprueba(`el gate ${id} declara por qué no se ejecuta`,
+      Boolean(fila) && motivo.length > 20 && !/pendiente|tbd|todo/i.test(motivo),
+      motivo.slice(0, 80));
+  }
+  comprueba('la estrategia de test cubre todos los gates no configurados',
+    (checks.unconfigured || []).length > 0);
+}
+
+console.log('\n5 quater · autocumplimiento del CLI y de los gates');
+cli_degrada_sin_estado_instalado();
+cli_error_json_es_maquina_legible();
+cli_ayuda_explica_comandos();
+gates_declarados_son_ejecutables();
+gates_no_configurados_tienen_motivo();
 
 // ─── 6 · No instalarse sobre sí misma ────────────────────────────────────────
 console.log('\n6 · protección contra instalarse encima de la plantilla');

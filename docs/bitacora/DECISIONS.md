@@ -9,6 +9,39 @@
 
 ---
 
+## 2026-08-17 · El sistema se aplica a sí mismo lo que exige a los demás
+
+- **Tipo**: decisión de proceso, calidad y usabilidad de la CLI
+- **Contexto**: escribir la memoria del TFM obligó a describir el sistema tal y como es, y esa
+  descripción destapó nueve incumplimientos propios. Los tres más caros: `product-status` y
+  `docs-status` reventaban sin `.sdd/installed.json` —justo la situación de quien todavía no ha
+  instalado nada—; la CLI no tenía `--help` y sus dieciocho subcomandos solo se descubrían leyendo
+  el código; y el repositorio declaraba dos gates y dejaba doce ausentes sin un motivo escrito,
+  mientras exigía a cada proyecto instalado que justificara los suyos.
+- **Decisión / hecho**: consultar el estado no puede exigir que el estado exista, así que la CLI
+  degrada a un estado de plantilla en lugar de fallar —pero una degradación nunca concede una
+  aprobación, y un registro corrupto sigue siendo un error—. `--help`, `-h` y `help` publican la
+  lista completa agrupada por tarea, y la lista vive en un único sitio para que no vuelva a
+  divergir. Con `--json`, el error también sale en JSON por `stderr`. El repositorio pasa a
+  ejecutar seis gates reales y escribe el motivo material de las ocho ausencias que quedan, con
+  un test que comprueba que ninguna se quede sin justificar. Y se aprueba de verdad el gate 1:
+  `docs/product/` deja de ser plantilla.
+- **Alternativas descartadas**: documentar los incumplimientos como limitaciones conocidas y no
+  tocar el código —convierte la memoria en una coartada—; declarar gates que no se ejecutan de
+  verdad para que la tabla quede llena —es exactamente el fraude que el sistema existe para
+  impedir—; añadir dependencias externas para cubrir `coverage`, `smells` y `mutation` —rompe la
+  regla de cero dependencias de runtime, que es lo que hace portable el artefacto—; y reescribir
+  las once specs cerradas para encajarlas en el baseline recién aprobado —produciría trazabilidad
+  inventada, así que la aprobación se aplica desde la spec 013—.
+- **Impacto**: `run --fast` pasa de no comprobar casi nada a ejecutar cuatro gates en segundos
+  antes de cada commit. Un agente que arranca en un repositorio sin instalar obtiene estado en
+  vez de una excepción, lo que ahorra la lectura exploratoria que venía después. Y la memoria del
+  TFM deja de describir un sistema mejor que el que existe.
+- **Spec**: [`012-autocumplimiento-cli-y-gates`](../specs/012-autocumplimiento-cli-y-gates/spec.md)
+- **Quién**: usuario + implementer
+
+---
+
 ## 2026-08-13 · Atribución inequívoca, rectificación append-only y tags inmutables
 
 - **Tipo**: decisión de trazabilidad y release

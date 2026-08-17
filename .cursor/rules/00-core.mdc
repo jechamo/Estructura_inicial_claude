@@ -31,7 +31,7 @@ Arquitectura vigente: [constitution.md](mdc:docs/architecture/constitution.md).
 Los perfiles detallados están en `.claude/agents/*.md`. Referéncialos con `@` cuando
 necesites un especialista (`@architect`, `@test-engineer`, `@security-auditor`, …).
 El router por defecto es `@orchestrator`.
-Hay 20 agentes y 25 skills canónicas. No crees `.cursor/commands/` para duplicar una skill.
+Hay 20 agentes y 26 skills canónicas. No crees `.cursor/commands/` para duplicar una skill.
 
 ## Prohibido
 

@@ -1,0 +1,44 @@
+{
+  "mode": "template",
+  "product": {
+    "schemaVersion": 1,
+    "status": "approved",
+    "approvedAt": "2026-08-17T11:02:18.124Z",
+    "approvedBy": "Jesus Chamorro",
+    "enforceFromSpec": 13,
+    "hashes": {
+      "docs/product/PRD.md": "951655d99789d6ad",
+      "docs/product/USE-CASES.md": "d25709b74aa2845a",
+      "docs/product/FEATURE-MAP.md": "b5b3c3faf65fc534",
+      "docs/product/SOURCES.md": "245fca9d39ea8830"
+    }
+  },
+  "security": {
+    "schemaVersion": 1,
+    "status": "bootstrap",
+    "standards": {
+      "owaspTop10": "2025",
+      "asvs": "5.0.0",
+      "level": "L2"
+    },
+    "enforceFromSpec": "013"
+  },
+  "usability": {
+    "schemaVersion": 1,
+    "status": "bootstrap",
+    "standards": {
+      "wcag": "2.2",
+      "level": "AA",
+      "heuristics": "nielsen-10"
+    },
+    "enforceFromSpec": "013"
+  },
+  "documentation": {
+    "schemaVersion": 1,
+    "status": "approved",
+    "approvedAt": "2026-08-17T11:03:16.790Z",
+    "approvedBy": "Jesus Chamorro",
+    "enforceFromSpec": "013",
+    "configHash": "8d2c74e85ec9eaed"
+  }
+}

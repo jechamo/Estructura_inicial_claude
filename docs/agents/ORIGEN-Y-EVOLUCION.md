@@ -1,7 +1,11 @@
-# Mapeo — los 10 agentes de la idea original sobre el ecosistema implementado
+# Origen y evolución del catálogo de agentes
 
 Este documento contesta a una pregunta concreta: **¿dónde está cada uno de los 10 agentes que
 pediste?** Todos están. Cinco cambiaron de forma, y aquí está el motivo de cada cambio.
+
+El nombre del fichero ya no cuenta agentes: el catálogo vigente tiene 20 y el número seguirá
+moviéndose, mientras que lo que este documento conserva —de dónde viene el diseño y qué se
+decidió cambiar— no caduca.
 
 Catálogo completo: [`CATALOG.md`](./CATALOG.md) · Circuito: [`../../AGENTS.md`](../../AGENTS.md) §2
 

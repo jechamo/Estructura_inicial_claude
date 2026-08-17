@@ -28,7 +28,7 @@ npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mod
 Para CI, automatizaciones o una instalación reproducible, fija el tag estable e inmutable:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.6.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -68,12 +68,18 @@ Si prefieres saltarte el router:
 Las skills delegan mecánica repetitiva en el mismo CLI portable de Node:
 
 ```bash
+node scripts/sdd-project.mjs --help
 node scripts/sdd-project.mjs status --json [--spec NNN]
 node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify --dry-run
 node scripts/sdd-project.mjs trace-status --spec NNN --json
 node scripts/check-sdd.mjs --json --strict --spec NNN
 node scripts/sdd-project.mjs generate <id> --dry-run
 ```
+
+`--help`, `-h` o `help` imprimen la lista completa de subcomandos agrupados por tarea. Todos
+aceptan `--json`, y cuando se pidió JSON el error también sale en JSON por `stderr`. Los comandos
+de consulta —`status`, `product-status`, `docs-status`— responden aunque el proyecto todavía no
+tenga instalación registrada: preguntar por el estado no puede exigir que el estado ya exista.
 
 El CLI hace inventario, numera, instancia plantillas y calcula cobertura; **no decide** requisitos,
 arquitectura, tareas, DTO ni veredictos. Los generadores son opt-in en `.sdd/generators.json`, no
@@ -463,6 +469,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 │   ├── docs.json                 Superficies y gates documentales reales
 │   └── installed.json            Propiedad y hashes del instalador
 ├── scripts/check-sdd.mjs         ⭐ Gate determinista, en cualquier proveedor
+├── scripts/check-syntax.mjs      Sintaxis y formato de los .mjs versionados
 ├── scripts/sdd-project.mjs       Detección y ejecución determinista de checks
 ├── .mcp.json · .vscode/mcp.json  Catálogo de la plantilla; opt-in al instalar
 └── docs/
@@ -516,7 +523,7 @@ registra no es la decisión, sino **la alternativa descartada y por qué**.
 | [`docs/README.md`](docs/README.md) | Mapa de toda la documentación |
 | [`docs/guides/DOCUMENTACION.md`](docs/guides/DOCUMENTACION.md) | Qué versionar y cómo usar `/docs-sync` y sus gates |
 | [`docs/agents/CATALOG.md`](docs/agents/CATALOG.md) | Los 20 agentes y sus handoffs |
-| [`docs/agents/MAPEO-10-AGENTES.md`](docs/agents/MAPEO-10-AGENTES.md) | De dónde viene este diseño: los 10 agentes de la idea original y qué cambió |
+| [`docs/agents/ORIGEN-Y-EVOLUCION.md`](docs/agents/ORIGEN-Y-EVOLUCION.md) | De dónde viene este diseño: los 10 agentes de la idea original y qué cambió |
 | [`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, política de auditoría y registro |
 | [`docs/architecture/DECISION-GUIDE.md`](docs/architecture/DECISION-GUIDE.md) | Elegir arquitectura con criterio |
 | [`docs/architecture/PATTERNS.md`](docs/architecture/PATTERNS.md) | Catálogo de patrones por problema |
@@ -556,6 +563,13 @@ licencia verificada. Ver [`docs/agents/SKILLS-EXTERNAS.md`](docs/agents/SKILLS-E
 
 Los dos están en CI y **fallan el build**. No dependen del IDE, del proveedor ni del modelo:
 solo de Node y del repositorio. En un host sin hooks, son tu única garantía real.
+
+Y esta plantilla se los aplica a sí misma: su `.sdd/checks.json` declara seis gates que se
+ejecutan de verdad —`sdd`, `lint`, `test`, `build`, `security` y `e2e`— y escribe el motivo
+material de cada uno de los ocho que siguen sin configurar, en
+[`docs/quality/TEST-STRATEGY.md`](docs/quality/TEST-STRATEGY.md) §10. Un gate ausente con su
+razón escrita es información; un gate ausente en silencio es el fallo que este sistema existe
+para impedir.
 
 ---
 

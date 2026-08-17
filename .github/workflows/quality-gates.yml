@@ -31,6 +31,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: node scripts/check-sdd.mjs
+      - run: node scripts/check-syntax.mjs --selftest
+      - run: node scripts/check-syntax.mjs
       - run: node scripts/test-hooks.mjs
       - run: node scripts/test-install.mjs
       - run: node scripts/skills-sync.mjs --check
@@ -41,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        spec: ['002', '004', '005', '006', '007', '008', '009', '010', '011']
+        spec: ['002', '004', '005', '006', '007', '008', '009', '010', '011', '012']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

@@ -458,6 +458,8 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
   if (r.startsWith('scripts/lib/') && !['scripts/lib/docs-contract.mjs', 'scripts/lib/jsonc.mjs'].includes(r)) return false;
   if (r.startsWith('docs/quality/benchmarks/')) return false;
+  // La memoria del TFM documenta esta plantilla concreta: es historia, no artefacto reutilizable.
+  if (r.startsWith('docs/TFM/')) return false;
   if (EXCLUSIONES_EXACTAS.has(r)) {
     if (conMcp && ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'].includes(r)) return true;
     return false;
@@ -468,7 +470,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('docs/quality/reports/') || r.startsWith('docs/security/reports/') ||
       r.startsWith('docs/design/reports/')) return r.endsWith('/.gitkeep');
   if (r.startsWith('docs/research/')) return conBaseline;
-  if (r === 'docs/agents/MAPEO-10-AGENTES.md') return false;
+  if (r === 'docs/agents/ORIGEN-Y-EVOLUCION.md') return false;
   if (r.startsWith('.sdd/state/') || r.startsWith('.sdd/conflicts/')) return false;
   if (r.startsWith('.claude/hooks/')) return false;
   return true;

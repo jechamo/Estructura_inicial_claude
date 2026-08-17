@@ -56,3 +56,9 @@ peticiones docs-only mediante `/docs-sync`; si cambia comportamiento, contrato,
 arquitectura, seguridad o persistencia, prevalece SDD/TDD.
 En hosts sin delegación, muestra el agente y `/sdd-intake` exactos y reanuda desde documentos.
 Cierra siempre con el bloque `### HANDOFF` ampliado del perfil canónico.
+
+Los ocho botones de `handoffs` no son ocho agentes: son ocho **pasos**, y varios recaen en el
+mismo agente con un encargo distinto —`spec-analyst` aparece tres veces (requisitos, baseline y
+spec de funcionalidad) y `docs-writer` dos (materializar el HANDOFF de seguridad y atender una
+petición docs-only). El botón identifica el trabajo, no al destinatario; los 20 agentes del
+catálogo se alcanzan desde el selector del chat, no desde esta lista.

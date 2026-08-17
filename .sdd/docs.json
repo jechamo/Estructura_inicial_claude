@@ -5,8 +5,14 @@
     {
       "id": "DOC-VCS",
       "kind": "developer-readme",
-      "sources": ["scripts/install.mjs", "scripts/lib/manifiesto.mjs"],
-      "artifacts": ["docs/guides/INSTALACION.md", "docs/guides/DOCUMENTACION.md"],
+      "sources": [
+        "scripts/install.mjs",
+        "scripts/lib/manifiesto.mjs"
+      ],
+      "artifacts": [
+        "docs/guides/INSTALACION.md",
+        "docs/guides/DOCUMENTACION.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "docs-writer"
@@ -14,8 +20,13 @@
     {
       "id": "DOC-SYNC",
       "kind": "user-guide",
-      "sources": [".agents/skills/docs-sync/SKILL.md", ".sdd/hooks/sdd-router.mjs"],
-      "artifacts": ["docs/guides/DOCUMENTACION.md"],
+      "sources": [
+        ".agents/skills/docs-sync/SKILL.md",
+        ".sdd/hooks/sdd-router.mjs"
+      ],
+      "artifacts": [
+        "docs/guides/DOCUMENTACION.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "docs-writer"
@@ -23,8 +34,14 @@
     {
       "id": "DOC-TRACE",
       "kind": "architecture",
-      "sources": ["docs/specs/_TEMPLATE/*.md", "scripts/check-sdd.mjs"],
-      "artifacts": ["docs/sdd/OPERATING-MODEL.md", "docs/guides/DOCUMENTACION.md"],
+      "sources": [
+        "docs/specs/_TEMPLATE/*.md",
+        "scripts/check-sdd.mjs"
+      ],
+      "artifacts": [
+        "docs/sdd/OPERATING-MODEL.md",
+        "docs/guides/DOCUMENTACION.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "planner"
@@ -32,8 +49,15 @@
     {
       "id": "DOC-GATES",
       "kind": "operations",
-      "sources": ["scripts/sdd-project.mjs", ".sdd/githooks/*", ".github/workflows/*.yml"],
-      "artifacts": ["docs/guides/DOCUMENTACION.md", "docs/quality/DEFINITION-OF-DONE.md"],
+      "sources": [
+        "scripts/sdd-project.mjs",
+        ".sdd/githooks/*",
+        ".github/workflows/*.yml"
+      ],
+      "artifacts": [
+        "docs/guides/DOCUMENTACION.md",
+        "docs/quality/DEFINITION-OF-DONE.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "devops-expert"
@@ -49,7 +73,10 @@
         ".agents/agents/*.md",
         ".gemini/agents/*.md"
       ],
-      "artifacts": ["docs/integrations/IDE-COMPATIBILITY.md", "docs/agents/CATALOG.md"],
+      "artifacts": [
+        "docs/integrations/IDE-COMPATIBILITY.md",
+        "docs/agents/CATALOG.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "implementer"
@@ -57,8 +84,14 @@
     {
       "id": "DOC-OPS",
       "kind": "developer-readme",
-      "sources": ["package.json"],
-      "artifacts": ["README.md", "docs/README.md", "CHANGELOG.md"],
+      "sources": [
+        "package.json"
+      ],
+      "artifacts": [
+        "README.md",
+        "docs/README.md",
+        "CHANGELOG.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "release-manager"
@@ -66,8 +99,14 @@
     {
       "id": "DOC-AUTO",
       "kind": "developer-readme",
-      "sources": ["scripts/sdd-project.mjs", "scripts/check-sdd.mjs"],
-      "artifacts": ["README.md", "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "sources": [
+        "scripts/sdd-project.mjs",
+        "scripts/check-sdd.mjs"
+      ],
+      "artifacts": [
+        "README.md",
+        "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "docs-writer"
@@ -75,8 +114,13 @@
     {
       "id": "DOC-SKILLS",
       "kind": "developer-readme",
-      "sources": [".agents/skills/**/SKILL.md", ".agents/skills/**/references/*.md"],
-      "artifacts": ["docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "sources": [
+        ".agents/skills/**/SKILL.md",
+        ".agents/skills/**/references/*.md"
+      ],
+      "artifacts": [
+        "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "docs-writer"
@@ -84,11 +128,32 @@
     {
       "id": "DOC-GEN",
       "kind": "operations",
-      "sources": [".sdd/generators.json", "scripts/sdd-project.mjs"],
-      "artifacts": [".sdd/README.md", "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"],
+      "sources": [
+        ".sdd/generators.json",
+        "scripts/sdd-project.mjs"
+      ],
+      "artifacts": [
+        ".sdd/README.md",
+        "docs/guides/COMO-TRABAJAR-CON-LOS-AGENTES.md"
+      ],
       "generated": false,
       "gate": null,
       "owner": "implementer"
+    },
+    {
+      "id": "DOC-CLI",
+      "kind": "operations",
+      "sources": [
+        "scripts/sdd-project.mjs",
+        ".sdd/checks.json"
+      ],
+      "artifacts": [
+        "docs/quality/TEST-STRATEGY.md",
+        "README.md"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
     }
   ]
 }

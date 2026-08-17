@@ -76,6 +76,7 @@
     "docs/security/SECURITY-CHECKLIST.md",
     "docs/specs/_TEMPLATE",
     "scripts/check-sdd.mjs",
+    "scripts/check-syntax.mjs",
     "scripts/install.mjs",
     "scripts/scan-secrets.mjs",
     "scripts/lib/manifiesto.mjs",
@@ -89,9 +90,13 @@
     "check": "node scripts/check-sdd.mjs",
     "check:strict": "node scripts/check-sdd.mjs --strict",
     "check:skills": "node scripts/skills-sync.mjs --check",
+    "lint": "node scripts/check-syntax.mjs",
+    "test": "node scripts/test-hooks.mjs && node scripts/check-syntax.mjs --selftest",
+    "build": "node scripts/skills-sync.mjs --check",
+    "e2e": "node scripts/test-install.mjs",
     "test:hooks": "node scripts/test-hooks.mjs",
     "test:install": "node scripts/test-install.mjs",
-    "verify": "npm run check:strict && npm run check:skills && npm run test:hooks && npm run test:install"
+    "verify": "npm run check:strict && npm run lint && npm run check:skills && npm run test:hooks && npm run test:install"
   },
   "license": "MIT",
   "private": false

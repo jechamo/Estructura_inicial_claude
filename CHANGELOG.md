@@ -7,6 +7,33 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+### Added
+- **La CLI responde antes de instalar nada.** `product-status` y `docs-status` ya no fallan cuando
+  todavía no existe `.sdd/installed.json`: devuelven el estado de plantilla. Consultar el estado es
+  lo primero que hace cualquiera, y no puede exigir que el estado ya exista.
+- **Ayuda de la CLI.** `--help`, `-h` o `help` imprimen la lista completa de subcomandos agrupados
+  por tarea. Antes había que leer el código fuente para descubrirlos.
+- **Errores en JSON cuando se pidió JSON.** Si se invoca con `--json` y algo falla, el error sale
+  por `stderr` como `{ "schemaVersion": 1, "ok": false, "command": "...", "error": "..." }`.
+- **Gate `lint` propio.** `scripts/check-syntax.mjs` comprueba sintaxis y formato de los `.mjs`
+  versionados, sin dependencias, y trae su propio autotest con `--selftest`.
+
+### Changed
+- **El repositorio ejecuta seis gates en vez de dos.** `sdd`, `lint`, `test` y `build` son rápidos y
+  caben antes de cada commit; `security` y `e2e` quedan para antes del push. Las ocho ausencias que
+  siguen tienen ahora un motivo material escrito en `docs/quality/TEST-STRATEGY.md` §10.
+- **Baseline de producto aprobado.** El propio ecosistema pasa por fin su gate 1: `docs/product/`
+  deja de ser plantilla y recoge objetivos, requisitos, casos de uso, mapa de funcionalidades y
+  fuentes reales. La aprobación no se aplica hacia atrás: las specs cerradas se quedan como están.
+- **`docs/agents/MAPEO-10-AGENTES.md` pasa a llamarse `ORIGEN-Y-EVOLUCION.md`.** El nombre contaba
+  agentes que ya eran veinte; lo que el documento conserva —de dónde viene el diseño— no caduca.
+
+### Fixed
+- **`docs/TFM/` deja de instalarse en los proyectos destino.** Es la memoria de esta plantilla
+  concreta, no un artefacto reutilizable.
+- **El comando de instalación de las pruebas se deriva de `package.json`.** Antes llevaba la versión
+  escrita a mano y cada release rompía la comprobación.
+
 ## [0.7.0] — 2026-08-16
 
 ### Added

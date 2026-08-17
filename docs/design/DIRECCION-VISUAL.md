@@ -1,5 +1,9 @@
 # Dirección visual del proyecto
 
+> **PLANTILLA.** No describe la identidad de ningún proyecto real: los valores entre `<...>`
+> están sin decidir. Este ecosistema no tiene interfaz gráfica propia, así que en este
+> repositorio el documento se conserva únicamente como semilla para los proyectos que lo instalan.
+>
 > **Se decide una vez y es vinculante**, como la constitución de arquitectura. Cada `design.md`
 > se contrasta contra este documento, y `/front` comprueba el código contra él.
 >
@@ -8,8 +12,8 @@
 
 | Campo | Valor |
 |---|---|
-| **Estado** | borrador \| **aprobada por el usuario** |
-| **Fecha** | YYYY-MM-DD |
+| **Estado** | plantilla sin rellenar |
+| **Fecha** | `<YYYY-MM-DD>` |
 | **Aprobada por** | `<persona>` |
 
 ---

@@ -66,7 +66,7 @@ Estos **obligan**, no son sugerencias:
 | [`guides/COMO-TRABAJAR-CON-LOS-AGENTES.md`](./guides/COMO-TRABAJAR-CON-LOS-AGENTES.md) | **Empieza aquí si vas a usar el sistema**: comunicación entre agentes, por dónde empezar, TDD, calidad y seguridad |
 | [`guides/DOCUMENTACION.md`](./guides/DOCUMENTACION.md) | Qué se versiona, circuitos docs-only/SDD, `/docs-sync`, propietarios y gates |
 | [`agents/CATALOG.md`](./agents/CATALOG.md) | Qué agente hace qué y a quién llama |
-| [`agents/MAPEO-10-AGENTES.md`](./agents/MAPEO-10-AGENTES.md) | La idea original de 10 agentes y por qué cambió cada pieza |
+| [`agents/ORIGEN-Y-EVOLUCION.md`](./agents/ORIGEN-Y-EVOLUCION.md) | La idea original de 10 agentes y por qué cambió cada pieza |
 | [`agents/SKILLS-EXTERNAS.md`](./agents/SKILLS-EXTERNAS.md) | Skills de terceros: catálogo, auditoría y registro |
 | [`security/MCP-SECURITY.md`](./security/MCP-SECURITY.md) | Usar MCP sin abrir un agujero |
 | [`security/_TEMPLATE.threat-model.md`](./security/_TEMPLATE.threat-model.md) | Plantilla STRIDE; no es un análisis real |

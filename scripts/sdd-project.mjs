@@ -2,20 +2,10 @@
 /**
  * Operaciones deterministas del proyecto instalado.
  *
- *   node scripts/sdd-project.mjs detect [--json]
- *   node scripts/sdd-project.mjs configure --accept-detected [--dry-run]
- *   node scripts/sdd-project.mjs run [--ci] [--fast|--slow]
- *   node scripts/sdd-project.mjs debt [--json]
- *   node scripts/sdd-project.mjs skills-export [--json]
- *   node scripts/sdd-project.mjs status [--json] [--spec NNN]
- *   node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
- *   node scripts/sdd-project.mjs trace-status --spec NNN [--json]
- *   node scripts/sdd-project.mjs generate <id> [--dry-run] [--json]
- *   node scripts/sdd-project.mjs product-status [--json]
- *   node scripts/sdd-project.mjs approve-product --approved-by <persona> [--json]
- *   node scripts/sdd-project.mjs docs-status [--json]
- *   node scripts/sdd-project.mjs approve-docs --approved-by <persona> [--json]
- *   node scripts/sdd-project.mjs trace-correct --from-spec NNN --to-spec NNN --session <id> --reason <texto> [--json]
+ *   node scripts/sdd-project.mjs --help
+ *
+ * La lista de subcomandos vive en la constante `USO` y en ningún otro sitio: mantenerla por
+ * duplicado en este comentario es cómo se quedó desactualizada durante cinco versiones.
  *
  * Detectar no equivale a aprobar: `detect` nunca escribe. `configure` requiere la bandera
  * explícita y conserva cualquier comando ya definido por el proyecto.
@@ -76,6 +66,43 @@ const PRODUCT_FILES = [
 
 const leer = (ruta) => (existsSync(ruta) ? readFileSync(ruta, 'utf8') : null);
 const hash = (contenido) => createHash('sha256').update(contenido).digest('hex').slice(0, 16);
+
+/**
+ * Uso del CLI. Es la única lista de subcomandos del fichero: si un comando no aparece aquí,
+ * para quien lo usa no existe.
+ */
+const USO = `Operaciones deterministas del proyecto instalado.
+
+  node scripts/sdd-project.mjs <comando> [opciones]
+
+Estado y diagnóstico
+  status [--json] [--spec NNN]        panorama del circuito; es el comando por defecto
+  detect [--json]                     detecta stacks y herramientas sin escribir nada
+  inventory [--json]                  inventario de agentes, skills y artefactos
+  trace-status --spec NNN [--json]    trazabilidad de una spec
+  debt [--json]                       conteo de marcadores de deuda
+
+Gates de producto y documentación
+  product-status [--json]             estado del baseline de producto
+  approve-product --approved-by <persona> [--json]
+  docs-status [--json]                estado del contrato documental
+  approve-docs --approved-by <persona> [--json]
+
+Trabajo sobre specs
+  new-spec <nombre> [--json]          crea la siguiente spec numerada
+  new-adr <titulo> [--json]           crea el siguiente ADR numerado
+  scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
+  trace-correct --from-spec NNN --to-spec NNN --session <id> --reason <texto> [--json]
+
+Ejecución y configuración
+  run [--ci] [--fast|--slow]          ejecuta los gates declarados en .sdd/checks.json
+  verify [--json]                     verificación completa antes de entregar
+  configure --accept-detected [--dry-run]
+  generate <id> [--dry-run] [--json]  ejecuta un generador declarado
+  skills-export [--json]              exporta las skills canónicas
+
+  --help, -h, help                    muestra esta ayuda
+  --json                              salida legible por máquina, también en los errores`;
 
 function opcion(nombre) {
   const indice = argv.indexOf(nombre);
@@ -477,8 +504,20 @@ function cargarInstalacion() {
   catch (error) { throw new Error(`.sdd/installed.json no es JSON válido: ${error.message}`); }
 }
 
+/**
+ * El registro cuando existe; el estado neutro de plantilla cuando todavía no.
+ *
+ * Preguntar por el estado no puede exigir que el estado exista: consultar es la primera cosa
+ * que hace cualquiera, humano o agente, antes de instalar nada. Un registro corrupto sí sigue
+ * siendo un error, porque es un problema real y no debe confundirse con "aún no instalado".
+ */
+function cargarInstalacionOPlantilla() {
+  if (leer(INSTALLED_PATH) === null) return { mode: 'template' };
+  return cargarInstalacion();
+}
+
 function estadoProducto() {
-  const registro = cargarInstalacion();
+  const registro = cargarInstalacionOPlantilla();
   return registro.product || {
     schemaVersion: 1,
     status: registro.mode === 'greenfield' ? 'bootstrap' : 'legacy-pending',
@@ -490,7 +529,7 @@ function estadoProducto() {
 }
 
 function estadoSeguridad() {
-  const registro = cargarInstalacion();
+  const registro = cargarInstalacionOPlantilla();
   return registro.security || {
     schemaVersion: 1,
     status: 'legacy-pending',
@@ -500,7 +539,7 @@ function estadoSeguridad() {
 }
 
 function estadoUsabilidad() {
-  const registro = cargarInstalacion();
+  const registro = cargarInstalacionOPlantilla();
   return registro.usability || {
     schemaVersion: 1,
     status: 'legacy-pending',
@@ -510,7 +549,7 @@ function estadoUsabilidad() {
 }
 
 function estadoDocumentacion() {
-  const registro = cargarInstalacion();
+  const registro = cargarInstalacionOPlantilla();
   return registro.documentation || {
     schemaVersion: 1,
     status: registro.mode === 'greenfield' ? 'bootstrap' : 'legacy-pending',
@@ -540,7 +579,7 @@ function aprobarDocumentacion() {
   const errores = Array.isArray(validacion) ? validacion : validacion?.errors || [];
   if (errores.length) throw new Error(`Contrato documental no aprobable: ${errores.join('; ')}`);
   const contenido = `${JSON.stringify(config, null, 2)}\n`;
-  const registro = cargarInstalacion();
+  const registro = cargarInstalacionOPlantilla();
   const previo = estadoDocumentacion();
   const ahora = new Date().toISOString();
   const documentation = {
@@ -734,7 +773,8 @@ function aprobarProducto() {
   if (!DRY && prdAprobado !== contenidos['docs/product/PRD.md']) writeFileSync(rutaPrd, prdAprobado, 'utf8');
   contenidos['docs/product/PRD.md'] = prdAprobado;
 
-  const registro = cargarInstalacion();
+  // Se llega aquí solo con el baseline ya validado: una degradación jamás concede aprobación.
+  const registro = cargarInstalacionOPlantilla();
   const numeros = nombres('docs/specs', (x) => x.isDirectory())
     .map((nombre) => Number((nombre.match(/^(\d{3})-/) || [])[1])).filter(Number.isFinite);
   const product = {
@@ -747,6 +787,7 @@ function aprobarProducto() {
   };
   if (!DRY) {
     registro.product = product;
+    mkdirSync(dirname(INSTALLED_PATH), { recursive: true });
     writeFileSync(INSTALLED_PATH, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
   }
   imprimir(product);
@@ -1493,6 +1534,13 @@ function informeDeuda() {
   console.log('Ratio y banderas: docs/quality/TECH-DEBT.md');
 }
 
+// La ayuda se resuelve antes de validar argumentos: hasta ahora `--help` moría como "argumento
+// desconocido", que es exactamente el momento en que alguien necesita la ayuda.
+if (argv.includes('--help') || argv.includes('-h') || comando === 'help') {
+  console.log(USO);
+  process.exit(0);
+}
+
 try {
   if (comando === 'detect') imprimir(detectar());
   else if (comando === 'inventory') imprimir(inventario());
@@ -1512,8 +1560,12 @@ try {
   else if (comando === 'debt') informeDeuda();
   else if (comando === 'skills-export') exportarSkills();
   else if (comando === 'status') imprimir(snapshotEstado());
-  else throw new Error(`Comando desconocido: ${comando}`);
+  else throw new Error(`Comando desconocido: ${comando}. Prueba \`--help\`.`);
 } catch (error) {
-  console.error(error.message);
+  // Quien pidió JSON necesita JSON también cuando algo falla: un agente que recibe prosa en
+  // stderr solo puede adivinar. El mensaje describe el fallo, nunca el sistema de ficheros
+  // del host ni la traza de pila.
+  if (JSON_OUT) console.error(JSON.stringify({ schemaVersion: 1, ok: false, command: comando, error: error.message }));
+  else console.error(error.message);
   process.exit(1);
 }

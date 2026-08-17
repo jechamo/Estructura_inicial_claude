@@ -246,3 +246,42 @@ setup gigante duplicado · cobertura alta con aserciones pobres.
 
 Comprobación rápida: rompe una línea de producción a propósito. Si la suite sigue en verde,
 esa línea no está probada.
+
+## 10. Gates de este repositorio
+
+La plantilla se aplica a sí misma lo que exige a los proyectos que la instalan. Estos son los
+gates declarados en [`.sdd/checks.json`](../../.sdd/checks.json):
+
+| Gate | Velocidad | Comando | Qué verifica |
+|---|---|---|---|
+| `sdd` | fast | `node scripts/check-sdd.mjs` | estructura, trazabilidad y evidencia del circuito |
+| `lint` | fast | `npm run lint` | sintaxis de los módulos y reglas de `.editorconfig` |
+| `test` | fast | `npm run test` | hooks compartidos y autotest del verificador de sintaxis |
+| `build` | fast | `npm run build` | sincronía de las skills canónicas con los seis formatos de IDE |
+| `security` | slow | `node scripts/scan-secrets.mjs --json` | secretos en el árbol versionado |
+| `e2e` | slow | `npm run e2e` | contrato completo del instalador sobre destinos reales |
+
+`build` no compila: el artefacto construido de esta plantilla son los adaptadores de skills por
+IDE, y `skills-sync --check` es exactamente la comprobación de que ese artefacto está al día.
+
+### Gates no configurados y por qué
+
+Un gate vacío sin explicación es indistinguible de un descuido. Cada ausencia declarada en
+`unconfigured` tiene un motivo material:
+
+| Gate | Motivo por el que no se ejecuta |
+|---|---|
+| `typecheck` | no hay TypeScript ni anotaciones de tipo en el repositorio; no existe nada que comprobar |
+| `smells` | no hay analizador de complejidad sin dependencias, y añadir una contradiría la regla de cero dependencias |
+| `coverage` | el arnés de test es propio y no instrumenta cobertura; la suficiencia se mide por criterio de aceptación cubierto, no por porcentaje |
+| `visual` | la plantilla no tiene interfaz gráfica: no hay nada que capturar ni comparar |
+| `a11y` | no hay superficie visual, foco ni contraste que auditar; la usabilidad aquí es microcopy de línea de comandos |
+| `deps-audit` | el paquete no declara ninguna dependencia de runtime ni de desarrollo, así que no hay árbol que auditar |
+| `docs` | el gate documental necesita el SHA base del pull request y solo tiene sentido en CI, donde se ejecuta con `check-sdd --docs-diff` |
+| `mutation` | requiere un motor de mutación externo, y este artefacto se compromete a cero dependencias de runtime; añadirlo rompería la portabilidad que lo justifica |
+
+Estos motivos se verifican, no solo se escriben:
+`scripts/test-install.mjs::gates_no_configurados_tienen_motivo` falla si un identificador
+aparece en `unconfigured` sin fila aquí, si el motivo es vago o si el gate está a la vez
+configurado y declarado ausente.
+
