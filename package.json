@@ -87,6 +87,7 @@
     "scripts/test-hooks.mjs"
   ],
   "scripts": {
+    "web": "node web/server.mjs",
     "check": "node scripts/check-sdd.mjs",
     "check:strict": "node scripts/check-sdd.mjs --strict",
     "check:skills": "node scripts/skills-sync.mjs --check",

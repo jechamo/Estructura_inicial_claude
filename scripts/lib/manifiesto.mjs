@@ -460,6 +460,8 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('docs/quality/benchmarks/')) return false;
   // La memoria del TFM documenta esta plantilla concreta: es historia, no artefacto reutilizable.
   if (r.startsWith('docs/TFM/')) return false;
+  // La landing instala la plantilla; no se instala con ella ni tendría sentido en el destino.
+  if (r.startsWith('web/')) return false;
   if (EXCLUSIONES_EXACTAS.has(r)) {
     if (conMcp && ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'].includes(r)) return true;
     return false;

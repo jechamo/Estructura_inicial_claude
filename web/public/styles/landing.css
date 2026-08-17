@@ -1,0 +1,311 @@
+/* Navegación, portada y secciones narrativas. */
+
+/* ── Navegación ───────────────────────────────────────────────────────────── */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--alto-nav);
+  border-bottom: 1px solid transparent;
+  background: rgba(6, 7, 13, 0);
+  transition:
+    background var(--dur-3) var(--curva-suave),
+    border-color var(--dur-3) var(--curva-suave),
+    backdrop-filter var(--dur-3) var(--curva-suave);
+}
+
+.nav.fijada {
+  border-bottom-color: var(--borde);
+  background: rgba(6, 7, 13, 0.78);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+.nav__interior {
+  display: flex;
+  align-items: center;
+  gap: var(--e-5);
+  height: 100%;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  color: var(--texto);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.marca__logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(109, 139, 255, 0.35));
+  transition: transform var(--dur-2) var(--curva-rebote);
+}
+
+.marca:hover .marca__logo { transform: scale(1.08) rotate(-3deg); }
+
+.marca__version {
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--r-full);
+  background: rgba(148, 163, 220, 0.12);
+  color: var(--texto-tenue);
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+  font-weight: 500;
+}
+
+.nav__enlaces {
+  display: flex;
+  gap: var(--e-2);
+  margin-left: auto;
+  align-items: center;
+}
+
+.nav__enlace {
+  position: relative;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--r-full);
+  color: var(--texto-suave);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--dur-1) var(--curva-suave), background var(--dur-1) var(--curva-suave);
+}
+
+.nav__enlace:hover,
+.nav__enlace[aria-current="true"] { background: rgba(148, 163, 220, 0.1); color: var(--texto); }
+
+@media (max-width: 720px) {
+  .nav__enlaces .oculta-movil { display: none; }
+}
+
+/* ── Portada ──────────────────────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  padding: var(--e-9) 0 var(--e-8);
+  overflow: hidden;
+}
+
+/* Malla aurora: tres manchas de color que respiran. CSS puro, sin lienzo ni imágenes. */
+.hero__aurora {
+  position: absolute;
+  inset: -30% -10% auto -10%;
+  height: 130%;
+  pointer-events: none;
+  filter: blur(90px);
+  opacity: 0.7;
+  transform: translate3d(0, var(--parallax, 0px), 0);
+}
+
+.hero__mancha {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  animation: respirar var(--periodo, 16s) ease-in-out infinite alternate;
+}
+
+.hero__mancha:nth-child(1) {
+  --periodo: 15s;
+  top: 4%;
+  left: 8%;
+  width: 44vw;
+  height: 44vw;
+  background: radial-gradient(circle, rgba(109, 139, 255, 0.75), transparent 68%);
+}
+
+.hero__mancha:nth-child(2) {
+  --periodo: 19s;
+  top: 22%;
+  right: 4%;
+  width: 38vw;
+  height: 38vw;
+  background: radial-gradient(circle, rgba(192, 123, 255, 0.6), transparent 68%);
+  animation-delay: -4s;
+}
+
+.hero__mancha:nth-child(3) {
+  --periodo: 23s;
+  top: 46%;
+  left: 34%;
+  width: 34vw;
+  height: 34vw;
+  background: radial-gradient(circle, rgba(36, 211, 184, 0.45), transparent 68%);
+  animation-delay: -9s;
+}
+
+@keyframes respirar {
+  from { transform: translate3d(-4%, -3%, 0) scale(0.94); }
+  to { transform: translate3d(5%, 4%, 0) scale(1.12); }
+}
+
+/* Rejilla que se desvanece hacia los bordes: da profundidad sin robar atención. */
+.hero__rejilla {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 220, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 220, 0.055) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 32%, #000 20%, transparent 78%);
+}
+
+.hero__interior {
+  position: relative;
+  display: grid;
+  gap: var(--e-6);
+  max-width: 900px;
+}
+
+.hero__logo {
+  width: clamp(120px, 16vw, 190px);
+  height: auto;
+  margin-bottom: calc(var(--e-4) * -1);
+  filter: drop-shadow(0 12px 40px rgba(109, 139, 255, 0.4));
+  animation: flotar 7s var(--curva-suave) infinite;
+}
+
+@keyframes flotar {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__logo { animation: none; }
+}
+
+.hero h1 {
+  font-size: var(--t-3xl);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.hero h1 .destello {
+  background: linear-gradient(110deg, var(--acento-claro), var(--acento-2) 40%, var(--acento-3) 75%, var(--acento-claro));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: barrido 7s linear infinite;
+}
+
+@keyframes barrido {
+  to { background-position: 220% 0; }
+}
+
+.hero__entrada {
+  max-width: 62ch;
+  color: var(--texto-suave);
+  font-size: var(--t-lg);
+}
+
+.hero__acciones { display: flex; flex-wrap: wrap; gap: var(--e-3); }
+
+.hero__cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--e-4);
+  margin-top: var(--e-4);
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--borde);
+}
+
+.cifra__valor {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--t-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--texto), var(--acento-claro));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cifra__nombre {
+  color: var(--texto-tenue);
+  font-size: var(--t-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Secciones ────────────────────────────────────────────────────────────── */
+
+.seccion { padding: var(--e-8) 0; scroll-margin-top: calc(var(--alto-nav) + var(--e-4)); }
+.seccion--alt { background: linear-gradient(180deg, transparent, var(--fondo-alt) 12%, var(--fondo-alt) 88%, transparent); }
+
+.seccion__cabecera { max-width: var(--ancho-estrecho); margin-bottom: var(--e-6); }
+.seccion__cabecera h2 { margin: var(--e-3) 0 var(--e-3); font-size: var(--t-2xl); }
+.seccion__cabecera p { color: var(--texto-suave); margin-bottom: 0; }
+
+.rejilla-pilares {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--e-4);
+}
+
+.pilar {
+  display: grid;
+  align-content: start;
+  gap: var(--e-3);
+  transition: transform var(--dur-2) var(--curva), border-color var(--dur-2) var(--curva-suave);
+}
+
+.pilar:hover { transform: translateY(-4px); border-color: var(--borde-fuerte); }
+
+.pilar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, var(--pilar-color, var(--acento)), transparent 55%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.pilar__icono {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pilar-color, var(--acento)) 18%, transparent);
+  color: var(--pilar-color, var(--acento));
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  font-weight: 700;
+}
+
+.pilar h3 { font-size: var(--t-lg); }
+.pilar p { margin: 0; color: var(--texto-suave); font-size: var(--t-sm); }
+
+.pilar__regla {
+  margin-top: auto;
+  padding-top: var(--e-3);
+  border-top: 1px dashed var(--borde);
+  color: var(--texto-tenue);
+  font-family: var(--mono);
+  font-size: var(--t-xs);
+}
+
+/* ── Pie ──────────────────────────────────────────────────────────────────── */
+
+.pie {
+  padding: var(--e-6) 0 var(--e-7);
+  border-top: 1px solid var(--borde);
+  color: var(--texto-tenue);
+  font-size: var(--t-sm);
+}
+
+.pie__interior { display: flex; flex-wrap: wrap; gap: var(--e-4); justify-content: space-between; align-items: center; }

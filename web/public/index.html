@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="sdd-token" content="__SDD_TOKEN__">
+<meta name="sdd-version" content="__SDD_VERSION__">
+<meta name="description" content="Instalador guiado del ecosistema de agentes SDD: simulación, instalación y verificación en tres pasos.">
+<title>Instalador SDD — ecosistema de agentes</title>
+<link rel="icon" href="/assets/logo.png">
+<link rel="stylesheet" href="/styles/tokens.css">
+<link rel="stylesheet" href="/styles/base.css">
+<link rel="stylesheet" href="/styles/landing.css">
+<link rel="stylesheet" href="/styles/installer.css">
+<link rel="stylesheet" href="/styles/docs.css">
+<script type="module" src="/app/main.mjs"></script>
+</head>
+<body>
+
+<a class="saltar" href="#instalar">Saltar al instalador</a>
+<div class="progreso-lectura" id="progreso-lectura" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="contenedor nav__interior">
+    <a class="marca" href="#inicio">
+      <img class="marca__logo" src="/assets/logo.png" alt="SDD Agents" width="40" height="40">
+      <span>Ecosistema de agentes</span>
+      <span class="marca__version" id="marca-version">v0.0.0</span>
+    </a>
+    <nav class="nav__enlaces" aria-label="Secciones">
+      <a class="nav__enlace" href="#instalar">Instalar</a>
+      <a class="nav__enlace oculta-movil" href="#pilares">Cómo funciona</a>
+      <a class="nav__enlace" href="#documentacion">Documentación</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+
+  <!-- ── Portada ─────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero__aurora" id="aurora" aria-hidden="true">
+      <span class="hero__mancha"></span>
+      <span class="hero__mancha"></span>
+      <span class="hero__mancha"></span>
+    </div>
+    <div class="hero__rejilla" aria-hidden="true"></div>
+
+    <div class="contenedor hero__interior">
+      <img class="hero__logo" src="/assets/logo.png" alt="" width="200" height="200" data-revelar>
+      <span class="etiqueta" data-revelar>Instalación guiada · tres pasos · sin sorpresas</span>
+
+      <h1 data-revelar style="--retardo:60ms">
+        Instala el ecosistema SDD en tu proyecto<br>
+        <span class="destello">sin escribir un solo comando</span>
+      </h1>
+
+      <p class="hero__entrada" data-revelar style="--retardo:120ms">
+        Simula primero, instala después y verifica al final. Cada paso espera tu confirmación y
+        te enseña la salida real del proceso, no un resumen inventado. Si tu red rompe la
+        validación de certificados, hay un modo permisivo acotado a esa ejecución.
+      </p>
+
+      <div class="hero__acciones" data-revelar style="--retardo:180ms">
+        <a class="btn btn-primario" href="#instalar">Empezar la instalación</a>
+        <a class="btn btn-fantasma" href="#documentacion">Leer la memoria técnica</a>
+      </div>
+
+      <dl class="hero__cifras" data-revelar style="--retardo:240ms">
+        <div><dd class="cifra__valor" data-contador="20">0</dd><dt class="cifra__nombre">Agentes</dt></div>
+        <div><dd class="cifra__valor" data-contador="26">0</dd><dt class="cifra__nombre">Skills</dt></div>
+        <div><dd class="cifra__valor" data-contador="7">0</dd><dt class="cifra__nombre">Hooks</dt></div>
+        <div><dd class="cifra__valor" data-contador="6">0</dd><dt class="cifra__nombre">IDE soportados</dt></div>
+        <div><dd class="cifra__valor" data-contador="0">0</dd><dt class="cifra__nombre">Dependencias</dt></div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ── Instalador ──────────────────────────────────────────────────────── -->
+  <section class="seccion seccion--alt" id="instalar">
+    <div class="contenedor">
+
+      <div class="seccion__cabecera" data-revelar>
+        <span class="etiqueta">Instalador</span>
+        <h2>Tres pasos, tres confirmaciones</h2>
+        <p>
+          Indica la carpeta del proyecto y revisa el comando exacto antes de ejecutarlo. La
+          simulación no escribe nada en disco: es el paso que permite instalar sin miedo sobre
+          un repositorio con trabajo en curso.
+        </p>
+      </div>
+
+      <div class="instalador">
+
+        <!-- Configuración -->
+        <form class="panel" id="config" novalidate>
+          <div class="tarjeta" style="display:grid;gap:var(--e-4)">
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="destino">Carpeta del proyecto</label>
+              <input class="entrada" id="destino" name="destino" type="text" spellcheck="false"
+                     autocomplete="off" placeholder="C:\ruta\proyecto"
+                     aria-describedby="destino-ayuda destino-validacion">
+              <p class="campo__ayuda" id="destino-ayuda">Ruta absoluta y local. Si no existe, la instalación real la creará.</p>
+              <div class="mensaje-validacion" id="destino-validacion" role="status" aria-live="polite"></div>
+            </div>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="modo">Modo</label>
+              <select class="selector" id="modo" name="modo">
+                <option value="auto" selected>auto — detecta el estado del destino</option>
+                <option value="greenfield">greenfield — proyecto nuevo</option>
+                <option value="brownfield">brownfield — repositorio con contenido</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="ref">Versión de la plantilla</label>
+              <select class="selector" id="ref" name="ref">
+                <option value="" data-etiqueta="fijada">Etiqueta fija — reproducible</option>
+                <option value="main">main — última versión, no reproducible</option>
+              </select>
+              <p class="campo__ayuda">Para una instalación auditable usa siempre la etiqueta fija.</p>
+            </div>
+
+            <fieldset class="campo" style="border:0;margin:0;padding:0">
+              <legend class="campo__etiqueta" style="padding:0">Opciones</legend>
+              <div class="grupo-conmutadores">
+                <label class="conmutador">
+                  <input type="checkbox" id="sin-hooks">
+                  <span class="conmutador__pista" aria-hidden="true"></span>
+                  <span>Sin hooks de Git <code>--no-hooks</code></span>
+                </label>
+                <label class="conmutador">
+                  <input type="checkbox" id="con-baseline">
+                  <span class="conmutador__pista" aria-hidden="true"></span>
+                  <span>Incluir baseline de investigación <code>--con-baseline</code></span>
+                </label>
+                <label class="conmutador conmutador--riesgo" id="conmutador-tls">
+                  <input type="checkbox" id="tls-permisivo" aria-describedby="aviso-tls">
+                  <span class="conmutador__pista" aria-hidden="true"></span>
+                  <span>Modo TLS permisivo</span>
+                </label>
+              </div>
+              <div class="aviso-tls" id="aviso-tls" role="status">
+                <strong>Desactiva la validación de certificados.</strong>
+                <span>
+                  Solo para esta ejecución: se pasa por el entorno del proceso hijo y no toca tu
+                  <code>.npmrc</code> ni la configuración global. Úsalo si tu proxy o tu CA corporativa
+                  rompen la descarga, y desactívalo en cuanto termine.
+                </span>
+              </div>
+            </fieldset>
+
+            <div class="campo">
+              <label class="campo__etiqueta" for="mcp">Servidores MCP <span class="campo__ayuda">(opcional)</span></label>
+              <input class="entrada" id="mcp" type="text" spellcheck="false" autocomplete="off"
+                     placeholder="context7,playwright" aria-describedby="mcp-ayuda">
+              <p class="campo__ayuda" id="mcp-ayuda">Separados por comas. Sin valor no se crea ninguna configuración MCP.</p>
+            </div>
+          </div>
+
+          <div class="tarjeta previa">
+            <div class="previa__barra">
+              <h3>Comando que se ejecutará</h3>
+              <button class="btn btn-fantasma btn-pequeno" type="button" data-copiar="#previa-codigo">Copiar</button>
+            </div>
+            <pre class="previa__codigo" id="previa-codigo">Indica una carpeta para ver el comando.</pre>
+          </div>
+        </form>
+
+        <!-- Pasos -->
+        <div class="pasos" id="pasos">
+
+          <article class="paso" data-paso="1" data-estado="listo">
+            <div class="paso__medidor">
+              <div class="paso__disco">
+                <span class="paso__numero">1</span>
+                <svg class="paso__marca" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="paso__cuerpo">
+              <div class="paso__titular">
+                <h3>Simulación</h3>
+                <span class="pastilla pastilla-neutra" data-insignia>--dry-run</span>
+                <span class="paso__crono" data-crono></span>
+              </div>
+              <p class="paso__resumen" data-resumen>No crea el directorio ni escribe nada: solo muestra qué haría.</p>
+              <div class="paso__acciones">
+                <button class="btn btn-primario" type="button" data-accion="ejecutar" data-objetivo="1">Simular instalación</button>
+                <button class="btn btn-peligro btn-pequeno" type="button" data-accion="cancelar" data-objetivo="1" hidden>Cancelar</button>
+              </div>
+              <div class="terminal" data-terminal="1">
+                <div class="terminal__barra">
+                  <span class="terminal__luces" aria-hidden="true"><span></span><span></span><span></span></span>
+                  <span class="terminal__titulo">paso 1 · simulación</span>
+                  <button class="btn btn-fantasma btn-pequeno" type="button" data-copiar-log="1">Copiar log</button>
+                </div>
+                <div class="terminal__pulso" aria-hidden="true"></div>
+                <pre class="terminal__salida" data-salida="1" role="log" aria-live="polite" aria-label="Salida del paso 1" tabindex="0"></pre>
+              </div>
+              <div class="confirmacion" data-confirmacion="1"></div>
+            </div>
+          </article>
+
+          <article class="paso" data-paso="2" data-estado="bloqueado">
+            <div class="paso__medidor">
+              <div class="paso__disco">
+                <span class="paso__numero">2</span>
+                <svg class="paso__marca" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="paso__cuerpo">
+              <div class="paso__titular">
+                <h3>Instalación real</h3>
+                <span class="pastilla pastilla-neutra" data-insignia>escribe en disco</span>
+                <span class="paso__crono" data-crono></span>
+              </div>
+              <p class="paso__resumen" data-resumen>Se desbloquea cuando la simulación termina bien y tú das el visto bueno.</p>
+              <div class="paso__acciones">
+                <button class="btn btn-primario" type="button" data-accion="ejecutar" data-objetivo="2" disabled>Instalar</button>
+                <button class="btn btn-peligro btn-pequeno" type="button" data-accion="cancelar" data-objetivo="2" hidden>Cancelar</button>
+              </div>
+              <div class="terminal" data-terminal="2">
+                <div class="terminal__barra">
+                  <span class="terminal__luces" aria-hidden="true"><span></span><span></span><span></span></span>
+                  <span class="terminal__titulo">paso 2 · instalación</span>
+                  <button class="btn btn-fantasma btn-pequeno" type="button" data-copiar-log="2">Copiar log</button>
+                </div>
+                <div class="terminal__pulso" aria-hidden="true"></div>
+                <pre class="terminal__salida" data-salida="2" role="log" aria-live="polite" aria-label="Salida del paso 2" tabindex="0"></pre>
+              </div>
+              <div class="confirmacion" data-confirmacion="2"></div>
+            </div>
+          </article>
+
+          <article class="paso" data-paso="3" data-estado="bloqueado">
+            <div class="paso__medidor">
+              <div class="paso__disco">
+                <span class="paso__numero">3</span>
+                <svg class="paso__marca" width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12.5l4.2 4.2L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="paso__cuerpo">
+              <div class="paso__titular">
+                <h3>Verificación</h3>
+                <span class="pastilla pastilla-neutra" data-insignia>check-sdd</span>
+                <span class="paso__crono" data-crono></span>
+              </div>
+              <p class="paso__resumen" data-resumen>Comprueba que el contrato está completo: 20 agentes y 26 skills.</p>
+              <div class="paso__acciones">
+                <button class="btn btn-primario" type="button" data-accion="ejecutar" data-objetivo="3" disabled>Verificar</button>
+                <button class="btn btn-peligro btn-pequeno" type="button" data-accion="cancelar" data-objetivo="3" hidden>Cancelar</button>
+              </div>
+              <div class="terminal" data-terminal="3">
+                <div class="terminal__barra">
+                  <span class="terminal__luces" aria-hidden="true"><span></span><span></span><span></span></span>
+                  <span class="terminal__titulo">paso 3 · verificación</span>
+                  <button class="btn btn-fantasma btn-pequeno" type="button" data-copiar-log="3">Copiar log</button>
+                </div>
+                <div class="terminal__pulso" aria-hidden="true"></div>
+                <pre class="terminal__salida" data-salida="3" role="log" aria-live="polite" aria-label="Salida del paso 3" tabindex="0"></pre>
+              </div>
+              <div class="confirmacion" data-confirmacion="3"></div>
+            </div>
+          </article>
+
+          <div class="tarjeta siguientes" id="siguientes">
+            <h3>Instalación terminada. Quedan dos cosas por hacer a mano</h3>
+            <p style="color:var(--texto-suave);font-size:var(--t-sm);margin:0">
+              El instalador no cambia permisos ni activa hooks por su cuenta: es una decisión
+              deliberada. Ejecuta esto en la carpeta del proyecto.
+            </p>
+            <pre id="siguientes-codigo"></pre>
+            <div class="paso__acciones">
+              <button class="btn btn-fantasma btn-pequeno" type="button" data-copiar="#siguientes-codigo">Copiar comandos</button>
+              <a class="btn btn-fantasma btn-pequeno" href="#documentacion">Ir a la memoria técnica</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pilares ─────────────────────────────────────────────────────────── -->
+  <section class="seccion" id="pilares">
+    <div class="contenedor">
+      <div class="seccion__cabecera" data-revelar>
+        <span class="etiqueta">Qué instalas</span>
+        <h2>Cuatro exigencias que atraviesan todo el circuito</h2>
+        <p>
+          No son capítulos de un documento: son controles materiales. Cada uno tiene un artefacto
+          que lo fija, un agente responsable, un script determinista y una evidencia exigida.
+        </p>
+      </div>
+
+      <div class="rejilla-pilares">
+        <article class="tarjeta pilar" data-revelar style="--pilar-color:var(--acento)">
+          <span class="pilar__icono" aria-hidden="true">SDD</span>
+          <h3>La spec es la fuente de verdad</h3>
+          <p>
+            Requisitos en sintaxis EARS que se traducen a un test casi sin traducir, priorización
+            MoSCoW sobre esfuerzo y no sobre número de requisitos, y seis puntos donde el circuito
+            se detiene a esperar una decisión humana.
+          </p>
+          <p class="pilar__regla">Regla dura 1 — sin spec aprobada no hay código.</p>
+        </article>
+
+        <article class="tarjeta pilar" data-revelar style="--pilar-color:var(--acento-2);--retardo:80ms">
+          <span class="pilar__icono" aria-hidden="true">TDD</span>
+          <h3>El test primero, y la salida real como prueba</h3>
+          <p>
+            El estado rojo debe fallar por la aserción, no por un import roto. La cobertura se
+            exige por niveles —100 % en el núcleo— en vez de por un porcentaje global que premia
+            cubrir lo fácil.
+          </p>
+          <p class="pilar__regla">Regla dura 4 — rojo demostrado, verde mínimo, refactor en verde.</p>
+        </article>
+
+        <article class="tarjeta pilar" data-revelar style="--pilar-color:var(--acento-3);--retardo:160ms">
+          <span class="pilar__icono" aria-hidden="true">QA</span>
+          <h3>Gates ejecutables, no buenas intenciones</h3>
+          <p>
+            Catorce gates de vocabulario cerrado declarados en <code>.sdd/checks.json</code>. Lo
+            que nadie configuró aparece como <code>unconfigured</code>: visible, no silencioso.
+            Y quien escribe el código no es quien lo audita.
+          </p>
+          <p class="pilar__regla">Regla dura 10 — antes de commitear, gates rápidos; antes de empujar, lentos.</p>
+        </article>
+
+        <article class="tarjeta pilar" data-revelar style="--pilar-color:var(--error);--retardo:240ms">
+          <span class="pilar__icono" aria-hidden="true">SEC</span>
+          <h3>Controles enlazados y auditor sin escritura</h3>
+          <p>
+            OWASP Top 10:2025 y ASVS 5.0.0 con versión citada. Un control no ejecutado bloquea
+            igual que un hallazgo crítico, porque la ignorancia sobre un control no es una
+            posición neutra.
+          </p>
+          <p class="pilar__regla">Regla dura 12 — un GO exige informe sin crítico, alto ni huecos.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Documentación ───────────────────────────────────────────────────── -->
+  <section class="seccion seccion--alt" id="documentacion">
+    <div class="contenedor">
+      <div class="seccion__cabecera" data-revelar>
+        <span class="etiqueta">Memoria técnica</span>
+        <h2>El sistema entero, sin recortes</h2>
+        <p>
+          Los once capítulos y los seis anexos de la memoria, con su índice navegable, sus tablas
+          y sus diagramas. Es el mismo documento que se entrega, servido tal cual.
+        </p>
+      </div>
+
+      <div class="docs">
+        <aside class="indice" aria-label="Índice de la memoria">
+          <div class="indice__buscador">
+            <label class="solo-lectores" for="buscar-indice">Buscar en el índice</label>
+            <input id="buscar-indice" type="search" placeholder="Buscar sección…" autocomplete="off" spellcheck="false">
+          </div>
+          <ul class="indice__lista" id="indice-lista"></ul>
+        </aside>
+
+        <div>
+          <div class="docs__barra">
+            <button class="btn btn-fantasma btn-pequeno" type="button" id="cargar-memoria">Cargar memoria</button>
+            <span class="separador"></span>
+            <a class="btn btn-fantasma btn-pequeno" id="descargar-memoria" href="/api/memoria" download="MEMORIA-SISTEMA-AGENTES.md" hidden>Descargar .md</a>
+            <button class="btn btn-fantasma btn-pequeno" type="button" id="imprimir" hidden>Imprimir</button>
+          </div>
+          <div class="prosa" id="prosa">
+            <div class="docs__estado" id="docs-estado">
+              <span class="diagrama__anillo" aria-hidden="true"></span>
+              <span>Pulsa «Cargar memoria» para traer el documento completo.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<button class="btn arriba" type="button" id="arriba" aria-label="Volver arriba">↑</button>
+
+<footer class="pie">
+  <div class="contenedor pie__interior">
+    <span>Ecosistema de agentes SDD · Node ≥ 18 · cero dependencias de runtime</span>
+    <span>Este servidor escucha solo en 127.0.0.1. Ciérralo con Ctrl+C cuando termines.</span>
+  </div>
+</footer>
+
+</body>
+</html>
