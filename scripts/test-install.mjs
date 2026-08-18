@@ -1225,7 +1225,7 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('instala los hooks de Copilot', existsSync(join(d, '.github/hooks/sdd.json')));
   comprueba('instala los 20 agentes de Codex',
     existsSync(join(d, '.codex/agents')) && readdirSync(join(d, '.codex/agents')).filter((f) => f.endsWith('.toml')).length === 20);
-  comprueba('mantiene paridad exacta de 20 agentes en seis hosts y 26 skills sin duplicados',
+  comprueba('mantiene paridad exacta de 20 agentes en seis hosts y 27 skills sin duplicados',
     readdirSync(join(d, '.claude/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
     readdirSync(join(d, '.github/agents')).filter((f) => f.endsWith('.agent.md')).length === 20 &&
     readdirSync(join(d, '.cursor/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
@@ -1234,8 +1234,8 @@ console.log('\n1 · init sobre un directorio vacío');
     readdirSync(join(d, '.agents/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
     existsSync(join(d, '.gemini/agents')) &&
     readdirSync(join(d, '.gemini/agents')).filter((f) => f.endsWith('.md')).length === 20 &&
-    readdirSync(join(d, '.agents/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 26 &&
-    readdirSync(join(d, '.claude/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 26);
+    readdirSync(join(d, '.agents/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 27 &&
+    readdirSync(join(d, '.claude/skills'), { withFileTypes: true }).filter((e) => e.isDirectory()).length === 27);
   comprueba('los adaptadores permiten planificar seguridad y materializar el handoff sin escribir desde el auditor', (() => {
     const plannerGithub = leer(join(d, '.github/agents/planner.agent.md')) || '';
     const orchestratorGithub = leer(join(d, '.github/agents/orchestrator.agent.md')) || '';
@@ -1603,7 +1603,7 @@ console.log('\n1 · init sobre un directorio vacío');
   let inventario = null;
   try { inventario = JSON.parse(inventory.stdout || 'null'); } catch { /* lo informa la aserción */ }
   comprueba('inventory cuenta agentes y skills canónicos',
-    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 26);
+    inventory.status === 0 && inventario?.agents === 20 && inventario?.skills === 27);
 
   comprueba('la skill observability se instala con su adaptador Claude',
     existsSync(join(d, '.agents/skills/observability/SKILL.md')) &&
@@ -3597,6 +3597,158 @@ console.log('\n5 quinquies · corroboración de trazas independiente del entorno
 el_trailer_no_suplanta_ni_inyecta();
 el_fallo_de_auditoria_ensena_como_arreglarlo();
 el_repositorio_declara_modo_restrictivo();
+
+// ─── 5 sexies · circuito ligero ──────────────────────────────────────────────
+// El modo rápido es, por construcción, una vía de escape. Lo que decide si vale algo no es que
+// exista, sino que sea falsable: estos casos comprueban que la puerta NO se abre cuando alguien
+// declara un atajo que no le corresponde.
+
+function circuit_status_nombra_lo_que_obliga_al_circuito_completo() {
+  console.log('\n  · --circuit-status responde y explica');
+  const r = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--circuit-status', '--json'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  comprueba('--circuit-status termina siempre en 0: informa, no juzga', r.status === 0);
+  let j = null;
+  try { j = JSON.parse(r.stdout); } catch { /* lo dirá la comprobación siguiente */ }
+  comprueba('--circuit-status --json emite JSON válido', j !== null, r.stdout.slice(0, 200));
+  comprueba('el veredicto es uno de los dos circuitos', j && ['light', 'full'].includes(j.circuito));
+  comprueba('el JSON declara si hay frontera', j && typeof j.frontera === 'boolean');
+  if (j && j.circuito === 'full') {
+    comprueba('cuando obliga al circuito completo, nombra las rutas culpables',
+      Array.isArray(j.obligan) && j.obligan.length > 0);
+    const texto = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--circuit-status'],
+      { cwd: ORIGEN, encoding: 'utf8' }).stdout;
+    comprueba('la salida legible nombra al menos una de esas rutas',
+      j.obligan.some((ruta) => texto.includes(ruta)), texto.slice(0, 300));
+  }
+}
+
+function un_commit_ligero_que_miente_falla() {
+  console.log('\n  · un atajo declarado se comprueba contra los ficheros reales');
+  const reparto = JSON.parse(leer(join(ORIGEN, '.sdd', 'territories.json')));
+  const frontera = { version: 1, cuota: 0.4, permitido: ['docs/guides/', 'README.md'], prohibido: ['docs/guides/seguridad/'] };
+  const base = { tareas: new Set(), agentes: new Set(), specs: new Set(), reparto };
+  const commit = (mensaje, ficheros, f = frontera) =>
+    auditarCommit({ sha: 'lig12345', mensaje, ficheros }, { ...base, frontera: f });
+
+  const motivo = 'Corrige el nombre del comando en la guía de instalación: estaba desfasado desde la 0.6 y confunde a quien instala.';
+
+  const honesto = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+    ['docs/guides/INSTALACION.md']);
+  comprueba('un commit ligero dentro de la frontera es conforme', honesto.estado === 'conforme',
+    honesto.hallazgos.join(' · '));
+
+  const mentiroso = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+    ['docs/guides/INSTALACION.md', 'scripts/check-sdd.mjs']);
+  comprueba('un commit ligero que toca lo prohibido se rechaza', mentiroso.estado === 'infractor');
+  comprueba('el rechazo nombra la ruta que rompe el atajo',
+    mentiroso.hallazgos.some((h) => h.includes('scripts/check-sdd.mjs')));
+
+  const negado = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+    ['docs/guides/seguridad/AUTH.md']);
+  comprueba('la negación prevalece aunque la carpeta padre esté permitida', negado.estado === 'infractor');
+
+  const sinFrontera = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+    ['docs/guides/INSTALACION.md'], null);
+  comprueba('sin frontera declarada no hay circuito ligero', sinFrontera.estado === 'infractor');
+  comprueba('la ausencia de frontera se explica, no se insinúa',
+    sinFrontera.hallazgos.some((h) => h.includes('.sdd/lightweight.json')));
+
+  for (const [etiqueta, texto] of [
+    ['vacío', ''],
+    ['de relleno', 'cambio menor'],
+    ['que aplaza', 'pendiente de revisar'],
+  ]) {
+    const r = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${texto}`, ['README.md']);
+    comprueba(`un motivo ${etiqueta} invalida el atajo`, r.estado === 'infractor');
+  }
+
+  const inventado = commit(`docs: x\n\nCircuit: express\nCircuit-reason: ${motivo}`, ['README.md']);
+  comprueba('un circuito inventado no se acepta por parecerse', inventado.estado === 'infractor');
+
+  // Evasión por travesía: `docs/guides/../scripts/x.mjs` no debe colarse como permitido.
+  const travesia = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+    ['docs/guides/../scripts/check-sdd.mjs']);
+  comprueba('una ruta con travesía se normaliza antes de decidir', travesia.estado === 'infractor');
+}
+
+function la_cuota_senala_la_frontera() {
+  console.log('\n  · la cuota señala al fichero, no a la persona');
+  const skill = leer(join(ORIGEN, '.agents', 'skills', 'sdd-light', 'SKILL.md')) || '';
+  const check = leer(join(ORIGEN, 'scripts', 'check-sdd.mjs')) || '';
+  const mensaje = (check.match(/cuota declarada[\s\S]{0,300}/) || [''])[0];
+  comprueba('el aviso de cuota nombra el fichero de la frontera',
+    mensaje.includes('.sdd/lightweight.json'), mensaje.slice(0, 200));
+  comprueba('el aviso de cuota no acusa a nadie',
+    !/culpa|abusa|abuso|infractor|has usado|demasiado laxo por tu/i.test(mensaje));
+  comprueba('la cuota avisa siempre y solo falla en estricto',
+    /STRICT \? err\('traza\/cuota'/.test(check.replace(/\s+/g, ' ')) || check.includes("STRICT ? err('traza/cuota'"));
+  comprueba('la skill explica qué significa superar la cuota', /cuota/i.test(skill));
+
+  const frontera = JSON.parse(leer(join(ORIGEN, '.sdd', 'lightweight.json')));
+  comprueba('la frontera de este repositorio declara una cuota',
+    typeof frontera.cuota === 'number' && frontera.cuota > 0 && frontera.cuota <= 1, `cuota=${frontera.cuota}`);
+  comprueba('la frontera prohíbe explícitamente lo que ejecuta el sistema',
+    frontera.prohibido.includes('scripts/') && frontera.prohibido.includes('.sdd/'));
+}
+
+function el_circuito_ligero_no_perdona_ningun_gate() {
+  console.log('\n  · el modo rápido ahorra papeleo, no verificación');
+  const skill = leer(join(ORIGEN, '.agents', 'skills', 'sdd-light', 'SKILL.md')) || '';
+  comprueba('la skill existe', skill.length > 0);
+  comprueba('la skill empieza por consultar, no por decidir', skill.includes('--circuit-status'));
+  comprueba('la skill declara que no dispensa de ningún gate', /no dispensa|ning[úu]n gate/i.test(skill));
+  for (const obligatorio of ['TDD', 'bitácora', 'Circuit: light', 'Circuit-reason'])
+    comprueba(`la skill mantiene obligatorio: ${obligatorio}`, skill.includes(obligatorio));
+  // Un atajo que se describa a sí mismo como «saltarse los gates» sería el peor resultado
+  // posible de esta spec, aunque el código hiciera lo correcto.
+  comprueba('la skill nunca propone omitir un gate',
+    !/(omit|salta|desactiva|ignora)\w*\s+(los?\s+)?gates?/i.test(skill));
+  comprueba('la skill no propone --no-verify', !skill.includes('--no-verify'));
+}
+
+function el_modelo_operativo_describe_el_circuito_ligero() {
+  console.log('\n  · DOC-CIRCUITO: el modelo operativo lo cuenta');
+  const modelo = leer(join(ORIGEN, 'docs', 'sdd', 'OPERATING-MODEL.md')) || '';
+  for (const pieza of ['.sdd/lightweight.json', 'Circuit: light', 'Circuit-reason', '--circuit-status', '/sdd-light'])
+    comprueba(`el modelo operativo nombra ${pieza}`, modelo.includes(pieza));
+  comprueba('el modelo operativo dice qué NO dispensa', /No dispensa|NO dispensa/.test(modelo));
+
+  const docs = JSON.parse(leer(join(ORIGEN, '.sdd', 'docs.json')));
+  const set = docs.documentSets.find((s) => s.id === 'DOC-CIRCUITO');
+  comprueba('DOC-CIRCUITO está declarado en el contrato documental', Boolean(set));
+  comprueba('DOC-CIRCUITO apunta al modelo operativo',
+    set?.artifacts.includes('docs/sdd/OPERATING-MODEL.md'));
+}
+
+function el_sitio_publicado_no_puede_mentir_sobre_el_catalogo() {
+  console.log('\n  · la séptima superficie: el sitio publicado');
+  const datos = leer(join(ORIGEN, 'site', 'assets', 'js', 'datos.mjs')) || '';
+  const skills = readdirSync(join(ORIGEN, '.agents', 'skills'), { withFileTypes: true })
+    .filter((e) => e.isDirectory()).map((e) => e.name);
+  const agentes = readdirSync(join(ORIGEN, '.claude', 'agents'), { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.md')).map((e) => e.name.replace(/\.md$/, ''));
+  for (const s of skills) comprueba(`el sitio publica la skill ${s}`, datos.includes(`'${s}'`));
+  for (const a of agentes) comprueba(`el sitio publica el agente ${a}`, datos.includes(`'${a}'`));
+
+  const html = leer(join(ORIGEN, 'site', 'index.html')) || '';
+  for (const m of html.matchAll(/(\d+)\s+agente\(s\)\s*·\s*(\d+)\s+skill\(s\)/g))
+    comprueba(`el recuento «${m[0]}» del sitio es cierto`,
+      Number(m[1]) === agentes.length && Number(m[2]) === skills.length);
+
+  // Y sobre todo: que check-sdd lo detecte. Una comprobación que solo vive en este fichero no
+  // protegería a quien instale la plantilla.
+  comprueba('check-sdd verifica el sitio como una superficie más',
+    (leer(join(ORIGEN, 'scripts', 'check-sdd.mjs')) || '').includes("superficie/sitio"));
+}
+
+console.log('\n5 sexies · circuito ligero verificable');
+circuit_status_nombra_lo_que_obliga_al_circuito_completo();
+un_commit_ligero_que_miente_falla();
+la_cuota_senala_la_frontera();
+el_circuito_ligero_no_perdona_ningun_gate();
+el_modelo_operativo_describe_el_circuito_ligero();
+el_sitio_publicado_no_puede_mentir_sobre_el_catalogo();
 
 // ─── 6 · No instalarse sobre sí misma ────────────────────────────────────────
 console.log('\n6 · protección contra instalarse encima de la plantilla');

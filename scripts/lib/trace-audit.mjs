@@ -17,14 +17,10 @@
  * Sin dependencias. Node >= 18.
  */
 import { decidirTerritorio } from '../../.sdd/hooks/territorios.mjs';
+import { clasificar, motivoMaterial, cuota } from './circuito.mjs';
 
 const FORMA_TAREA = /^T-\d{3}-\d+$/;
 
-/** Motivos que no explican nada. Aceptarlos convertiría la excepción en un trámite. */
-const RELLENO = [
-  /^(?:varios|otros?|n\/?a|ninguno|motivo|excepci[oó]n|porque s[ií]|hac[ií]a falta|necesario)\.?$/i,
-  /pendiente|tbd|todo/i,
-];
 
 /**
  * Extrae los trailers de un mensaje de commit.
@@ -58,25 +54,48 @@ export function parsearTrailers(mensaje) {
   return trailers;
 }
 
-function motivoMaterial(motivo) {
-  const texto = String(motivo || '').trim();
-  if (texto.length <= 20) return false;
-  return !RELLENO.some((re) => re.test(texto));
-}
-
 /**
  * Audita un commit contra los artefactos del repositorio.
  *
  * @param {object} commit           `{ sha, mensaje, ficheros }`
- * @param {object} contexto         `{ tareas:Set, agentes:Set, reparto, specs:Set }`
- * @returns {{estado:'conforme'|'no-auditable'|'infractor', hallazgos:string[]}}
+ * @param {object} contexto         `{ tareas:Set, agentes:Set, reparto, specs:Set, frontera }`
+ * @returns {{estado:'conforme'|'no-auditable'|'infractor'|'ligero', hallazgos:string[]}}
  */
 export function auditarCommit(commit, contexto) {
   const { sha = '', mensaje = '', ficheros = [] } = commit || {};
-  const { tareas = new Set(), agentes = new Set(), reparto = null, specs = new Set() } = contexto || {};
+  const { tareas = new Set(), agentes = new Set(), reparto = null, specs = new Set(), frontera = null } = contexto || {};
   const t = parsearTrailers(mensaje);
   const hallazgos = [];
   const corto = String(sha).slice(0, 8) || 'sin sha';
+
+  // Circuito ligero. Declararlo no lo hace cierto: es una afirmación sobre el propio commit,
+  // exactamente de la misma naturaleza que `Trace-exception`, y se contrasta contra su diff.
+  // Un commit ligero no debe `Spec:` ni `Task:` —de eso trata el atajo—, pero sí debe caber
+  // en la frontera y sí debe explicar por qué.
+  if (Object.hasOwn(t, 'Circuit')) {
+    const valor = String(t.Circuit || '').trim().toLowerCase();
+    if (valor !== 'light') {
+      return {
+        estado: 'infractor',
+        ligero: true,
+        hallazgos: [`${corto}: \`Circuit: ${t.Circuit}\` no es un circuito reconocido; el único valor válido es \`light\`.`],
+      };
+    }
+    const veredicto = clasificar(ficheros, frontera);
+    if (!frontera)
+      hallazgos.push(`${corto}: declara \`Circuit: light\` pero no hay frontera en \`.sdd/lightweight.json\`; sin frontera no hay circuito ligero.`);
+    else if (veredicto.circuito !== 'light')
+      hallazgos.push(
+        `${corto}: declara \`Circuit: light\` y toca rutas fuera de la frontera — ${veredicto.obligan.join(', ')}. ` +
+          'Ese cambio exige el circuito completo.',
+      );
+    if (!motivoMaterial(t['Circuit-reason']))
+      hallazgos.push(
+        `${corto}: \`Circuit-reason\` no explica nada («${t['Circuit-reason'] || ''}»). ` +
+          'Escribe qué cambia y por qué no necesita spec; un atajo sin motivo legible es un atajo que nadie puede revisar después.',
+      );
+    return { estado: hallazgos.length ? 'infractor' : 'conforme', ligero: true, hallazgos };
+  }
 
   // Un commit sin trailers no es un infractor: es un commit que esta auditoría no alcanza.
   // Confundir "no lo sé" con "está mal" es la forma más rápida de que nadie se crea el informe.
@@ -131,11 +150,15 @@ export function auditarCommit(commit, contexto) {
 /** Audita una lista de commits y resume el veredicto. */
 export function auditarCommits(commits, contexto) {
   const resultados = commits.map((c) => ({ sha: c.sha, ...auditarCommit(c, contexto) }));
+  const ligeros = resultados.filter((r) => r.ligero).length;
   return {
     total: resultados.length,
     conformes: resultados.filter((r) => r.estado === 'conforme').length,
     noAuditables: resultados.filter((r) => r.estado === 'no-auditable').length,
     infractores: resultados.filter((r) => r.estado === 'infractor'),
+    // La proporción se informa siempre. Superarla no acusa a nadie: dice que la frontera
+    // deja pasar más de lo que se pensaba y conviene volver a mirarla.
+    cuota: cuota({ ligeros, total: resultados.length, maximo: contexto?.frontera?.cuota ?? 1 }),
     resultados,
   };
 }

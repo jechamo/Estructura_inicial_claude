@@ -51,17 +51,25 @@ Antigravity y Codex. La política completa y vinculante está en
 | Proyecto nuevo | `/sdd-intake` → `/sdd-init` |
 | Repositorio existente sin documentar | `/onboard` |
 | Nueva funcionalidad | `/sdd-specify` |
+| Cambio de bajo riesgo | `/sdd-light` — la ruta decide, no quien lo pide |
 | Implementación de tarea | `/sdd-implement` → `/middle`, `/front` o `/bbdd` |
 | Validación | `/sdd-verify` |
 | Entrega | `/sdd-ship` |
 | Documentación sin cambio de comportamiento | `/docs-sync update` o `/docs-sync audit` |
 | Duda sobre la fase | `orchestrator` o `/sdd-status` |
 
+**Circuito ligero.** `.sdd/lightweight.json` declara qué rutas admiten el modo rápido y cuáles lo
+prohíben; la negación prevalece sobre el permiso y, sin fichero, no hay atajo. `check-sdd.mjs
+--circuit-status` responde `light` o `full` **antes** de tocar nada, y el commit resultante lleva
+`Circuit: light` con un motivo material para que `--trace-audit` pueda desmentirlo. El modo rápido
+ahorra los cinco documentos de la spec; **no dispensa de ningún gate, ni del ciclo TDD, ni de la
+bitácora**.
+
 ## Agentes, delegación y aislamiento
 
 - Perfiles canónicos: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` contiene adaptadores.
-- El contrato instalado mantiene **20 agentes** y **26 skills**; no se crean prompts o commands
+- El contrato instalado mantiene **20 agentes** y **27 skills**; no se crean prompts o commands
   paralelos para representar una skill.
 - `orchestrator` es la puerta de entrada por defecto.
 - Solo `orchestrator`, `planner` e `implementer` delegan.

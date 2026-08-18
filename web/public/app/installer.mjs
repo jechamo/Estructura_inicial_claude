@@ -387,10 +387,10 @@ function confirmarInstalacion(resumen) {
   });
 }
 
-const SALIDA_ESPERADA = 'check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)\n✅ Estructura y coherencia correctas.';
+const SALIDA_ESPERADA = 'check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 27 skill(s)\n✅ Estructura y coherencia correctas.';
 
 function confirmarVerificacion(resumen) {
-  const contratoOk = resumen.agentes === 20 && resumen.skills === 26;
+  const contratoOk = resumen.agentes === 20 && resumen.skills === 27;
 
   tarjeta(3, {
     tono: contratoOk ? 'ok' : 'aviso',
@@ -402,7 +402,7 @@ function confirmarVerificacion(resumen) {
       { nombre: 'specs', valor: resumen.specs ?? '—' },
       { nombre: 'tareas', valor: resumen.tareas ?? '—' },
       { nombre: 'agentes', valor: resumen.agentes ?? '—', tono: resumen.agentes === 20 ? 'ok' : 'aviso' },
-      { nombre: 'skills', valor: resumen.skills ?? '—', tono: resumen.skills === 26 ? 'ok' : 'aviso' },
+      { nombre: 'skills', valor: resumen.skills ?? '—', tono: resumen.skills === 27 ? 'ok' : 'aviso' },
     ] : [],
     comparativa: resumen.reconocido ? [
       { titulo: 'Salida esperada', texto: SALIDA_ESPERADA },

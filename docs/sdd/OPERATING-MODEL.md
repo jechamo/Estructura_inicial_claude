@@ -146,6 +146,47 @@ docs/specs/042-checkout-invitado/
 
 ---
 
+### 2.6 El circuito ligero (modo rápido)
+
+Un peaje idéntico para corregir una errata y para cambiar un contrato no protege nada: se
+rodea. El circuito ligero existe para que el papeleo sea proporcional al riesgo **sin reducir la
+verificación**.
+
+**Qué dispensa.** Únicamente los cinco documentos de la spec (`spec.md`, `plan.md`, `tasks.md`,
+`test-plan.md`, `evidence.md`).
+
+**Qué NO dispensa.** Ningún gate. Ni el ciclo TDD. Ni la entrada en la bitácora. Ni las guardas
+de los hooks ni los territorios. Un cambio ligero se verifica exactamente igual que uno normal.
+
+**Quién decide.** No la persona ni el modelo: el fichero `.sdd/lightweight.json`, que declara
+`permitido` y `prohibido` por rutas. La negación prevalece siempre sobre el permiso, y **sin
+fichero no hay circuito ligero** — la ausencia se trata como prohibición, no como permiso total.
+La respuesta se consulta:
+
+```bash
+node scripts/check-sdd.mjs --circuit-status        # responde light | full
+```
+
+Si responde `full`, nombra las rutas que obligan al circuito completo y no hay atajo. Si responde
+`light`, se sigue la skill `/sdd-light`.
+
+**Cómo se declara y cómo se comprueba.** El commit lleva dos *trailers*:
+
+```
+Circuit: light
+Circuit-reason: <qué cambia y por qué no necesita spec>
+```
+
+Esa declaración es **falsable**: `check-sdd.mjs --trace-audit` recalcula la frontera contra los
+ficheros que el commit tocó de verdad y falla si el atajo miente, si no hay frontera, o si el
+motivo es relleno. Un atajo que nadie puede comprobar después no es un atajo.
+
+**La cuota.** `.sdd/lightweight.json` declara una `cuota` (proporción máxima de commits ligeros).
+Superarla no acusa a nadie: indica que la frontera deja pasar más de lo previsto y hay que
+revisarla. Avisa siempre; falla solo en modo estricto.
+
+---
+
 ## 3. Arquitectura
 
 La decisión la toma el agente `architect` con `docs/architecture/DECISION-GUIDE.md`.

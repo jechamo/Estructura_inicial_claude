@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "cuota": 0.4,
+  "permitido": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "docs/README.md",
+    "docs/guides/",
+    "docs/ops/runbooks/",
+    "docs/agents/CATALOG.md",
+    "docs/integrations/",
+    "site/index.html",
+    "site/documentacion.html",
+    "site/404.html"
+  ],
+  "prohibido": [
+    "scripts/",
+    ".sdd/",
+    ".claude/",
+    ".github/",
+    ".codex/",
+    ".cursor/",
+    ".gemini/",
+    ".agents/",
+    "docs/specs/",
+    "docs/architecture/",
+    "docs/product/",
+    "docs/security/",
+    "docs/quality/",
+    "docs/sdd/",
+    "site/assets/",
+    "package.json",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md"
+  ]
+}

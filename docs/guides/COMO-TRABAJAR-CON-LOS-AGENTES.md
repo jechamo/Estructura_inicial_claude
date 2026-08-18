@@ -170,10 +170,18 @@ formato del host obliga —los agentes—, y siempre como envoltorio fino que re
 | **PRD global o proyecto nuevo** | `/sdd-intake` | `orchestrator` → `spec-analyst` / `ux-designer` |
 | **Proyecto nuevo con producto aprobado** | `/sdd-init` | `architect` |
 | **Modificación / funcionalidad nueva** | `/sdd-specify` | `spec-analyst` |
+| **Cambio que crees de bajo riesgo** | `/sdd-light` | `docs-writer` o el especialista del terreno |
 | Repo existente sin documentar | `/onboard` | `research-analyst` → `architect` |
 | No sé en qué punto estoy | `/sdd-status` | — |
 | Algo se ha caído en producción | `/respond-incident` | — |
 | Revalidar formatos y estándares | `/sdd-refresh` | `research-analyst` |
+
+> **Sobre el modo rápido.** `/sdd-light` no lo decides tú ni lo decide el agente: lo decide la
+> ruta. La skill empieza ejecutando `node scripts/check-sdd.mjs --circuit-status` y, si responde
+> `full`, se detiene y te manda a `/sdd-specify`. Ahorra los cinco documentos de la spec y
+> **ningún gate**: los tests, el lint, la cobertura y el escaneo de secretos siguen corriendo
+> igual. El commit resultante lleva `Circuit: light` y un motivo, para que la auditoría de CI
+> pueda desmentirlo si el atajo no correspondía.
 
 ### Qué automatiza el CLI y qué sigue razonando el agente
 

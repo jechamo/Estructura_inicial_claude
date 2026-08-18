@@ -31,6 +31,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # El sitio es la séptima superficie del contrato: publica recuentos de agentes y skills.
+      # Si el catálogo publicado se desvía del real, esto falla antes de desplegar la mentira.
+      - name: Verificar el contrato antes de publicar
+        run: node scripts/check-sdd.mjs
+
+      - name: Verificar accesibilidad del HTML publicado
+        run: node scripts/check-a11y.mjs
+
       - name: Preparar artefacto
         run: node scripts/site-prep.mjs
 

@@ -4,12 +4,13 @@
     "scripts/",
     ".sdd/hooks/"
   ],
-  "maxLineas": 3628,
+  "maxLineas": 3780,
   "maxLineasFuncion": 304,
   "margen": 0,
   "medido": {
-    "mayorFichero": 3628,
+    "mayorFichero": 3780,
     "mayorFuncion": 304
   },
-  "actualizado": "2026-08-18"
+  "actualizado": "2026-08-18",
+  "motivo": "El trinquete sube de 3628 a 3780 por scripts/test-install.mjs: la spec 015 añade seis casos del circuito ligero. Se afloja a sabiendas: la alternativa era escribir menos tests, que es peor. Aflojarlo una tercera vez debería ser motivo para partir la suite, no para volver a subir el número."
 }

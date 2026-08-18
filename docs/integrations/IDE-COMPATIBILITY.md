@@ -49,7 +49,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 | Reglas por glob | ✅ skills | ✅ `.github/instructions/` | ✅ | ✅ `.mdc` con `globs` | 🟡 activación por glob | ❌ | ❌ |
 | Doctrina de usabilidad al editar UI | 🟡 vía skills `/front` | ✅ `usability.instructions.md` | ✅ | ✅ `40-usability.mdc` | 🟡 según activación | ❌ vía `AGENTS.md` | ❌ vía `AGENTS.md` |
 | Perfiles de agente nativos | ✅ `.claude/agents/` | ✅ lee `.github/agents/` **y** `.claude/agents/` | ✅ `.github/agents/` | 🟡 `.cursor/agents/` | 🟡 `.agents/agents/` | ✅ `.codex/agents/*.toml` | ❌ sin formato |
-| Comandos `/` | ✅ 26 skills | ✅ 26 skills | ✅ skills | ✅ 26 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
+| Comandos `/` | ✅ 27 skills | ✅ 27 skills | ✅ skills | ✅ 27 skills | 🟡 workflows | 🟡 skills por nombre/prompt | ✅ **skills nativas**, importadas al workspace |
 | Delegación real a subagente | ✅ herramienta `Agent` | ✅ herramienta `agent` | 🟡 según modo | ✅ subagentes nativos | 🟡 por prompt | ✅ subagentes | ❌ un solo agente |
 | **Lista blanca de a quién puede llamar** | ✅ `Agent(tipo)` en `tools` | ✅ `agents:` en frontmatter | 🟡 | ✅ `Agent(tipo)` en `tools` | ❌ | ⚠️ | ❌ |
 | **Agente sin escritura (auditor)** | ✅ omitir `Write`/`Edit` | ✅ omitir `edit/editFiles` | ✅ | ✅ `readonly: true` | ❌ | ✅ `sandbox_mode = "read-only"` | ❌ **el auditor puede escribir** |
@@ -66,7 +66,7 @@ Leyenda: ✅ verificado contra documentación oficial · 🟡 funciona con limit
 
 Gemini CLI usa su superficie propia `.gemini/agents/`: instala los mismos 20 nombres, conserva
 los cuatro auditores read-only y limita la delegación a `orchestrator`, `planner` e `implementer`.
-Antigravity usa `.agents/agents/`. Ambos comparten `AGENTS.md`, las 26 skills canónicas y los gates
+Antigravity usa `.agents/agents/`. Ambos comparten `AGENTS.md`, las 27 skills canónicas y los gates
 deterministas; la ejecución real de subagentes/hooks sigue dependiendo del host.
 
 ### Qué significa cada casilla incómoda
@@ -286,7 +286,7 @@ antes de cada entrega, y deja que CI lo ejecute en cada PR.
 ```
 /sdd-start
 ```
-Los 20 agentes con `@nombre`, 26 skills, 7 hooks y trazabilidad `observed`.
+Los 20 agentes con `@nombre`, 27 skills, 7 hooks y trazabilidad `observed`.
 
 ### Intake sin superficies duplicadas
 

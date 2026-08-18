@@ -32,6 +32,21 @@
       "owner": "docs-writer"
     },
     {
+      "id": "DOC-CIRCUITO",
+      "kind": "architecture",
+      "sources": [
+        ".sdd/lightweight.json",
+        ".agents/skills/sdd-light/SKILL.md",
+        "scripts/check-sdd.mjs"
+      ],
+      "artifacts": [
+        "docs/sdd/OPERATING-MODEL.md"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
       "id": "DOC-TRACE",
       "kind": "architecture",
       "sources": [

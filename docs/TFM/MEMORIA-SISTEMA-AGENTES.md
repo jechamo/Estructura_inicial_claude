@@ -117,7 +117,7 @@ flowchart LR
 
 ### 1.4 Portabilidad: un método, seis superficies
 
-El mismo contrato de 20 agentes y 26 skills se replica sobre **seis superficies de IDE**, cada
+El mismo contrato de 20 agentes y 27 skills se replica sobre **seis superficies de IDE**, cada
 una con el formato nativo que su *host* espera:
 
 | Superficie | Directorio | Formato de agente |
@@ -154,7 +154,7 @@ Cifras reales obtenidas de la ejecución de los verificadores del propio reposit
 
 ```text
 $ node scripts/check-sdd.mjs
-check-sdd (normal) · 13 spec(s) · 89 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)
+check-sdd (normal) · 15 spec(s) · 103 tarea(s) hecha(s) · 20 agente(s) · 27 skill(s)
 ✅ Estructura y coherencia correctas. Usa --strict antes de entregar.
 ```
 
@@ -163,9 +163,9 @@ $ node scripts/install.mjs init <destino> --mode greenfield --si
 modo greenfield · 309 escrito(s) · 0 fusionado(s) · 0 conservado(s) · 0 conflicto(s)
 ```
 
-El sistema se ha construido **aplicándose a sí mismo**: las trece especificaciones de
+El sistema se ha construido **aplicándose a sí mismo**: las quince especificaciones de
 `docs/specs/` son las de su propia evolución, desde `001-agentes-codex` hasta
-`013-verificacion-independiente-del-host`. Esto es relevante metodológicamente porque significa
+`015-circuito-ligero-verificable`. Esto es relevante metodológicamente porque significa
 que el circuito descrito en el capítulo 8 no es una propuesta teórica: es el procedimiento con
 el que se produjo el artefacto que esta memoria describe.
 
@@ -251,7 +251,7 @@ objetivo    requisito PRD   caso uso   req. spec  criterio   tarea      ejecuci�
 | **Agentes** | `spec-analyst` (redacta), `orchestrator` (enruta y para en el gate), `planner` (convierte a plan) |
 | **Skills** | `/sdd-start`, `/sdd-intake`, `/sdd-specify`, `/sdd-clarify`, `/sdd-plan`, `/sdd-tasks` |
 | **Scripts** | `check-sdd.mjs` (estructura y coherencia), `sdd-project.mjs new-spec`, `scaffold`, `trace-status`, `product-status`, `approve-product` |
-| **Hooks** | `sdd-router.mjs` recuerda la fase correcta al detectar la intención del prompt |
+| **Hooks** | `sdd-router.mjs` recuerda la fase correcta al detectar la intención del prompt. Si el prompt suena a cambio de bajo riesgo, sugiere consultar el circuito aplicable; la decisión no es suya |
 
 #### (d) Cómo se demuestra
 
@@ -542,7 +542,7 @@ node scripts/check-sdd.mjs
 Salida esperada en una instalación limpia:
 
 ```text
-check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)
+check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 27 skill(s)
 ✅ Estructura y coherencia correctas.
 ```
 
@@ -701,7 +701,7 @@ proyecto/
 │
 ├── .agents/                        ── SUPERFICIE GENÉRICA · también fuente canónica de skills
 │   ├── agents/                        20 perfiles en Markdown + frontmatter (formato genérico).
-│   ├── skills/                     ★ LAS 26 SKILLS CANÓNICAS. Una carpeta por skill, con
+│   ├── skills/                     ★ LAS 27 SKILLS CANÓNICAS. Una carpeta por skill, con
 │   │   ├── sdd-specify/SKILL.md       SKILL.md dentro. Es la única copia real: el resto de
 │   │   ├── tdd/SKILL.md               superficies referencia o adapta, no duplica.
 │   │   └── … (26 carpetas)
@@ -765,6 +765,8 @@ proyecto/
 │   ├── generators.json                Generadores deterministas. Vacío por defecto: nunca se
 │   │                                  activa uno por detección automática.
 │   ├── external-skills.json           Registro de skills de terceros.
+│   ├── lightweight.json            ★ FRONTERA DEL MODO RÁPIDO. Rutas permitidas, rutas prohibidas
+│   │                                  y cuota. Se instala VACÍA: sin abrirla, no hay atajo.
 │   ├── installed.json                 Qué versión y qué manifiesto se instaló. Se versiona.
 │   ├── agent-audit.jsonl              Traza append-only cuando NO hay spec activa.
 │   ├── README.md                      Contrato de .sdd/ y ejemplo de trace-correct.
@@ -772,14 +774,22 @@ proyecto/
 │   └── conflicts/                     Propuestas de fusión. NO se versiona.
 │
 ├── scripts/                        ★ CAPA DETERMINISTA
-│   ├── check-sdd.mjs                  Verifica estructura, coherencia, 20 agentes y 26 skills.
+│   ├── check-sdd.mjs                  Verifica estructura, coherencia, 20 agentes y 27 skills.
+│   │                                  Además: --trace-audit y --circuit-status.
 │   ├── check-syntax.mjs               Sintaxis y formato de los .mjs versionados. Es el gate `lint`.
+│   ├── check-coverage.mjs             Cobertura vía NODE_V8_COVERAGE. Es el gate `coverage`.
+│   ├── check-a11y.mjs                 Accesibilidad del HTML publicado. Es el gate `a11y`.
+│   ├── check-smells.mjs               Tamaño con trinquete que solo aprieta. Es el gate `smells`.
 │   ├── sdd-project.mjs                CLI de 18 subcomandos: estado, scaffold, gates, traza…
 │   ├── scan-secrets.mjs               Detección de secretos. Es el gate `security`.
 │   ├── skills-sync.mjs                Sincroniza skills canónicas con sus adaptadores.
 │   ├── test-hooks.mjs                 Prueba el contrato de hooks en los 6 hosts.
 │   └── lib/
 │       ├── manifiesto.mjs             Declara QUÉ crea el instalador. Fuente de verdad del árbol.
+│       ├── circuito.mjs               Decide si un conjunto de rutas admite el modo rápido.
+│       │                              Función pura: ni lee ficheros ni consulta git.
+│       ├── coverage-v8.mjs            Traduce el perfil de V8 a líneas cubiertas.
+│       ├── trace-audit.mjs            Corrobora los trailers del commit contra tasks.md.
 │       └── docs-contract.mjs          Contrato de documentación viva.
 │
 └── docs/                           ── DOCUMENTACIÓN VIVA
@@ -935,7 +945,7 @@ algunos IDE no es un contrato.
 | `.sdd/checks.json` | `run --fast` y `run --slow` no tienen nada que ejecutar. Los gates pasan vacíos |
 | `docs/architecture/constitution.md` | No hay arquitectura vigente. Cada spec decide la suya |
 | `execution-log.jsonl` | Se pierde la evidencia observada de delegación. La trazabilidad cae al nivel que git pueda sostener: `declared-corroborated` |
-| `scripts/check-sdd.mjs` | Nadie verifica el contrato de 20 agentes y 26 skills |
+| `scripts/check-sdd.mjs` | Nadie verifica el contrato de 20 agentes y 27 skills |
 
 #### 4.2.5 Ficheros que se versionan y ficheros que no
 
@@ -1006,22 +1016,31 @@ su comportamiento con scripts propios:
 {
   "version": 1,
   "checks": {
-    "sdd":      { "command": "node scripts/check-sdd.mjs",           "required": true, "speed": "fast" },
+    "sdd":      { "command": "node scripts/check-sdd.mjs",            "required": true, "speed": "fast" },
     "lint":     { "command": "npm run lint",                          "required": true, "speed": "fast" },
     "test":     { "command": "npm run test",                          "required": true, "speed": "fast" },
     "build":    { "command": "npm run build",                         "required": true, "speed": "fast" },
+    "smells":   { "command": "node scripts/check-smells.mjs",         "required": true, "speed": "fast" },
     "security": { "command": "node scripts/scan-secrets.mjs --json",  "required": true, "speed": "slow" },
+    "coverage": { "command": "node scripts/check-coverage.mjs",       "required": true, "speed": "slow" },
+    "a11y":     { "command": "node scripts/check-a11y.mjs",           "required": true, "speed": "slow" },
     "e2e":      { "command": "npm run e2e",                           "required": true, "speed": "slow" }
   },
-  "unconfigured": ["typecheck", "smells", "coverage", "visual",
-                   "a11y", "deps-audit", "docs", "mutation"]
+  "unconfigured": ["typecheck", "visual", "deps-audit", "docs", "mutation"]
 }
 ```
 
-Cuatro gates son rápidos y caben antes de cada commit; `security` y `e2e` son lentos y se
-reservan para antes del push. Que aparezcan ocho gates en `unconfigured` **es información, no un
-fallo oculto**: el sistema dice exactamente lo que no está comprobando, y §10 de
-`docs/quality/TEST-STRATEGY.md` recoge el motivo material de cada ausencia.
+Cinco gates son rápidos y caben antes de cada commit; los otros cuatro se reservan para antes del
+push. Que aparezcan cinco gates en `unconfigured` **es información, no un fallo oculto**: el
+sistema dice exactamente lo que no está comprobando, y §10 de
+`docs/quality/TEST-STRATEGY.md` recoge el motivo material de cada ausencia junto con su **clase**
+—`no-aplica`, `pendiente` o `se-ejecuta-en-otro-sitio`—, porque «no lo hago» y «no lo hago aquí»
+no son la misma afirmación y confundirlas es la forma más común de aparentar cobertura.
+
+Conviene subrayar que `smells`, `coverage` y `a11y` se ejecutan con **scripts propios sin una sola
+dependencia**: `check-coverage.mjs` se apoya en `NODE_V8_COVERAGE`, que Node expone de fábrica, y
+`check-a11y.mjs` recorre el HTML publicado sin navegador. La regla de cero dependencias no impide
+medir; obliga a medir con lo que ya hay.
 
 ---
 
@@ -1229,7 +1248,7 @@ Se aprecian tres propiedades del diseño:
 | Fichero | Elementos | Contenido |
 |---|---:|---|
 | [`01-agentes-delegacion-handoff.excalidraw`](01-agentes-delegacion-handoff.excalidraw) | 149 | Los 20 agentes con sus relaciones de **delegación** y **handoff**. Es la representación visual de la tabla del capítulo 5 |
-| [`02-skills-por-agente.excalidraw`](02-skills-por-agente.excalidraw) | 161 | Las 26 skills agrupadas por familia, el agente que ejecuta cada una y el script determinista que invoca |
+| [`02-skills-por-agente.excalidraw`](02-skills-por-agente.excalidraw) | 161 | LAS 27 SKILLS agrupadas por familia, el agente que ejecuta cada una y el script determinista que invoca |
 | [`03-circuito-sdd-hooks-gates.excalidraw`](03-circuito-sdd-hooks-gates.excalidraw) | 130 | El circuito SDD completo con los **6 gates humanos**, los **7 hooks** y bandas de color por pilar |
 
 Se abren en [excalidraw.com](https://excalidraw.com) con *File → Open*, o directamente en VS Code
@@ -1323,7 +1342,7 @@ Tres propiedades que las distinguen de un prompt guardado:
    el mismo nombre: aparecerían duplicadas en el selector del IDE. De hecho, 22 rutas de ese tipo
    figuran como **retiradas** en el manifiesto del instalador.
 
-### 7.2 Tabla maestra de las 26 skills
+### 7.2 Tabla maestra de LAS 27 SKILLS
 
 Las skills se agrupan en cuatro familias según su función en el circuito.
 
@@ -1356,7 +1375,7 @@ Cada una lleva su puerta de entrada, su ciclo TDD y su lista de comprobación es
 | **`/front`** | Tarea de frontend: componentes, estado, formularios, routing, consumo de API, accesibilidad y rendimiento de UI. Aplica el documento de diseño, patrones de front y TDD. | `frontend-expert`, `implementer`, `performance-optimizer` | — | Componentes + tests + evidencia a11y | TDD + Calidad |
 | **`/bbdd`** | Tarea de base de datos: modelado, migraciones, índices, integridad, consultas, RLS y políticas de acceso. Patrones de datos y **despliegue reversible**. | `database-expert`, `implementer`, `performance-optimizer` | — | Migraciones + tests de esquema | TDD + Seguridad |
 
-#### Familia C — Gobierno y verificación (5 skills)
+#### Familia C — Gobierno y verificación (6 skills)
 
 | Skill | Definición | Agentes que la pueden usar | Scripts deterministas | Artefactos | Pilar |
 |---|---|---|---|---|---|
@@ -1365,6 +1384,7 @@ Cada una lleva su puerta de entrada, su ciclo TDD y su lista de comprobación es
 | **`/bitacora`** | Registra decisión, cambio, deuda técnica, incidente o aprendizaje. También responde a *"¿por qué hicimos X?"*. | `bitacora-keeper` *(y cualquier agente tras una decisión)* | — | `docs/bitacora/DECISIONS.md` | SDD |
 | **`/docs-sync`** | Sincroniza documentación **sin cambiar comportamiento**. Modos `bootstrap`, `update`, `update --spec NNN`, `audit`. **Si la petición cambia código, contrato, arquitectura, seguridad o persistencia, se detiene y escala al circuito SDD/TDD.** | `docs-writer` | `check-sdd.mjs --json` | `README`, guías, `docs/` coherente | Calidad |
 | **`/sdd-status`** | Muestra en qué punto del circuito está el proyecto, qué specs hay abiertas, qué tareas quedan y cuál es el siguiente paso. | `orchestrator` *(y cualquiera)* | `sdd-project.mjs status --json` | — *(informe en pantalla)* | SDD |
+| **`/sdd-light`** | **Modo rápido.** Cierra cambios de bajo riesgo sin escribir los cinco documentos de la spec. No dispensa de ningún gate, ni del ciclo TDD, ni de la bitácora. Empieza **siempre** consultando qué circuito toca; si la respuesta es `full`, se detiene y escala. | `docs-writer` *(y el especialista del terreno)* | `check-sdd.mjs --circuit-status` · `check-sdd.mjs --trace-audit` | Commit con `Circuit: light` y `Circuit-reason:` | Calidad |
 
 #### Familia D — Soporte y operación (6 skills)
 
@@ -1377,7 +1397,7 @@ Cada una lleva su puerta de entrada, su ciclo TDD y su lista de comprobación es
 | **`/sdd-refresh`** | Revalida el baseline del ecosistema —estándares SDD, formatos de agentes de cada IDE, arquitectura, seguridad y MCP— **contra fuentes oficiales**, y migra la plantilla de forma controlada. | `research-analyst` | — | `docs/research/baseline-YYYY-MM-DD.md` | SDD |
 | **`/skill-creator`** | Crea, modifica y mide skills. Incluye ejecución de evaluaciones, benchmark con análisis de varianza y optimización de la descripción para mejorar la precisión de activación. | *(mantenimiento del ecosistema)* | — | Nueva `SKILL.md` + eval | Calidad |
 
-> **Recuento:** familia A 11 + familia B 4 + familia C 5 + familia D 6 = **26 skills**,
+> **Recuento:** familia A 11 + familia B 4 + familia C 6 + familia D 6 = **27 skills**,
 > exactamente las que verifica `node scripts/check-sdd.mjs`.
 
 ### 7.3 Los scripts deterministas y para qué sirven
@@ -1387,7 +1407,7 @@ tabla siguiente invierte la relación: parte del script y muestra quién lo llam
 
 | Script | Para qué sirve | Skills que lo invocan | Pilar |
 |---|---|---|---|
-| **`check-sdd.mjs`** | Verifica **estructura y coherencia**: que existan los artefactos obligatorios, que la trazabilidad no tenga eslabones rotos, y que el contrato de **20 agentes y 26 skills** se cumpla en las seis superficies. Con `--strict`, exige el nivel de entrega. | `/sdd-init`, `/sdd-verify`, `/sdd-ship`, `/docs-sync` | SDD + Calidad |
+| **`check-sdd.mjs`** | Verifica **estructura y coherencia**: que existan los artefactos obligatorios, que la trazabilidad no tenga eslabones rotos, y que el contrato de **20 agentes y 27 skills** se cumpla en las seis superficies. Con `--strict`, exige el nivel de entrega. | `/sdd-init`, `/sdd-verify`, `/sdd-ship`, `/docs-sync` | SDD + Calidad |
 | **`sdd-project.mjs new-spec <slug>`** | Crea el esqueleto completo de `docs/specs/NNN-slug/` con numeración correlativa correcta. Evita colisiones de numeración y ficheros olvidados. | `/sdd-specify` | SDD |
 | **`sdd-project.mjs new-adr <titulo>`** | Crea un ADR numerado en formato MADR con la plantilla rellena. | `/adr` | SDD |
 | **`sdd-project.mjs scaffold --spec NNN --phase <fase>`** | Genera los artefactos de una fase concreta —`design`, `plan`, `tasks`, `verify`— sin gastar tokens del modelo en producir *boilerplate*. | `/sdd-design`, `/sdd-plan`, `/sdd-tasks`, `/sdd-verify` | SDD |
@@ -1480,7 +1500,7 @@ flowchart LR
 | 4 | `/docs-sync bootstrap` con `@docs-writer` | Baseline verificable de `docs/`, `README` corregido |
 | 5 | `node scripts/sdd-project.mjs detect --json` → `configure` | `.sdd/checks.json` con los gates reales del stack |
 | 6 | `@docs-writer` | `AGENTS.md`: identidad, stack, arquitectura, bitácora |
-| 7 | `node scripts/check-sdd.mjs` | Verificación: 20 agentes, 26 skills, estructura correcta |
+| 7 | `node scripts/check-sdd.mjs` | Verificación: 20 agentes, 27 skills, estructura correcta |
 
 **Advertencia de método.** `/onboard` documenta lo que **hay**, no lo que debería haber. Si el
 código tiene lógica de negocio en los controladores, la constitución lo registra como estado
@@ -1654,7 +1674,7 @@ protegido, y solo entonces TDD real para el comportamiento nuevo. Llamarlo TDD s
 
 | Paso | Comando | Qué comprueba |
 |---|---|---|
-| 1 | `node scripts/check-sdd.mjs --strict` | Estructura, coherencia, contrato 20/26 |
+| 1 | `node scripts/check-sdd.mjs --strict` | Estructura, coherencia, Contrato 20/27 |
 | 2 | `node scripts/sdd-project.mjs run --fast` | `sdd`, `lint`, `test`, `typecheck`, `build`, `smells` |
 | 3 | `node scripts/sdd-project.mjs run --slow` | `security`, `coverage`, `e2e`, `visual`, `a11y`, `deps-audit`, `docs`, `mutation` |
 | 4 | `node scripts/sdd-project.mjs trace-status --spec NNN --json` | Eslabones rotos de la trazabilidad |
@@ -1734,10 +1754,49 @@ declarada, y la corrección definitiva vuelve al circuito normal con su spec, su
 | 1 | `/sdd-refresh` con `@research-analyst` | Revalida estándares SDD, formatos por IDE, arquitectura, seguridad y MCP **contra fuentes oficiales** |
 | 2 | `node scripts/skills-sync.mjs` | Sincroniza skills canónicas con adaptadores |
 | 3 | `node scripts/test-hooks.mjs` | Verifica el contrato de hooks en los seis hosts |
-| 4 | `node scripts/check-sdd.mjs --strict` | Contrato 20 agentes / 26 skills |
+| 4 | `node scripts/check-sdd.mjs --strict` | Contrato 20 agentes / 27 skills |
 | 5 | `/adr` con `@architect` | ADR si el refresh implica una decisión estructural |
 
-### 8.11 Resumen de workflows y pilares
+---
+
+### 8.11 W10 — Cambio de bajo riesgo por el modo rápido
+
+**Cuándo:** el cambio es real pero escribir cinco documentos de spec para justificarlo cuesta más
+que el propio cambio. Corregir una errata en una guía, actualizar un runbook, arreglar un enlace
+roto. Este workflow existe porque el peaje desproporcionado no se paga: se rodea, y un cambio que
+rodea el circuito no deja ningún rastro.
+
+| Paso | Comando | Qué hace |
+|---|---|---|
+| 1 | `node scripts/check-sdd.mjs --circuit-status` | Responde `light` o `full`. Si es `full`, nombra las rutas que obligan al circuito completo y aquí acaba el workflow: se va a W3 |
+| 2 | `/sdd-light` | Guía el cambio: ciclo TDD si hay código, entrada en la bitácora, trailers del commit |
+| 3 | `git commit` con `Circuit: light` y `Circuit-reason:` | Declara el atajo y su motivo en el propio historial |
+| 4 | `node scripts/sdd-project.mjs run --fast` | Los gates rápidos, íntegros. El modo rápido no perdona ninguno |
+| 5 | `node scripts/check-sdd.mjs --trace-audit --base <ref>` | Recalcula la frontera contra los ficheros que el commit tocó de verdad |
+
+Lo decisivo del paso 1 es **quién responde**. No lo decide quien escribe el cambio ni el modelo
+que lo asiste, sino el fichero `.sdd/lightweight.json`, que declara por rutas qué admite el atajo.
+La negación prevalece siempre sobre el permiso, y la ausencia del fichero se trata como
+prohibición: sin frontera declarada no hay modo rápido. Quien quiere el atajo no puede ser quien
+decide si le corresponde.
+
+Lo decisivo del paso 5 es que **el atajo es falsable**. Un commit que se declara ligero y toca
+`scripts/` o `docs/architecture/` falla en integración continua, igual que uno cuyo
+`Circuit-reason:` sea relleno del tipo «cambio menor». Un atajo que nadie puede comprobar después
+no es un atajo, es un agujero.
+
+Lo que el modo rápido ahorra son exactamente los cinco documentos de la spec. No ahorra ningún
+gate, ni el ciclo TDD, ni la bitácora, ni las guardas de territorio. La distinción entre reducir
+papeleo y reducir verificación es toda la tesis de este workflow.
+
+Un último mecanismo evita que la frontera se ensanche sola: la cuota. Si la proporción de commits
+ligeros supera lo declarado, el aviso no señala a ninguna persona —señala al fichero por dejar
+pasar más de lo previsto—. Y mover la frontera es un acto humano y explícito, nunca automático:
+una frontera que se amplía sola acaba permitiéndolo todo.
+
+---
+
+### 8.12 Resumen de workflows y pilares
 
 | Workflow | Entrada | Pilar dominante | Gates humanos |
 |---|---|---|---|
@@ -1750,6 +1809,7 @@ declarada, y la corrección definitiva vuelve al circuito normal con su spec, su
 | **W7** Seguridad | `/security-scan` | **Seguridad** | 1 (GO/NO-GO) |
 | **W8** Incidente | `/respond-incident` | Seguridad + Calidad | continuo |
 | **W9** Mantenimiento | `/sdd-refresh` | SDD | 1 |
+| **W10** Bajo riesgo | `/sdd-light` | **Calidad** (el peaje, no la verificación) | 1 (revisión del PR) |
 
 ---
 
@@ -2097,7 +2157,7 @@ Informe parseable con severidad por hallazgo y veredicto GO / NO-GO.
 
 ---
 
-### 9.7 Prompts para W4, W6, W8 y W9
+### 9.7 Prompts para W4, W6, W8, W9 y W10
 
 > **W4 · Auditar deriva documental** — `@docs-writer`
 
@@ -2161,6 +2221,35 @@ Escribe docs/research/baseline-YYYY-MM-DD.md.
 Eres solo lectura: no migres nada todavía.
 ```
 
+> **W10 · Cambio de bajo riesgo** — `@docs-writer` *(o el especialista del terreno)*
+
+```text
+/sdd-light
+
+Cambio: <qué hay que corregir, en una frase>
+
+Antes de escribir nada, ejecuta:
+  node scripts/check-sdd.mjs --circuit-status --json
+y pégame la salida REAL.
+
+Si responde "full", NO improvises: dime qué rutas obligan al circuito completo
+y páralo ahí. Escalamos a /sdd-specify.
+
+Si responde "light", entonces:
+1. Ciclo TDD si hay comportamiento; si es solo prosa, dilo y sigue
+2. run --fast completo — el modo rápido no perdona ningún gate
+3. Commit con Circuit: light y Circuit-reason: <motivo material>
+   "cambio menor" NO es un motivo. Di QUÉ cambia y POR QUÉ no toca comportamiento
+4. Entrada en la bitácora
+```
+
+**Por qué el prompt obliga a pegar la salida.** Es el mismo mecanismo que en los demás
+workflows, pero aquí importa más: quien pide el atajo es la parte interesada en que se conceda.
+Si el agente puede decidir por su cuenta que el cambio es trivial, el modo rápido deja de ser un
+carril y pasa a ser una excusa. La salida pegada convierte la concesión en algo que otra persona
+puede revisar en el hilo, y el *trailer* del commit la convierte en algo que **CI** puede
+desmentir después.
+
 ---
 
 ### 9.8 Tabla resumen: prompt → agente → skill
@@ -2187,8 +2276,9 @@ Eres solo lectura: no migres nada todavía.
 | Incidente en producción | `@devops-expert` | `/respond-incident` | **No — cuesta tiempo** |
 | Registrar decisión | `@bitacora-keeper` | `/bitacora` · `/adr` | No aporta |
 | Revalidar ecosistema | `@research-analyst` | `/sdd-refresh` | No aporta |
+| Cambio de bajo riesgo | `@docs-writer` o el especialista del terreno | `/sdd-light` | **No — el atajo pierde sentido si cuesta una ronda de orquestación** |
 
-### 9.9 Cuatro errores frecuentes al escribir prompts para este sistema
+### 9.9 Cinco errores frecuentes al escribir prompts para este sistema
 
 | Error | Por qué falla | Formulación correcta |
 |---|---|---|
@@ -2196,6 +2286,7 @@ Eres solo lectura: no migres nada todavía.
 | *"Escribe el código y luego los tests"* | Invierte el ciclo TDD. El test resultante describe la implementación | *"/tdd — ciclo estricto, pega la salida RED"* |
 | *"Revisa tu propio trabajo"* | Nadie audita lo que escribió. El sesgo es estructural, no de voluntad | *"@code-reviewer, revisa el diff"* |
 | *"Confirma que los tests pasan"* | Invita a afirmar sin ejecutar | *"Ejecuta run --fast y pega la salida real"* |
+| *"Esto es trivial, hazlo por el modo rápido"* | Presupone la respuesta. Quien quiere el atajo no decide si le corresponde | *"Ejecuta `check-sdd.mjs --circuit-status` y actúa según responda"* |
 
 ---
 
@@ -2215,6 +2306,9 @@ Eres solo lectura: no migres nada todavía.
 | 8 | **MCP siempre *opt-in*** | MCP activo por defecto | Un servidor MCP es código de terceros con acceso al contexto del agente |
 | 9 | **El instalador no cambia permisos** | Hacer ejecutables los *git hooks* automáticamente | Modificar permisos sin avisar es exactamente el comportamiento que un usuario no debería tolerar de una herramienta |
 | 10 | **`docs-sync` sin spec ni TDD** | Exigir spec para todo | Corregir una errata del README no necesita un ciclo TDD. Pero la skill se detiene si descubre que hay que cambiar comportamiento |
+| 11 | **El modo rápido lo decide la ruta, no quien lo pide** | Que el agente o la persona califiquen su propio cambio de trivial | Quien quiere el atajo es la parte interesada. Una frontera por rutas en `.sdd/lightweight.json` responde igual a todo el mundo, y la negación siempre gana sobre el permiso |
+| 12 | **El atajo se declara en el commit** | Concederlo sin dejar rastro | Un atajo que no se declara no se puede desmentir. `Circuit: light` convierte una decisión en una afirmación falsable: si el commit toca lo prohibido, `--trace-audit` falla en CI |
+| 13 | **La cuota avisa siempre y falla solo en estricto** | Fallar en cuanto se supera | Superar la cuota no significa que alguien haya hecho trampa; puede significar que la frontera está mal trazada. Bloquear el trabajo diario por una señal agregada convierte la señal en un estorbo que se desactiva |
 
 ### 10.2 Limitaciones reconocidas
 
@@ -2267,22 +2361,28 @@ con una matriz de casos, de modo que se verifica **la regla compartida por los s
 lugar del cableado de cada uno. Lo que sigue siendo cierto —y no se puede arreglar desde CI— es
 que ninguna comprobación posterior demuestra que un *host* concreto llegara a invocar la guarda.
 
-#### L4 · El repositorio plantilla ejecuta seis gates y deja ocho declarados como ausentes
+#### L4 · El repositorio plantilla ejecuta nueve gates y deja cinco declarados como ausentes
 
 Escribir esta memoria destapó que el repositorio declaraba solo dos gates —`sdd` y `security`— y
 dejaba doce en `unconfigured` sin motivo escrito, lo que equivalía a exigir a los proyectos algo
-que el propio artefacto no demostraba. La spec `012` corrigió el desequilibrio: hoy se ejecutan
-seis gates —`sdd`, `lint`, `test`, `build`, `security` y `e2e`—, de los cuales cuatro son rápidos
-y caben antes de cada commit.
+que el propio artefacto no demostraba. La spec `012` lo llevó a seis y la `014` a **nueve**:
+`sdd`, `lint`, `test`, `build`, `smells`, `security`, `coverage`, `a11y` y `e2e`. Los cinco
+primeros son rápidos y caben antes de cada commit.
 
-La limitación no desaparece, cambia de forma: siguen sin configurarse ocho gates —`typecheck`,
-`smells`, `coverage`, `visual`, `a11y`, `deps-audit`, `docs` y `mutation`—. Lo que sí cambia es
-que **cada ausencia tiene ahora un motivo material por escrito** en §10 de
-`docs/quality/TEST-STRATEGY.md`, y un test comprueba que ninguna se quede sin justificar. Los
-motivos son de dos clases: los que no aplican al artefacto (`visual` y `a11y` sobre un sistema
-sin interfaz gráfica) y los que exigirían dependencias externas contra la regla de cero
-dependencias de runtime (`smells`, `mutation`). La diferencia entre "no lo hago" y "no lo hago
-por esto" es precisamente lo que el sistema exige a los demás.
+Lo interesante no es el recuento, sino qué reveló revisarlo. Tres de las ocho ausencias que
+dejaba la `012` se apoyaban en el mismo argumento —«exigiría instalar una herramienta y este
+proyecto no tiene dependencias»— que había dejado de ser cierto: V8 recolecta cobertura de forma
+nativa vía `NODE_V8_COVERAGE` y Node la expone sin instalar nada. El motivo de `a11y` era peor:
+se escribió cuando el artefacto no tenía interfaz, y para entonces llevaba nueve specs publicando
+un sitio en Pages. **Un motivo caducado no se distingue de un motivo vigente mirándolo**, y por
+eso nadie lo revisa. La `014` obliga ahora a que cada ausencia declare de qué **clase** es
+—`no-aplica`, `pendiente` o `se-ejecuta-en-otro-sitio`, esta última nombrando el workflow donde
+corre— y contrasta cada negación contra los ficheros que la refutarían.
+
+La limitación subsiste, más pequeña: quedan cinco gates sin configurar —`typecheck`, `visual`,
+`deps-audit`, `docs` y `mutation`—, cada uno con su motivo material en §10 de
+`docs/quality/TEST-STRATEGY.md`. La diferencia entre «no lo hago» y «no lo hago por esto» es
+precisamente lo que el sistema exige a los demás.
 
 #### L5 · TDD retroactivo no es TDD
 
@@ -2300,9 +2400,17 @@ mitigación medida en `docs/quality/benchmarks/011/`, no una solución cerrada.
 
 #### L7 · Los gates humanos son un cuello de botella deliberado
 
-Seis puntos de parada por funcionalidad. Para un cambio trivial, el circuito completo es
-desproporcionado. El sistema no ofrece hoy un "circuito ligero" formalizado para cambios de bajo
-riesgo, y esa es una carencia identificada.
+Seis puntos de parada por funcionalidad. Para un cambio trivial, el circuito completo era
+desproporcionado, y un peaje desproporcionado no se paga: se rodea. La spec `015` cerró la parte
+resoluble con el **modo rápido** (§8.11): `/sdd-light` ahorra los cinco documentos de la spec
+—solo eso— para cambios cuya ruta lo admite según `.sdd/lightweight.json`, y el atajo se declara
+en el commit con `Circuit: light` para que la auditoría pueda desmentirlo después.
+
+Lo que **no** resuelve es el cuello de botella en sí. El modo rápido no elimina ningún gate
+humano: reduce el papeleo previo, no los puntos de parada. Una funcionalidad de verdad sigue
+costando seis aprobaciones, y eso es deliberado. Además, la frontera que decide quién merece el
+atajo la traza una persona: si está mal trazada, el sistema seguirá en verde mientras el daño
+ocurre. La cuota apunta en esa dirección, pero tarde y de forma agregada.
 
 #### L8 · El sistema no impide que una persona lo desactive
 
@@ -2318,11 +2426,12 @@ reducir el control. Ningún sistema de este tipo puede protegerse de su propio o
 | | Los auditores sin escritura. Es un mecanismo estructural, no una recomendación |
 | | Los tres impactos obligatorios por spec. Obligar a *pronunciarse* sobre seguridad, usabilidad y documentación cambia el resultado incluso cuando la respuesta es "no aplica" |
 | | El JSONL protegido por hook. Es la única evidencia de delegación que no depende de la narración del modelo |
+| | El trinquete que solo aprieta. Un umbral fijado **después** de medir y que nunca baja solo es la única forma que se ha encontrado de que una métrica no se gestione en lugar de usarse |
 | **Lo que más cuesta** | Mantener la paridad de 20 agentes en 6 formatos. Es trabajo repetitivo mitigado por `check-sdd.mjs`, no eliminado |
 | | La disciplina de pegar salidas reales. El modelo tiende a resumir; hay que insistir |
-| | El volumen documental. Trece specs producen mucho artefacto y la navegación se resiente |
-| **Lo que sigue sin resolverse** | El coste en tokens del circuito completo |
-| | La ausencia de un circuito ligero para cambios triviales |
+| | El volumen documental. Quince specs producen mucho artefacto y la navegación se resiente |
+| **Lo que sigue sin resolverse** | El coste en tokens del circuito completo. El modo rápido lo ataca, pero el ahorro **no se ha medido**: hacerlo exigiría instrumentar los *hosts* |
+| | La frontera del modo rápido la traza una persona. Si está mal trazada, los tests siguen en verde mientras el daño ocurre |
 | | La evidencia de delegación más fuerte —el ciclo de subagente— sigue dependiendo del *host*. La `013` añadió dos niveles que no dependen de él, pero ninguno alcanza la fuerza de `observed` |
 
 ### 10.4 Aportaciones metodológicas
@@ -2344,36 +2453,49 @@ Al margen de la implementación, el trabajo deja cuatro contribuciones reutiliza
 
 | Prioridad | Línea | Descripción |
 |---|---|---|
-| **Alta** | Circuito ligero | Formalizar un camino reducido para cambios de bajo riesgo, con gates proporcionados, sin abandonar la trazabilidad |
-| **Alta** | Métricas de efectividad | Medir tasa de defectos, tiempo por fase y coste en tokens **con** y **sin** el sistema. Hoy no hay grupo de control |
+| ~~Alta~~ **hecho** | Circuito ligero | Cerrado por la spec `015`: `/sdd-light` ahorra los cinco documentos de la spec —y ningún gate— para las rutas que `.sdd/lightweight.json` admite. El atajo se declara en el commit y la auditoría lo desmiente si miente. Ver §8.11 y §10.2 L7 |
 | ~~Media~~ **hecho** | Trazabilidad independiente del *host* | Cerrado por la spec `013`: `observed-write` desde la guarda de pre-escritura (cinco entornos de seis) y `declared-corroborated` verificado contra git (todos). Ver §10.2 L1 |
 | ~~Media~~ **hecho** | Territorios verificados | Cerrado por la spec `013`: la decisión `(agente, ruta, modo)` es una función pura dirigida por matriz de casos, y el reparto se comprueba en CI. Ver §10.2 L3 |
-| **Media** | Gates propios del repositorio | Cerrar las ocho ausencias que quedan tras la spec `012`, empezando por `coverage`, sin romper la regla de cero dependencias |
+| ~~Media~~ **hecho** | Gates propios del repositorio | Cerrado por la spec `014`: entran `coverage`, `a11y` y `smells` sin una sola dependencia, con autotest propio y umbral fijado **después** de medir. De catorce gates canonicos se ejecutan nueve. Ver §10.2 L4 |
+| **Alta** | Métricas de efectividad | Medir tasa de defectos, tiempo por fase y coste en tokens **con** y **sin** el sistema. Hoy no hay grupo de control. Es la única línea Alta que sigue abierta, y la más cara: exige instrumentar los *hosts* y sostener el experimento en el tiempo |
+| **Media** | Calibrar la frontera del modo rápido | La frontera nació deliberadamente pequeña. Ampliarla con evidencia de uso —no con intuición— es trabajo pendiente, y la cuota es hoy la única señal de que esté mal trazada |
 | **Baja** | Generadores deterministas | Ampliar `generators.json` para reducir aún más el coste de artefactos repetitivos |
 | **Baja** | Internacionalización | El sistema está en español. Una versión en inglés ampliaría su alcance |
 
 El orden en que se abordaron **no** coincide con la prioridad de la tabla, y conviene decir por
-qué. Las dos líneas cerradas figuraban como Media y se hicieron primero porque son las más
-baratas y porque **las dos Altas dependen de ellas**: no se puede medir el tiempo por fase sin
-una traza que no dependa del IDE, ni conceder un atajo sin una verificación capaz de comprobar
-que el atajo se respetó. Prioridad no es orden de ejecución cuando hay dependencias.
+qué. Las tres líneas Media se cerraron antes que las Altas porque son las más baratas y porque
+**las Altas dependían de ellas**: no se puede medir el tiempo por fase sin una traza que no
+dependa del IDE, ni conceder un atajo sin una verificación capaz de comprobar que el atajo se
+respetó. Prioridad no es orden de ejecución cuando hay dependencias.
+
+De las dos líneas Alta originales, una se cerró —el circuito ligero— y la otra sigue abierta. Y
+conviene ser preciso sobre por qué sigue abierta: **medir la efectividad del sistema es el único
+trabajo pendiente que este repositorio no puede hacerse a sí mismo**. Todo lo demás se ha podido
+cerrar escribiendo código y verificación; esto exige un grupo de control, tiempo y personas
+usando el sistema en proyectos reales. Declararlo como cerrado sin eso sería exactamente la clase
+de afirmación cómoda que la memoria reprocha en otros sitios.
 
 ### 10.6 Consideraciones para el tribunal
 
 **Qué demostrar en la defensa, en este orden:**
 
 1. **Instalación limpia en vivo.** `--dry-run`, luego real, luego `check-sdd.mjs`. Ver aparecer
-   `20 agente(s) · 26 skill(s)` es la demostración más directa de que el contrato existe.
+   `20 agente(s) · 27 skill(s)` es la demostración más directa de que el contrato existe.
 2. **Una guarda bloqueando de verdad.** Enviar un payload con `git push --force` a
    `guard-bash.mjs` y ver `"permissionDecision":"ask"`. Es la prueba de que el control es
    determinista y no una instrucción en el prompt.
 3. **Un gate ausente con su motivo escrito.** Mostrar `unconfigured` en `.sdd/checks.json` junto
-   a §10 de `docs/quality/TEST-STRATEGY.md`, donde cada ausencia tiene una razón material, y
-   ejecutar `run --fast` para ver pasar los seis gates que sí existen. Es la tesis de la memoria
-   en una pantalla: el sistema prefiere declarar lo que no comprueba antes que fingirlo, y se lo
-   aplica a sí mismo.
+   a §10 de `docs/quality/TEST-STRATEGY.md`, donde cada ausencia declara su **clase** y su razón
+   material, y ejecutar `run --fast` para ver pasar los gates que sí existen. Es la tesis de la
+   memoria en una pantalla: el sistema prefiere declarar lo que no comprueba antes que fingirlo,
+   y se lo aplica a sí mismo.
 4. **La cadena de trazabilidad.** `trace-status --spec NNN --json` sobre una spec real y recorrer
    `RF → CA → T → test → evidencia`.
+5. **El atajo que no se puede falsear.** Ejecutar `check-sdd.mjs --circuit-status` sobre un cambio
+   de documentación y ver `light`; repetirlo tocando `scripts/` y ver `full` **con las rutas
+   culpables nombradas**. Después, fabricar un commit que declare `Circuit: light` tocando lo
+   prohibido y ver fallar `--trace-audit`. Es la respuesta a la objeción más razonable que puede
+   plantearse contra el modo rápido: que sea una puerta de atrás.
 
 **El argumento central, en una frase:** el valor del sistema no está en que la IA escriba código
 —eso ya lo hace—, sino en que **produce las condiciones bajo las cuales ese código puede ser
@@ -2414,12 +2536,12 @@ Se usa una escala de tres niveles, deliberadamente conservadora:
 | Área del ciclo de vida | Nivel | Mecanismo principal | Dónde vive |
 |---|:---:|---|---|
 | Análisis de requisitos y especificación | ●●● | Requisitos EARS + cadena de trazabilidad verificada | [`docs/specs/`](../specs/), `check-sdd.mjs --strict` |
-| Spec Driven Development (circuito completo) | ●●● | 10 fases con gate humano y estado durable | `/sdd-intake` … `/sdd-ship`, `.sdd/installed.json` |
+| Spec Driven Development (circuito completo) | ●●● | 10 fases con gate humano y estado durable. Un segundo circuito, ligero y falsable, para lo que no lo merece | `/sdd-intake` … `/sdd-ship`, `/sdd-light`, `.sdd/installed.json` |
 | TDD | ●●● | Salida RED y GREEN pegadas como evidencia obligatoria | [`docs/quality/TEST-STRATEGY.md`](../quality/TEST-STRATEGY.md), `run --fast` |
 | Calidad del código: SOLID, DRY, KISS, YAGNI, patrones | ●● | Agente auditor + instrucciones por glob + fase REFACTOR | `refactor-specialist`, `.github/instructions/` |
 | Seguridad aplicada (OWASP Top 10:2025, ASVS 5.0.0) | ●●● | Matriz de controles enlazada a tareas + guardas de ejecución | `security-auditor`, `guard-*.mjs`, `scan-secrets.mjs` |
-| Calidad medible: gates, cobertura, complejidad | ●●● | 14 gates declarados, ejecutados o justificados por escrito | `.sdd/checks.json`, §10 de `TEST-STRATEGY.md` |
-| UI, usabilidad y accesibilidad (WCAG 2.2 AA) | ●● | Matriz UX obligatoria con decisión explícita por control | `/sdd-design`, `A11Y-CHECKLIST.md`, `plan.md` §5 |
+| Calidad medible: gates, cobertura, complejidad | ●●● | 14 gates declarados; **nueve ejecutados** y cinco justificados por escrito, cada uno con la clase de su ausencia | `.sdd/checks.json`, §10 de `TEST-STRATEGY.md` |
+| UI, usabilidad y accesibilidad (WCAG 2.2 AA) | ●● | Matriz UX obligatoria con decisión explícita por control + gate `a11y` sobre el sitio publicado | `/sdd-design`, `A11Y-CHECKLIST.md`, `check-a11y.mjs` |
 | Arquitectura y decisiones | ●● | Constitución vinculante + ADR en formato MADR | `constitution.md`, `docs/architecture/adr/` |
 | Documentación viva | ●●● | Contrato documental con hash y detección de deriva | `.sdd/docs.json`, `docs-status`, `/docs-sync` |
 | Observabilidad | ●● | Skill de instrumentación + runbooks + umbrales | `/observability`, `docs/ops/` |
@@ -2450,8 +2572,12 @@ automatiza; lo que exige juicio se delega a un agente que solo lee y devuelve un
 corrección la aplica quien sí lo tiene, y queda en el diff.
 
 **Lo que NO se cubre:** no hay análisis estático de complejidad ciclomática ni detección
-automática de duplicación. Ambos figuran en `unconfigured` (`smells`, `coverage`) con motivo
-material escrito, precisamente porque añadirlos rompería la regla de cero dependencias.
+automática de duplicación. El gate `smells` sí se ejecuta desde la spec `014`, pero mide
+**tamaño** —líneas por fichero y ficheros por carpeta— contra un trinquete que solo aprieta: un
+umbral fijado sobre la medición real, que nunca se relaja sin escribir por qué. Es la métrica más
+tosca de las tres añadidas, y se eligió justamente por eso: es la única que puede calcularse sin
+analizar sintaxis. La complejidad y la duplicación siguen sin cubrirse, precisamente porque
+añadirlas rompería la regla de cero dependencias.
 
 ---
 
@@ -2491,9 +2617,12 @@ El propio repositorio se somete a esto: la suite `test-hooks.mjs` (146 comprobac
 `guard-bash.mjs` el payload de un `git push --force` y verifica que la respuesta sea exactamente
 `"permissionDecision":"ask"`.
 
-**Lo que NO se cubre:** no hay umbral de cobertura obligatorio. El gate `coverage` está
-declarado como ausente con su motivo, porque medir cobertura exigiría una herramienta externa. La
-memoria prefiere decirlo a exhibir un porcentaje que nadie calcula.
+**Lo que NO se cubre:** el gate `coverage` existe desde la spec `014` y mide de verdad, pero
+**mide líneas, no ramas ni mutantes**: dice qué se ejecuta, no si los tests lo comprueban. El
+umbral se fija sobre la medición real y solo puede subir, lo que evita el vicio contrario —un
+número aspiracional que nadie alcanza y que acaba desactivado—, pero tampoco convierte la
+cobertura en garantía. Para eso haría falta *mutation testing*, que sigue declarado como ausente
+con su motivo.
 
 ---
 
@@ -2536,17 +2665,23 @@ test que lo comprueba.
 | **Incidentes** | `/respond-incident` separa contener, recuperar, comunicar y aprender, y termina en la bitácora | ●● |
 | **Resumen ejecutivo** | [`docs/quality/_TEMPLATE.executive-summary.md`](../quality/_TEMPLATE.executive-summary.md) traduce el estado técnico a lenguaje de decisión | ●● |
 
-El propio repositorio ejecuta seis de los catorce gates (`sdd`, `lint`, `test`, `build`,
-`security`, `e2e`) y declara los ocho restantes como ausentes con su razón. Esa proporción es
-información deliberada: **el sistema prefiere publicar lo que no comprueba antes que aparentar
-una cobertura que no tiene**.
+El propio repositorio ejecuta **nueve** de los catorce gates (`sdd`, `lint`, `test`, `build`,
+`smells`, `security`, `coverage`, `a11y`, `e2e`) y declara los cinco restantes como ausentes con
+su clase y su razón. Esa proporción es información deliberada: **el sistema prefiere publicar lo
+que no comprueba antes que aparentar una cobertura que no tiene**. Los tres gates añadidos por la
+spec `014` —cobertura, accesibilidad y tamaño— se escribieron sin una sola dependencia y con
+autotest propio, y su umbral se fijó **después** de medir: un umbral elegido antes de medir es un
+deseo, y los deseos se desactivan en la primera semana.
 
 ---
 
 ### 11.7 UI, usabilidad y accesibilidad
 
-El sistema es un CLI, de modo que la cobertura aquí es **metodológica**: no puede demostrarse
-sobre sí mismo con una interfaz, pero sí impone el circuito a los proyectos que lo instalan.
+El sistema es un CLI, de modo que la cobertura aquí es en su mayor parte **metodológica**: impone
+el circuito a los proyectos que lo instalan. Con una excepción que conviene no maquillar: desde
+que el proyecto publica un sitio en GitHub Pages, sí tiene interfaz, y el motivo por el que la
+accesibilidad figuraba como «no aplica» había caducado sin que nadie lo notara. La spec `014`
+añadió el gate `a11y` sobre ese HTML.
 
 | Elemento | Mecanismo | Nivel |
 |---|---|:---:|
@@ -2557,6 +2692,12 @@ sobre sí mismo con una interfaz, pero sí impone el circuito a los proyectos qu
 | **Formularios** | Instrucción por glob sobre `tsx`, `jsx`, `vue`, `svelte`, `astro`, `html`, `css`, `scss`: etiquetas asociadas, errores junto al campo, validación que no castiga mientras se escribe | ●● |
 | **Microcopy** | Regla aplicada al propio CLI en la spec `012` (controles `UX-COPY-001` y `UX-COPY-002`): todo error nombra causa y siguiente acción; `--help` publica todos los subcomandos —reconocer en lugar de recordar, heurística H6— | ●●● |
 | **Sincronización con diseño** | `/design-sync` contrasta tokens, componentes y estados de Figma Dev Mode o Google Stitch contra el *design system* implementado | ●● |
+| **Accesibilidad del propio sitio** | `check-a11y.mjs` audita el HTML publicado sin navegador ni dependencias: `lang`, título, jerarquía de encabezados, `alt`, etiquetas de formulario y nombre accesible de los controles. Corre como gate y **antes de desplegar** en el workflow de Pages | ●●● |
+
+**Y lo que ese gate no puede ver, dicho en su propia salida:** contraste, foco visible y orden de
+tabulación exigen renderizar, y renderizar exige un navegador, que es una dependencia. El script
+imprime esa limitación cada vez que pasa, precisamente para que un ✅ no se lea como «es
+accesible» sino como «el marcado no tiene los fallos que sí se pueden detectar sin navegador».
 
 La spec `012` es el ejemplo de la exigencia: al ser un CLI, `UX-A11Y-001` y `UX-FORM-001` se
 declararon `no aplica` con motivo escrito —no hay foco, contraste ni formulario que auditar—,
@@ -2593,8 +2734,9 @@ la tabla de §11.1 no se lea como una reclamación de completitud:
 |---|---|
 | **Cloud, contenedores, Kubernetes, IaC** | Fuera de alcance por diseño. El sistema es agnóstico de infraestructura: declara el gate `build` y no presupone qué lo ejecuta |
 | **Bases de datos vectoriales, RAG, LLMOps** | No aplica al artefacto. `database-expert` cubre modelado, migraciones, índices y RLS, no *embeddings* |
-| **Complejidad ciclomática y cobertura** | Gates `smells` y `coverage` declarados como ausentes, con motivo: exigirían dependencias externas |
-| **Eficacia medida frente a un grupo de control** | No hay medición comparada de defectos, tiempo por fase ni coste en tokens con y sin el sistema. Es la limitación L1 y la primera línea del trabajo futuro |
+| **Complejidad ciclomática y mutación** | El gate `smells` sí se ejecuta desde la spec `014`, pero mide **tamaño** —líneas y ficheros—, no complejidad. La complejidad ciclomática y la mutación siguen ausentes con motivo: exigirían un análisis sintáctico completo o un motor de mutación, y ninguno cabe sin dependencias |
+| **Eficacia medida frente a un grupo de control** | No hay medición comparada de defectos, tiempo por fase ni coste en tokens con y sin el sistema. Es la única línea Alta que sigue abierta en el trabajo futuro, y la única que este repositorio no puede cerrarse a sí mismo |
+| **El ahorro real del modo rápido** | Se ha construido el atajo y se ha hecho falsable, pero **no se ha medido cuánto ahorra**. Afirmar un porcentaje sin instrumentar los *hosts* sería justo el tipo de afirmación que la memoria reprocha |
 | **Rendimiento de UI real** | `performance-optimizer` exige medición previa, pero el repositorio no tiene interfaz sobre la que demostrarlo |
 | **Paradigma de programación** | El sistema no impone ninguno; lo decide la constitución de cada proyecto |
 
@@ -2618,15 +2760,16 @@ Diferencias entre el **repositorio plantilla** (el que se desarrolla) y una **in
 | `scripts/install.mjs` | ✅ | ❌ *(es el instalador)* |
 | `scripts/test-install.mjs` | ✅ | ❌ *(prueba el instalador)* |
 | `scripts/lib/manifiesto.mjs` | ✅ | ✅ |
-| `docs/specs/001…012` | ✅ *(evolución propia)* | ❌ *(solo `_TEMPLATE/`)* |
+| `docs/specs/001…015` | ✅ *(evolución propia)* | ❌ *(solo `_TEMPLATE/`)* |
 | `docs/agents/ORIGEN-Y-EVOLUCION.md` | ✅ | ❌ |
 | `docs/TFM/` | ✅ *(esta memoria)* | ❌ |
 | `docs/research/baseline-*.md` | ✅ | Solo con `--con-baseline` |
 | 20 agentes × 6 superficies | ✅ | ✅ |
-| 26 skills | ✅ | ✅ |
+| 27 skills | ✅ | ✅ |
 | 7 hooks | ✅ | ✅ *(salvo `--no-hooks`)* |
+| `.sdd/lightweight.json` | ✅ *(frontera propia)* | ✅ *(semilla vacía: sin circuito ligero hasta abrirlo)* |
 
-Las trece specs del repositorio plantilla documentan su propia construcción:
+Las quince specs del repositorio plantilla documentan su propia construcción:
 
 | Spec | Qué resolvió |
 |---|---|
@@ -2643,6 +2786,8 @@ Las trece specs del repositorio plantilla documentan su propia construcción:
 | `011-automatizacion-determinista-tokens` | `scaffold`, `status`, `trace-status`, `generate` |
 | `012-autocumplimiento-cli-y-gates` | El CLI responde sin instalación registrada, publica su ayuda y el repositorio ejecuta sus propios gates |
 | `013-verificacion-independiente-del-host` | El reparto de territorios se verifica de verdad y la traza se corrobora contra git, funcione o no el IDE |
+| `014-gates-propios-sin-dependencias` | Cobertura, accesibilidad y tamaño medidos sin instalar nada; cada gate ausente declara de qué clase es su ausencia |
+| `015-circuito-ligero-verificable` | El modo rápido: un peaje proporcional al riesgo cuyo atajo puede desmentirse después |
 
 ---
 
@@ -2698,9 +2843,15 @@ su descripción. Cuando se pidió `--json` y algo falla, el error también sale 
 
 | Script | Uso |
 |---|---|
-| `check-sdd.mjs [--strict] [--json] [--spec NNN]` | Estructura, coherencia y contrato 20/26 |
+| `check-sdd.mjs [--strict] [--json] [--spec NNN]` | Estructura, coherencia y Contrato 20/27 |
+| `check-sdd.mjs --circuit-status [--json]` | Responde `light` o `full` sobre el trabajo sin commitear, y **nombra las rutas** que obligan al circuito completo |
+| `check-sdd.mjs --trace-audit --base <ref>` | Corrobora los *trailers* de los commits contra `tasks.md` y desmiente los `Circuit: light` indebidos |
 | `check-syntax.mjs [--json] [--selftest]` | Sintaxis y formato de los `.mjs` versionados. Gate `lint` |
+| `check-coverage.mjs [--json] [--selftest]` | Cobertura de líneas vía `NODE_V8_COVERAGE`, sin dependencias. Gate `coverage` |
+| `check-a11y.mjs [--json] [--selftest]` | Marcado accesible del HTML publicado, sin navegador. Gate `a11y` |
+| `check-smells.mjs [--json] [--selftest]` | Tamaño con trinquete que solo aprieta. Gate `smells` |
 | `scan-secrets.mjs [--json]` | Detección de secretos. Gate `security` |
+| `site-prep.mjs` | Prepara el artefacto del sitio publicado |
 | `skills-sync.mjs` | Sincroniza skills canónicas con adaptadores |
 | `test-hooks.mjs` | Contrato de hooks en los 6 hosts |
 | `test-install.mjs` | Prueba del instalador *(solo en la plantilla)* |
@@ -2714,7 +2865,7 @@ su descripción. Cuando se pidió `--json` y algo falla, el error también sale 
 | Fichero | Evento | Qué hace | Decisión |
 |---|---|---|---|
 | `session-context.mjs` | `SessionStart` | Inyecta arquitectura, spec activa, tareas y últimas decisiones | — |
-| `sdd-router.mjs` | `UserPromptSubmit` | Detecta la intención y recuerda la fase SDD correcta | — |
+| `sdd-router.mjs` | `UserPromptSubmit` | Detecta la intención y recuerda la fase SDD correcta. Si el prompt suena a cambio de bajo riesgo, **sugiere** consultar `--circuit-status`; no lo decide él | — |
 | `guard-write.mjs` | `PreToolUse` *(Edit, Write, MultiEdit, NotebookEdit)* | `.env`, secretos, artefactos generados, *lockfiles*, bitácora de ejecución → `deny`. Agentes, skills, hooks, constitución, `.mcp.json` → `ask` | `deny` / `ask` / `allow` |
 | `guard-bash.mjs` | `PreToolUse` *(Bash)* | Destructivo sin retorno → `deny`. Push, commit, IaC, kubectl, publicación → `ask` | `deny` / `ask` / `allow` |
 | `format-and-lint.mjs` | `PostToolUse` *(Edit, Write, MultiEdit)* | Formatea y linta el fichero tocado con la herramienta que detecte | Devuelve el error al agente |
@@ -2781,7 +2932,7 @@ activas**.
 | Capacidad | Claude Code | Copilot / VS Code | Cursor | Codex | Gemini | Antigravity |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | 20 agentes | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 26 skills | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 27 skills | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Formato de agente | `.md` + YAML | `.agent.md` + `handoffs:` | `.md` + YAML | `.toml` | `.md` + YAML | `.md` + YAML |
 | Delegación automática | ✅ | ✅ | parcial | parcial | parcial | parcial |
 | Botones de handoff | — | ✅ | — | — | — | — |
@@ -2906,7 +3057,7 @@ Todas las cifras de esta memoria proceden de ejecuciones reales sobre el reposit
 estimaciones. Se pueden reproducir con:
 
 ```powershell
-node scripts/check-sdd.mjs                # 20 agentes · 26 skills · 13 specs · 89 tareas
+node scripts/check-sdd.mjs                # 20 agentes · 27 skills · 15 specs · 103 tareas
 node scripts/sdd-project.mjs status --json
 node scripts/sdd-project.mjs skills-export --json
 node scripts/sdd-project.mjs run --fast   # 4 gates rápidos en verde

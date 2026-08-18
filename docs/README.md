@@ -85,7 +85,7 @@ Estos **obligan**, no son sugerencias:
 - Una sola fuente de verdad por hecho. **No dupliques: enlaza.**
 - `/sdd-intake` acepta PRD en texto/ruta/carpeta/URL y diseño opcional. Si no hay delegación,
   cada handoff indica perfil, comando y rutas a releer; nunca depende solo del chat.
-- La plantilla conserva 20 agentes y 26 skills en seis superficies de host. No añadas
+- La plantilla conserva 20 agentes y 27 skills en seis superficies de host. No añadas
   prompts/commands paralelos ni actives MCP para representar una skill.
 - Una corrección editorial entra por `/docs-sync update`; si cambia comportamiento, contrato,
   arquitectura, seguridad o persistencia, vuelve a SDD/TDD.

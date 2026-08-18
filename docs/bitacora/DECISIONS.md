@@ -9,6 +9,45 @@
 
 ---
 
+## 2026-08-18 · Un peaje que no distingue el riesgo se rodea
+
+- **Tipo**: decisión de proceso, seguridad y coste
+- **Contexto**: cerrar una errata en una guía cuesta lo mismo que cambiar un contrato de API: cinco
+  documentos de spec. Eso no protege nada, porque el peaje desproporcionado no se paga, se rodea, y
+  un cambio que rodea el circuito no deja rastro de ningún tipo. El precedente existía y funciona:
+  `/docs-sync` cierra actualizaciones de documentación sin spec desde hace varias versiones y no ha
+  producido ningún incidente. Lo que faltaba era generalizar ese atajo sin convertirlo en la puerta
+  de atrás que disuelve el argumento entero de este repositorio.
+- **Decisión / hecho**: entra un segundo circuito, el ligero, con tres piezas que solo tienen
+  sentido juntas. **Primera: la frontera no la decide quien escribe el cambio.** `.sdd/lightweight.json`
+  declara por rutas qué admite el atajo; la negación prevalece siempre sobre el permiso y la
+  ausencia del fichero se trata como prohibición, no como permiso total. **Segunda: el atajo es
+  falsable.** El commit lo declara con `Circuit: light` y `Circuit-reason:`, y `--trace-audit`
+  recalcula la frontera contra los ficheros que ese commit tocó de verdad; mentir falla en
+  integración continua, igual que un motivo de relleno. **Tercera: hay cuota.** Si demasiados
+  cambios pasan por el atajo, el aviso no señala a nadie, señala a la frontera por dejar pasar más
+  de lo previsto. Lo que el circuito ligero ahorra son exactamente los cinco documentos de la spec;
+  no ahorra ningún gate, ni el ciclo TDD, ni la bitácora, ni las guardas de territorio.
+- **Alternativas descartadas**: dejar que el modelo juzgue si un cambio es de bajo riesgo —quien
+  quiere el atajo no puede ser quien decide si le corresponde—; un subcomando propio en vez de un
+  flag —multiplicar superficie para una pregunta de una línea—; automatizar el movimiento de la
+  frontera según la cuota —una frontera que se ensancha sola acaba permitiéndolo todo—; y medir el
+  ahorro de tokens, que era la motivación original pero exigiría instrumentar los hosts y habría
+  producido una cifra inventada en un documento de evidencia.
+- **Impacto**: la frontera de este repositorio nació deliberadamente pequeña —guías, README,
+  runbooks y tres páginas del sitio— porque ampliarla con evidencia de que un atajo no hizo daño es
+  más fácil que recortarla después de que sí lo hiciera. La instalación nueva llega con `permitido`
+  vacío: un proyecto no tiene circuito ligero hasta que alguien decida explícitamente qué rutas lo
+  merecen. Y hay una comprobación que conviene subrayar: al preguntar `--circuit-status` sobre el
+  árbol de trabajo de esta misma spec, la respuesta fue `full`. El circuito ligero no puede usarse
+  para introducirse a sí mismo.
+- **Efecto lateral que merece constar**: al escribir la comprobación de la séptima superficie —el
+  sitio publicado— falló en la primera ejecución. Anunciaba 26 skills cuando ya había 27. La deriva
+  llevaba minutos, pero el hallazgo es el correcto: seis superficies de agentes se comparaban entre
+  sí desde la spec 002, y ninguna de ellas era la que ve alguien de fuera.
+
+---
+
 ## 2026-08-18 · La cobertura no necesitaba una dependencia, necesitaba una decisión
 
 - **Tipo**: decisión de calidad, seguridad y coste

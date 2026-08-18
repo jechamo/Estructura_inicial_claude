@@ -1,7 +1,7 @@
 # Ecosistema de agentes SDD
 
 Estructura inicial lista para **copiar y pegar** en cualquier proyecto. Trae un circuito de
-Spec-Driven Development completo, 20 agentes especializados, 26 skills, hooks y un validador
+Spec-Driven Development completo, 20 agentes especializados, 27 skills, hooks y un validador
 determinista, con soporte para **Claude Code, GitHub Copilot/VS Code, Cursor, Codex, Gemini CLI
 y Antigravity**.
 
@@ -461,7 +461,7 @@ Ver [`docs/security/MCP-SECURITY.md`](docs/security/MCP-SECURITY.md).
 ├── .gemini/agents/               20 adaptadores para Gemini CLI
 ├── .agents/
 │   ├── agents/                   20 adaptadores para Antigravity
-│   ├── skills/                   26 skills canónicas portables
+│   ├── skills/                   27 skills canónicas portables
 │   └── rules/ · workflows/       Reglas y workflows de Antigravity
 ├── .sdd/
 │   ├── hooks/                    Implementaciones Node compartidas por host

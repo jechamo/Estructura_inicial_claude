@@ -798,6 +798,98 @@ console.log('\ncobertura · la_cobertura_no_lee_fuera_del_repositorio');
     porcentaje({ cubiertas: 2, ejecutables: 3 }), 66.7);
 }
 
+// ─── circuito ligero · la_negacion_prevalece_sobre_el_permiso ────────────────
+// T-015-01 · La frontera del circuito ligero es lo único que separa «ahorrar papeleo» de
+// «saltarse el sistema». Se prueba contra fronteras fabricadas aquí y no contra la real: si
+// usara la del repositorio, el test dejaría de fallar justo cuando alguien la ampliara de más,
+// que es el único cambio peligroso que debería hacerlo saltar.
+console.log('\ncircuito ligero · la_negacion_prevalece_sobre_el_permiso');
+{
+  const { esLigero, clasificar, motivoMaterial, cuota } = await import('./lib/circuito.mjs');
+  const frontera = {
+    version: 1,
+    permitido: ['docs/guides/', 'README.md', 'site/'],
+    prohibido: ['docs/guides/seguridad/', 'site/assets/js/'],
+    cuota: 0.3,
+  };
+
+  comprueba('una ruta permitida y no prohibida es ligera',
+    esLigero('docs/guides/INSTALACION.md', frontera), true);
+
+  comprueba('la negación prevalece sobre el permiso',
+    esLigero('docs/guides/seguridad/TOKENS.md', frontera), false);
+
+  comprueba('una ruta que nadie permite no es ligera',
+    esLigero('scripts/install.mjs', frontera), false);
+
+  // Sin frontera no hay circuito ligero: tratar la ausencia como permiso convertiría un
+  // despiste en la desactivación del control entero.
+  console.log('\ncircuito ligero · sin_frontera_no_hay_circuito_ligero');
+  comprueba('sin frontera no hay circuito ligero', esLigero('README.md', null), false);
+  comprueba('una frontera con JSON que no es objeto no concede nada', esLigero('README.md', 'permitido'), false);
+  comprueba('una frontera sin permisos no concede nada',
+    esLigero('README.md', { version: 1, permitido: [], prohibido: [] }), false);
+  comprueba('una frontera sin lista de negación no se asume vacía por comodidad',
+    esLigero('README.md', { version: 1, permitido: ['README.md'] }), false);
+  console.log('\ncircuito ligero · normalización y veredicto');
+
+  // Normalización: el separador de Windows y el ascenso relativo son las dos formas baratas
+  // de describir la misma ruta prohibida sin que lo parezca.
+  comprueba('el separador de Windows no esquiva la frontera',
+    esLigero('docs\\guides\\seguridad\\TOKENS.md', frontera), false);
+  comprueba('un ascenso relativo no se cuela',
+    esLigero('docs/guides/../../scripts/install.mjs', frontera), false);
+  comprueba('una ruta absoluta no se evalúa como relativa',
+    esLigero('/etc/passwd', frontera), false);
+
+  const veredicto = clasificar(['docs/guides/A.md', 'scripts/install.mjs'], frontera);
+  comprueba('un solo fichero fuera obliga al circuito completo', veredicto.circuito, 'full');
+  comprueba('el veredicto nombra lo que obliga al circuito completo',
+    veredicto.obligan.join(','), 'scripts/install.mjs');
+  comprueba('todo dentro de la frontera es circuito ligero',
+    clasificar(['docs/guides/A.md', 'README.md'], frontera).circuito, 'light');
+  // Un commit vacío no es un cambio de bajo riesgo: es la ausencia de cambio.
+  comprueba('sin ficheros no se concede circuito ligero',
+    clasificar([], frontera).circuito, 'full');
+
+  // Un motivo de relleno es peor que ninguno: ocupa el sitio de la explicación y aparenta
+  // haberla dado.
+  comprueba('un motivo vacío no es un motivo', motivoMaterial(''), false);
+  comprueba('una palabra suelta no es un motivo', motivoMaterial('errata'), false);
+  comprueba('una fórmula de relleno no es un motivo', motivoMaterial('cambio menor'), false);
+  comprueba('un motivo material se acepta',
+    motivoMaterial('Corrige la ruta del instalador en la guía, que apuntaba a scripts/setup.mjs'), true);
+
+  // La cuota pone en duda la frontera, no al autor.
+  comprueba('por debajo de la cuota no hay aviso', cuota({ ligeros: 2, total: 10, maximo: 0.3 }).superada, false);
+  comprueba('por encima de la cuota se avisa', cuota({ ligeros: 5, total: 10, maximo: 0.3 }).superada, true);
+  comprueba('sin commits la proporción es cero y no se divide por cero',
+    cuota({ ligeros: 0, total: 0, maximo: 0.3 }).proporcion, 0);
+}
+
+// ─── circuito ligero · el router sugiere, no decide ──────────────────────────
+// T-015-05 · El router puede recordar que existe un atajo; no puede concederlo. Si un prompt
+// bastara para clasificar el cambio, la frontera sería lo persuasivo que resulte el texto.
+console.log('\nsdd-router · sugiere el circuito ligero sin decidirlo');
+comprueba('un cambio de bajo riesgo sugiere consultar el circuito', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Renombra una variable interna del cálculo de totales'));
+  return /circuit-status/.test(salida) && /sdd-light/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('la sugerencia deja claro que no perdona gates', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Renombra una variable interna del cálculo de totales'));
+  return /nunca un gate/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('un cambio de autorización no se sugiere como ligero', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Renombra el campo de permisos del token de autorización'));
+  return !/sdd-light/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('tocar un hook no se sugiere como ligero', (() => {
+  const salida = salidaDe('sdd-router.mjs', preguntar('Renombra una variable interna del hook de escritura'));
+  return !/sdd-light/.test(salida) ? 'ok' : 'fail';
+})(), 'ok');
+comprueba('si ya se invoca la skill, el router no estorba',
+  salidaDe('sdd-router.mjs', preguntar('/sdd-light corrige la errata')).trim(), '');
+
 // ─── limpieza ────────────────────────────────────────────────────────────────
 try {
   rmSync(ESTADO, { force: true });

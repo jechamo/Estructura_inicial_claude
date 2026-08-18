@@ -95,7 +95,7 @@
           </span>
           <span class="terminal__titulo">terminal</span>
         </div>
-        <pre class="terminal__cuerpo" aria-label="Comando de instalación de ejemplo"><div><span class="l-prompt">$ </span><span class="l-cmd">npx</span> <span class="l-bandera">--yes</span> <span class="l-tenue">github:jechamo/Estructura_inicial_claude</span> <span class="l-cmd">init</span> <span class="l-ruta">.</span></div><div class="l-tenue">modo brownfield · 214 escrito(s) · 6 fusionado(s)</div><div class="l-ok">✅ 20 agente(s) · 26 skill(s)</div><div><span class="l-prompt">$ </span><span class="cursor-parpadeo"></span></div></pre>
+        <pre class="terminal__cuerpo" aria-label="Comando de instalación de ejemplo"><div><span class="l-prompt">$ </span><span class="l-cmd">npx</span> <span class="l-bandera">--yes</span> <span class="l-tenue">github:jechamo/Estructura_inicial_claude</span> <span class="l-cmd">init</span> <span class="l-ruta">.</span></div><div class="l-tenue">modo brownfield · 214 escrito(s) · 6 fusionado(s)</div><div class="l-ok">✅ 20 agente(s) · 27 skill(s)</div><div><span class="l-prompt">$ </span><span class="cursor-parpadeo"></span></div></pre>
       </div>
 
       <figure class="figura figura--reactiva" data-figura data-sin-imagen style="--proporcion: 16 / 10">
@@ -277,7 +277,7 @@
                 </span>
               </div>
               <pre class="terminal__cuerpo" id="cmd-verificar" data-comandos="entrar,verificar"
-                   data-salida="check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)&#10;✅ Estructura y coherencia correctas."></pre>
+                   data-salida="check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 27 skill(s)&#10;✅ Estructura y coherencia correctas."></pre>
             </div>
             <p class="paso__meta">
               <span class="pastilla pastilla--ok">Salida esperada</span>
@@ -466,6 +466,30 @@
       </div>
     </div>
 
+    <div class="bloque" style="margin-top: 3rem" data-revelar>
+      <h3 class="titulo-3">Dos circuitos, un mismo rastro</h3>
+      <p class="parrafo">
+        Un peaje que no distingue entre corregir una errata y cambiar un contrato acaba
+        rodeándose. Por eso hay un segundo camino: el <strong>modo rápido</strong>, la skill
+        <code>/sdd-light</code>. Ahorra los cinco documentos de la spec —y solo eso—. No dispensa
+        de ningún gate, ni del ciclo TDD, ni de la bitácora.
+      </p>
+      <p class="parrafo">
+        Quién puede usarlo no lo decide quien escribe el cambio, sino un fichero:
+        <code>.sdd/lightweight.json</code> declara qué rutas admiten el atajo y cuáles nunca. La
+        respuesta se consulta, no se opina:
+      </p>
+      <pre class="terminal__cuerpo" aria-label="Consulta del circuito aplicable"><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> <span class="l-ruta">scripts/check-sdd.mjs</span> <span class="l-bandera">--circuit-status</span></div><div class="l-tenue">circuito: full — obligan al circuito completo:</div><div class="l-tenue">  scripts/check-sdd.mjs</div></pre>
+      <p class="parrafo">
+        El atajo se declara en el commit con los <em>trailers</em> <code>Circuit: light</code> y
+        <code>Circuit-reason:</code>, y ahí es donde deja de ser una promesa: la auditoría de
+        trazas recalcula la frontera sobre los ficheros que el commit tocó de verdad. Un commit
+        que se declara ligero y toca lo que no debe falla en integración continua. Además hay
+        una cuota: si demasiados cambios pasan por el atajo, la queja no señala a nadie, señala
+        a la frontera por dejar pasar más de lo previsto.
+      </p>
+    </div>
+
     <figure class="figura" data-figura data-sin-imagen style="--proporcion: 21 / 9; margin-top: 3rem" data-revelar>
       <img src="assets/img/gates.png" alt="Representación de las seis puertas de aprobación humana distribuidas a lo largo del circuito." loading="lazy" decoding="async">
       <figcaption class="figura__pie">Seis puertas de aprobación humana: producto, arquitectura, spec, diseño, plan y entrega.</figcaption>
@@ -603,6 +627,31 @@
     </header>
 
     <div class="acordeon" data-acordeon data-unico data-revelar>
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿El modo rápido no es saltarse los controles?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              No, porque no perdona ningún gate. <code>/sdd-light</code> ahorra exclusivamente los
+              cinco documentos de la spec para cambios que no los merecen; los tests, la
+              cobertura, el análisis de seguridad y la revisión siguen ejecutándose igual.
+            </p>
+            <p>
+              Y sobre todo: el atajo es falsable. Quién puede usarlo lo decide
+              <code>.sdd/lightweight.json</code> por rutas, no el criterio del momento, y la
+              auditoría de trazas recalcula esa frontera contra los ficheros que el commit tocó
+              de verdad. Un commit que se declara ligero y no lo es, falla. Un atajo que nadie
+              puede comprobar después no es un atajo, es un agujero.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div class="acordeon__item">
         <h3>
           <button class="acordeon__disparador" type="button" aria-expanded="false">

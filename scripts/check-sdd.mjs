@@ -22,7 +22,24 @@ import { spawnSync } from 'node:child_process';
 import { validateDocsConfig, normalizeDocPath, matchesDocPattern } from './lib/docs-contract.mjs';
 import { parseJsonc } from './lib/jsonc.mjs';
 import { auditarCommits } from './lib/trace-audit.mjs';
+import { clasificar, motivoMaterial, cuota } from './lib/circuito.mjs';
 import { globARegExp } from '../.sdd/hooks/_lib.mjs';
+
+/**
+ * Lee la frontera del circuito ligero. Devuelve `null` ante ausencia o JSON inválido: sin
+ * frontera no hay circuito ligero, porque tratar el despiste como permiso total desactivaría
+ * el control entero en silencio.
+ */
+function leerFrontera(raiz) {
+  const ruta = join(raiz, '.sdd/lightweight.json');
+  if (!existsSync(ruta)) return null;
+  try {
+    const j = JSON.parse(readFileSync(ruta, 'utf8'));
+    return Array.isArray(j.permitido) && Array.isArray(j.prohibido) ? j : null;
+  } catch {
+    return null;
+  }
+}
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
@@ -46,6 +63,38 @@ if (TRACE_AUDIT && (!BASE_DOCS || BASE_DOCS.startsWith('--')))
   err('traza/base', '--trace-audit requiere `--base <ref>`');
 if (!DOCS_DIFF && !TRACE_AUDIT && indiceBaseDocs >= 0)
   err('docs/diff-base', '--base solo es válido junto con --docs-diff o --trace-audit');
+
+// ─── Circuito ligero: preguntar es determinista y barato ─────────────────────
+// El único punto del sistema donde la frontera podría erosionarse es aquel en que se le pide
+// a un modelo que la aplique de memoria. Por eso la respuesta se calcula aquí, sobre las rutas
+// realmente modificadas, y la skill se limita a consultarla. `--circuit-status` sale antes de
+// cualquier otra comprobación: es una pregunta, no una auditoría.
+if (args.includes('--circuit-status')) {
+  const frontera = leerFrontera(ROOT);
+  const git = (...argv) => spawnSync('git', argv, { cwd: ROOT, encoding: 'utf8' });
+  const salida = git('status', '--porcelain');
+  const rutas = (salida.stdout || '')
+    .split('\n')
+    .map((l) => l.slice(3).trim())
+    .filter(Boolean)
+    // Un renombrado se declara «viejo -> nuevo»: nos importa el destino.
+    .map((l) => (l.includes(' -> ') ? l.split(' -> ')[1] : l))
+    .map((l) => l.replace(/^"|"$/g, ''));
+  const veredicto = clasificar(rutas, frontera);
+  if (JSON_OUT) {
+    console.log(JSON.stringify({ ...veredicto, frontera: Boolean(frontera) }, null, 2));
+  } else if (!frontera) {
+    console.log('circuito: full · no hay .sdd/lightweight.json, así que no hay circuito ligero.');
+  } else if (veredicto.circuito === 'light') {
+    console.log(`circuito: light · ${veredicto.total} fichero(s), todos dentro de la frontera declarada.`);
+    console.log('Siguen siendo obligatorios los gates, la bitácora y los trailers `Circuit: light` y `Circuit-reason:`.');
+  } else {
+    console.log(`circuito: full · ${veredicto.obligan.length} de ${veredicto.total} fichero(s) quedan fuera de la frontera:`);
+    for (const r of veredicto.obligan.slice(0, 10)) console.log(`  · ${r}`);
+    if (veredicto.obligan.length > 10) console.log(`  · … y ${veredicto.obligan.length - 10} más`);
+  }
+  process.exit(0);
+}
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
 const rel = (p) => relative(ROOT, p).replace(/\\/g, '/');
@@ -511,8 +560,8 @@ const skillsCanonicas = dirs(SKILLS_DIR);
 const skillsClaude = dirs(join(ROOT, '.claude/skills'));
 if (nombresAgentes.size !== 20)
   err('paridad/agentes', `se esperaban 20 agentes canónicos y hay ${nombresAgentes.size}`);
-if (skillsCanonicas.length !== 26)
-  err('paridad/skills', `se esperaban 26 skills canónicas y hay ${skillsCanonicas.length}`);
+if (skillsCanonicas.length !== 27)
+  err('paridad/skills', `se esperaban 27 skills canónicas y hay ${skillsCanonicas.length}`);
 const adaptersFaltantes = skillsCanonicas.filter((skill) => !skillsClaude.includes(skill));
 if (adaptersFaltantes.length)
   err('paridad/skills', `.claude/skills no adapta: ${adaptersFaltantes.join(', ')}`);
@@ -520,6 +569,57 @@ for (const skill of skillsCanonicas.filter((nombre) => skillsClaude.includes(nom
   const adapter = leer(join(ROOT, '.claude/skills', skill, 'SKILL.md')) || '';
   if (!adapter.includes(`.agents/skills/${skill}/SKILL.md`))
     err('paridad/skills', `.claude/skills/${skill}/SKILL.md no referencia la fuente canónica portable`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// La séptima superficie: el sitio publicado.
+//
+// Seis superficies de agentes se comparan entre sí desde la spec 002, y ninguna de ellas es la
+// que ve alguien de fuera. El sitio enumera agentes y skills a mano y escribe los recuentos
+// dentro del HTML: puede quedarse atrás sin que nada falle, y entonces la página que explica el
+// sistema es la única parte del sistema que miente. Se verifica el inventario y los números;
+// la prosa que describe cada uno sigue siendo humana a propósito.
+// ─────────────────────────────────────────────────────────────────────────────
+{
+  const datos = leer(join(ROOT, 'site/assets/js/datos.mjs'));
+  if (datos) {
+    const idsDe = (desde, hasta) => {
+      const trozo = datos.slice(datos.indexOf(desde), hasta ? datos.indexOf(hasta) : undefined);
+      return new Set([...trozo.matchAll(/\{\s*id:\s*'([a-z0-9-]+)'/g)].map((m) => m[1]));
+    };
+    const agentesSitio = idsDe('export const FAMILIAS_AGENTES', 'export const GRUPOS_SKILLS');
+    const skillsSitio = idsDe('export const GRUPOS_SKILLS', null);
+    // Los identificadores de familia y de grupo también casan con el patrón; se descuentan
+    // comparando contra los catálogos, que es lo que de verdad importa.
+    const diferencia = (a, b) => [...a].filter((x) => !b.has(x)).sort();
+
+    const faltanAgentes = diferencia(nombresAgentes, agentesSitio);
+    if (faltanAgentes.length)
+      err('superficie/sitio', `site/assets/js/datos.mjs no publica ${faltanAgentes.length} agente(s): ${faltanAgentes.join(', ')}`);
+    const sobranAgentes = diferencia(agentesSitio, nombresAgentes)
+      .filter((x) => !['circuito', 'arquitectura', 'construccion', 'calidad', 'auditoria'].includes(x));
+    if (sobranAgentes.length)
+      err('superficie/sitio', `site/assets/js/datos.mjs anuncia agente(s) inexistente(s): ${sobranAgentes.join(', ')}`);
+
+    const catalogoSkills = new Set(skillsCanonicas);
+    const faltanSkills = diferencia(catalogoSkills, skillsSitio);
+    if (faltanSkills.length)
+      err('superficie/sitio', `site/assets/js/datos.mjs no publica ${faltanSkills.length} skill(s): ${faltanSkills.join(', ')}`);
+    const sobranSkills = diferencia(skillsSitio, catalogoSkills)
+      .filter((x) => !['circuito', 'terreno', 'riesgo', 'memoria', 'otros'].includes(x));
+    if (sobranSkills.length)
+      err('superficie/sitio', `site/assets/js/datos.mjs anuncia skill(s) inexistente(s): ${sobranSkills.join(', ')}`);
+
+    // Los recuentos del HTML están escritos a mano dentro de terminales de ejemplo. Un número
+    // desfasado en la portada es exactamente la clase de afirmación cómoda que este repositorio
+    // reprocha en otros sitios.
+    const indexHtml = leer(join(ROOT, 'site/index.html')) || '';
+    for (const m of indexHtml.matchAll(/(\d+)\s+agente\(s\)\s*·\s*(\d+)\s+skill\(s\)/g)) {
+      if (Number(m[1]) !== nombresAgentes.size || Number(m[2]) !== skillsCanonicas.length)
+        err('superficie/sitio',
+          `site/index.html anuncia «${m[0]}» y el catálogo real tiene ${nombresAgentes.size} agente(s) · ${skillsCanonicas.length} skill(s)`);
+    }
+  }
 }
 
 // Una skill ya aparece como comando `/` en los hosts compatibles. Mantener además un
@@ -1593,7 +1693,7 @@ if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
         return { sha: sha.trim(), mensaje, ficheros };
       });
 
-    const resumen = auditarCommits(commits, { tareas, agentes, specs: specsIds, reparto });
+    const resumen = auditarCommits(commits, { tareas, agentes, specs: specsIds, reparto, frontera: leerFrontera(ROOT) });
     for (const infractor of resumen.infractores)
       for (const hallazgo of infractor.hallazgos) err('traza/corroboracion', hallazgo);
     // Un commit sin trailers no es una infracción: es un commit que esta auditoría no alcanza.
@@ -1601,7 +1701,18 @@ if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
     if (resumen.noAuditables)
       warn('traza/no-auditable',
         `${resumen.noAuditables} de ${resumen.total} commit(s) en \`${rango}\` no declaran traza; la corroboración no los alcanza`);
-    console.log(`traza · ${rango} · ${resumen.conformes} corroborado(s) · ${resumen.noAuditables} no auditable(s) · ${resumen.infractores.length} con hallazgos`);
+    // La cuota pone en duda la frontera, no al autor. Fallar en cada commit por una proporción
+    // histórica castigaría a quien no ha hecho nada mal: el commit que cruza el umbral puede
+    // ser el más inocente de la ventana. Avisa siempre; falla cuando alguien mira el conjunto.
+    const c = resumen.cuota;
+    if (c.superada) {
+      const mensaje =
+        `${Math.round(c.proporcion * 100)} % de los commits en \`${rango}\` usan el circuito ligero, ` +
+        `por encima de la cuota declarada (${Math.round(c.maximo * 100)} %). ` +
+        'Eso no señala a nadie: indica que la frontera de `.sdd/lightweight.json` deja pasar más de lo previsto y hay que revisarla.';
+      STRICT ? err('traza/cuota', mensaje) : warn('traza/cuota', mensaje);
+    }
+    console.log(`traza · ${rango} · ${resumen.conformes} corroborado(s) · ${resumen.noAuditables} no auditable(s) · ${resumen.infractores.length} con hallazgos · ${c.ligeros} ligero(s) (${Math.round(c.proporcion * 100)} %)`);
   }
 }
 

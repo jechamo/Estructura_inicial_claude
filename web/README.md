@@ -17,7 +17,7 @@ Tres pasos, cada uno esperando confirmación explícita:
    No escribe nada. Sirve para ver qué haría la instalación real antes de correr el riesgo.
 2. **Instalación real** — el mismo comando sin `--dry-run`.
 3. **Verificación** — `node scripts/check-sdd.mjs` dentro del destino. Compara la salida obtenida
-   con la esperada: `20 agente(s) · 26 skill(s)`.
+   con la esperada: `20 agente(s) · 27 skill(s)`.
 
 El paso 2 permanece bloqueado hasta que la simulación termina bien y se confirma; el 3 hasta que
 termina la instalación. La interfaz nunca encadena pasos por su cuenta.

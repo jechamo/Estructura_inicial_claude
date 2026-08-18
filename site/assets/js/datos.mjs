@@ -86,6 +86,7 @@ export const GRUPOS_SKILLS = [
       { id: 'sdd-plan', papel: 'Plan técnico, modelo de datos, contratos e investigación.' },
       { id: 'sdd-tasks', papel: 'Trocea el plan en tareas atómicas con su test asociado.' },
       { id: 'sdd-implement', papel: 'Ejecuta las tareas en ciclo TDD estricto, una a una.' },
+      { id: 'sdd-light', papel: 'Modo rápido: ahorra los documentos de la spec, nunca un gate.' },
       { id: 'sdd-verify', papel: 'Pasa todos los gates: tests, cobertura, lint, revisión y seguridad.' },
       { id: 'sdd-ship', papel: 'PR con trazabilidad, CHANGELOG, bitácora y plan de reversión.' },
       { id: 'sdd-status', papel: 'En qué punto está el proyecto y cuál es el siguiente paso.' },

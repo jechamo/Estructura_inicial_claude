@@ -28,7 +28,7 @@ durante intake solo el orquestador coordina `spec-analyst`, `ux-designer` y `spe
 
 ## Skills reutilizables
 
-Las 26 skills canónicas viven en `.agents/skills/*/SKILL.md`. Invócalas con `/nombre` en el chat;
+Las 27 skills canónicas viven en `.agents/skills/*/SKILL.md`. Invócalas con `/nombre` en el chat;
 no crees `.github/prompts/` equivalentes porque aparecerían como comandos duplicados.
 El circuito SDD son: `/sdd-intake`, `/sdd-init`, `/sdd-specify`, `/sdd-clarify`, `/sdd-design`, `/sdd-plan`,
 `/sdd-tasks`, `/sdd-implement`, `/sdd-verify`, `/sdd-ship`.

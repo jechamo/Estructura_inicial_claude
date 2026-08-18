@@ -8,6 +8,23 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 ## [No publicado]
 
 ### Added
+- **Modo rápido: un peaje proporcional al riesgo.** La skill `/sdd-light` permite cerrar cambios de
+  bajo riesgo sin escribir los cinco documentos de una spec. No dispensa de ningún gate, ni del
+  ciclo TDD, ni de la bitácora: ahorra papeleo, no verificación. Quién puede usarlo no lo decide
+  quien escribe el cambio, sino `.sdd/lightweight.json`, que declara por rutas qué admite el atajo
+  y qué no lo admite nunca. Sin ese fichero no hay modo rápido.
+- **Preguntar qué circuito toca.** `node scripts/check-sdd.mjs --circuit-status` responde `light` o
+  `full` para lo que hay ahora mismo en el árbol de trabajo, y si responde `full` nombra las rutas
+  que obligan al circuito completo. Con `--json` para automatizarlo.
+- **El atajo es falsable.** Un commit del modo rápido lleva `Circuit: light` y `Circuit-reason:`, y
+  la auditoría de trazas recalcula la frontera contra los ficheros que ese commit tocó de verdad.
+  Declararse ligero y tocar lo que no se debe falla en integración continua. Una cuota avisa cuando
+  demasiados cambios pasan por el atajo: no acusa a nadie, señala que la frontera es demasiado
+  ancha.
+- **El sitio publicado deja de poder mentir.** `check-sdd` verifica ahora una séptima superficie: que
+  la página de GitHub Pages enumere exactamente los agentes y las skills que existen, y que sus
+  recuentos coincidan. Era la única superficie que ve alguien de fuera y la única que nadie
+  contrastaba.
 - **La CLI responde antes de instalar nada.** `product-status` y `docs-status` ya no fallan cuando
   todavía no existe `.sdd/installed.json`: devuelven el estado de plantilla. Consultar el estado es
   lo primero que hace cualquiera, y no puede exigir que el estado ya exista.

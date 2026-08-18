@@ -421,6 +421,32 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "actualizado": null
 }
 `,
+  '.sdd/lightweight.json': `{
+  "version": 1,
+  "cuota": 0.4,
+  "permitido": [],
+  "prohibido": [
+    "scripts/",
+    ".sdd/",
+    ".claude/",
+    ".github/",
+    ".codex/",
+    ".cursor/",
+    ".gemini/",
+    ".agents/",
+    "docs/specs/",
+    "docs/architecture/",
+    "docs/product/",
+    "docs/security/",
+    "docs/quality/",
+    "docs/sdd/",
+    "package.json",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md"
+  ]
+}
+`,
   '.env.example': `# Variables de aplicación
 # Añade solo nombres y explicaciones. Nunca incluyas valores reales ni credenciales.
 
@@ -464,7 +490,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   'docs/security/THREAT-MODEL.md', 'docs/bitacora/DECISIONS.md',
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
   '.sdd/checks.json', '.sdd/docs.json', '.sdd/generators.json', '.sdd/installed.json', '.env.example',
-  '.sdd/coverage.json', '.sdd/smells.json',
+  '.sdd/coverage.json', '.sdd/smells.json', '.sdd/lightweight.json',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
   '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
@@ -479,6 +505,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   const r = ruta.replaceAll('\\', '/');
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
   if (r.startsWith('scripts/lib/') && ![
+    'scripts/lib/circuito.mjs',
     'scripts/lib/coverage-v8.mjs',
     'scripts/lib/docs-contract.mjs',
     'scripts/lib/jsonc.mjs',

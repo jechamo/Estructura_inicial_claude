@@ -34,7 +34,7 @@ especialista, adopta su perfil leyendo ese fichero: `architect`, `spec-analyst`,
 `research-analyst`, `release-manager`.
 
 Los flujos paso a paso están en `.agents/workflows/`.
-El sistema conserva 20 agentes y 26 skills canónicas; no crees prompts o comandos paralelos.
+El sistema conserva 20 agentes y 27 skills canónicas; no crees prompts o comandos paralelos.
 
 ## Prohibido
 
