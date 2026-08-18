@@ -462,6 +462,9 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('docs/TFM/')) return false;
   // La landing instala la plantilla; no se instala con ella ni tendría sentido en el destino.
   if (r.startsWith('web/')) return false;
+  // El sitio estático es la portada de esta plantilla y contiene su catálogo y versión.
+  // Copiarlo a un proyecto nuevo filtraría contexto propio y no aporta al circuito instalado.
+  if (r.startsWith('site/')) return false;
   if (EXCLUSIONES_EXACTAS.has(r)) {
     if (conMcp && ['.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json'].includes(r)) return true;
     return false;

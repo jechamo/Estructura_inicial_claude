@@ -1,0 +1,138 @@
+/* Reset, tipografía base y utilidades transversales. */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+* { margin: 0; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--alto-nav) + var(--e-5));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--sans);
+  font-size: var(--t-base);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Grano muy tenue sobre todo el documento: rompe el bandeado de los degradados grandes. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img,
+svg,
+video { display: block; max-width: 100%; }
+
+img { height: auto; }
+
+button,
+input,
+select,
+textarea { font: inherit; color: inherit; }
+
+button { cursor: pointer; background: none; border: none; padding: 0; }
+
+a { color: var(--acento-claro); text-underline-offset: 0.22em; }
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+p { text-wrap: pretty; }
+
+code, kbd, pre { font-family: var(--mono); }
+
+::selection { background: rgba(109, 139, 255, 0.32); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--acento-claro);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--fondo-2); }
+::-webkit-scrollbar-thumb { background: var(--superficie-alta); border-radius: var(--r-full); border: 3px solid var(--fondo-2); }
+::-webkit-scrollbar-thumb:hover { background: var(--borde-fuerte); }
+
+/* ── Utilidades ───────────────────────────────────────────────────────────── */
+
+.contenedor {
+  width: min(100% - 2.5rem, var(--ancho));
+  margin-inline: auto;
+}
+
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.saltar {
+  position: fixed;
+  top: var(--e-3);
+  left: var(--e-3);
+  z-index: 10000;
+  padding: var(--e-3) var(--e-5);
+  border-radius: var(--r-md);
+  background: var(--acento);
+  color: #05070f;
+  font-weight: 650;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform var(--dur-2) var(--curva);
+}
+
+.saltar:focus-visible { transform: translateY(0); }
+
+.degradado-texto {
+  background: var(--degradado);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: deslizar-degradado 9s linear infinite;
+}
+
+@keyframes deslizar-degradado {
+  to { background-position: 220% 0; }
+}
+
+/* Aparición al entrar en pantalla. El estado final es el normal: si el script no llega a
+   ejecutarse, `motion.mjs` marca el documento y estas reglas ni siquiera se aplican. */
+[data-revelar] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--dur-3) var(--curva),
+    transform var(--dur-3) var(--curva);
+  transition-delay: var(--retraso, 0ms);
+}
+
+[data-revelar].visible { opacity: 1; transform: none; }
+
+html.sin-observador [data-revelar] { opacity: 1; transform: none; }

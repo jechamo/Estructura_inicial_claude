@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ecosistema de agentes SDD — instala el circuito completo en tu proyecto</title>
+<meta name="description" content="Veinte agentes, veintiséis skills y un circuito de desarrollo dirigido por especificación que se instala en cualquier proyecto con un comando. Sin dependencias de runtime.">
+<meta name="color-scheme" content="dark">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ecosistema de agentes SDD">
+<meta property="og:description" content="Veinte agentes, veintiséis skills y un circuito SDD completo. Un comando, cero dependencias.">
+<meta property="og:image" content="assets/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="assets/img/logo.png">
+<link rel="preload" href="assets/img/logo.png" as="image">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<div class="progreso" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="contenedor nav__interior">
+    <a class="marca" href="#inicio">
+      <img src="assets/img/logo.png" alt="" width="34" height="34">
+      <span>Agentes SDD</span>
+      <span class="marca__version" data-version>v0.7.0</span>
+    </a>
+    <nav class="nav__enlaces" aria-label="Secciones">
+      <a class="nav__enlace" href="#instalar">Instalar</a>
+      <a class="nav__enlace" href="#actualizar">Actualizar</a>
+      <a class="nav__enlace" href="#circuito">Circuito</a>
+      <a class="nav__enlace" href="#agentes">Agentes</a>
+      <a class="nav__enlace" href="#skills">Skills</a>
+      <a class="nav__enlace" href="documentacion.html">Memoria</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenido">
+
+<!-- ── Portada ─────────────────────────────────────────────────────────── -->
+<section class="hero" id="inicio">
+  <div class="aurora" aria-hidden="true">
+    <span class="aurora__mancha"></span>
+    <span class="aurora__mancha"></span>
+    <span class="aurora__mancha"></span>
+  </div>
+  <div class="rejilla" aria-hidden="true"></div>
+
+  <div class="contenedor hero__interior">
+    <div class="hero__texto">
+      <span class="etiqueta" data-revelar>
+        <span class="etiqueta__punto" aria-hidden="true"></span>
+        Desarrollo dirigido por especificación
+      </span>
+
+      <h1 data-revelar>
+        Veinte agentes que no escriben<br>
+        una línea <span class="degradado-texto">sin spec</span>.
+      </h1>
+
+      <p class="hero__lead" data-revelar>
+        Un circuito completo —especificar, planificar, implementar en TDD estricto, verificar y
+        entregar— con sus gates, su trazabilidad y su auditoría de seguridad. Se instala en
+        cualquier proyecto con un comando y funciona igual en Claude Code, Copilot, Cursor,
+        Codex, Gemini y Antigravity.
+      </p>
+
+      <div class="hero__acciones" data-revelar>
+        <a class="btn btn--primario btn--grande" href="#instalar">
+          Instalar en mi proyecto
+        </a>
+        <a class="btn btn--fantasma btn--grande" href="documentacion.html">
+          Leer la memoria técnica
+        </a>
+      </div>
+    </div>
+
+    <div class="hero__visual" data-revelar>
+      <img class="hero__logo" src="assets/img/logo.png" alt="" aria-hidden="true">
+
+      <div class="terminal">
+        <div class="terminal__barra">
+          <span class="terminal__luces" aria-hidden="true">
+            <span class="terminal__luz"></span>
+            <span class="terminal__luz"></span>
+            <span class="terminal__luz"></span>
+          </span>
+          <span class="terminal__titulo">terminal</span>
+        </div>
+        <pre class="terminal__cuerpo" aria-label="Comando de instalación de ejemplo"><div><span class="l-prompt">$ </span><span class="l-cmd">npx</span> <span class="l-bandera">--yes</span> <span class="l-tenue">github:jechamo/Estructura_inicial_claude</span> <span class="l-cmd">init</span> <span class="l-ruta">.</span></div><div class="l-tenue">modo brownfield · 214 escrito(s) · 6 fusionado(s)</div><div class="l-ok">✅ 20 agente(s) · 26 skill(s)</div><div><span class="l-prompt">$ </span><span class="cursor-parpadeo"></span></div></pre>
+      </div>
+
+      <figure class="figura figura--reactiva" data-figura data-sin-imagen style="--proporcion: 16 / 10">
+        <img src="assets/img/circuito.png" alt="Diagrama del circuito SDD: las fases encadenadas desde la especificación hasta la entrega, con las puertas de aprobación humana entre ellas." loading="lazy" decoding="async">
+        <figcaption class="figura__pie">El circuito completo, de la idea a la entrega, con sus seis puertas de aprobación.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<div class="contenedor">
+  <div class="cifras" data-revelar>
+    <div class="cifra">
+      <div class="cifra__valor" data-total="agentes">0</div>
+      <div class="cifra__nombre">Agentes</div>
+    </div>
+    <div class="cifra">
+      <div class="cifra__valor" data-total="skills">0</div>
+      <div class="cifra__nombre">Skills</div>
+    </div>
+    <div class="cifra">
+      <div class="cifra__valor" data-total="ides">0</div>
+      <div class="cifra__nombre">Entornos</div>
+    </div>
+    <div class="cifra">
+      <div class="cifra__valor" data-contador="0">0</div>
+      <div class="cifra__nombre">Dependencias</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Instalación ─────────────────────────────────────────────────────── -->
+<section class="seccion" id="instalar">
+  <div class="contenedor">
+    <header class="cabecera" data-revelar>
+      <h2>Instalación en tres pasos</h2>
+      <p>
+        Rellena la ruta de tu proyecto y copia cada comando. Se simula primero, se instala
+        después y se verifica al final: en ningún momento tienes que fiarte de lo que va a pasar.
+      </p>
+    </header>
+
+    <div class="instalador">
+      <form class="panel" data-panel autocomplete="off" data-revelar>
+        <p class="panel__titulo">
+          <span aria-hidden="true">◈</span> Configuración
+        </p>
+
+        <div class="campo">
+          <label class="campo__etiqueta" for="ruta">Ruta del proyecto</label>
+          <input class="entrada" id="ruta" type="text" data-campo="ruta"
+                 placeholder="C:\ruta\proyecto" spellcheck="false">
+          <p class="campo__ayuda" data-aviso-ruta hidden>
+            Usa una ruta absoluta: <code>C:\proyectos\mi-app</code> o <code>/home/yo/mi-app</code>.
+          </p>
+        </div>
+
+        <div class="campo">
+          <label class="campo__etiqueta" for="modo">Modo</label>
+          <select class="selector" id="modo" data-campo="modo">
+            <option value="auto">auto — decide según el repositorio</option>
+            <option value="greenfield">greenfield — proyecto nuevo</option>
+            <option value="brownfield">brownfield — código ya existente</option>
+          </select>
+          <p class="campo__ayuda">
+            En automático mira si hay código y elige por ti. Los otros dos fuerzan la decisión.
+          </p>
+        </div>
+
+        <div class="panel__separador" role="presentation"></div>
+
+        <label class="conmutador">
+          <input type="checkbox" data-campo="sin-hooks">
+          <span class="conmutador__texto">
+            <span class="conmutador__titulo">Sin hooks de git</span>
+            <span class="conmutador__nota">
+              No instala los ganchos que ejecutan los gates antes de cada commit. Útil si el
+              equipo ya tiene los suyos.
+            </span>
+          </span>
+        </label>
+
+        <label class="conmutador">
+          <input type="checkbox" data-campo="con-baseline">
+          <span class="conmutador__texto">
+            <span class="conmutador__titulo">Con baseline documental</span>
+            <span class="conmutador__nota">
+              Añade las plantillas de producto, arquitectura y calidad ya rellenadas con el
+              esqueleto mínimo.
+            </span>
+          </span>
+        </label>
+      </form>
+
+      <ol class="pasos">
+        <li class="paso paso--destacado" data-revelar>
+          <span class="paso__numero">1</span>
+          <div class="paso__cuerpo">
+            <h3 class="paso__titulo">Simular</h3>
+            <p class="paso__texto">
+              <code>--dry-run</code> recorre todo el proceso y te dice exactamente qué ficheros
+              escribiría, cuáles fusionaría y cuáles conservaría. No toca el disco.
+            </p>
+            <div class="terminal">
+              <div class="terminal__barra">
+                <span class="terminal__luces" aria-hidden="true">
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                </span>
+                <span class="terminal__titulo">paso 1 · simulación</span>
+                <span class="terminal__acciones">
+                  <button class="copiar" type="button" data-copiar="#cmd-simular">
+                    <span data-copiar-texto>Copiar</span>
+                  </button>
+                </span>
+              </div>
+              <pre class="terminal__cuerpo" id="cmd-simular" data-comandos="simular"></pre>
+            </div>
+            <p class="paso__meta">
+              <span class="pastilla pastilla--ok">No escribe nada</span>
+              <span class="pastilla">Reversible por definición</span>
+            </p>
+          </div>
+        </li>
+
+        <li class="paso" data-revelar>
+          <span class="paso__numero">2</span>
+          <div class="paso__cuerpo">
+            <h3 class="paso__titulo">Instalar</h3>
+            <p class="paso__texto">
+              El mismo comando sin <code>--dry-run</code>. Copia agentes, skills, instrucciones,
+              scripts de verificación y hooks. Lo que ya existía en tu proyecto se fusiona o se
+              conserva; nunca se pisa en silencio.
+            </p>
+            <div class="terminal">
+              <div class="terminal__barra">
+                <span class="terminal__luces" aria-hidden="true">
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                </span>
+                <span class="terminal__titulo">paso 2 · instalación</span>
+                <span class="terminal__acciones">
+                  <button class="copiar" type="button" data-copiar="#cmd-instalar">
+                    <span data-copiar-texto>Copiar</span>
+                  </button>
+                </span>
+              </div>
+              <pre class="terminal__cuerpo" id="cmd-instalar" data-comandos="instalar"></pre>
+            </div>
+            <p class="paso__meta">
+              <span class="pastilla pastilla--acento">Fusiona sin pisar</span>
+              <span class="pastilla">Deja los conflictos a la vista</span>
+            </p>
+          </div>
+        </li>
+
+        <li class="paso" data-revelar>
+          <span class="paso__numero">3</span>
+          <div class="paso__cuerpo">
+            <h3 class="paso__titulo">Verificar</h3>
+            <p class="paso__texto">
+              El comprobador cuenta lo que hay realmente en disco y contrasta la coherencia
+              entre agentes, skills y specs. Si la cuenta no cuadra, sale con error.
+            </p>
+            <div class="terminal">
+              <div class="terminal__barra">
+                <span class="terminal__luces" aria-hidden="true">
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                  <span class="terminal__luz"></span>
+                </span>
+                <span class="terminal__titulo">paso 3 · verificación</span>
+                <span class="terminal__acciones">
+                  <button class="copiar" type="button" data-copiar="#cmd-verificar">
+                    <span data-copiar-texto>Copiar</span>
+                  </button>
+                </span>
+              </div>
+              <pre class="terminal__cuerpo" id="cmd-verificar" data-comandos="entrar,verificar"
+                   data-salida="check-sdd (normal) · 0 spec(s) · 0 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)&#10;✅ Estructura y coherencia correctas."></pre>
+            </div>
+            <p class="paso__meta">
+              <span class="pastilla pastilla--ok">Salida esperada</span>
+              <span class="pastilla">Código de salida 0</span>
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ── Actualizar ──────────────────────────────────────────────────────── -->
+<section class="seccion seccion--alterna" id="actualizar">
+  <div class="contenedor">
+    <header class="cabecera" data-revelar>
+      <h2>Actualizar un proyecto ya instalado</h2>
+      <p>
+        <code>update</code> es lo que ejecutas cuando sale una versión nueva del ecosistema y
+        quieres traerte las mejoras sin perder tu trabajo.
+      </p>
+    </header>
+
+    <div class="instalador">
+      <div data-revelar>
+        <div class="terminal">
+          <div class="terminal__barra">
+            <span class="terminal__luces" aria-hidden="true">
+              <span class="terminal__luz"></span>
+              <span class="terminal__luz"></span>
+              <span class="terminal__luz"></span>
+            </span>
+            <span class="terminal__titulo">actualización</span>
+            <span class="terminal__acciones">
+              <button class="copiar" type="button" data-copiar="#cmd-actualizar">
+                <span data-copiar-texto>Copiar</span>
+              </button>
+            </span>
+          </div>
+          <pre class="terminal__cuerpo" id="cmd-actualizar" data-comandos="actualizar"></pre>
+        </div>
+        <p class="campo__ayuda" style="margin-top: 0.8rem">
+          Admite <code>--dry-run</code> igual que <code>init</code>. Ejecútalo primero: verás el
+          reparto exacto antes de que se escriba nada.
+        </p>
+      </div>
+
+      <div>
+        <p class="parrafo" data-revelar>
+          La diferencia con <code>init</code> es la intención. <code>init</code> asume que
+          llega a un proyecto que aún no tiene el circuito. <code>update</code> asume que sí lo
+          tiene, que llevas meses trabajando encima y que tus specs, tus ADR y tu bitácora son
+          justamente lo que no se puede tocar.
+        </p>
+        <p class="parrafo" data-revelar>
+          Por eso no sobrescribe el proyecto: lo reconcilia. Cada fichero cae en una de estas
+          cuatro categorías, y el resumen final te dice cuántos hubo de cada una.
+        </p>
+
+        <div class="matriz" style="margin-top: 2rem">
+          <article class="caso caso--escribe" data-revelar>
+            <header class="caso__cabecera">
+              <span class="caso__accion">Escribe</span>
+            </header>
+            <p class="caso__condicion">Lo que pertenece al ecosistema</p>
+            <p class="caso__nota">
+              Agentes, skills, instrucciones y scripts de verificación. Son la plantilla: se
+              reemplazan por la versión nueva porque no tienen nada tuyo dentro.
+            </p>
+          </article>
+
+          <article class="caso caso--fusiona" data-revelar>
+            <header class="caso__cabecera">
+              <span class="caso__accion">Fusiona</span>
+            </header>
+            <p class="caso__condicion">Ficheros compartidos</p>
+            <p class="caso__nota">
+              En <code>AGENTS.md</code> o <code>CLAUDE.md</code> solo se toca el bloque
+              delimitado. En los JSON de configuración tus claves ganan y los arrays se unen sin
+              duplicados. En <code>.gitignore</code> se añade lo que falte.
+            </p>
+          </article>
+
+          <article class="caso caso--conserva" data-revelar>
+            <header class="caso__cabecera">
+              <span class="caso__accion">Conserva</span>
+            </header>
+            <p class="caso__condicion">Todo lo que has escrito tú</p>
+            <p class="caso__nota">
+              Specs, ADR, constitución, bitácora, informes y la configuración de checks. Una vez
+              que existen, <code>update</code> no vuelve a mirarlos.
+            </p>
+          </article>
+
+          <article class="caso caso--conflicto" data-revelar>
+            <header class="caso__cabecera">
+              <span class="caso__accion">Conflicto</span>
+            </header>
+            <p class="caso__condicion">Un fichero de plantilla que modificaste</p>
+            <p class="caso__nota">
+              No se pisa ni se ignora: la versión nueva se deja al lado con otro nombre y
+              aparece listada al final para que decidas tú con un diff delante.
+            </p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Circuito ────────────────────────────────────────────────────────── -->
+<section class="seccion" id="circuito">
+  <div class="contenedor">
+    <header class="cabecera cabecera--centrada" data-revelar>
+      <h2>Un circuito, no una colección de prompts</h2>
+      <p>
+        Cada fase produce un artefacto que la siguiente necesita. Saltarse una no acelera nada:
+        deja a la siguiente sin entrada.
+      </p>
+    </header>
+
+    <div data-pestanas data-revelar>
+      <div class="pestanas__lista" role="tablist" aria-label="Fases del circuito">
+        <button class="pestana" type="button" role="tab" aria-selected="true" aria-controls="fase-1" id="tab-1">Especificar</button>
+        <button class="pestana" type="button" role="tab" aria-selected="false" aria-controls="fase-2" id="tab-2">Planificar</button>
+        <button class="pestana" type="button" role="tab" aria-selected="false" aria-controls="fase-3" id="tab-3">Implementar</button>
+        <button class="pestana" type="button" role="tab" aria-selected="false" aria-controls="fase-4" id="tab-4">Verificar</button>
+        <button class="pestana" type="button" role="tab" aria-selected="false" aria-controls="fase-5" id="tab-5">Entregar</button>
+      </div>
+
+      <div class="pestanas__panel" id="fase-1" role="tabpanel" aria-labelledby="tab-1" style="padding-top: 2rem">
+        <p class="parrafo">
+          La idea se convierte en requisitos EARS con criterios de aceptación testables. Sin
+          decisiones técnicas: aquí se decide <em>qué</em> y para quién, nunca cómo. Lo que quede
+          ambiguo se marca y se resuelve preguntando, no adivinando.
+        </p>
+        <p class="parrafo">
+          Cada spec declara además su impacto en seguridad, usabilidad y documentación. Si es
+          sensible, cada control tendrá que enlazar decisión, tarea, test y evidencia.
+        </p>
+      </div>
+
+      <div class="pestanas__panel" id="fase-2" role="tabpanel" aria-labelledby="tab-2" hidden style="padding-top: 2rem">
+        <p class="parrafo">
+          Aquí se decide el cómo, siempre conforme a la arquitectura vigente: plan técnico,
+          modelo de datos, contratos de API antes de escribir el endpoint, e investigación de
+          las alternativas que se descartan.
+        </p>
+        <p class="parrafo">
+          El plan se trocea después en tareas atómicas, cada una con su test asociado y su
+          trazabilidad a un criterio concreto de la spec.
+        </p>
+      </div>
+
+      <div class="pestanas__panel" id="fase-3" role="tabpanel" aria-labelledby="tab-3" hidden style="padding-top: 2rem">
+        <p class="parrafo">
+          Ciclo rojo-verde-refactor estricto, una tarea cada vez. El test que falla se enseña
+          fallando: sin salida real no hay fase roja, y sin fase roja el test no demuestra nada.
+        </p>
+        <p class="parrafo">
+          Las dependencias apuntan hacia dentro. El dominio no conoce la infraestructura, y
+          ningún atajo de implementación cambia esa regla sin un ADR que lo justifique.
+        </p>
+      </div>
+
+      <div class="pestanas__panel" id="fase-4" role="tabpanel" aria-labelledby="tab-4" hidden style="padding-top: 2rem">
+        <p class="parrafo">
+          Todos los gates a la vez: tests, cobertura, lint, revisión del diff, principios de
+          diseño y auditoría de seguridad contra OWASP Top 10:2025 y ASVS 5.0.0.
+        </p>
+        <p class="parrafo">
+          «Pasa» sin ejecución real no cuenta como resultado. «No ejecutado» sí, siempre que
+          venga con su riesgo y su siguiente paso.
+        </p>
+      </div>
+
+      <div class="pestanas__panel" id="fase-5" role="tabpanel" aria-labelledby="tab-5" hidden style="padding-top: 2rem">
+        <p class="parrafo">
+          PR con trazabilidad completa, CHANGELOG, entrada en la bitácora y plan de reversión.
+          Nada de esto hace push ni merge por su cuenta: la entrega la autoriza una persona.
+        </p>
+        <p class="parrafo">
+          La bitácora es la que responde meses después a «¿por qué hicimos X?», incluida la
+          deuda que se aceptó a sabiendas.
+        </p>
+      </div>
+    </div>
+
+    <figure class="figura" data-figura data-sin-imagen style="--proporcion: 21 / 9; margin-top: 3rem" data-revelar>
+      <img src="assets/img/gates.png" alt="Representación de las seis puertas de aprobación humana distribuidas a lo largo del circuito." loading="lazy" decoding="async">
+      <figcaption class="figura__pie">Seis puertas de aprobación humana: producto, arquitectura, spec, diseño, plan y entrega.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ── Agentes ─────────────────────────────────────────────────────────── -->
+<section class="seccion seccion--alterna" id="agentes">
+  <div class="contenedor">
+    <header class="cabecera" data-revelar>
+      <h2>Veinte agentes con territorio propio</h2>
+      <p>
+        Solo tres delegan. Los auditores no escriben. Ninguna cadena de delegación baja de dos
+        saltos, y cada especialista devuelve el control en lugar de encadenar a otro.
+      </p>
+    </header>
+
+    <div class="carrusel" data-carrusel data-revelar>
+      <div class="carrusel__pista" data-agentes></div>
+      <div class="carrusel__mando">
+        <button class="carrusel__flecha" type="button" data-carrusel-anterior aria-label="Familias anteriores">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button class="carrusel__flecha" type="button" data-carrusel-siguiente aria-label="Familias siguientes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+        <div class="carrusel__puntos" role="group" aria-label="Ir a una familia"></div>
+      </div>
+    </div>
+
+    <figure class="figura figura--reactiva" data-figura data-sin-imagen style="--proporcion: 16 / 9; margin-top: 2.5rem" data-revelar>
+      <img src="assets/img/agentes.png" alt="Mapa de los veinte agentes agrupados por familia, con las líneas de delegación permitidas entre ellos." loading="lazy" decoding="async">
+      <figcaption class="figura__pie">El mapa de delegación: quién puede llamar a quién, y hasta dónde.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ── Skills ──────────────────────────────────────────────────────────── -->
+<section class="seccion" id="skills">
+  <div class="contenedor">
+    <header class="cabecera" data-revelar>
+      <h2>Veintiséis skills invocables</h2>
+      <p>
+        Se llaman con <code>/nombre</code> desde el chat. Cada una lleva su puerta de entrada,
+        su procedimiento y su lista de comprobación.
+      </p>
+    </header>
+
+    <div class="filtros" data-filtros-skills role="group" aria-label="Filtrar skills por grupo"></div>
+    <div class="rejilla-skills" data-skills></div>
+  </div>
+</section>
+
+<!-- ── Garantías ───────────────────────────────────────────────────────── -->
+<section class="seccion seccion--alterna" id="garantias">
+  <div class="contenedor">
+    <header class="cabecera cabecera--centrada" data-revelar>
+      <h2>Lo que el circuito garantiza</h2>
+      <p>Cuatro reglas que no dependen de que alguien se acuerde de aplicarlas.</p>
+    </header>
+
+    <div class="bento">
+      <article class="tarjeta tarjeta--reactiva tarjeta--foco pilar bento--ancho" data-revelar>
+        <span class="pilar__sello">SDD</span>
+        <h3 class="tarjeta__titulo">Sin spec no hay código</h3>
+        <p class="tarjeta__texto">
+          Toda implementación arranca de una especificación aprobada con criterios testables. La
+          verificación cuenta specs y tareas cerradas: un cambio sin trazabilidad no pasa.
+        </p>
+      </article>
+
+      <article class="tarjeta tarjeta--reactiva tarjeta--foco pilar bento--ancho" data-revelar>
+        <span class="pilar__sello">TDD</span>
+        <h3 class="tarjeta__titulo">Rojo antes que verde</h3>
+        <p class="tarjeta__texto">
+          El test que falla se demuestra fallando, con su salida real. Después el código mínimo
+          que lo pone en verde, y solo entonces el refactor con la suite entera pasando.
+        </p>
+      </article>
+
+      <article class="tarjeta tarjeta--reactiva tarjeta--foco pilar" data-revelar>
+        <span class="pilar__sello">SEC</span>
+        <h3 class="tarjeta__titulo">Seguridad auditada</h3>
+        <p class="tarjeta__texto">
+          OWASP Top 10:2025 y ASVS 5.0.0. El auditor es de solo lectura y un visto bueno exige
+          informe sin críticos ni altos.
+        </p>
+      </article>
+
+      <article class="tarjeta tarjeta--reactiva tarjeta--foco pilar" data-revelar>
+        <span class="pilar__sello">UX</span>
+        <h3 class="tarjeta__titulo">Usabilidad con suelo</h3>
+        <p class="tarjeta__texto">
+          WCAG 2.2 AA es el mínimo, no la meta. Nadie audita su propio diseño: la revisión la
+          hace otro agente.
+        </p>
+      </article>
+
+      <article class="tarjeta tarjeta--reactiva tarjeta--foco pilar" data-revelar>
+        <span class="pilar__sello">DOC</span>
+        <h3 class="tarjeta__titulo">Memoria que sobrevive</h3>
+        <p class="tarjeta__texto">
+          Bitácora y ADR guardan el porqué, las alternativas descartadas y la deuda aceptada a
+          sabiendas.
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ── Entornos ────────────────────────────────────────────────────────── -->
+<section class="seccion seccion--ceñida">
+  <div class="contenedor">
+    <header class="cabecera cabecera--centrada" data-revelar>
+      <h2>El mismo contrato en todos los entornos</h2>
+      <p>
+        Los perfiles se escriben una vez y el instalador los adapta al formato que espera cada
+        herramienta.
+      </p>
+    </header>
+  </div>
+
+  <div class="cinta" data-cinta data-revelar>
+    <div class="cinta__pista" data-ides></div>
+  </div>
+</section>
+
+<!-- ── Preguntas ───────────────────────────────────────────────────────── -->
+<section class="seccion" id="preguntas">
+  <div class="contenedor">
+    <header class="cabecera" data-revelar>
+      <h2>Preguntas razonables</h2>
+      <p>Lo que suele preguntarse antes de instalar esto en un proyecto que ya funciona.</p>
+    </header>
+
+    <div class="acordeon" data-acordeon data-unico data-revelar>
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿Qué pasa si ya tengo un AGENTS.md o una configuración propia?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              Se fusiona, no se reemplaza. En los ficheros Markdown compartidos solo se toca el
+              bloque delimitado por marcadores, y tu contenido queda intacto alrededor. En los
+              JSON de configuración tus claves tienen prioridad y los arrays se unen sin
+              duplicados. Si un fichero de plantilla lo habías modificado tú, se declara como
+              conflicto y la versión nueva se deja al lado para que la compares.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿Puedo instalarlo desde esta página?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              No, y no es una limitación que convenga rodear. Ninguna página web puede ejecutar
+              procesos en el ordenador de quien la visita: esa es exactamente la barrera que
+              impide que abrir una URL cualquiera te instale cosas. Lo que hace esta página es
+              construir el comando exacto para que lo leas antes de pegarlo en tu terminal.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿Añade dependencias a mi proyecto?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              Ninguna. Todo el ecosistema son ficheros de texto y scripts de Node sin
+              dependencias de runtime. No hay <code>node_modules</code> que instalar, ni proceso
+              de compilación, ni servicio que arrancar. Los scripts de verificación funcionan
+              con Node 18 o superior y nada más.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿Y si mi proyecto no es de Node?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              El circuito es agnóstico. Los comandos de test, lint y construcción de cada
+              proyecto se declaran en un fichero de configuración después de instalar, así que
+              funciona igual con Python, Java, Go o lo que uses. Node solo hace falta para
+              ejecutar el instalador y los comprobadores.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="acordeon__item">
+        <h3>
+          <button class="acordeon__disparador" type="button" aria-expanded="false">
+            ¿Cómo lo desinstalo?
+            <span class="acordeon__signo" aria-hidden="true"></span>
+          </button>
+        </h3>
+        <div class="acordeon__caja">
+          <div class="acordeon__contenido">
+            <p>
+              Instálalo siempre sobre un árbol de trabajo limpio y con la simulación hecha
+              antes. Así, si no te convence, un <code>git checkout</code> lo devuelve todo al
+              estado anterior. No hay estado oculto fuera del repositorio ni registro global que
+              limpiar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pie">
+  <div class="contenedor pie__interior">
+    <span>Ecosistema de agentes SDD · <span data-version>v0.7.0</span></span>
+    <nav class="pie__enlaces" aria-label="Enlaces del pie">
+      <a href="https://github.com/jechamo/Estructura_inicial_claude" target="_blank" rel="noopener noreferrer">Repositorio</a>
+      <a href="documentacion.html">Memoria técnica</a>
+      <a href="#instalar">Instalar</a>
+    </nav>
+  </div>
+</footer>
+
+<button class="arriba" type="button" aria-label="Volver arriba">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script type="module" src="assets/js/main.mjs"></script>
+</body>
+</html>

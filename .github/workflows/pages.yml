@@ -1,0 +1,44 @@
+name: pages
+
+# Publica site/ en GitHub Pages. El sitio es estático puro: no hay build, no hay dependencias.
+# El único paso de preparación es copiar la memoria técnica dentro del artefacto para que la
+# página de documentación la lea sin duplicar el fichero en el repositorio.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs/TFM/MEMORIA-SISTEMA-AGENTES.md'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar artefacto
+        run: node scripts/site-prep.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: despliegue
+        uses: actions/deploy-pages@v4

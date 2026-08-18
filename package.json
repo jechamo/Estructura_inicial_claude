@@ -88,6 +88,7 @@
   ],
   "scripts": {
     "web": "node web/server.mjs",
+    "site": "node scripts/site-prep.mjs",
     "check": "node scripts/check-sdd.mjs",
     "check:strict": "node scripts/check-sdd.mjs --strict",
     "check:skills": "node scripts/skills-sync.mjs --check",

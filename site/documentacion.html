@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memoria técnica — Ecosistema de agentes SDD</title>
+<meta name="description" content="Memoria técnica completa del sistema de agentes: arquitectura, circuito SDD, delegación, gates, trazabilidad y decisiones de diseño.">
+<meta name="color-scheme" content="dark">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Memoria técnica — Ecosistema de agentes SDD">
+<meta property="og:description" content="Arquitectura, circuito, delegación, gates y trazabilidad del sistema de agentes.">
+<meta property="og:image" content="assets/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="assets/img/logo.png">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
+</head>
+<body>
+
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<div class="progreso" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="contenedor nav__interior">
+    <a class="marca" href="index.html">
+      <img src="assets/img/logo.png" alt="" width="34" height="34">
+      <span>Agentes SDD</span>
+      <span class="marca__version" data-version>v0.7.0</span>
+    </a>
+    <nav class="nav__enlaces" aria-label="Secciones">
+      <a class="nav__enlace" href="index.html#instalar">Instalar</a>
+      <a class="nav__enlace" href="index.html#actualizar">Actualizar</a>
+      <a class="nav__enlace" href="index.html#agentes">Agentes</a>
+      <a class="nav__enlace activo" href="documentacion.html">Memoria</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenido" class="contenedor memoria">
+
+  <aside class="indice" aria-label="Índice del documento">
+    <p class="indice__titulo">Contenido</p>
+    <div class="campo">
+      <label class="solo-lectores" for="buscar">Filtrar el índice</label>
+      <input class="entrada" id="buscar" type="search" data-buscar
+             placeholder="Filtrar secciones…" spellcheck="false">
+    </div>
+    <ul class="indice__lista" data-indice></ul>
+  </aside>
+
+  <article class="prosa" data-prosa>
+    <div class="estado-carga" data-estado>
+      <span class="diagrama__anillo" aria-hidden="true"></span>
+      <span>Cargando la memoria técnica…</span>
+    </div>
+  </article>
+
+</main>
+
+<footer class="pie">
+  <div class="contenedor pie__interior">
+    <span>Ecosistema de agentes SDD · <span data-version>v0.7.0</span></span>
+    <nav class="pie__enlaces" aria-label="Enlaces del pie">
+      <a href="https://github.com/jechamo/Estructura_inicial_claude" target="_blank" rel="noopener noreferrer">Repositorio</a>
+      <a href="index.html">Portada</a>
+    </nav>
+  </div>
+</footer>
+
+<button class="arriba" type="button" aria-label="Volver arriba">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script type="module" src="assets/js/memoria.mjs"></script>
+</body>
+</html>

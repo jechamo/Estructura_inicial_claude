@@ -1,0 +1,4 @@
+# Artefactos que genera scripts/site-prep.mjs. Se recrean en cada despliegue.
+.nojekyll
+assets/memoria.md
+assets/img/logo.png
