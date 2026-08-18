@@ -12,10 +12,11 @@
  * Node >= 18, sin dependencias.
  */
 import { spawnSync } from 'node:child_process';
-import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, mkdtempSync, symlinkSync, linkSync } from 'node:fs';
+import { rmSync, mkdirSync, writeFileSync, readFileSync, existsSync, mkdtempSync, symlinkSync, linkSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { findActiveSpec } from '../.sdd/hooks/_lib.mjs';
+import { decidirTerritorio, cargarTerritorios } from '../.sdd/hooks/territorios.mjs';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -295,58 +296,93 @@ comprueba(
 // Es la guarda que impide que un agente haga el trabajo de otro.
 console.log('\nguard-write · territorio por agente');
 
-const restriccionesTerritorio = (() => {
-  try {
-    const cfg = JSON.parse(readFileSync(join(ROOT, '.sdd', 'territories.json'), 'utf8'));
-    return cfg.modo !== 'audit' && Object.keys(cfg.territorios || {}).length > 0;
-  } catch {
-    return false;
-  }
-})();
+// ─── territorios: la regla, no el hook ───────────────────────────────────────
+// Hasta la spec 013 esta sección estaba muerta: la condición miraba `cfg.territorios`
+// cuando la clave real es `territories`, y además exigía un modo distinto de `audit`.
+// Nunca se ejecutó ni una sola comprobación. Ahora la regla vive en una función pura y
+// se dirige con una tabla, así que se verifica sin depender de ningún entorno.
+console.log('\nterritorios · decidirTerritorio (regla compartida por los seis entornos)');
 
-if (restriccionesTerritorio) {
+const REPARTO = {
+  version: 1,
+  modo: 'deny',
+  coordinadores: ['orchestrator', 'implementer'],
+  territories: [
+    { name: 'arquitectura-sdd', agent: 'architect', paths: ['docs/architecture/**'] },
+    { name: 'especificacion-sdd', agent: 'spec-analyst', paths: ['docs/specs/**/spec.md'] },
+  ],
+};
 
-agenteActivo('database-expert');
-comprueba('bbdd → componente de front se bloquea', decisionDe('guard-write.mjs', escribir('src/components/A.tsx')), 'deny');
-comprueba('bbdd → migración se permite', decisionDe('guard-write.mjs', escribir('migrations/001.sql')), 'allow');
-comprueba('bbdd → ADR se bloquea', decisionDe('guard-write.mjs', escribir('docs/architecture/adr/ADR-2.md')), 'deny');
-comprueba('bbdd → ruta de nadie se permite', decisionDe('guard-write.mjs', escribir('scripts/util.mjs')), 'allow');
-comprueba('bbdd → su propio test se permite', decisionDe('guard-write.mjs', escribir('tests/db/x.test.ts')), 'allow');
+const decidir = (agente, ruta, modo = 'deny') =>
+  decidirTerritorio({ agente, ruta, modo, config: REPARTO }).decision;
 
-agenteActivo('frontend-expert');
-comprueba('front → migración se bloquea', decisionDe('guard-write.mjs', escribir('migrations/002.sql')), 'deny');
-comprueba('front → componente se permite', decisionDe('guard-write.mjs', escribir('src/components/A.tsx')), 'allow');
-comprueba(
-  'front → caso de uso se bloquea',
-  decisionDe('guard-write.mjs', escribir('src/application/PagarPedido.ts')),
-  'deny',
-);
-
-agenteActivo('spec-analyst');
-comprueba('spec-analyst → código se bloquea', decisionDe('guard-write.mjs', escribir('src/domain/Order.ts')), 'deny');
-comprueba('spec-analyst → su spec se permite', decisionDe('guard-write.mjs', escribir('docs/specs/042-x/spec.md')), 'allow');
-
-agenteActivo('implementer');
-comprueba(
-  'implementer (coordinador) no tiene territorio',
-  decisionDe('guard-write.mjs', escribir('src/components/A.tsx')),
-  'allow',
-);
-
-agenteActivo(null);
-comprueba(
-  'hilo principal sin subagente no se restringe',
-  decisionDe('guard-write.mjs', escribir('src/components/A.tsx')),
-  'allow',
-);
-} else {
-  agenteActivo('database-expert');
-  comprueba(
-    'un mapa virgen en audit no inventa territorios de aplicación',
-    decisionDe('guard-write.mjs', escribir('src/components/A.tsx')),
-    'allow',
-  );
+for (const [agente, ruta, modo, esperado] of [
+  ['architect', 'docs/architecture/constitution.md', 'deny', 'allow'],
+  ['spec-analyst', 'docs/architecture/constitution.md', 'deny', 'deny'],
+  ['spec-analyst', 'docs/architecture/constitution.md', 'ask', 'ask'],
+  ['spec-analyst', 'docs/architecture/constitution.md', 'audit', 'allow'],
+  ['spec-analyst', 'docs/architecture/constitution.md', 'off', 'allow'],
+  ['spec-analyst', 'docs/specs/013-x/spec.md', 'deny', 'allow'],
+  ['architect', 'docs/specs/013-x/spec.md', 'deny', 'deny'],
+  ['orchestrator', 'docs/architecture/constitution.md', 'deny', 'allow'],
+  ['implementer', 'docs/architecture/constitution.md', 'deny', 'allow'],
+  ['spec-analyst', 'scripts/util.mjs', 'deny', 'allow'],
+  [null, 'docs/architecture/constitution.md', 'deny', 'allow'],
+]) {
+  comprueba(`${agente || 'hilo principal'} → ${ruta} en modo ${modo}`, decidir(agente, ruta, modo), esperado);
 }
+
+// la_normalizacion_de_ruta_no_elude_el_territorio · SEC-TERR-001 · CA-01
+console.log('\nterritorios · la_normalizacion_de_ruta_no_elude_el_territorio');
+for (const variante of [
+  'docs/architecture/../architecture/constitution.md',
+  'docs\\architecture\\constitution.md',
+  './docs/architecture/constitution.md',
+  'docs//architecture//constitution.md',
+  'docs/specs/../architecture/constitution.md',
+]) {
+  comprueba(`la ruta equivalente \`${variante}\` decide igual que la canónica`,
+    decidir('spec-analyst', variante), 'deny');
+}
+
+// un_reparto_corrupto_no_degrada_a_permitir · SEC-TERR-002 · CA-02
+console.log('\nterritorios · un_reparto_corrupto_no_degrada_a_permitir');
+comprueba('un reparto ausente no bloquea el trabajo',
+  cargarTerritorios(null).modo, 'off');
+comprueba('un reparto truncado resuelve al modo más restrictivo',
+  cargarTerritorios('{"modo":"audit","territories":[').modo, 'deny');
+comprueba('un reparto sin lista de territorios resuelve al modo más restrictivo',
+  cargarTerritorios('{"modo":"audit"}').modo, 'deny');
+comprueba('un modo desconocido resuelve al modo más restrictivo',
+  cargarTerritorios('{"modo":"permisivo","territories":[]}').modo, 'deny');
+comprueba('un reparto válido conserva su modo',
+  cargarTerritorios(JSON.stringify(REPARTO)).modo, 'deny');
+comprueba('un modo desconocido no se interpreta como permiso',
+  decidirTerritorio({ agente: 'spec-analyst', ruta: 'docs/architecture/x.md', modo: 'permisivo', config: REPARTO }).decision,
+  'deny');
+
+// el_rechazo_por_territorio_dice_quien_que_y_de_quien · UX-COPY-001 · CA-03
+console.log('\nterritorios · el_rechazo_por_territorio_dice_quien_que_y_de_quien');
+{
+  const r = decidirTerritorio({ agente: 'spec-analyst', ruta: 'docs/architecture/constitution.md', modo: 'deny', config: REPARTO });
+  comprueba('el motivo nombra al agente que escribe', /spec-analyst/.test(r.motivo), true);
+  comprueba('el motivo nombra la ruta rechazada', /docs\/architecture\/constitution\.md/.test(r.motivo), true);
+  comprueba('el motivo nombra al agente dueño', /architect/.test(r.motivo), true);
+  comprueba('el motivo nombra el territorio', /arquitectura-sdd/.test(r.motivo), true);
+}
+
+// El reparto real de este repositorio tiene que ser coherente con la regla que acabamos
+// de verificar: si alguien reordena territorios, esto lo detecta.
+{
+  const real = cargarTerritorios(readFileSync(join(ROOT, '.sdd', 'territories.json'), 'utf8'));
+  comprueba('el reparto de este repositorio es válido', real.ok, true);
+  comprueba('el reparto de este repositorio declara un modo conocido',
+    ['off', 'audit', 'ask', 'deny'].includes(real.modo), true);
+  comprueba('docs/architecture es territorio de architect',
+    decidirTerritorio({ agente: 'spec-analyst', ruta: 'docs/architecture/x.md', modo: 'deny', config: real.config }).dueno,
+    'architect');
+}
+
 
 // ─── guard-bash ──────────────────────────────────────────────────────────────
 console.log('\nguard-bash · comandos');
@@ -453,14 +489,24 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
 comprueba('git status se permite', decisionDe('guard-bash.mjs', ejecutar('git status')), 'allow');
 
 // ─── contratos por host ──────────────────────────────────────────────────────
-console.log('\ncontratos de hooks · cinco hosts');
-const contratos = [
-  ['Claude Code', '.claude/settings.json'],
-  ['Cursor', '.cursor/hooks.json'],
-  ['Antigravity', '.agents/hooks.json'],
-  ['Codex', '.codex/hooks.json'],
-  ['Copilot/VS Code', '.github/hooks/sdd.json'],
+// Son SEIS entornos, no cinco. Gemini estaba fuera de esta lista y por eso su carencia
+// —no tiene contrato de hooks— no constaba en ninguna parte: un hueco invisible es peor
+// que un hueco conocido. Aquí cada entorno declara qué observa y qué no.
+console.log('\ncontratos de hooks · seis entornos, con sus carencias');
+
+// preEscritura: puede invocar la guarda antes de escribir un fichero.
+// subagente:    puede observar el inicio y el fin de un subagente, que es lo que permite
+//               el estado `observed`. Sin él, la delegación solo puede corroborarse.
+const ENTORNOS = [
+  { host: 'Claude Code', contrato: '.claude/settings.json', preEscritura: true, subagente: true },
+  { host: 'Codex', contrato: '.codex/hooks.json', preEscritura: true, subagente: true },
+  { host: 'Cursor', contrato: '.cursor/hooks.json', preEscritura: true, subagente: false },
+  { host: 'Copilot/VS Code', contrato: '.github/hooks/sdd.json', preEscritura: true, subagente: false },
+  { host: 'Antigravity', contrato: '.agents/hooks.json', preEscritura: true, subagente: false },
+  { host: 'Gemini', contrato: null, preEscritura: false, subagente: false },
 ];
+
+const contratos = ENTORNOS.filter((e) => e.contrato).map((e) => [e.host, e.contrato]);
 
 function comandosEn(valor, out = []) {
   if (Array.isArray(valor)) for (const x of valor) comandosEn(x, out);
@@ -494,6 +540,122 @@ comprueba('Antigravity usa hooks nombrados con event',
 const codexHooks = readFileSync(join(ROOT, '.codex/hooks.json'), 'utf8');
 comprueba('Codex separa la guarda de shell de la guarda de escritura',
   /guard-bash\.mjs/.test(codexHooks) && /guard-write\.mjs/.test(codexHooks) ? 'ok' : 'fail', 'ok');
+
+// ─── capacidades declaradas por entorno ──────────────────────────────────────
+// Lo que se verifica aquí es que la declaración escrita coincide con el contrato real.
+// Si alguien añade el evento de subagente a Cursor y no actualiza la tabla, esto falla;
+// si alguien retira la declaración de Gemini, también. La carencia deja de poder
+// desaparecer sin que nadie se entere.
+console.log('\ncontratos de hooks · las carencias están declaradas, no supuestas');
+for (const e of ENTORNOS) {
+  const texto = e.contrato && existsSync(join(ROOT, e.contrato)) ? readFileSync(join(ROOT, e.contrato), 'utf8') : '';
+  comprueba(`${e.host}: la pre-escritura declarada coincide con el contrato`,
+    /guard-write\.mjs/.test(texto), e.preEscritura);
+  comprueba(`${e.host}: el ciclo de vida de subagente declarado coincide con el contrato`,
+    /[Ss]ubagent/.test(texto), e.subagente);
+}
+comprueba('Gemini consta como entorno sin contrato de hooks',
+  ENTORNOS.some((e) => e.host === 'Gemini' && e.contrato === null && !e.preEscritura), true);
+comprueba('los seis entornos soportados están en la tabla', ENTORNOS.length, 6);
+comprueba('solo dos entornos pueden observar la delegación',
+  ENTORNOS.filter((e) => e.subagente).length, 2);
+comprueba('el reparto de territorios alcanza a cinco de los seis',
+  ENTORNOS.filter((e) => e.preEscritura).length, 5);
+
+// la_autoria_no_escribe_fuera_del_repositorio
+console.log('\nautoría · un hecho por sesión, agente y spec');
+{
+  const proyecto = proyectoTemporal('sdd-hook-autoria-');
+  try {
+    escribeTareas(proyecto, '042-autoria', '### T-042-01\n- **Estado:** pendiente\n');
+    const log = join(proyecto, 'docs', 'specs', '042-autoria', 'execution-log.jsonl');
+    const arranca = (agente, sesion) =>
+      ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start', { session_id: sesion, agent_type: agente });
+    const autorias = () => lineasJson(log).filter((l) => l.evento === 'autoria');
+
+    arranca('backend-expert', 'ses-1');
+    arranca('backend-expert', 'ses-1');
+    arranca('backend-expert', 'ses-1');
+    comprueba('tres arranques del mismo agente dejan una sola autoría', autorias().length, 1);
+    comprueba('el ciclo de vida sí queda registrado las tres veces',
+      lineasJson(log).filter((l) => l.evento === 'subagent-start').length, 3);
+    comprueba('la autoría nombra la spec', autorias()[0]?.spec, '042-autoria');
+
+    arranca('frontend-expert', 'ses-1');
+    comprueba('otro agente sí añade su autoría', autorias().length, 2);
+
+    arranca('backend-expert', 'ses-2');
+    comprueba('otra sesión vuelve a declarar la autoría', autorias().length, 3);
+
+    // Una sesión con forma de ruta no debe convertirse en una escritura fuera del proyecto.
+    const antes = new Set(readdirSync(tmpdir()));
+    arranca('database-expert', '../../fuera-del-repo');
+    comprueba('una sesión hostil no crea nada en el directorio temporal',
+      readdirSync(tmpdir()).filter((n) => !antes.has(n) && /fuera-del-repo/.test(n)).length, 0);
+    comprueba('el estado de autoría vive dentro del repositorio',
+      readdirSync(join(proyecto, '.sdd', 'state')).some((n) => n.startsWith('autoria-')), true);
+    comprueba('la sesión hostil sí registra su autoría, saneada',
+      autorias().some((l) => l.agente === 'database-expert'), true);
+
+    // Sin nombre de agente no hay autoría que declarar: inventarla sería fabricar evidencia.
+    arranca(undefined, 'ses-3');
+    comprueba('un subagente sin nombre no genera autoría',
+      autorias().some((l) => l.agente === 'desconocido'), false);
+  } finally {
+    rmSync(proyecto, { recursive: true, force: true });
+  }
+}
+
+// la_autoria_de_fichero_no_depende_del_ciclo_de_subagente
+//
+// Este es el punto entero: la autoría de fichero la emite la pre-escritura, que existe en
+// cinco de los seis entornos. Si alguien la devuelve al hook de subagente, el alcance cae a
+// dos y esto se pone rojo.
+console.log('\nautoría de fichero · observada por la guarda de escritura');
+{
+  const proyecto = proyectoTemporal('sdd-hook-autoria-write-');
+  try {
+    escribeTareas(proyecto, '043-autoria', '### T-043-01\n- **Estado:** pendiente\n');
+    const log = join(proyecto, 'docs', 'specs', '043-autoria', 'execution-log.jsonl');
+    const autorias = () => lineasJson(log).filter((l) => l.evento === 'autoria');
+    const escribeEn = (ruta) =>
+      ejecutaHookEn(proyecto, 'guard-write.mjs', null,
+        { session_id: 'ses-w', tool_name: 'Write', tool_input: { file_path: ruta } });
+
+    // Sin agente activo no hay a quién atribuirlo: la guarda deja pasar y no inventa autor.
+    escribeEn('README.md');
+    comprueba('sin agente activo no se atribuye autoría', autorias().length, 0);
+
+    ejecutaHookEn(proyecto, 'subagent-log.mjs', 'start',
+      { session_id: 'ses-w', agent_type: 'docs-writer' });
+    const previas = autorias().length;
+
+    escribeEn('README.md');
+    const trasPrimera = autorias().filter((l) => l.verificacion === 'observed-write');
+    comprueba('la escritura permitida deja autoría observada por la guarda',
+      trasPrimera.length, 1);
+    comprueba('la autoría de fichero nombra el fichero', trasPrimera[0]?.fichero, 'README.md');
+    comprueba('la autoría de fichero nombra al agente', trasPrimera[0]?.agente, 'docs-writer');
+
+    escribeEn('README.md');
+    comprueba('el mismo agente sobre el mismo fichero no repite la autoría',
+      autorias().filter((l) => l.verificacion === 'observed-write').length, 1);
+
+    escribeEn('docs/README.md');
+    comprueba('otro fichero del mismo agente sí genera autoría',
+      autorias().filter((l) => l.verificacion === 'observed-write').length, 2);
+
+    // Una escritura bloqueada no llega a ocurrir: atribuirla sería registrar un hecho falso.
+    escribeEn('.env');
+    comprueba('una escritura bloqueada no deja autoría',
+      autorias().filter((l) => l.verificacion === 'observed-write').length, 2);
+
+    comprueba('la autoría de subagente y la de fichero se distinguen por verificación',
+      autorias().length > previas, true);
+  } finally {
+    rmSync(proyecto, { recursive: true, force: true });
+  }
+}
 
 console.log('\nsdd-router · intake de producto antes de arquitectura');
 comprueba('un PRD local enruta a sdd-intake',

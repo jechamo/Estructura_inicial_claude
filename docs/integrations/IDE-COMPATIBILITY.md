@@ -165,9 +165,39 @@ modelo**: `PreToolUse` no dice quién escribe, y sin ese dato la guarda vería l
 mano. Funciona en Claude Code y Cursor (probado), y **también en VS Code** según su documentación
 de hooks —mismos eventos, mismo payload, misma decisión—, aunque ahí no se ha ejecutado en vivo.
 
-**3 · Verificación determinista** — `check-sdd.mjs` comprueba que el mapa no nombra agentes
-inexistentes y avisa de quién no está gobernado por ninguna regla. **Funciona en todas partes**,
-porque es Node y CI.
+**3 · Verificación determinista** — `check-sdd.mjs` comprueba que el reparto es íntegro: que no
+nombra agentes inexistentes, que sus rutas resuelven a algo real, que dos territorios no reclaman
+la misma ruta, y que todo agente sin territorio tiene declarado por escrito por qué no lo
+necesita. La regla de decisión vive en `.sdd/hooks/territorios.mjs` como función pura y se
+verifica con una tabla de casos, de modo que lo que se prueba es exactamente lo que decide el
+hook. **Funciona en todas partes**, porque es Node y CI.
+
+### Qué observa cada entorno, y qué no
+
+Esta tabla es la que verifica `scripts/test-hooks.mjs`. Si un entorno gana una capacidad y no se
+actualiza aquí, la suite falla; si alguien retira una carencia, también. La ausencia deja de
+poder desaparecer en silencio.
+
+| Entorno | Contrato | Pre-escritura (territorio) | Ciclo de vida de subagente (`observed`) |
+|---|---|---|---|
+| Claude Code | `.claude/settings.json` | sí | sí |
+| Codex | `.codex/hooks.json` | sí | sí |
+| Cursor | `.cursor/hooks.json` | sí | **no** |
+| Copilot / VS Code | `.github/hooks/sdd.json` | sí | **no** |
+| Antigravity | `.agents/hooks.json` | sí | **no** |
+| Gemini CLI | **ninguno** | **no** | **no** |
+
+Las consecuencias son concretas. El territorio se aplica en cinco de los seis; en Gemini CLI no
+hay guarda de escritura y el único control es `AGENTS.md` y el CI. El estado `observed` de la
+traza solo es alcanzable en dos, porque es el único que ve realmente empezar y terminar un
+subagente. Esa misma columna de pre-escritura, sin embargo, alcanza a cinco, y por eso la
+autoría de fichero se emite ahí y no en el ciclo de subagente: `observed-write` responde *quién
+tocó este fichero* en cinco entornos en lugar de en dos. Para el resto existe
+`declared-corroborated`, que no depende del entorno porque se apoya en git: los trailers del
+commit se contrastan contra `tasks.md`, el catálogo de agentes y este mismo reparto. Un trailer
+falso sigue siendo posible; lo que la corroboración detecta es el descuido, que es el fallo que
+de verdad ocurre.
+
 
 > **En Codex y Antigravity el territorio no se considera una garantía hasta completar el smoke
 > manual del host**, aunque Codex sí deja los cuatro auditores en solo lectura mediante sandbox.

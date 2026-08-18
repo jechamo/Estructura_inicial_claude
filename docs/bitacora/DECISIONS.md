@@ -9,6 +9,52 @@
 
 ---
 
+## 2026-08-18 · Los tests del reparto llevaban meses sin ejecutarse
+
+- **Tipo**: decisión de proceso, seguridad y trazabilidad
+- **Contexto**: al abrir la spec 013 para convertir `territories.json` de convención en
+  comprobación de CI, resultó que `scripts/test-hooks.mjs` ya tenía un bloque de casos de
+  territorio. Estaba tras la condición `cfg.modo !== 'audit' && Object.keys(cfg.territorios ||
+  {}).length > 0`. La clave real del fichero es `territories` —un array—, no `territorios` —un
+  objeto—, y el modo era `audit`. Es decir: **ni una sola aserción de territorio se había
+  ejecutado nunca**, y la rama `else` corría una comprobación trivial que siempre pasaba en
+  verde. La suite decía 113 correctas y ninguna de ellas probaba el reparto. En paralelo, la
+  trazabilidad de la delegación dependía del estado `observed`, que solo emiten dos de los seis
+  entornos soportados; en los otros cuatro la única opción era `declared-direct`, que es una
+  afirmación del propio agente que nadie contrasta.
+- **Decisión / hecho**: la regla de decisión sale de `guard-write.mjs` a
+  `.sdd/hooks/territorios.mjs` como función pura, y la prueba una tabla de casos, de modo que
+  lo que se verifica es exactamente lo que decide el hook, no una copia. `check-sdd` comprueba
+  ahora la integridad del reparto —agentes que existen, rutas que resuelven, territorios que no
+  se solapan— y exige que todo agente sin territorio tenga escrito por qué no lo necesita. Los
+  seis entornos declaran su capacidad real de pre-escritura y de ciclo de vida de subagente, y
+  retirar una carencia hace fallar la suite. Se añade un tercer estado de traza,
+  `declared-corroborated`, verificable con `check-sdd --trace-audit --base <ref>`: contrasta los
+  trailers `Spec`, `Task`, `Agent` del commit contra `tasks.md`, el catálogo de agentes y el
+  propio reparto, sobre el único sustrato común a los seis entornos, que es git. Escribir fuera
+  del territorio exige un `Trace-exception` con motivo material; vacío, de una palabra o de
+  relleno se rechaza igual que su ausencia. Y este repositorio pasa a `deny`, mientras la
+  plantilla que se instala sigue arrancando en `audit`.
+- **Alternativas descartadas**: arreglar la condición del test y dejar la regla dentro del hook
+  —seguiría sin poder probarse sin lanzar un proceso por caso—; duplicar la lógica de territorio
+  en `check-sdd` —dos copias divergen, y entonces verificar una no dice nada de la otra—; hacer
+  que un commit sin trailers cuente como infracción —confundir «no lo sé» con «está mal» es la
+  forma más rápida de que nadie se crea el informe, así que se reporta como no auditable—; y
+  poner también la plantilla en `deny` —bloquear a alguien el primer día, antes de que entienda
+  el reparto, es la mejor forma de que desactive el sistema entero—.
+- **Impacto**: el hallazgo es la mejor evidencia disponible de la tesis que sostiene este
+  trabajo. Un gate que nadie comprueba desde fuera acaba siendo decorativo, y aquí lo fue
+  durante meses **dentro del propio sistema que existe para impedirlo**. La lección se traduce
+  en una regla concreta: un test que solo puede pasar no es un test, y una condición de guarda
+  que silencia el bloque entero es tan peligrosa como no tenerlo. La trazabilidad, además, deja
+  de depender de qué IDE tenga el usuario abierto.
+- **Límite declarado**: la corroboración no demuestra la delegación. Un agente puede escribir un
+  trailer falso y esto no lo impedirá. Lo que hace es encarecer la mentira deliberada y volver
+  detectable el descuido, que es el fallo que de verdad ocurre.
+- **Spec**: [`013-verificacion-independiente-del-host`](../specs/013-verificacion-independiente-del-host/spec.md)
+
+---
+
 ## 2026-08-17 · El sistema se aplica a sí mismo lo que exige a los demás
 
 - **Tipo**: decisión de proceso, calidad y usabilidad de la CLI

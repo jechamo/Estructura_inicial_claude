@@ -9,6 +9,9 @@
  *   node scripts/check-sdd.mjs            → estructura y coherencia (avisa)
  *   node scripts/check-sdd.mjs --strict   → además exige evidencia y trazabilidad (falla)
  *   node scripts/check-sdd.mjs --spec 042 → limita el análisis a una spec
+ *   node scripts/check-sdd.mjs --trace-audit --base <ref>
+ *                                         → corrobora los trailers de traza contra tasks.md,
+ *                                           el catálogo de agentes y el reparto de territorios
  *
  * Node >= 18, sin dependencias.
  */
@@ -18,12 +21,15 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { validateDocsConfig, normalizeDocPath, matchesDocPattern } from './lib/docs-contract.mjs';
 import { parseJsonc } from './lib/jsonc.mjs';
+import { auditarCommits } from './lib/trace-audit.mjs';
+import { globARegExp } from '../.sdd/hooks/_lib.mjs';
 
 const ROOT = process.cwd();
 const args = process.argv.slice(2);
 const STRICT = args.includes('--strict');
 const VIRGIN = args.includes('--virgin');
 const DOCS_DIFF = args.includes('--docs-diff');
+const TRACE_AUDIT = args.includes('--trace-audit');
 const JSON_OUT = args.includes('--json');
 const indiceBaseDocs = args.indexOf('--base');
 const BASE_DOCS = indiceBaseDocs >= 0 ? args[indiceBaseDocs + 1] : null;
@@ -36,8 +42,10 @@ const warn = (regla, msg) => avisos.push({ regla, msg });
 
 if (DOCS_DIFF && (!BASE_DOCS || BASE_DOCS.startsWith('--')))
   err('docs/diff-base', '--docs-diff requiere `--base <SHA completo>`');
-if (!DOCS_DIFF && indiceBaseDocs >= 0)
-  err('docs/diff-base', '--base solo es válido junto con --docs-diff');
+if (TRACE_AUDIT && (!BASE_DOCS || BASE_DOCS.startsWith('--')))
+  err('traza/base', '--trace-audit requiere `--base <ref>`');
+if (!DOCS_DIFF && !TRACE_AUDIT && indiceBaseDocs >= 0)
+  err('docs/diff-base', '--base solo es válido junto con --docs-diff o --trace-audit');
 
 const leer = (p) => (existsSync(p) ? readFileSync(p, 'utf8') : null);
 const rel = (p) => relative(ROOT, p).replace(/\\/g, '/');
@@ -720,13 +728,71 @@ if (territoriosRaw) {
         err('territorios/patrones', `territorio '${nombre}' sin patrones`);
     }
 
-    // Antes de activar ask/deny, /onboard debe gobernar a todos los agentes que escriben.
-    if (['ask', 'deny'].includes(cfg.modo)) {
-      const AUDITORES = new Set(['code-reviewer', 'security-auditor', 'research-analyst', 'orchestrator']);
-      for (const a of nombresAgentes) {
-        if (conDueño.has(a) || (cfg.coordinadores || []).includes(a) || AUDITORES.has(a)) continue;
-        warn('territorios/huerfano', `'${a}' no es dueño de ningún territorio ni coordinador: puede escribir en cualquier sitio no reclamado`);
+    // ── integridad de rutas ──────────────────────────────────────────────────
+    // Un patrón que no apunta a nada no protege nada, pero parece que sí. Es la forma
+    // más silenciosa de que un reparto quede obsoleto: se renombra una carpeta y el
+    // territorio sigue escrito, intacto y vacío.
+    //
+    // Se exige solo cuando el reparto manda de verdad (ask/deny). En `audit`, un proyecto
+    // recién instalado aún no ha creado sus carpetas, y convertir eso en error rompería la
+    // instalación el primer día por algo que todavía no es un problema.
+    const obliga = ['ask', 'deny'].includes(cfg.modo);
+    const anotar = obliga ? err : warn;
+    const futuras = new Set(cfg.rutasFuturas || []);
+    for (const [nombre, t] of territorios) {
+      for (const patron of t.patrones || []) {
+        if (futuras.has(patron)) continue;
+        const base = String(patron).includes('*')
+          ? String(patron).split('*')[0].replace(/\/$/, '')
+          : String(patron);
+        if (base && !existsSync(join(ROOT, base)))
+          anotar('territorios/ruta', `territorio '${nombre}': '${patron}' no resuelve a nada; decláralo en 'rutasFuturas' si aún no existe`);
       }
+    }
+    for (const patron of futuras)
+      if (!territorios.some(([, t]) => (t.patrones || []).includes(patron)))
+        warn('territorios/ruta', `'${patron}' figura en 'rutasFuturas' pero ningún territorio lo reclama`);
+
+    // ── solape ───────────────────────────────────────────────────────────────
+    // Dos dueños sobre la misma ruta convierten la decisión en un accidente de orden:
+    // gana el territorio que aparezca antes en el fichero. Eso no es un reparto.
+    const muestraDe = (p) => String(p).replace(/\*\*\//g, 'x/').replace(/\*\*/g, 'x').replace(/\*/g, 'x').replace(/\?/g, 'x');
+    for (const [nombreA, a] of territorios) {
+      for (const [nombreB, b] of territorios) {
+        if (nombreA >= nombreB) continue;
+        if ((a.duenos || []).some((d) => (b.duenos || []).includes(d))) continue;
+        for (const patron of a.patrones || []) {
+          const muestra = muestraDe(patron);
+          if ((b.patrones || []).some((q) => globARegExp(q).test(muestra)))
+            err('territorios/solape', `'${nombreA}' y '${nombreB}' reclaman la misma ruta ('${patron}'): la decisión dependería del orden del fichero`);
+        }
+      }
+    }
+
+    // ── agentes sin territorio ───────────────────────────────────────────────
+    // No todos los agentes necesitan territorio, pero la diferencia entre "no le
+    // corresponde" y "se nos olvidó" tiene que estar escrita. Un auditor de solo lectura
+    // con territorio de escritura sería una contradicción; un especialista de aplicación
+    // sin territorio en la plantilla es correcto porque la plantilla no tiene aplicación.
+    const sinTerritorio = cfg.sinTerritorio || {};
+    const declarados = new Map();
+    for (const [grupo, datos] of Object.entries(sinTerritorio)) {
+      if (!datos || typeof datos.motivo !== 'string' || datos.motivo.trim().length <= 20)
+        err('territorios/sin-territorio', `el grupo '${grupo}' no explica por qué sus agentes no tienen territorio`);
+      if (/pendiente|tbd|todo/i.test(datos?.motivo || ''))
+        err('territorios/sin-territorio', `el motivo del grupo '${grupo}' aplaza la decisión en vez de tomarla`);
+      for (const a of datos?.agentes || []) {
+        if (!nombresAgentes.has(a)) err('territorios/agente', `'${a}' (grupo '${grupo}') no existe en .claude/agents/`);
+        if (conDueño.has(a)) err('territorios/sin-territorio', `'${a}' figura como sin territorio y a la vez es dueño de uno`);
+        if (declarados.has(a)) err('territorios/sin-territorio', `'${a}' está declarado en dos grupos: '${declarados.get(a)}' y '${grupo}'`);
+        declarados.set(a, grupo);
+      }
+    }
+    for (const a of nombresAgentes) {
+      if (conDueño.has(a) || (cfg.coordinadores || []).includes(a) || declarados.has(a)) continue;
+      // En `audit` esto es un aviso: el reparto todavía observa. En `ask`/`deny` manda, y
+      // un agente que escribe sin que nadie haya dicho dónde es exactamente el agujero.
+      anotar('territorios/sin-territorio', `'${a}' no es dueño de ningún territorio, ni coordinador, ni consta por qué no lo necesita`);
     }
   }
 }
@@ -1484,6 +1550,58 @@ if (VIRGIN) {
       if (modo !== '100755')
         err('githooks/permiso', `${ruta} está en el índice como ${modo}: git no lo ejecutará en Linux ni macOS. Corrige con \`git update-index --chmod=+x ${ruta}\``);
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Corroboración de trazas (--trace-audit --base <ref>).
+//
+// `observed` solo lo alcanzan dos de los seis entornos soportados, porque solo dos emiten el
+// ciclo de vida del subagente. Para los otros cuatro la alternativa era `declared-direct`: el
+// agente lo dice y nadie lo contrasta. Esto añade el estado intermedio sobre el único
+// sustrato común a todos: git. No impide un trailer falso; vuelve detectable el descuido.
+// ─────────────────────────────────────────────────────────────────────────────
+if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
+  const git = (...argv) => spawnSync('git', argv, { cwd: ROOT, encoding: 'utf8' });
+  const rango = `${BASE_DOCS}..HEAD`;
+  const historial = git('log', '--format=%H%x1f%B%x1e', rango);
+  if (historial.status !== 0) {
+    err('traza/base', `no se puede leer el rango \`${rango}\`: ${(historial.stderr || '').trim().split('\n')[0]}`);
+  } else {
+    const tareas = new Set();
+    const specsIds = new Set();
+    for (const nombre of dirs(join(ROOT, 'docs', 'specs'))) {
+      const m = nombre.match(/^(\d{3})-/);
+      if (m) specsIds.add(m[1]);
+      for (const id of (leer(join(ROOT, 'docs', 'specs', nombre, 'tasks.md')) || '').match(/T-\d{3}-\d+/g) || [])
+        tareas.add(id);
+    }
+    const agentes = new Set(
+      (existsSync(join(ROOT, '.claude', 'agents'))
+        ? readdirSync(join(ROOT, '.claude', 'agents'))
+        : []
+      ).filter((n) => n.endsWith('.md')).map((n) => n.replace(/\.md$/, '')),
+    );
+    let reparto = null;
+    try { reparto = JSON.parse(leer(join(ROOT, '.sdd', 'territories.json')) || 'null'); } catch { reparto = null; }
+
+    const commits = historial.stdout.split('\u001e').map((bloque) => bloque.trim()).filter(Boolean)
+      .map((bloque) => {
+        const [sha, mensaje = ''] = bloque.split('\u001f');
+        const ficheros = git('show', '--pretty=format:', '--name-only', sha.trim())
+          .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
+        return { sha: sha.trim(), mensaje, ficheros };
+      });
+
+    const resumen = auditarCommits(commits, { tareas, agentes, specs: specsIds, reparto });
+    for (const infractor of resumen.infractores)
+      for (const hallazgo of infractor.hallazgos) err('traza/corroboracion', hallazgo);
+    // Un commit sin trailers no es una infracción: es un commit que esta auditoría no alcanza.
+    // Decirlo en voz alta evita que el silencio se lea como conformidad.
+    if (resumen.noAuditables)
+      warn('traza/no-auditable',
+        `${resumen.noAuditables} de ${resumen.total} commit(s) en \`${rango}\` no declaran traza; la corroboración no los alcanza`);
+    console.log(`traza · ${rango} · ${resumen.conformes} corroborado(s) · ${resumen.noAuditables} no auditable(s) · ${resumen.infractores.length} con hallazgos`);
   }
 }
 

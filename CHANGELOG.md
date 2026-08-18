@@ -17,6 +17,20 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   por `stderr` como `{ "schemaVersion": 1, "ok": false, "command": "...", "error": "..." }`.
 - **Gate `lint` propio.** `scripts/check-syntax.mjs` comprueba sintaxis y formato de los `.mjs`
   versionados, sin dependencias, y trae su propio autotest con `--selftest`.
+- **El reparto de territorios se verifica de verdad.** `check-sdd` comprueba que no nombra agentes
+  inexistentes, que sus rutas existen, que dos territorios no se pisan y que todo agente sin
+  territorio tiene escrito por qué no lo necesita. Antes era una convención que nadie contrastaba.
+- **Traza corroborada, funcione o no el IDE.** `node scripts/check-sdd.mjs --trace-audit --base <ref>`
+  contrasta los trailers `Spec:`, `Task:` y `Agent:` de cada commit contra las tareas reales, el
+  catálogo de agentes y el reparto de territorios. Solo dos de los seis entornos soportados pueden
+  observar la delegación desde dentro; esto cubre a los otros cuatro usando git, que está en todos.
+  Escribir fuera del propio territorio exige un `Trace-exception:` con un motivo material.
+- **Autoría legible al cerrar una tarea.** El registro de ejecución añade una línea por sesión,
+  agente y spec, en vez de obligar a reconstruir quién trabajó a partir de decenas de arranques y
+  paradas.
+- **Quién tocó cada fichero, en cinco entornos de seis.** La autoría de fichero la emite la guarda
+  de escritura, que existe casi en todas partes, en vez del ciclo de vida del subagente, que solo
+  existe en dos. La pregunta que se hace al revisar un cambio deja de depender del IDE.
 
 ### Changed
 - **El repositorio ejecuta seis gates en vez de dos.** `sdd`, `lint`, `test` y `build` son rápidos y
@@ -27,8 +41,15 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   fuentes reales. La aprobación no se aplica hacia atrás: las specs cerradas se quedan como están.
 - **`docs/agents/MAPEO-10-AGENTES.md` pasa a llamarse `ORIGEN-Y-EVOLUCION.md`.** El nombre contaba
   agentes que ya eran veinte; lo que el documento conserva —de dónde viene el diseño— no caduca.
+- **Este repositorio aplica el reparto en modo restrictivo (`deny`).** Una instalación nueva sigue
+  arrancando en `audit`, que solo observa: bloquear a alguien el primer día, antes de que entienda
+  el reparto, es la mejor forma de que acabe desactivando el sistema entero.
 
 ### Fixed
+- **Los casos de prueba del reparto de territorios no se ejecutaban.** Estaban tras una condición
+  que consultaba una clave que el fichero de configuración no tiene, así que el bloque entero se
+  saltaba en silencio y la suite salía en verde sin haber probado nada. La regla vive ahora en una
+  función pura con su tabla de casos.
 - **`docs/TFM/` deja de instalarse en los proyectos destino.** Es la memoria de esta plantilla
   concreta, no un artefacto reutilizable.
 - **El comando de instalación de las pruebas se deriva de `package.json`.** Antes llevaba la versión

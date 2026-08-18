@@ -466,6 +466,59 @@ export function agenteActivo(root, sesion) {
   return pila.length ? pila[pila.length - 1] : null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Autoría
+//
+// El registro de ciclo de vida deja una línea por cada arranque y parada. Eso sirve para
+// auditar la sesión, pero no para responder la pregunta que de verdad importa al cerrar una
+// tarea: *quién* trabajó en esta spec. Un subagente invocado quince veces produce quince
+// pares de líneas y la respuesta se pierde entre el ruido.
+//
+// La autoría se registra una sola vez por (sesión, agente, spec). Es un hecho, no un evento.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const rutaAutoria = (root, sesion) =>
+  join(root, '.sdd', 'state', `autoria-${(sesion || 'default').replace(/[^\w-]/g, '')}.json`);
+
+function leerAutorias(root, sesion) {
+  try {
+    const v = JSON.parse(readIfExists(rutaAutoria(root, sesion)) || '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Marca la autoría si es la primera vez y devuelve `true` solo entonces.
+ *
+ * Con `ruta`, la clave es «este agente ya tocó este fichero»; sin ella, «este agente ya
+ * trabajó en esta spec». La primera la usa la pre-escritura, que corre en cinco de los seis
+ * entornos; la segunda el ciclo de subagente, que solo corre en dos.
+ *
+ * La marca vive bajo `.sdd/state/`, que no se versiona: es estado de sesión, no evidencia.
+ * La evidencia es la línea que se escribe en la bitácora append-only. Si la ruta de estado
+ * no resuelve dentro del repositorio —sesión hostil, enlace, montaje— devuelve `false` y no
+ * escribe nada: perder la deduplicación es un ruido aceptable; escribir fuera del proyecto
+ * no lo es.
+ */
+export function marcarAutoria(root, { sesion, agente, spec, ruta } = {}) {
+  if (!agente || agente === 'desconocido') return false;
+  const clave = ruta ? `${agente}#${ruta}` : `${agente}@${spec || 'sin-spec'}`;
+  const destino = rutaAutoria(root, sesion);
+  try {
+    if (!rutaConfinadaSinEnlaces(root, destino)) return false;
+    if (leerAutorias(root, sesion).includes(clave)) return false;
+    const padre = resolve(destino, '..');
+    mkdirSync(padre, { recursive: true });
+    if (!rutaConfinadaSinEnlaces(root, padre) || !rutaConfinadaSinEnlaces(root, destino)) return false;
+    writeFileSync(destino, JSON.stringify([...leerAutorias(root, sesion), clave].slice(-128)), 'utf8');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Últimas N entradas (encabezados `## `) de la bitácora. */
 export function lastDecisions(root, n = 3) {
   const content = readIfExists(join(root, process.env.SDD_BITACORA || 'docs/bitacora/DECISIONS.md'));

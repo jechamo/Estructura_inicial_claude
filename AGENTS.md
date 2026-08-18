@@ -90,6 +90,10 @@ Antigravity y Codex. La política completa y vinculante está en
 - Con spec activa: `docs/specs/NNN-slug/execution-log.jsonl`.
 - Sin spec: `.sdd/agent-audit.jsonl`.
 - `observed`: solo si un hook vio realmente inicio y fin del subagente.
+- `observed-write`: un hook vio a ese agente escribir ese fichero. Lo emite la pre-escritura,
+  que existe en cinco de los seis entornos.
+- `declared-corroborated`: el agente lo declaró en los trailers del commit y el repositorio lo
+  contrasta con `node scripts/check-sdd.mjs --trace-audit --base <ref>`.
 - `declared-direct`: el agente activo hizo el trabajo sin delegar.
 - `unverified`: solo con motivo explícito.
 - Los JSONL son append-only y no se editan a mano.

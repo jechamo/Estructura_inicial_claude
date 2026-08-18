@@ -1,7 +1,8 @@
 {
   "version": 1,
-  "modo": "audit",
-  "descripcion": "La plantilla no asume rutas de aplicación. Declara solo propiedad documental durable; /sdd-init o /onboard proponen territorios de aplicación.",
+  "modo": "deny",
+  "descripcion": "Reparto de este repositorio. La plantilla que se instala arranca en 'audit' (ver scripts/lib/manifiesto.mjs): bloquear a alguien el primer día, antes de que entienda el reparto, es la mejor forma de que desactive el sistema entero. Este repositorio sí lo entiende, así que se aplica lo que predica.",
+  "coordinadores": ["orchestrator", "planner", "implementer"],
   "territories": [
     {
       "name": "arquitectura-sdd",
@@ -45,5 +46,24 @@
       "agent": "devops-expert",
       "paths": ["docs/ops/**"]
     }
-  ]
+  ],
+  "rutasFuturas": ["docs/api/**"],
+  "sinTerritorio": {
+    "auditores": {
+      "motivo": "Son auditores de solo lectura por definición. Darles territorio de escritura contradiría su perfil: emiten hallazgos y devuelven el control, no corrigen lo que auditan.",
+      "agentes": ["code-reviewer", "security-auditor", "research-analyst"]
+    },
+    "aplicacion": {
+      "motivo": "Escriben en el código de la aplicación —src, tests, migraciones—, que esta plantilla no tiene. Sus territorios los propone /sdd-init o /onboard sobre el repositorio real, no aquí.",
+      "agentes": [
+        "backend-expert",
+        "frontend-expert",
+        "database-expert",
+        "test-engineer",
+        "api-designer",
+        "performance-optimizer",
+        "refactor-specialist"
+      ]
+    }
+  }
 }

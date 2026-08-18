@@ -456,7 +456,11 @@ const EXCLUSIONES_EXACTAS = new Set([
 export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   const r = ruta.replaceAll('\\', '/');
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
-  if (r.startsWith('scripts/lib/') && !['scripts/lib/docs-contract.mjs', 'scripts/lib/jsonc.mjs'].includes(r)) return false;
+  if (r.startsWith('scripts/lib/') && ![
+    'scripts/lib/docs-contract.mjs',
+    'scripts/lib/jsonc.mjs',
+    'scripts/lib/trace-audit.mjs',
+  ].includes(r)) return false;
   if (r.startsWith('docs/quality/benchmarks/')) return false;
   // La memoria del TFM documenta esta plantilla concreta: es historia, no artefacto reutilizable.
   if (r.startsWith('docs/TFM/')) return false;

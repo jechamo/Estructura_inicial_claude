@@ -15,6 +15,7 @@ import { join, dirname, resolve, parse } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { auditarCommit, parsearTrailers } from './lib/trace-audit.mjs';
 
 const ORIGEN = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALADOR = join(ORIGEN, 'scripts', 'install.mjs');
@@ -3275,6 +3276,129 @@ cli_error_json_es_maquina_legible();
 cli_ayuda_explica_comandos();
 gates_declarados_son_ejecutables();
 gates_no_configurados_tienen_motivo();
+
+// ─── 5 quinquies · corroboración de trazas ───────────────────────────────────
+// El estado `observed` solo lo alcanzan dos de los seis entornos. Esto verifica el tercer
+// estado, `declared-corroborated`, que no depende de que el IDE cuente nada porque se apoya
+// en git. Los casos hostiles son los que dan valor a la comprobación: si un trailer falso o
+// inyectado pasara, corroborar no significaría nada.
+function el_trailer_no_suplanta_ni_inyecta() {
+  console.log('\n  · corroboración de trailers de commit');
+  const reparto = JSON.parse(leer(join(ORIGEN, '.sdd', 'territories.json')));
+  const contexto = {
+    tareas: new Set(['T-013-04', 'T-013-05']),
+    agentes: new Set(['spec-analyst', 'architect', 'docs-writer']),
+    specs: new Set(['013']),
+    reparto,
+  };
+  const commit = (mensaje, ficheros = []) => auditarCommit({ sha: 'abc12345', mensaje, ficheros }, contexto);
+
+  const conforme = commit(
+    'feat(013): corrobora trazas\n\nSpec: 013\nTask: T-013-04\nAgent: spec-analyst',
+    ['docs/specs/013-x/spec.md'],
+  );
+  comprueba('un commit coherente se declara conforme', conforme.estado === 'conforme',
+    conforme.hallazgos.join(' · '));
+
+  const sinTrailers = commit('chore: mueve una coma', ['README.md']);
+  comprueba('un commit sin trailers es no auditable, no infractor', sinTrailers.estado === 'no-auditable');
+
+  const tareaFantasma = commit('feat(013): x\n\nSpec: 013\nTask: T-013-99\nAgent: spec-analyst');
+  comprueba('una tarea inexistente se rechaza', tareaFantasma.estado === 'infractor');
+  comprueba('el rechazo por tarea nombra la tarea',
+    tareaFantasma.hallazgos.some((h) => h.includes('T-013-99') && /no existe/.test(h)));
+
+  const agenteFantasma = commit('feat(013): x\n\nSpec: 013\nTask: T-013-04\nAgent: no-existe');
+  comprueba('un agente inexistente se rechaza', agenteFantasma.estado === 'infractor');
+  comprueba('el rechazo por agente es distinto del rechazo por tarea',
+    agenteFantasma.hallazgos.some((h) => h.includes('no-existe') && /\.claude\/agents/.test(h)));
+
+  const fueraDeTerritorio = commit(
+    'feat(013): x\n\nSpec: 013\nTask: T-013-04\nAgent: spec-analyst',
+    ['docs/architecture/constitution.md'],
+  );
+  comprueba('escribir en territorio ajeno sin excepción se rechaza', fueraDeTerritorio.estado === 'infractor');
+
+  // Inyección: una línea con forma de trailer en mitad del cuerpo no debe suplantar a la real.
+  const inyectado = commit(
+    'feat(013): x\n\nAgent: architect\nEsto es cuerpo, no trailers.\n\nSpec: 013\nTask: T-013-04\nAgent: spec-analyst',
+    ['docs/architecture/constitution.md'],
+  );
+  comprueba('un trailer inyectado en el cuerpo no suplanta al real', inyectado.estado === 'infractor',
+    'el bloque final manda: quien escribe sigue siendo spec-analyst');
+
+  comprueba('solo el bloque final del mensaje cuenta como trailers',
+    parsearTrailers('Agent: architect\n\ncuerpo\n\nAgent: spec-analyst').Agent === 'spec-analyst');
+  comprueba('una línea de cuerpo con dos puntos no se toma por trailer',
+    parsearTrailers('feat: x\n\nnota: esto es prosa y no debería contar\n\ntexto final').Agent === undefined);
+
+  const tareaDeOtraSpec = commit('feat(013): x\n\nSpec: 013\nTask: T-012-01\nAgent: spec-analyst');
+  comprueba('una tarea de otra spec se rechaza', tareaDeOtraSpec.estado === 'infractor');
+}
+
+function el_fallo_de_auditoria_ensena_como_arreglarlo() {
+  console.log('\n  · el fallo de auditoría contiene la solución');
+  const reparto = JSON.parse(leer(join(ORIGEN, '.sdd', 'territories.json')));
+  const contexto = {
+    tareas: new Set(['T-013-05']),
+    agentes: new Set(['spec-analyst', 'architect']),
+    specs: new Set(['013']),
+    reparto,
+  };
+  const invasion = ['docs/architecture/constitution.md'];
+  const commit = (mensaje) => auditarCommit({ sha: 'def67890', mensaje, ficheros: invasion }, contexto);
+  const base = 'feat(013): x\n\nSpec: 013\nTask: T-013-05\nAgent: spec-analyst';
+
+  const sinExcepcion = commit(base);
+  comprueba('el fallo enseña la forma literal del trailer que falta',
+    sinExcepcion.hallazgos.some((h) => h.includes('Trace-exception: <motivo>')));
+  comprueba('el fallo nombra la ruta invadida',
+    sinExcepcion.hallazgos.some((h) => h.includes('docs/architecture/constitution.md')));
+  comprueba('el fallo nombra al dueño del territorio',
+    sinExcepcion.hallazgos.some((h) => h.includes('architect')));
+
+  for (const [etiqueta, motivo] of [
+    ['vacío', ''],
+    ['de una palabra', 'varios'],
+    ['que aplaza la decisión', 'pendiente de revisar con el equipo la semana que viene'],
+    ['demasiado corto', 'hacía falta'],
+  ]) {
+    const r = commit(`${base}\nTrace-exception: ${motivo}`);
+    comprueba(`una excepción ${etiqueta} se rechaza igual que su ausencia`, r.estado === 'infractor');
+  }
+
+  const conMotivo = commit(
+    `${base}\nTrace-exception: la constitución citaba un contrato que esta spec cambia y dejarla sin tocar habría publicado documentación falsa`,
+  );
+  comprueba('una excepción con motivo material se acepta', conMotivo.estado === 'conforme',
+    conMotivo.hallazgos.join(' · '));
+
+  const falta = auditarCommit({ sha: 'aaa', mensaje: 'feat: x\n\nSpec: 013\nTask: T-013-05' }, contexto);
+  comprueba('la ausencia de un trailer indica su forma exacta',
+    falta.hallazgos.some((h) => h.includes('`Agent: <valor>`')));
+}
+
+function el_repositorio_declara_modo_restrictivo() {
+  console.log('\n  · el reparto que se predica y el que se instala');
+  const propio = JSON.parse(leer(join(ORIGEN, '.sdd', 'territories.json')));
+  comprueba('este repositorio aplica el modo restrictivo', propio.modo === 'deny', `modo=${propio.modo}`);
+  comprueba('este repositorio clasifica a todos sus agentes',
+    Object.keys(propio.sinTerritorio || {}).length > 0);
+
+  // La plantilla que se instala arranca observando: bloquear a alguien el primer día, antes
+  // de que entienda el reparto, es la mejor forma de que desactive el sistema entero.
+  const d = nuevoDestino();
+  sdd(d, 'init', d);
+  const instalado = JSON.parse(leer(join(d, '.sdd', 'territories.json')) || '{}');
+  comprueba('una instalación nueva arranca en modo observación', instalado.modo === 'audit',
+    `modo=${instalado.modo}`);
+  comprueba('los dos repartos no son el mismo fichero', propio.modo !== instalado.modo);
+}
+
+console.log('\n5 quinquies · corroboración de trazas independiente del entorno');
+el_trailer_no_suplanta_ni_inyecta();
+el_fallo_de_auditoria_ensena_como_arreglarlo();
+el_repositorio_declara_modo_restrictivo();
 
 // ─── 6 · No instalarse sobre sí misma ────────────────────────────────────────
 console.log('\n6 · protección contra instalarse encima de la plantilla');

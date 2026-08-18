@@ -154,7 +154,7 @@ Cifras reales obtenidas de la ejecución de los verificadores del propio reposit
 
 ```text
 $ node scripts/check-sdd.mjs
-check-sdd (normal) · 12 spec(s) · 82 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)
+check-sdd (normal) · 13 spec(s) · 89 tarea(s) hecha(s) · 20 agente(s) · 26 skill(s)
 ✅ Estructura y coherencia correctas. Usa --strict antes de entregar.
 ```
 
@@ -163,9 +163,9 @@ $ node scripts/install.mjs init <destino> --mode greenfield --si
 modo greenfield · 309 escrito(s) · 0 fusionado(s) · 0 conservado(s) · 0 conflicto(s)
 ```
 
-El sistema se ha construido **aplicándose a sí mismo**: las doce especificaciones de
+El sistema se ha construido **aplicándose a sí mismo**: las trece especificaciones de
 `docs/specs/` son las de su propia evolución, desde `001-agentes-codex` hasta
-`012-autocumplimiento-cli-y-gates`. Esto es relevante metodológicamente porque significa
+`013-verificacion-independiente-del-host`. Esto es relevante metodológicamente porque significa
 que el circuito descrito en el capítulo 8 no es una propuesta teórica: es el procedimiento con
 el que se produjo el artefacto que esta memoria describe.
 
@@ -934,7 +934,7 @@ algunos IDE no es un contrato.
 | `.sdd/hooks/guard-write.mjs` | Desaparece la protección de secretos y de la bitácora de ejecución. Un agente podría reescribir su propio registro |
 | `.sdd/checks.json` | `run --fast` y `run --slow` no tienen nada que ejecutar. Los gates pasan vacíos |
 | `docs/architecture/constitution.md` | No hay arquitectura vigente. Cada spec decide la suya |
-| `execution-log.jsonl` | Se pierde la evidencia de delegación. La trazabilidad degrada a `declared-direct` |
+| `execution-log.jsonl` | Se pierde la evidencia observada de delegación. La trazabilidad cae al nivel que git pueda sostener: `declared-corroborated` |
 | `scripts/check-sdd.mjs` | Nadie verifica el contrato de 20 agentes y 26 skills |
 
 #### 4.2.5 Ficheros que se versionan y ficheros que no
@@ -2220,19 +2220,30 @@ Eres solo lectura: no migres nada todavía.
 
 Un TFM honesto declara lo que su artefacto **no** consigue.
 
-#### L1 · La trazabilidad de delegación depende del *host*
+#### L1 · La evidencia más fuerte de delegación depende del *host*
 
 `subagent-log.mjs` registra `SubagentStart` y `SubagentStop` **solo si el *host* emite esos
-eventos**. Donde no los emite, la trazabilidad degrada a `declared-direct`: el agente declara que
-hizo el trabajo sin delegar. El sistema lo marca explícitamente con tres estados:
+eventos**, y solo dos de los seis los emiten. La spec `013` atacó esta limitación por dos flancos
+sin poder eliminarla, y el resultado son **cinco estados ordenados de mayor a menor fuerza**:
 
-| Estado | Significado |
-|---|---|
-| `observed` | Un hook vio realmente inicio y fin del subagente. **Es evidencia** |
-| `declared-direct` | El agente activo hizo el trabajo sin delegar. Es una declaración, no una prueba |
-| `unverified` | Solo se admite con motivo explícito |
+| Estado | Significado | Alcance |
+|---|---|---|
+| `observed` | Un hook vio realmente inicio y fin del subagente. **Es evidencia** | 2 de 6 |
+| `observed-write` | Un hook vio a ese agente escribir ese fichero concreto | **5 de 6** |
+| `declared-corroborated` | El agente lo declaró en los *trailers* del commit y el repositorio lo contrastó contra `tasks.md` y los territorios | **todos**, vía git |
+| `declared-direct` | El agente activo hizo el trabajo sin delegar. Es una declaración, no una prueba | todos |
+| `unverified` | Solo se admite con motivo explícito | todos |
 
-Es una limitación real del ecosistema de IDEs, no un fallo de diseño; pero es una limitación.
+Los dos estados intermedios son la aportación de la `013`. `observed-write` aprovecha que la
+guarda de pre-escritura sí existe en cinco entornos: responde *quién tocó este fichero* donde el
+ciclo de subagente no llega. `declared-corroborated` se apoya en git, que es el único sustrato
+que los seis comparten, y lo verifica `check-sdd --trace-audit --base <ref>`.
+
+Los límites, dichos sin adorno. `observed-write` ve la **intención** de escribir, no la escritura
+consumada: si el *host* aborta después, queda registrada una autoría de algo que no ocurrió.
+Y `declared-corroborated` no es prueba criptográfica: un agente puede escribir un *trailer* falso.
+Lo que hace la corroboración es **encarecer la mentira y volver detectable el accidente común**
+—escribir fuera del propio carril—, que es el fallo que de verdad ocurre.
 
 #### L2 · Codex no soporta tres decisiones de guarda
 
@@ -2245,6 +2256,16 @@ reintentarla. La seguridad se mantiene; la ergonomía no.
 `.sdd/territories.json` declara qué rutas puede tocar cada agente, pero **se aplica donde el
 *host* lo permite**. En hosts sin soporte, es una convención. Por eso el sistema exige que se
 **verifique siempre en CI**: la declaración no basta, la comprobación posterior sí.
+
+La spec `013` cerró la mitad verificable de esta limitación, y de paso destapó algo peor. Los
+tests que supuestamente probaban el reparto de territorios estaban **condicionados a una clave
+que no existía**, así que llevaban meses sin ejecutar ni una sola comprobación: el fichero usa
+`territories` y el test preguntaba por `territorios`. Un control que no se ejecuta es
+indistinguible de un control que no existe, y era invisible precisamente porque estaba en verde.
+Hoy la decisión `(agente, ruta, modo) → allow | ask | deny` se extrajo a función pura y se dirige
+con una matriz de casos, de modo que se verifica **la regla compartida por los seis hosts** en
+lugar del cableado de cada uno. Lo que sigue siendo cierto —y no se puede arreglar desde CI— es
+que ninguna comprobación posterior demuestra que un *host* concreto llegara a invocar la guarda.
 
 #### L4 · El repositorio plantilla ejecuta seis gates y deja ocho declarados como ausentes
 
@@ -2299,10 +2320,10 @@ reducir el control. Ningún sistema de este tipo puede protegerse de su propio o
 | | El JSONL protegido por hook. Es la única evidencia de delegación que no depende de la narración del modelo |
 | **Lo que más cuesta** | Mantener la paridad de 20 agentes en 6 formatos. Es trabajo repetitivo mitigado por `check-sdd.mjs`, no eliminado |
 | | La disciplina de pegar salidas reales. El modelo tiende a resumir; hay que insistir |
-| | El volumen documental. Doce specs producen mucho artefacto y la navegación se resiente |
+| | El volumen documental. Trece specs producen mucho artefacto y la navegación se resiente |
 | **Lo que sigue sin resolverse** | El coste en tokens del circuito completo |
 | | La ausencia de un circuito ligero para cambios triviales |
-| | La dependencia del *host* para la evidencia de delegación |
+| | La evidencia de delegación más fuerte —el ciclo de subagente— sigue dependiendo del *host*. La `013` añadió dos niveles que no dependen de él, pero ninguno alcanza la fuerza de `observed` |
 
 ### 10.4 Aportaciones metodológicas
 
@@ -2325,11 +2346,17 @@ Al margen de la implementación, el trabajo deja cuatro contribuciones reutiliza
 |---|---|---|
 | **Alta** | Circuito ligero | Formalizar un camino reducido para cambios de bajo riesgo, con gates proporcionados, sin abandonar la trazabilidad |
 | **Alta** | Métricas de efectividad | Medir tasa de defectos, tiempo por fase y coste en tokens **con** y **sin** el sistema. Hoy no hay grupo de control |
-| **Media** | Trazabilidad independiente del *host* | Explorar un mecanismo de evidencia de delegación que no dependa de que el IDE emita eventos |
-| **Media** | Territorios verificados | Convertir `territories.json` de convención en comprobación de CI obligatoria en todos los hosts |
+| ~~Media~~ **hecho** | Trazabilidad independiente del *host* | Cerrado por la spec `013`: `observed-write` desde la guarda de pre-escritura (cinco entornos de seis) y `declared-corroborated` verificado contra git (todos). Ver §10.2 L1 |
+| ~~Media~~ **hecho** | Territorios verificados | Cerrado por la spec `013`: la decisión `(agente, ruta, modo)` es una función pura dirigida por matriz de casos, y el reparto se comprueba en CI. Ver §10.2 L3 |
 | **Media** | Gates propios del repositorio | Cerrar las ocho ausencias que quedan tras la spec `012`, empezando por `coverage`, sin romper la regla de cero dependencias |
 | **Baja** | Generadores deterministas | Ampliar `generators.json` para reducir aún más el coste de artefactos repetitivos |
 | **Baja** | Internacionalización | El sistema está en español. Una versión en inglés ampliaría su alcance |
+
+El orden en que se abordaron **no** coincide con la prioridad de la tabla, y conviene decir por
+qué. Las dos líneas cerradas figuraban como Media y se hicieron primero porque son las más
+baratas y porque **las dos Altas dependen de ellas**: no se puede medir el tiempo por fase sin
+una traza que no dependa del IDE, ni conceder un atajo sin una verificación capaz de comprobar
+que el atajo se respetó. Prioridad no es orden de ejecución cuando hay dependencias.
 
 ### 10.6 Consideraciones para el tribunal
 
@@ -2454,13 +2481,13 @@ de stack.
 |---|---|:---:|
 | **Ciclo rojo-verde-refactor** | `/tdd` y `/sdd-implement` ejecutan una tarea a la vez y exigen **pegar la salida real del test fallando antes de escribir el código**. Sin salida RED, la tarea no puede marcarse `hecho` | ●●● |
 | **Un test por tarea** | `/sdd-tasks` no admite una tarea sin test asociado; `check-sdd --strict` lo verifica y falla si una tarea `hecho` no nombra su test ni el criterio que cubre | ●●● |
-| **Evidencia de ejecución** | `evidence.md` exige, por tarea, un resultado con vocabulario cerrado (`PASS`, `verde`, `N/M`, emoji) y una marca de procedencia (`declared-direct` o `unverified` con motivo). El objetivo es impedir la frase *"los tests pasan"* sin nada detrás | ●●● |
+| **Evidencia de ejecución** | `evidence.md` exige, por tarea, un resultado con vocabulario cerrado (`PASS`, `verde`, `N/M`, emoji) y una marca de procedencia del vocabulario de trazabilidad (`observed`, `observed-write`, `declared-corroborated`, `declared-direct` o `unverified` con motivo). El objetivo es impedir la frase *"los tests pasan"* sin nada detrás | ●●● |
 | **Mapa de pruebas** | [`docs/quality/TEST-STRATEGY.md`](../quality/TEST-STRATEGY.md) distingue unitarios, integración, contrato y E2E, y qué nivel corresponde a qué capa | ●● |
 | **Tests difíciles** | El agente `test-engineer` cubre concurrencia, dobles, fixtures y contratos, y audita la suite buscando tests frágiles o que no prueban nada | ●● |
 | **Refactor seguro** | La fase REFACTOR solo se entra con la suite en verde; es la precondición documentada | ●●● |
 
-El propio repositorio se somete a esto: la suite `test-hooks.mjs` (85 comprobaciones) y
-`test-install.mjs` (>300) no prueban intenciones, prueban decisiones. Un test típico envía a
+El propio repositorio se somete a esto: la suite `test-hooks.mjs` (146 comprobaciones) y
+`test-install.mjs` (386) no prueban intenciones, prueban decisiones. Un test típico envía a
 `guard-bash.mjs` el payload de un `git push --force` y verifica que la respuesta sea exactamente
 `"permissionDecision":"ask"`.
 
@@ -2599,7 +2626,7 @@ Diferencias entre el **repositorio plantilla** (el que se desarrolla) y una **in
 | 26 skills | ✅ | ✅ |
 | 7 hooks | ✅ | ✅ *(salvo `--no-hooks`)* |
 
-Las doce specs del repositorio plantilla documentan su propia construcción:
+Las trece specs del repositorio plantilla documentan su propia construcción:
 
 | Spec | Qué resolvió |
 |---|---|
@@ -2615,6 +2642,7 @@ Las doce specs del repositorio plantilla documentan su propia construcción:
 | `010-trazabilidad-release-latest` | Vía móvil frente a vía reproducible; tags inmutables |
 | `011-automatizacion-determinista-tokens` | `scaffold`, `status`, `trace-status`, `generate` |
 | `012-autocumplimiento-cli-y-gates` | El CLI responde sin instalación registrada, publica su ayuda y el repositorio ejecuta sus propios gates |
+| `013-verificacion-independiente-del-host` | El reparto de territorios se verifica de verdad y la traza se corrobora contra git, funcione o no el IDE |
 
 ---
 
@@ -2759,12 +2787,14 @@ activas**.
 | Botones de handoff | — | ✅ | — | — | — | — |
 | Hooks | ✅ | ✅ | ✅ | ✅ | — | ✅ |
 | Decisión `ask` | ✅ | ✅ | ✅ | ⚠️ → `deny` | — | ✅ |
-| Eventos de subagente | ✅ | parcial | — | — | — | — |
+| Pre-escritura *(territorio, `observed-write`)* | ✅ | ✅ | ✅ | ✅ | — | ✅ |
+| Eventos de subagente *(`observed`)* | ✅ | — | — | ✅ | — | — |
 | Instrucciones por *glob* | — | ✅ | ✅ *(`.mdc`)* | — | — | — |
 | Registro de hooks | `.claude/settings.json` | `.github/hooks/sdd.json` | `.cursor/hooks.json` | `.codex/hooks.json` | — | `.agents/hooks.json` |
 
-Donde una capacidad no existe, el sistema **degrada de forma declarada**: la trazabilidad pasa a
-`declared-direct` y se documenta. No se simula una capacidad ausente.
+Donde una capacidad no existe, el sistema **degrada de forma declarada**: la trazabilidad baja al
+estado más fuerte que ese entorno pueda sostener —`observed-write` donde hay pre-escritura,
+`declared-corroborated` donde solo hay git— y se documenta. No se simula una capacidad ausente.
 
 ---
 
@@ -2780,6 +2810,8 @@ Donde una capacidad no existe, el sistema **degrada de forma declarada**: la tra
 | `RF-NN` | `RF-03` | `docs/specs/NNN/spec.md` | Requisito funcional de la spec, en EARS |
 | `CA-NN` | `CA-05` | `docs/specs/NNN/spec.md` | Criterio de aceptación testable |
 | `T-NNN-NN` | `T-042-07` | `docs/specs/NNN/tasks.md` | Tarea atómica |
+| `Spec:` · `Task:` · `Agent:` | `Task: T-042-07` | *Trailers* del mensaje de commit | Autoría declarada y corroborada contra `tasks.md` y los territorios |
+| `Trace-exception:` | `Trace-exception: <motivo>` | *Trailers* del mensaje de commit | Escritura fuera del propio territorio, con motivo material obligatorio |
 | `SEC-*` | `SEC-AUTH-01` | `spec.md` + informe de seguridad | Control de seguridad |
 | `UX-*` | `UX-A11Y-03` | `spec.md` + informe de usabilidad | Control de usabilidad |
 | `DOC-*` | `DOC-API` | `spec.md` + `.sdd/docs.json` | Superficie de documentación |
@@ -2874,7 +2906,7 @@ Todas las cifras de esta memoria proceden de ejecuciones reales sobre el reposit
 estimaciones. Se pueden reproducir con:
 
 ```powershell
-node scripts/check-sdd.mjs                # 20 agentes · 26 skills · 12 specs · 82 tareas
+node scripts/check-sdd.mjs                # 20 agentes · 26 skills · 13 specs · 89 tareas
 node scripts/sdd-project.mjs status --json
 node scripts/sdd-project.mjs skills-export --json
 node scripts/sdd-project.mjs run --fast   # 4 gates rápidos en verde
