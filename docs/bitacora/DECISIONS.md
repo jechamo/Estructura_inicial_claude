@@ -9,6 +9,47 @@
 
 ---
 
+## 2026-08-18 · Un test que cambia de veredicto según quién lo ejecute no es un test
+
+- **Tipo**: incidente y corrección
+- **Contexto**: tras publicar 013, 014 y 015, todos los workflows de integración continua fallaban
+  y el sitio no llegaba a publicarse. La causa no era ninguna de las tres specs en sí: el caso
+  `--circuit-status` de `scripts/test-install.mjs` interrogaba al repositorio **real** y exigía que
+  `obligan` nombrase al menos una ruta. Eso solo se cumple con el árbol de trabajo sucio. Pasó en
+  local mientras había cambios sin registrar y empezó a fallar en cuanto se hizo el commit; en CI,
+  donde todo checkout está limpio por definición, falla siempre. Tumbaba las seis combinaciones de
+  `portable-runtime` y el job `slow`, que son los que ejecutan la suite.
+- **Decisión / hecho**: el caso deja de afirmar nada sobre el estado del árbol ajeno y se conserva
+  solo como humo —termina en 0, emite JSON válido, el veredicto es uno de los dos—. Los tres
+  estados se ejercitan sobre un repositorio fabricado para la ocasión, con su propia
+  `.sdd/lightweight.json`, donde sí se controla qué ficheros hay sin registrar. De paso se corrige
+  el defecto real que el test tapaba: con cero ficheros la salida legible anunciaba «0 de 0
+  fichero(s) quedan fuera de la frontera:» y no nombraba ninguno; ahora dice que no hay nada que
+  clasificar todavía. Se añade además una guarda en `superficie/sitio`: ninguna página publicada
+  puede usar rutas absolutas, porque el sitio cuelga de `/<repositorio>/` y una barra inicial
+  apunta a la raíz del dominio. `site/404.html` las usaba en las siete referencias y se servía sin
+  estilos, sin logotipo y con los enlaces fuera del proyecto.
+- **Alternativas descartadas**: hacer que `clasificar` devolviera `light` con cero ficheros para que
+  el test pasara —premiaría con atajo a quien no ha tocado nada, y el veredicto correcto es el
+  conservador—; envolver el caso en una condición que lo saltase con el árbol limpio —un test que
+  se desactiva justo en el entorno donde importa no protege nada—; y fijar el nombre del
+  repositorio en las rutas del 404 para que resolvieran siempre, a costa de la portabilidad de la
+  plantilla.
+- **Impacto**: `.sdd/smells.json` sube el trinquete por tercera vez, de 3780 a 3831, contra la
+  advertencia que dejó escrita la subida anterior. Se hace explícito en el propio motivo: las 51
+  líneas son el arreglo de un fallo de CI, no superficie nueva, y partir la suite extrayendo el
+  arnés compartido queda como la siguiente tarea de calidad. El matrix `strict` pasa a cubrir 013,
+  014 y 015, que se habían quedado fuera.
+- **Deuda aceptada**: en un 404 de ruta profunda las rutas relativas tampoco resolverán, y la
+  página saldrá sin estilos. Se acepta a cambio de no fijar el nombre del repositorio; queda dicho
+  en un comentario dentro del propio fichero para que nadie lo descubra por sorpresa.
+- **Referencias**: [`scripts/test-install.mjs`](../../scripts/test-install.mjs),
+  [`scripts/check-sdd.mjs`](../../scripts/check-sdd.mjs), [`site/404.html`](../../site/404.html),
+  [`.sdd/smells.json`](../../.sdd/smells.json)
+- **Quién**: agente `implementer` · revisión humana pendiente
+
+---
+
 ## 2026-08-18 · Un peaje que no distingue el riesgo se rodea
 
 - **Tipo**: decisión de proceso, seguridad y coste

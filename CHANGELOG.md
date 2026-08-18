@@ -78,6 +78,17 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   el reparto, es la mejor forma de que acabe desactivando el sistema entero.
 
 ### Fixed
+- **La integración continua fallaba en todos los workflows.** Un caso de prueba de
+  `--circuit-status` interrogaba al repositorio real y exigía que nombrase al menos una ruta fuera
+  de la frontera. Eso solo se cumple con cambios sin registrar, así que en cualquier checkout
+  limpio —es decir, en todos los de CI— fallaba siempre. Los tres veredictos se comprueban ahora
+  sobre un repositorio fabricado, donde sí se controla qué ficheros hay.
+- **`--circuit-status` acusaba sin acusados.** Con el árbol limpio anunciaba «0 de 0 fichero(s)
+  quedan fuera de la frontera:» y no nombraba ninguno. Ahora dice que no hay nada que clasificar.
+- **La página de error del sitio salía sin estilos ni logotipo.** Usaba rutas absolutas, y el sitio
+  se publica colgando de `/<repositorio>/`: una barra inicial apunta a la raíz del dominio, donde
+  no hay nada. `check-sdd` rechaza a partir de ahora cualquier ruta absoluta en las páginas
+  publicadas, que es como debió detectarse la primera vez.
 - **Los casos de prueba del reparto de territorios no se ejecutaban.** Estaban tras una condición
   que consultaba una clave que el fichero de configuración no tiene, así que el bloque entero se
   saltaba en silencio y la suite salía en verde sin haber probado nada. La regla vive ahora en una

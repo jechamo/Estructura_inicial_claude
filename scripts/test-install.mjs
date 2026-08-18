@@ -3613,14 +3613,64 @@ function circuit_status_nombra_lo_que_obliga_al_circuito_completo() {
   comprueba('--circuit-status --json emite JSON válido', j !== null, r.stdout.slice(0, 200));
   comprueba('el veredicto es uno de los dos circuitos', j && ['light', 'full'].includes(j.circuito));
   comprueba('el JSON declara si hay frontera', j && typeof j.frontera === 'boolean');
-  if (j && j.circuito === 'full') {
-    comprueba('cuando obliga al circuito completo, nombra las rutas culpables',
-      Array.isArray(j.obligan) && j.obligan.length > 0);
-    const texto = spawnSync(process.execPath, ['scripts/check-sdd.mjs', '--circuit-status'],
-      { cwd: ORIGEN, encoding: 'utf8' }).stdout;
-    comprueba('la salida legible nombra al menos una de esas rutas',
-      j.obligan.some((ruta) => texto.includes(ruta)), texto.slice(0, 300));
-  }
+  // Deliberadamente no se afirma nada sobre `obligan` aquí: depende de lo que haya sin
+  // registrar en el árbol de trabajo, y un test que cambia de veredicto según quién lo ejecute
+  // no prueba nada. Los tres estados se ejercitan abajo, sobre un repositorio fabricado.
+}
+
+/**
+ * El mismo comando, sobre un repositorio construido para la ocasión. Aquí sí se controla qué
+ * ficheros hay sin registrar, así que se pueden exigir los tres veredictos sin depender del
+ * estado del árbol de quien ejecuta la suite —ni del checkout limpio de CI.
+ */
+function circuit_status_se_comporta_igual_en_un_repositorio_fabricado() {
+  console.log('\n  · --circuit-status distingue los tres estados en un repositorio controlado');
+  const repo = nuevoDestino();
+  const git = (...argv) => spawnSync('git', argv, { cwd: repo, encoding: 'utf8' });
+  git('init', '-q');
+  const pregunta = () => {
+    const r = spawnSync(process.execPath, [join(ORIGEN, 'scripts', 'check-sdd.mjs'), '--circuit-status', '--json'],
+      { cwd: repo, encoding: 'utf8' });
+    try { return JSON.parse(r.stdout); } catch { return null; }
+  };
+  const legible = () => spawnSync(process.execPath, [join(ORIGEN, 'scripts', 'check-sdd.mjs'), '--circuit-status'],
+    { cwd: repo, encoding: 'utf8' }).stdout;
+
+  // 1 · sin frontera declarada no hay atajo posible.
+  const sinFrontera = pregunta();
+  comprueba('sin .sdd/lightweight.json el veredicto es full',
+    sinFrontera && sinFrontera.circuito === 'full' && sinFrontera.frontera === false);
+
+  mkdirSync(join(repo, '.sdd'), { recursive: true });
+  writeFileSync(join(repo, '.sdd', 'lightweight.json'), JSON.stringify({
+    version: 1, cuota: 0.4, permitido: ['docs/guides/'], prohibido: ['scripts/'],
+  }));
+
+  // 2 · un árbol limpio no obliga a nada porque no hay nada que clasificar. Este es el caso que
+  // ve CI en cada checkout, y el que antes hacía fallar la suite.
+  git('add', '-A');
+  git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'base');
+  const limpio = pregunta();
+  comprueba('con el árbol limpio el veredicto es full y no acusa a nadie',
+    limpio && limpio.circuito === 'full' && limpio.total === 0 && limpio.obligan.length === 0);
+  comprueba('con el árbol limpio no se anuncian rutas culpables inexistentes',
+    !legible().includes('quedan fuera de la frontera'), legible().slice(0, 200));
+
+  // 3 · solo lo permitido: atajo concedido.
+  mkdirSync(join(repo, 'docs', 'guides'), { recursive: true });
+  writeFileSync(join(repo, 'docs', 'guides', 'INSTALACION.md'), '# guía\n');
+  const ligero = pregunta();
+  comprueba('un cambio dentro de la frontera concede el circuito ligero',
+    ligero && ligero.circuito === 'light' && ligero.total === 1 && ligero.obligan.length === 0);
+
+  // 4 · un solo fichero prohibido basta para cerrar el atajo, y hay que decir cuál.
+  mkdirSync(join(repo, 'scripts'), { recursive: true });
+  writeFileSync(join(repo, 'scripts', 'algo.mjs'), 'export default 1;\n');
+  const completo = pregunta();
+  comprueba('un fichero fuera de la frontera obliga al circuito completo',
+    completo && completo.circuito === 'full' && completo.obligan.length === 1);
+  comprueba('la salida legible nombra la ruta culpable',
+    legible().includes('scripts/algo.mjs'), legible().slice(0, 300));
 }
 
 function un_commit_ligero_que_miente_falla() {
@@ -3744,6 +3794,7 @@ function el_sitio_publicado_no_puede_mentir_sobre_el_catalogo() {
 
 console.log('\n5 sexies · circuito ligero verificable');
 circuit_status_nombra_lo_que_obliga_al_circuito_completo();
+circuit_status_se_comporta_igual_en_un_repositorio_fabricado();
 un_commit_ligero_que_miente_falla();
 la_cuota_senala_la_frontera();
 el_circuito_ligero_no_perdona_ningun_gate();

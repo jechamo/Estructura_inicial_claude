@@ -88,6 +88,10 @@ if (args.includes('--circuit-status')) {
   } else if (veredicto.circuito === 'light') {
     console.log(`circuito: light · ${veredicto.total} fichero(s), todos dentro de la frontera declarada.`);
     console.log('Siguen siendo obligatorios los gates, la bitácora y los trailers `Circuit: light` y `Circuit-reason:`.');
+  } else if (veredicto.total === 0) {
+    // La ausencia de cambio no merece atajo, pero tampoco merece un reproche. Sin este caso el
+    // mensaje anunciaba «0 de 0 fichero(s) quedan fuera de la frontera:» y no nombraba ninguno.
+    console.log('circuito: full · no hay cambios sin registrar, así que todavía no hay nada que clasificar.');
   } else {
     console.log(`circuito: full · ${veredicto.obligan.length} de ${veredicto.total} fichero(s) quedan fuera de la frontera:`);
     for (const r of veredicto.obligan.slice(0, 10)) console.log(`  · ${r}`);
@@ -619,6 +623,20 @@ for (const skill of skillsCanonicas.filter((nombre) => skillsClaude.includes(nom
         err('superficie/sitio',
           `site/index.html anuncia «${m[0]}» y el catálogo real tiene ${nombresAgentes.size} agente(s) · ${skillsCanonicas.length} skill(s)`);
     }
+  }
+
+  // El sitio se publica como «project page», colgando de /<repositorio>/. Una ruta que empiece
+  // por barra apunta a la raíz del dominio, no a la del sitio: el recurso existe en el
+  // repositorio, el enlace es válido en local y en producción da 404. No se comprueba que el
+  // fichero exista porque algunos los genera `site-prep.mjs` en el momento de publicar; se
+  // comprueba lo que sí es una propiedad estática del HTML.
+  for (const pagina of ['index.html', 'documentacion.html', '404.html']) {
+    const html = leer(join(ROOT, 'site', pagina));
+    if (!html) continue;
+    const absolutas = [...html.matchAll(/(?:src|href)="(\/[^/"][^"]*|\/)"/g)].map((m) => m[1]);
+    if (absolutas.length)
+      err('superficie/sitio',
+        `site/${pagina} usa ${absolutas.length} ruta(s) absoluta(s) que en una project page apuntan fuera del sitio: ${[...new Set(absolutas)].join(', ')}`);
   }
 }
 

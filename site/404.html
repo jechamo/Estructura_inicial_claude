@@ -6,11 +6,19 @@
 <title>Página no encontrada — Ecosistema de agentes SDD</title>
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="dark">
-<link rel="icon" href="/assets/img/logo.png">
-<link rel="stylesheet" href="/assets/css/tokens.css">
-<link rel="stylesheet" href="/assets/css/base.css">
-<link rel="stylesheet" href="/assets/css/components.css">
-<link rel="stylesheet" href="/assets/css/pages.css">
+<!--
+  Rutas relativas a propósito. Este sitio se publica como «project page» bajo /<repositorio>/,
+  así que una ruta absoluta como /assets/css/base.css apunta a la raíz del dominio y deja la
+  página sin estilos, sin logotipo y con los enlaces fuera del proyecto. Relativo resuelve bien
+  el caso normal —una dirección inexistente colgando de la raíz del sitio—. En un 404 de ruta
+  profunda el navegador resolvería contra esa ruta y los estilos no cargarían; se acepta porque
+  la alternativa es fijar el nombre del repositorio y perder la portabilidad de la plantilla.
+-->
+<link rel="icon" href="assets/img/logo.png">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/pages.css">
 </head>
 <body>
 
@@ -23,12 +31,12 @@
   <div class="rejilla" aria-hidden="true"></div>
 
   <div class="contenedor" style="position: relative; display: grid; gap: 1.5rem; justify-items: center; text-align: center">
-    <img src="/assets/img/logo.png" alt="" width="96" height="96" style="filter: drop-shadow(0 14px 42px rgba(109, 139, 255, 0.5))">
+    <img src="assets/img/logo.png" alt="" width="96" height="96" style="filter: drop-shadow(0 14px 42px rgba(109, 139, 255, 0.5))">
     <h1>404 — <span class="degradado-texto">aquí no hay nada</span></h1>
     <p class="hero__lead">Esta dirección no existe en el sitio. Puede que el enlace esté antiguo.</p>
     <div class="hero__acciones" style="justify-content: center">
-      <a class="btn btn--primario btn--grande" href="/">Volver a la portada</a>
-      <a class="btn btn--fantasma btn--grande" href="/documentacion.html">Memoria técnica</a>
+      <a class="btn btn--primario btn--grande" href="index.html">Volver a la portada</a>
+      <a class="btn btn--fantasma btn--grande" href="documentacion.html">Memoria técnica</a>
     </div>
   </div>
 </main>

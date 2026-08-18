@@ -546,13 +546,20 @@
 }
 
 .figura img {
+  display: block;
   width: 100%;
+  /* Reserva el hueco antes de que llegue el fichero: sin esto la figura mide cero de alto
+     mientras carga y la página da un salto. Las proporciones declaradas coinciden con las de
+     los ficheros reales, así que no recorta nada. */
+  aspect-ratio: var(--proporcion, 16 / 9);
+  object-fit: cover;
   transition: transform var(--dur-4) var(--curva);
 }
 
 .figura--reactiva:hover img { transform: scale(1.03); }
 
-/* Mientras no exista el fichero, el hueco sigue siendo una superficie con textura y no un roto. */
+/* Si el fichero falla, el hueco sigue siendo una superficie con textura y no un roto. Lo marca
+   `iniciarFiguras` al recibir el evento `error`; mientras todo vaya bien no se aplica nada. */
 .figura[data-sin-imagen] img { display: none; }
 
 .figura[data-sin-imagen]::before {

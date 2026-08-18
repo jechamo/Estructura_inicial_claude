@@ -240,18 +240,24 @@ export function iniciarCinta(raiz = document) {
 /* ── Figuras ──────────────────────────────────────────────────────────────── */
 
 /**
- * Las figuras nacen marcadas como «sin imagen» y solo se destapan cuando el fichero carga de
- * verdad. Al revés se vería el icono de imagen rota durante un instante, y si la ilustración
- * todavía no existe se vería siempre.
+ * La figura enseña su imagen desde el principio y solo se tapa con el marcador de hueco si el
+ * fichero falla de verdad.
+ *
+ * Antes era al revés —nacían tapadas y el JS las destapaba al cargar— y eso escondía dos fallos.
+ * El primero: `.figura[data-sin-imagen] img` aplica `display: none`, y una imagen sin caja nunca
+ * llega a intersecar el viewport, así que con `loading="lazy"` el navegador no la pedía jamás, el
+ * evento `load` no llegaba y la figura se quedaba tapada para siempre. El segundo: cualquier fallo
+ * del módulo dejaba las tres ilustraciones invisibles, mientras el resto de la página se veía bien.
  */
 export function iniciarFiguras(raiz = document) {
   for (const figura of raiz.querySelectorAll('[data-figura]')) {
     const imagen = figura.querySelector('img');
     if (!imagen) continue;
 
-    const mostrar = () => figura.removeAttribute('data-sin-imagen');
-    if (imagen.complete && imagen.naturalWidth > 0) { mostrar(); continue; }
-    imagen.addEventListener('load', mostrar, { once: true });
+    const tapar = () => figura.setAttribute('data-sin-imagen', '');
+    // `complete` con anchura cero significa que el navegador ya intentó cargarla y no pudo.
+    if (imagen.complete && imagen.naturalWidth === 0) { tapar(); continue; }
+    imagen.addEventListener('error', tapar, { once: true });
   }
 }
 
