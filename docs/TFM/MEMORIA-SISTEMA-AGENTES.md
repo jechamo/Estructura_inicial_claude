@@ -1247,14 +1247,20 @@ Se aprecian tres propiedades del diseño:
 
 | Fichero | Elementos | Contenido |
 |---|---:|---|
-| [`01-agentes-delegacion-handoff.excalidraw`](01-agentes-delegacion-handoff.excalidraw) | 149 | Los 20 agentes con sus relaciones de **delegación** y **handoff**. Es la representación visual de la tabla del capítulo 5 |
-| [`02-skills-por-agente.excalidraw`](02-skills-por-agente.excalidraw) | 161 | LAS 27 SKILLS agrupadas por familia, el agente que ejecuta cada una y el script determinista que invoca |
-| [`03-circuito-sdd-hooks-gates.excalidraw`](03-circuito-sdd-hooks-gates.excalidraw) | 130 | El circuito SDD completo con los **6 gates humanos**, los **7 hooks** y bandas de color por pilar |
+| [`01-agentes-delegacion-handoff.excalidraw`](01-agentes-delegacion-handoff.excalidraw) | 150 | Los 20 agentes con sus relaciones de **delegación** y **handoff**. Es la representación visual de la tabla del capítulo 5 |
+| [`02-skills-por-agente.excalidraw`](02-skills-por-agente.excalidraw) | 166 | LAS 27 SKILLS agrupadas por familia, el agente que ejecuta cada una y el script determinista que invoca |
+| [`03-circuito-sdd-hooks-gates.excalidraw`](03-circuito-sdd-hooks-gates.excalidraw) | 139 | El circuito SDD completo con los **6 gates humanos**, los **7 hooks**, el **circuito ligero** y bandas de color por pilar |
 
 Se abren en [excalidraw.com](https://excalidraw.com) con *File → Open*, o directamente en VS Code
 con la extensión de Excalidraw. Los tres se generan de forma **determinista**: geometría
 calculada, identificadores estables y flechas ligadas a sus nodos —al mover un agente, sus
 flechas se recalculan solas—.
+
+Los tres se revisaron tras las specs 013, 014 y 015. Lo que cambió no fue el dibujo sino el
+sistema: `02` incorpora `/sdd-light` como sexta skill de gobierno —con el script que decide si el
+atajo procede—, `03` añade la ruta corta que puentea la spec sin puentear ningún gate, y `01`
+cierra con la frase que sostiene todo lo demás: **lo que el diagrama afirma sobre quién delegó en
+quién se puede contrastar contra git**.
 
 **El fichero `01` se organiza en dos paneles superpuestos verticalmente.** Dibujar las 30
 relaciones de delegación y las 30 de handoff sobre un mismo grafo produce un diagrama
@@ -1314,6 +1320,7 @@ diagrama son **la misma información en dos formatos**, no dos fuentes que pueda
 | *Skills que usa* | Flecha punteada violeta hacia la elipse de la skill | `02` |
 | *Script determinista* | Rectángulo cian a la derecha de cada skill | `02` |
 | *Pilar que sostiene* | Banda de fondo coloreada | `03` |
+| *Circuito aplicable* | Ruta corta bajo la fila de fases, con su script de decisión | `03` |
 
 Dos observaciones que el diagrama hace evidentes y la tabla no:
 
@@ -1321,6 +1328,11 @@ Dos observaciones que el diagrama hace evidentes y la tabla no:
    salida en el panel A. Los especialistas son hojas.
 2. **`implementer` es el sumidero del grafo de handoff.** Siete especialistas apuntan a él y él
    apunta a `code-reviewer`. Es el punto por el que pasa todo el trabajo antes de ser revisado.
+
+Y una tercera que el diagrama `03` hace evidente desde que existe la ruta corta: **el atajo no
+salta ningún gate**. Entra y sale de la misma fila de fases; lo que se ahorra son los cinco
+documentos de la spec, y el precio es declararlo en el commit para que la integración continua
+pueda desmentirlo.
 
 ---
 
