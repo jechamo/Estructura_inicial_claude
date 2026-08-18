@@ -9,6 +9,44 @@
 
 ---
 
+## 2026-08-18 · La cobertura no necesitaba una dependencia, necesitaba una decisión
+
+- **Tipo**: decisión de calidad, seguridad y coste
+- **Contexto**: de los catorce gates canónicos, este repositorio solo configuraba seis. Las ocho
+  ausencias tenían motivo escrito, pero tres de esos motivos se apoyaban en el mismo argumento
+  —«exigiría instalar una herramienta y este proyecto no tiene dependencias»— que había dejado de
+  ser cierto: V8 recolecta cobertura de forma nativa a través de `NODE_V8_COVERAGE`, y Node la
+  expone sin instalar nada. El motivo de `a11y` era peor todavía: se escribió cuando no había
+  interfaz, y para entonces el repositorio llevaba nueve specs publicando un sitio en Pages. Un
+  motivo caducado no se distingue de un motivo vigente mirándolo, y por eso nadie lo revisa.
+- **Decisión / hecho**: entran tres gates propios, sin dependencias y con autotest.
+  `check-coverage.mjs` lee los volcados de V8 e intersecta lo no cubierto entre procesos, de modo
+  que una línea solo cuenta como muerta si ningún proceso la pisó; el umbral se fijó **después** de
+  medir —48,3 % con 51,3 % observado— porque un umbral elegido antes de medir es un deseo.
+  `check-a11y.mjs` audita las páginas realmente publicadas contra seis reglas comprobables sin
+  navegador. `check-smells.mjs` vigila tamaño con un trinquete que solo aprieta. Las cinco
+  ausencias restantes pasan a declarar **de qué clase** son: `no-aplica`, `pendiente` o
+  `se-ejecuta-en-otro-sitio`, y esta última tiene que nombrar el workflow donde corre. Una
+  comprobación nueva contrasta cada negación contra los ficheros que la refutarían.
+- **Alternativas descartadas**: aproximar complejidad ciclomática contando palabras clave —produce
+  un número que se baja reordenando código sin mejorar nada, y lo que se puede bajar sin mejorar
+  acaba gestionándose en vez de usándose—; un motor de mutación completo —el coste no cabe en el
+  peaje y la parte barata ya vive dentro de cada `--selftest`—; y elegir el umbral de cobertura
+  antes de medir, que habría sido cómodo y falso.
+- **Impacto**: nueve gates configurados en vez de seis, y el peaje rápido sigue durando segundos
+  porque los tres nuevos son lentos y esperan al push. Pero lo que importa no es el recuento: la
+  auditoría de a11y salió en rojo la primera vez y la investigación demostró que **la regla estaba
+  mal, no el sitio** —dos casillas envueltas en `<label>` ya tenían nombre accesible—. Se arregló
+  la regla, no el marcado. Cambiar el código para complacer al verificador es exactamente la forma
+  de convertir un gate en decoración.
+- **Límite declarado**: la cobertura mide líneas ejecutadas, no comportamiento demostrado. Un test
+  vacío que importe un módulo sube el número sin probar nada. El número se publica junto a esta
+  frase o no se publica. La auditoría de accesibilidad, por su parte, no ve contraste, foco ni
+  orden de tabulación, y solo sirve porque este sitio es HTML estático escrito a mano.
+- **Spec**: [`014-gates-propios-y-medicion`](../specs/014-gates-propios-y-medicion/spec.md)
+
+---
+
 ## 2026-08-18 · Los tests del reparto llevaban meses sin ejecutarse
 
 - **Tipo**: decisión de proceso, seguridad y trazabilidad

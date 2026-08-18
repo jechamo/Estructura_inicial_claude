@@ -3261,7 +3261,9 @@ function gates_no_configurados_tienen_motivo() {
   for (const id of checks.unconfigured || []) {
     comprueba(`el gate ${id} no está a la vez configurado`, !configurados.has(id));
     const fila = estrategia.split('\n').find((linea) => new RegExp(`\\|\\s*\`?${id}\`?\\s*\\|`).test(linea));
-    const motivo = (fila || '').split('|').slice(2).join(' ').trim();
+    // La tabla es `| gate | clase | motivo |`: el motivo empieza en la tercera celda. La clase
+    // se comprueba aparte, en `cada_ausencia_declara_su_clase`.
+    const motivo = (fila || '').split('|').slice(3).join(' ').trim();
     comprueba(`el gate ${id} declara por qué no se ejecuta`,
       Boolean(fila) && motivo.length > 20 && !/pendiente|tbd|todo/i.test(motivo),
       motivo.slice(0, 80));
@@ -3270,12 +3272,208 @@ function gates_no_configurados_tienen_motivo() {
     (checks.unconfigured || []).length > 0);
 }
 
+// T-014-05 · "No configurado" mete en el mismo saco tres cosas distintas: lo que no aplica a
+// este artefacto, lo que aplica y todavía no está, y lo que sí se ejecuta pero en otro sitio.
+// Sin distinguirlas, la lista no dice si falta trabajo o si la decisión está tomada, y la
+// pregunta "¿por qué no medís esto?" hay que responderla a mano cada vez.
+const CLASES = new Set(['no-aplica', 'pendiente', 'se-ejecuta-en-otro-sitio']);
+function cada_ausencia_declara_su_clase() {
+  console.log('\n  · clase de cada ausencia declarada');
+  const checks = JSON.parse(leer(join(ORIGEN, '.sdd', 'checks.json')) || '{}');
+  const estrategia = leer(join(ORIGEN, 'docs', 'quality', 'TEST-STRATEGY.md')) || '';
+  for (const id of checks.unconfigured || []) {
+    const fila = estrategia.split('\n').find((linea) => new RegExp(`\\|\\s*\`?${id}\`?\\s*\\|`).test(linea));
+    const clase = (fila || '').split('|')[2]?.replaceAll('`', '').trim() || '';
+    comprueba(`el gate ${id} declara su clase de ausencia`, CLASES.has(clase), clase);
+    if (clase === 'se-ejecuta-en-otro-sitio') {
+      const motivo = (fila || '').split('|').slice(3).join(' ');
+      comprueba(`el gate ${id} dice dónde se ejecuta`, /\.ya?ml|workflow|CI/i.test(motivo),
+        motivo.slice(0, 80));
+    }
+  }
+  comprueba('ninguna ausencia queda sin clasificar',
+    (checks.unconfigured || []).length > 0);
+}
+
+// T-014-06 · Un motivo de ausencia envejece en silencio. `a11y` estuvo nueve specs declarado
+// inaplicable porque "no hay superficie visual", mientras el repositorio publicaba tres páginas
+// HTML. El motivo no era mentira cuando se escribió; caducó. Esta comprobación convierte esa
+// caducidad en un fallo: si un motivo niega la existencia de una superficie que el árbol
+// versionado sí contiene, el gate se pone rojo y nombra los ficheros que lo desmienten.
+function un_motivo_caducado_falla() {
+  console.log('\n  · un motivo caducado no sobrevive');
+  const versionados = spawnSync('git', ['ls-files'], { cwd: ORIGEN, encoding: 'utf8' })
+    .stdout.split('\n').map((s) => s.trim()).filter(Boolean);
+  const estrategia = leer(join(ORIGEN, 'docs', 'quality', 'TEST-STRATEGY.md')) || '';
+
+  // Cada negación tiene un patrón de ficheros que la desmentiría. Es una lista corta y
+  // explícita a propósito: inferir la superficie desde la prosa sería adivinar.
+  const negaciones = [
+    { patron: /no (hay|tiene) (superficie visual|interfaz)/i, desmiente: /^(site|web)\/.*\.html?$/ },
+    { patron: /no (hay|tiene) (código|codigo) (TypeScript|tipado)/i, desmiente: /\.tsx?$/ },
+  ];
+  const desmentidos = [];
+  for (const linea of estrategia.split('\n')) {
+    if (!linea.trim().startsWith('|')) continue;
+    for (const { patron, desmiente } of negaciones) {
+      if (!patron.test(linea)) continue;
+      const pruebas = versionados.filter((f) => desmiente.test(f));
+      if (pruebas.length) desmentidos.push({ linea: linea.trim().slice(0, 70), pruebas });
+    }
+  }
+  comprueba('ningún motivo niega una superficie que sí existe', desmentidos.length === 0,
+    desmentidos.map((d) => `${d.linea} ← ${d.pruebas.slice(0, 3).join(', ')}`).join(' | '));
+
+  // Y la comprobación de la comprobación: sobre un texto que sí miente, tiene que saltar.
+  const miente = '| `a11y` | `no-aplica` | No se ejecuta porque no hay superficie visual. |';
+  const saltaria = negaciones.some(({ patron, desmiente }) =>
+    patron.test(miente) && versionados.some((f) => desmiente.test(f)));
+  comprueba('la comprobación sí salta cuando el motivo miente', saltaria);
+}
+
+// T-014-02 · El trinquete de cobertura solo sirve si un número por debajo del umbral termina
+// en rojo. Aseverar la cobertura real convertiría cualquier refactor en un fallo espurio, así
+// que lo que se asevera es el comportamiento del umbral con volcados fabricados. Y de paso se
+// comprueba que ningún gate nuevo interpole en una shell: los comandos de `.sdd/checks.json`
+// se ejecutan con los argumentos ya separados, nunca a través del intérprete.
+function los_gates_nuevos_no_invocan_shell() {
+  console.log('\n  · trinquete de cobertura');
+  const conf = JSON.parse(leer(join(ORIGEN, '.sdd', 'coverage.json')) || '{}');
+  comprueba('el umbral de cobertura está versionado',
+    typeof conf.umbral === 'number' && conf.umbral >= 0, String(conf.umbral));
+  comprueba('el umbral se midió antes de declararse, no se aspiró',
+    typeof conf.medido === 'number' && conf.medido >= conf.umbral,
+    `medido ${conf.medido} · umbral ${conf.umbral}`);
+
+  const r = spawnSync(process.execPath,
+    ['scripts/check-coverage.mjs', '--selftest', '--json'], { cwd: ORIGEN, encoding: 'utf8' });
+  comprueba('el autotest del verificador de cobertura pasa', r.status === 0,
+    (r.stdout + r.stderr).slice(-200));
+
+  const checks = JSON.parse(leer(join(ORIGEN, '.sdd', 'checks.json')) || '{}');
+  const peligrosos = Object.entries(checks.checks || {})
+    .filter(([, d]) => /[|&;><`$]/.test(String(d.command || '')))
+    .map(([id]) => id);
+  comprueba('ningún gate nuevo interpola en una shell', peligrosos.length === 0,
+    peligrosos.join(', '));
+}
+
+// T-014-03 · Un gate que dice "no llegas" sin decir a qué ni por culpa de qué obliga a
+// investigar lo que el propio gate ya sabe. El mensaje tiene que traer el número medido, el
+// umbral vigente y los ficheros que más lo bajan.
+function el_fallo_de_cobertura_dice_que_falta() {
+  console.log('\n  · el fallo de cobertura explica qué falta');
+  const r = spawnSync(process.execPath,
+    ['scripts/check-coverage.mjs', '--explica-fallo'], { cwd: ORIGEN, encoding: 'utf8' });
+  const salida = `${r.stdout}${r.stderr}`;
+  comprueba('el fallo nombra el porcentaje medido', /\d+([.,]\d+)?\s*%/.test(salida),
+    salida.slice(0, 120));
+  comprueba('el fallo nombra el umbral vigente', /umbral/i.test(salida));
+  comprueba('el fallo nombra ficheros concretos', /scripts\/[\w.-]+\.mjs/.test(salida),
+    salida.slice(0, 200));
+  comprueba('el fallo no se limita a decir que falló',
+    !/^\s*(error|fallo)\s*$/i.test(salida.trim()));
+}
+
+// T-014-04 · Durante nueve specs el gate `a11y` se declaró inaplicable porque "no hay
+// superficie visual". Entretanto el repositorio empezó a publicar tres páginas HTML. El motivo
+// no era mentira cuando se escribió; caducó y nadie lo revisó, que es el defecto que esta spec
+// persigue. Lo que se verifica aquí no es que las páginas pasen —eso sería un gate que siempre
+// pasa—, sino que una página construida para incumplir cada regla sea detectada.
+function el_sitio_publicado_pasa_su_propia_auditoria() {
+  console.log('\n  · auditoría de accesibilidad de lo publicado');
+  const auto = spawnSync(process.execPath, ['scripts/check-a11y.mjs', '--selftest'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  comprueba('el autotest del auditor de accesibilidad pasa', auto.status === 0,
+    (auto.stdout + auto.stderr).slice(-300));
+
+  const real = spawnSync(process.execPath, ['scripts/check-a11y.mjs', '--json'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  let informe = {};
+  try { informe = JSON.parse(real.stdout || '{}'); } catch { /* se detecta abajo */ }
+  comprueba('las páginas publicadas se auditan de verdad',
+    Array.isArray(informe.paginas) && informe.paginas.length >= 3,
+    `${(informe.paginas || []).length} página(s)`);
+  comprueba('las páginas publicadas pasan su propia auditoría', real.status === 0,
+    JSON.stringify(informe.hallazgos || []).slice(0, 300));
+
+  // Una página hostil: sin idioma, sin título, imagen informativa sin alternativa, salto de
+  // encabezado y un control sin nombre accesible.
+  const d = mkdtempSync(join(tmpdir(), 'sdd-a11y-'));
+  mkdirSync(join(d, 'site'), { recursive: true });
+  writeFileSync(join(d, 'site', 'mala.html'),
+    '<!doctype html><html><head></head><body><h1>A</h1><h3>B</h3>' +
+    '<img src="g.png"><input type="text"></body></html>', 'utf8');
+  const hostil = spawnSync(process.execPath,
+    [join(ORIGEN, 'scripts', 'check-a11y.mjs'), '--json', '--dir', join(d, 'site')],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  let malo = {};
+  try { malo = JSON.parse(hostil.stdout || '{}'); } catch { /* se detecta abajo */ }
+  const reglas = new Set((malo.hallazgos || []).map((h) => h.regla));
+  comprueba('una página sin idioma se detecta', reglas.has('idioma'), [...reglas].join(', '));
+  comprueba('una página sin título se detecta', reglas.has('titulo'));
+  comprueba('una imagen sin alternativa se detecta', reglas.has('alternativa'));
+  comprueba('un salto de encabezado se detecta', reglas.has('encabezados'));
+  comprueba('un control sin nombre accesible se detecta', reglas.has('nombre-accesible'));
+  comprueba('la página hostil no pasa', hostil.status !== 0);
+  const primero = (malo.hallazgos || [])[0] || {};
+  comprueba('el hallazgo nombra la página y el elemento',
+    /mala\.html$/.test(String(primero.pagina || '')) && Boolean(primero.elemento),
+    JSON.stringify(primero).slice(0, 160));
+  rmSync(d, { recursive: true, force: true });
+}
+
+// T-014-07 · Dar de alta tres gates es fácil; el riesgo es que el peaje rápido engorde hasta
+// que alguien empiece a saltárselo, y entonces el circuito entero deja de valer. Cobertura y
+// accesibilidad ejecutan suites completas: van a los lentos. Solo `smells`, que lee ficheros y
+// cuenta líneas, puede estar en los rápidos.
+function el_peaje_rapido_sigue_siendo_rapido() {
+  console.log('\n  · el alta de gates no engorda el peaje rápido');
+  const checks = JSON.parse(leer(join(ORIGEN, '.sdd', 'checks.json')) || '{}');
+  const conf = checks.checks || {};
+  const ausentes = new Set(checks.unconfigured || []);
+
+  for (const id of ['coverage', 'a11y', 'smells']) {
+    comprueba(`el gate ${id} está configurado`, Boolean(conf[id]), Object.keys(conf).join(', '));
+    comprueba(`el gate ${id} ya no consta como ausente`, !ausentes.has(id));
+  }
+  comprueba('cobertura y accesibilidad son gates lentos',
+    conf.coverage?.speed === 'slow' && conf.a11y?.speed === 'slow',
+    `${conf.coverage?.speed} / ${conf.a11y?.speed}`);
+  comprueba('el gate de olores es rápido porque solo lee ficheros',
+    conf.smells?.speed === 'fast', String(conf.smells?.speed));
+
+  const auto = spawnSync(process.execPath, ['scripts/check-smells.mjs', '--selftest'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  comprueba('el autotest del detector de olores pasa', auto.status === 0,
+    (auto.stdout + auto.stderr).slice(-300));
+
+  const trinquete = JSON.parse(leer(join(ORIGEN, '.sdd', 'smells.json')) || '{}');
+  comprueba('el trinquete de olores mide longitud, no complejidad ciclomática',
+    typeof trinquete.maxLineas === 'number' && !('complejidad' in trinquete),
+    JSON.stringify(Object.keys(trinquete)));
+
+  const inicio = Date.now();
+  const rapido = spawnSync(process.execPath, ['scripts/check-smells.mjs'],
+    { cwd: ORIGEN, encoding: 'utf8' });
+  const tardo = Date.now() - inicio;
+  comprueba('el gate rápido se mide en segundos, no en minutos', tardo < 30000, `${tardo} ms`);
+  comprueba('el gate de olores pasa sobre este repositorio', rapido.status === 0,
+    (rapido.stdout + rapido.stderr).slice(-300));
+}
+
 console.log('\n5 quater · autocumplimiento del CLI y de los gates');
 cli_degrada_sin_estado_instalado();
 cli_error_json_es_maquina_legible();
 cli_ayuda_explica_comandos();
 gates_declarados_son_ejecutables();
 gates_no_configurados_tienen_motivo();
+los_gates_nuevos_no_invocan_shell();
+el_fallo_de_cobertura_dice_que_falta();
+el_sitio_publicado_pasa_su_propia_auditoria();
+cada_ausencia_declara_su_clase();
+un_motivo_caducado_falla();
+el_peaje_rapido_sigue_siendo_rapido();
 
 // ─── 5 quinquies · corroboración de trazas ───────────────────────────────────
 // El estado `observed` solo lo alcanzan dos de los seis entornos. Esto verifica el tercer

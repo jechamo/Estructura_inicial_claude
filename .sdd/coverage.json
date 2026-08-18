@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "incluir": [
+    "scripts/",
+    ".sdd/hooks/"
+  ],
+  "excluir": [
+    "scripts/test-hooks.mjs",
+    "scripts/test-install.mjs",
+    "scripts/check-coverage.mjs"
+  ],
+  "suites": [
+    [
+      "scripts/test-hooks.mjs"
+    ],
+    [
+      "scripts/check-syntax.mjs",
+      "--selftest"
+    ],
+    [
+      "scripts/check-sdd.mjs",
+      "--strict"
+    ],
+    [
+      "scripts/skills-sync.mjs",
+      "--check"
+    ]
+  ],
+  "umbral": 48.3,
+  "margen": 3,
+  "medido": 51.3,
+  "actualizado": "2026-08-18"
+}

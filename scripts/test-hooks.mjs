@@ -751,6 +751,53 @@ console.log('\nSDD_GATES=off · el escape declarado');
   else process.env.SDD_GATES = antes;
 }
 
+// ─── cobertura · la_cobertura_no_lee_fuera_del_repositorio ───────────────────
+// T-014-01 · Un volcado de V8 es entrada no confiable: sus URL las escribe el proceso medido,
+// no nosotros. Si el lector las resolviera a ciegas, bastaría un volcado ajeno en el directorio
+// para que el gate leyera ficheros de fuera del árbol. Y hay dos trampas de plataforma que en
+// este repositorio se dan las dos a la vez: la ruta contiene un espacio —así que la URL llega
+// percent-encoded— y los ficheros llevan tildes —así que contar desplazamientos sobre bytes
+// desalinea todo lo que venga después del primer acento—.
+console.log('\ncobertura · la_cobertura_no_lee_fuera_del_repositorio');
+{
+  const { rutaDeVolcado, lineasSinCubrir, porcentaje } = await import('./lib/coverage-v8.mjs');
+  const raiz = 'C:/Users/BK71217/OneDrive - Bankinter/TFM/repo';
+
+  comprueba('una URL con espacio percent-encoded resuelve a su ruta real',
+    rutaDeVolcado('file:///C:/Users/BK71217/OneDrive%20-%20Bankinter/TFM/repo/scripts/a.mjs', raiz),
+    'scripts/a.mjs');
+
+  comprueba('una URL fuera del repositorio se descarta',
+    rutaDeVolcado('file:///C:/Windows/System32/drivers/etc/hosts', raiz), null);
+
+  comprueba('un ascenso relativo no se cuela',
+    rutaDeVolcado('file:///C:/Users/BK71217/OneDrive%20-%20Bankinter/TFM/repo/../secretos.mjs', raiz),
+    null);
+
+  comprueba('un módulo interno de Node no es un fichero propio',
+    rutaDeVolcado('node:internal/modules/esm/loader', raiz), null);
+
+  comprueba('un esquema que no es file: se descarta',
+    rutaDeVolcado('http://malicioso.example/a.mjs', raiz), null);
+
+  // Los desplazamientos se cuentan sobre la cadena, no sobre el búfer. `configuración` ocupa
+  // 14 unidades UTF-16 y 15 bytes en UTF-8: si el lector usara bytes, marcaría la línea
+  // equivocada a partir de aquí.
+  const fuente = 'const configuración = 1;\nfunction sinUsar() {\n  return 2;\n}\n';
+  const inicio = fuente.indexOf('function');
+  const sinCubrir = lineasSinCubrir(fuente, [{ startOffset: inicio, endOffset: fuente.length - 1, count: 0 }]);
+  comprueba('la tilde no desalinea el mapeo de desplazamiento a línea',
+    JSON.stringify([...sinCubrir].sort((a, b) => a - b)), JSON.stringify([2, 3, 4]));
+
+  comprueba('una línea recorrida no se cuenta como sin cubrir',
+    lineasSinCubrir(fuente, [{ startOffset: 0, endOffset: fuente.length, count: 3 }]).size, 0);
+
+  comprueba('el porcentaje sin nada medido es cero, no cien',
+    porcentaje({ cubiertas: 0, ejecutables: 0 }), 0);
+  comprueba('el porcentaje redondea a una decimal',
+    porcentaje({ cubiertas: 2, ejecutables: 3 }), 66.7);
+}
+
 // ─── limpieza ────────────────────────────────────────────────────────────────
 try {
   rmSync(ESTADO, { force: true });

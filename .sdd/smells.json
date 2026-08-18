@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "incluir": [
+    "scripts/",
+    ".sdd/hooks/"
+  ],
+  "maxLineas": 3628,
+  "maxLineasFuncion": 304,
+  "margen": 0,
+  "medido": {
+    "mayorFichero": 3628,
+    "mayorFuncion": 304
+  },
+  "actualizado": "2026-08-18"
+}

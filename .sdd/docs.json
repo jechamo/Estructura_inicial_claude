@@ -47,6 +47,22 @@
       "owner": "planner"
     },
     {
+      "id": "DOC-QUALITY",
+      "kind": "developer-readme",
+      "sources": [
+        ".sdd/checks.json",
+        "scripts/check-coverage.mjs",
+        "scripts/check-a11y.mjs",
+        "scripts/check-smells.mjs"
+      ],
+      "artifacts": [
+        "docs/quality/TEST-STRATEGY.md"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
       "id": "DOC-GATES",
       "kind": "operations",
       "sources": [

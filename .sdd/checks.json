@@ -5,8 +5,11 @@
     "lint": { "command": "npm run lint", "required": true, "speed": "fast" },
     "test": { "command": "npm run test", "required": true, "speed": "fast" },
     "build": { "command": "npm run build", "required": true, "speed": "fast" },
+    "smells": { "command": "node scripts/check-smells.mjs", "required": true, "speed": "fast" },
     "security": { "command": "node scripts/scan-secrets.mjs --json", "required": true, "speed": "slow" },
+    "coverage": { "command": "node scripts/check-coverage.mjs", "required": true, "speed": "slow" },
+    "a11y": { "command": "node scripts/check-a11y.mjs", "required": true, "speed": "slow" },
     "e2e": { "command": "npm run e2e", "required": true, "speed": "slow" }
   },
-  "unconfigured": ["typecheck", "smells", "coverage", "visual", "a11y", "deps-audit", "docs", "mutation"]
+  "unconfigured": ["typecheck", "visual", "deps-audit", "docs", "mutation"]
 }

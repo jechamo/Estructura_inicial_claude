@@ -31,11 +31,26 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 - **Quién tocó cada fichero, en cinco entornos de seis.** La autoría de fichero la emite la guarda
   de escritura, que existe casi en todas partes, en vez del ciclo de vida del subagente, que solo
   existe en dos. La pregunta que se hace al revisar un cambio deja de depender del IDE.
+- **Gate `coverage` sin instalar nada.** `scripts/check-coverage.mjs` mide cobertura de línea con el
+  recolector que V8 ya trae dentro de Node. El umbral vive en `.sdd/coverage.json`, se fijó después
+  de medir y no al revés, y bajarlo es una decisión humana que deja rastro en el fichero.
+- **Gate `a11y` sobre el sitio publicado.** `scripts/check-a11y.mjs` audita idioma, título, texto
+  alternativo, referencia principal, jerarquía de encabezados y nombre accesible. Comprueba seis
+  cosas verificables sin navegador y dice en su cabecera cuáles no puede comprobar.
+- **Gate `smells` con trinquete.** `scripts/check-smells.mjs` vigila tamaño de fichero y de función
+  contra un techo que solo puede apretarse. No aproxima complejidad ciclomática: un número que se
+  baja reordenando código sin mejorarlo acaba gestionándose en vez de usarse.
+- **Cuando la cobertura falla, dice qué falta.** El fallo nombra el porcentaje medido, el umbral, los
+  puntos que faltan y los cinco ficheros peor cubiertos, en vez de un número rojo sin destino.
 
 ### Changed
-- **El repositorio ejecuta seis gates en vez de dos.** `sdd`, `lint`, `test` y `build` son rápidos y
-  caben antes de cada commit; `security` y `e2e` quedan para antes del push. Las ocho ausencias que
-  siguen tienen ahora un motivo material escrito en `docs/quality/TEST-STRATEGY.md` §10.
+- **El repositorio ejecuta nueve gates en vez de dos.** `sdd`, `lint`, `test`, `build` y `smells` son
+  rápidos y caben antes de cada commit; `security`, `coverage`, `a11y` y `e2e` quedan para antes del
+  push. El peaje rápido sigue midiéndose en segundos.
+- **Cada gate ausente declara de qué tipo es su ausencia.** Las cinco que quedan se clasifican en
+  `no-aplica`, `pendiente` o `se-ejecuta-en-otro-sitio`, y esta última tiene que nombrar el workflow
+  donde corre. Un motivo caducado se parece demasiado a una decisión tomada, así que ahora una
+  comprobación contrasta las negaciones contra los ficheros que las refutarían.
 - **Baseline de producto aprobado.** El propio ecosistema pasa por fin su gate 1: `docs/product/`
   deja de ser plantilla y recoge objetivos, requisitos, casos de uso, mapa de funcionalidades y
   fuentes reales. La aprobación no se aplica hacia atrás: las specs cerradas se quedan como están.

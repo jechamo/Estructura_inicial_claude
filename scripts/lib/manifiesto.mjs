@@ -400,6 +400,27 @@ Ninguna. Toda decisión nueva requiere justificación y, si es estructural, un A
   "generators": []
 }
 `,
+  '.sdd/coverage.json': `{
+  "version": 1,
+  "incluir": [],
+  "excluir": [],
+  "suites": [],
+  "umbral": 0,
+  "margen": 3,
+  "medido": null,
+  "actualizado": null
+}
+`,
+  '.sdd/smells.json': `{
+  "version": 1,
+  "incluir": [],
+  "maxLineas": null,
+  "maxLineasFuncion": null,
+  "margen": 0,
+  "medido": null,
+  "actualizado": null
+}
+`,
   '.env.example': `# Variables de aplicación
 # Añade solo nombres y explicaciones. Nunca incluyas valores reales ni credenciales.
 
@@ -443,6 +464,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   'docs/security/THREAT-MODEL.md', 'docs/bitacora/DECISIONS.md',
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
   '.sdd/checks.json', '.sdd/docs.json', '.sdd/generators.json', '.sdd/installed.json', '.env.example',
+  '.sdd/coverage.json', '.sdd/smells.json',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
   '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
@@ -457,6 +479,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   const r = ruta.replaceAll('\\', '/');
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
   if (r.startsWith('scripts/lib/') && ![
+    'scripts/lib/coverage-v8.mjs',
     'scripts/lib/docs-contract.mjs',
     'scripts/lib/jsonc.mjs',
     'scripts/lib/trace-audit.mjs',
