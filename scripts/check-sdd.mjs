@@ -72,7 +72,10 @@ if (!DOCS_DIFF && !TRACE_AUDIT && indiceBaseDocs >= 0)
 if (args.includes('--circuit-status')) {
   const frontera = leerFrontera(ROOT);
   const git = (...argv) => spawnSync('git', argv, { cwd: ROOT, encoding: 'utf8' });
-  const salida = git('status', '--porcelain');
+  // `--untracked-files=all` es obligatorio: sin él, un directorio recién creado y sin
+  // trackear se colapsa a una sola línea («?? docs/») en lugar de listar cada fichero, y la
+  // frontera deja de poder clasificarlos uno a uno.
+  const salida = git('status', '--porcelain', '--untracked-files=all');
   const rutas = (salida.stdout || '')
     .split('\n')
     .map((l) => l.slice(3).trim())
