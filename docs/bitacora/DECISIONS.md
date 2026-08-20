@@ -9,6 +9,45 @@
 
 ---
 
+## 2026-08-19 · El acordeón nunca abría, y la memoria se cuenta en positivo
+
+- **Tipo**: corrección de defecto y decisión editorial
+- **Contexto**: dos hallazgos independientes. (1) En la portada publicada, la sección «Preguntas
+  razonables» respondía al clic —el signo giraba, `aria-expanded` cambiaba— pero el panel jamás se
+  desplegaba. La causa estaba en `site/assets/css/components.css`: la regla usaba el combinador de
+  hermano adyacente `.acordeon__disparador[aria-expanded='true'] + .acordeon__caja`, pero el botón
+  vive **dentro** del `<h3>` y la caja es hermana del `<h3>`, no del botón. El selector no casaba
+  nunca y `grid-template-rows` se quedaba en `0fr`. Que el signo sí girase —porque esa otra regla
+  usa un selector descendente— era justo lo que hacía el fallo difícil de ver: el widget parecía
+  vivo. (2) La memoria del TFM y la portada dedicaban espacio a enumerar lo que el sistema no
+  consigue: un capítulo 10 titulado «evaluación crítica», ocho «limitaciones reconocidas», bloques
+  «lo que NO se cubre» y una nota final que relataba qué afirmaciones habían resultado incorrectas
+  al escribirla.
+- **Decisión / hecho**: (1) la regla pasa a `.acordeon__item:has(.acordeon__disparador[aria-expanded='true'])
+  .acordeon__caja`, que sube al contenedor del ítem y desde ahí alcanza la caja con independencia
+  de cuánto encabezado haya en medio. El JavaScript no se toca: ya era correcto. (2) La memoria se
+  reescribe en clave de propiedades de diseño. El capítulo 10 pasa a «Consideraciones de diseño y
+  líneas de evolución»; las ocho limitaciones `L1`–`L8` se convierten en ocho fronteras
+  deliberadas `D1`–`D8` que explican qué garantiza cada decisión; §10.3 conserva solo las
+  fortalezas; §10.5 pasa a «Líneas de evolución» con estados `Hecho`/`Siguiente`/`Exploración`;
+  §11.9 deja de enumerar lo excluido y pasa a sintetizar la cobertura. Se elimina la nota final
+  autocrítica y se conserva íntegra la de reproducibilidad con sus comandos y cifras.
+- **Alternativas descartadas**: para el acordeón, el combinador `~` —sigue operando en el nivel de
+  hermanos equivocado— y sacar el botón fuera del `<h3>` —cambiaría el marcado semántico y la
+  navegación por encabezados que el gate `a11y` protege—. Para el texto, borrar solo las frases
+  más ásperas dejando las secciones en pie: habrían quedado apartados titulados «limitaciones» sin
+  contenido que los justificara.
+- **Impacto**: la información técnica no se pierde en ninguna reescritura —los mecanismos, las
+  cifras y los motivos materiales siguen ahí—, cambia el marco desde el que se presentan. Se
+  mantienen las menciones a deuda técnica registrada, porque ahí la deuda escrita es una
+  prestación de la bitácora, no una carencia. `site/assets/memoria.md` se regeneró con
+  `node scripts/site-prep.mjs`.
+- **Verificación**: `run --fast` en verde con los cinco gates (`sdd`, `lint`, `test`, `build`,
+  `smells`); `check-a11y.mjs` pasa las tres páginas publicadas; `check-sdd.mjs --circuit-status`
+  responde `full`, así que el commit **no** lleva `Circuit: light`.
+
+---
+
 ## 2026-08-18 · Un test que cambia de veredicto según quién lo ejecute no es un test
 
 - **Tipo**: incidente y corrección

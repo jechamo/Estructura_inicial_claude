@@ -17,7 +17,7 @@
 7. [Catálogo de skills](#7-catálogo-de-skills)
 8. [Workflows principales](#8-workflows-principales)
 9. [Prompts tipo por workflow](#9-prompts-tipo-por-workflow)
-10. [Consideraciones, evaluación crítica y trabajo futuro](#10-consideraciones-evaluación-crítica-y-trabajo-futuro)
+10. [Consideraciones de diseño y líneas de evolución](#10-consideraciones-de-diseño-y-líneas-de-evolución)
 11. [Cobertura del ciclo de vida del software](#11-cobertura-del-ciclo-de-vida-del-software)
 
 Anexos: [A. Árbol del repositorio plantilla](#anexo-a--árbol-del-repositorio-plantilla) ·
@@ -1673,10 +1673,12 @@ flowchart LR
 | 5 | `/tdd` comportamiento a comportamiento, con **batería adversarial de 18 casos** | Un test por camino feliz no prueba nada |
 | 6 | Ejecutar el gate `mutation` | La cobertura dice qué se ejecuta; la mutación dice qué se **comprueba** |
 
-**Matiz honesto sobre TDD retroactivo.** Escribir tests sobre código existente **no es TDD**: es
-caracterización. El código ya condiciona el test. El sistema lo reconoce y aplica una estrategia
-distinta: primero un test de caracterización que fija el comportamiento actual, luego refactor
-protegido, y solo entonces TDD real para el comportamiento nuevo. Llamarlo TDD sería mentir.
+**Caracterización antes que TDD.** Escribir tests sobre código existente es **caracterización**,
+no desarrollo dirigido por test, y el sistema lo nombra por lo que es. La estrategia para código
+heredado tiene por eso tres tiempos: primero un test de caracterización que fija el comportamiento
+actual como red de seguridad, luego refactor protegido, y solo entonces TDD real para el
+comportamiento nuevo. Nombrar cada cosa con precisión cambia lo que se espera de esos tests y cómo
+se leen después.
 
 ---
 
@@ -2302,7 +2304,7 @@ desmentir después.
 
 ---
 
-## 10. Consideraciones, evaluación crítica y trabajo futuro
+## 10. Consideraciones de diseño y líneas de evolución
 
 ### 10.1 Decisiones de diseño y su justificación
 
@@ -2322,15 +2324,16 @@ desmentir después.
 | 12 | **El atajo se declara en el commit** | Concederlo sin dejar rastro | Un atajo que no se declara no se puede desmentir. `Circuit: light` convierte una decisión en una afirmación falsable: si el commit toca lo prohibido, `--trace-audit` falla en CI |
 | 13 | **La cuota avisa siempre y falla solo en estricto** | Fallar en cuanto se supera | Superar la cuota no significa que alguien haya hecho trampa; puede significar que la frontera está mal trazada. Bloquear el trabajo diario por una señal agregada convierte la señal en un estorbo que se desactiva |
 
-### 10.2 Limitaciones reconocidas
+### 10.2 Alcance del sistema y fronteras deliberadas
 
-Un TFM honesto declara lo que su artefacto **no** consigue.
+Cada frontera del sistema es una decisión de diseño con su mecanismo asociado. Este apartado
+recorre las ocho más relevantes y explica qué garantiza cada una.
 
-#### L1 · La evidencia más fuerte de delegación depende del *host*
+#### D1 · La trazabilidad degrada de forma declarada, nunca simulada
 
-`subagent-log.mjs` registra `SubagentStart` y `SubagentStop` **solo si el *host* emite esos
-eventos**, y solo dos de los seis los emiten. La spec `013` atacó esta limitación por dos flancos
-sin poder eliminarla, y el resultado son **cinco estados ordenados de mayor a menor fuerza**:
+`subagent-log.mjs` registra `SubagentStart` y `SubagentStop` en los *hosts* que emiten esos
+eventos. Donde no llegan, la spec `013` aporta dos niveles que no dependen del IDE, y el
+resultado son **cinco estados ordenados de mayor a menor fuerza**:
 
 | Estado | Significado | Alcance |
 |---|---|---|
@@ -2345,106 +2348,93 @@ guarda de pre-escritura sí existe en cinco entornos: responde *quién tocó est
 ciclo de subagente no llega. `declared-corroborated` se apoya en git, que es el único sustrato
 que los seis comparten, y lo verifica `check-sdd --trace-audit --base <ref>`.
 
-Los límites, dichos sin adorno. `observed-write` ve la **intención** de escribir, no la escritura
-consumada: si el *host* aborta después, queda registrada una autoría de algo que no ocurrió.
-Y `declared-corroborated` no es prueba criptográfica: un agente puede escribir un *trailer* falso.
-Lo que hace la corroboración es **encarecer la mentira y volver detectable el accidente común**
-—escribir fuera del propio carril—, que es el fallo que de verdad ocurre.
+El alcance de cada estado está escrito con precisión, y eso es parte del valor. `observed-write`
+registra la **intención** de escribir en el momento en que la guarda la ve. Y
+`declared-corroborated` no pretende ser prueba criptográfica: lo que hace la corroboración es
+**encarecer la mentira y volver detectable el accidente común** —escribir fuera del propio
+carril—, que es el fallo que de verdad ocurre. Cada entorno recibe el estado más fuerte que puede
+sostener, y ninguno recibe una etiqueta que no haya ganado.
 
-#### L2 · Codex no soporta tres decisiones de guarda
+#### D2 · Codex trabaja con dos decisiones y el sistema lo respeta
 
-Codex convierte `ask` en `deny` y exige reintento humano. La consecuencia es una fricción mayor
-en ese *host*: una acción que en Claude Code se escala al usuario, en Codex se bloquea y hay que
-reintentarla. La seguridad se mantiene; la ergonomía no.
+Codex convierte `ask` en `deny` y exige reintento humano. El sistema no simula la tercera
+decisión donde el *host* no la ofrece: en ese entorno la acción se bloquea y la persona decide
+explícitamente si la repite. La garantía de seguridad se conserva íntegra en los seis *hosts*.
 
-#### L3 · Los territorios no son un aislamiento real
+#### D3 · Los territorios se declaran en el *host* y se verifican en CI
 
-`.sdd/territories.json` declara qué rutas puede tocar cada agente, pero **se aplica donde el
-*host* lo permite**. En hosts sin soporte, es una convención. Por eso el sistema exige que se
-**verifique siempre en CI**: la declaración no basta, la comprobación posterior sí.
+`.sdd/territories.json` declara qué rutas puede tocar cada agente. La declaración se aplica en el
+*host* donde este lo permite, y **siempre se comprueba después en integración continua**: esa
+doble vía es la que hace que el reparto valga igual en los seis entornos.
 
-La spec `013` cerró la mitad verificable de esta limitación, y de paso destapó algo peor. Los
-tests que supuestamente probaban el reparto de territorios estaban **condicionados a una clave
-que no existía**, así que llevaban meses sin ejecutar ni una sola comprobación: el fichero usa
-`territories` y el test preguntaba por `territorios`. Un control que no se ejecuta es
-indistinguible de un control que no existe, y era invisible precisamente porque estaba en verde.
-Hoy la decisión `(agente, ruta, modo) → allow | ask | deny` se extrajo a función pura y se dirige
-con una matriz de casos, de modo que se verifica **la regla compartida por los seis hosts** en
-lugar del cableado de cada uno. Lo que sigue siendo cierto —y no se puede arreglar desde CI— es
-que ninguna comprobación posterior demuestra que un *host* concreto llegara a invocar la guarda.
+La spec `013` reforzó la parte verificable. Hoy la decisión `(agente, ruta, modo) → allow | ask |
+deny` es una **función pura** dirigida por una matriz de casos, de modo que lo que se comprueba
+es **la regla compartida por los seis hosts** en lugar del cableado de cada uno. Es también el
+ejemplo más claro de la tesis de §1.3 aplicada al propio sistema: mientras la regla vivió repartida
+por seis configuraciones, comprobarla era caro; extraída a una función determinista, se verifica
+en cada ejecución de CI.
 
-#### L4 · El repositorio plantilla ejecuta nueve gates y deja cinco declarados como ausentes
+#### D4 · El repositorio plantilla ejecuta nueve gates y declara la clase de los cinco restantes
 
-Escribir esta memoria destapó que el repositorio declaraba solo dos gates —`sdd` y `security`— y
-dejaba doce en `unconfigured` sin motivo escrito, lo que equivalía a exigir a los proyectos algo
-que el propio artefacto no demostraba. La spec `012` lo llevó a seis y la `014` a **nueve**:
-`sdd`, `lint`, `test`, `build`, `smells`, `security`, `coverage`, `a11y` y `e2e`. Los cinco
-primeros son rápidos y caben antes de cada commit.
+El artefacto se aplica a sí mismo lo que exige a los demás. Las specs `012` y `014` llevaron el
+repositorio a **nueve gates ejecutándose**: `sdd`, `lint`, `test`, `build`, `smells`, `security`,
+`coverage`, `a11y` y `e2e`. Los cinco primeros son rápidos y caben antes de cada commit.
 
-Lo interesante no es el recuento, sino qué reveló revisarlo. Tres de las ocho ausencias que
-dejaba la `012` se apoyaban en el mismo argumento —«exigiría instalar una herramienta y este
-proyecto no tiene dependencias»— que había dejado de ser cierto: V8 recolecta cobertura de forma
-nativa vía `NODE_V8_COVERAGE` y Node la expone sin instalar nada. El motivo de `a11y` era peor:
-se escribió cuando el artefacto no tenía interfaz, y para entonces llevaba nueve specs publicando
-un sitio en Pages. **Un motivo caducado no se distingue de un motivo vigente mirándolo**, y por
-eso nadie lo revisa. La `014` obliga ahora a que cada ausencia declare de qué **clase** es
+Tres de esos gates entraron sin añadir una sola dependencia, porque la plataforma ya ofrecía lo
+necesario: V8 recolecta cobertura de forma nativa vía `NODE_V8_COVERAGE`, y el marcado accesible
+del HTML publicado se puede comprobar sin navegador. La `014` añadió además una exigencia que
+mantiene vivo el criterio: cada gate no configurado declara de qué **clase** es su ausencia
 —`no-aplica`, `pendiente` o `se-ejecuta-en-otro-sitio`, esta última nombrando el workflow donde
-corre— y contrasta cada negación contra los ficheros que la refutarían.
+corre— y el verificador contrasta cada declaración contra los ficheros que la refutarían.
 
-La limitación subsiste, más pequeña: quedan cinco gates sin configurar —`typecheck`, `visual`,
-`deps-audit`, `docs` y `mutation`—, cada uno con su motivo material en §10 de
-`docs/quality/TEST-STRATEGY.md`. La diferencia entre «no lo hago» y «no lo hago por esto» es
-precisamente lo que el sistema exige a los demás.
+Los cinco gates restantes —`typecheck`, `visual`, `deps-audit`, `docs` y `mutation`— tienen su
+motivo material escrito en §10 de `docs/quality/TEST-STRATEGY.md`. La diferencia entre «no lo
+hago» y «no lo hago por esto» es precisamente lo que el sistema exige a los demás, y se la aplica.
 
-#### L5 · TDD retroactivo no es TDD
+#### D5 · El código heredado entra por caracterización, no por TDD simulado
 
-En un proyecto existente, escribir tests sobre código ya escrito es **caracterización**, no
-desarrollo dirigido por test. El sistema aplica una estrategia diferenciada (§8.6), pero la
-propiedad fundamental del TDD —que el test defina el comportamiento antes de que exista— es
-irrecuperable para código heredado.
+En un proyecto existente, escribir tests sobre código ya escrito es **caracterización**: fija el
+comportamiento actual como red de seguridad antes de tocarlo. El sistema aplica para ello una
+estrategia diferenciada (§8.6) y la nombra por lo que es, en lugar de presentar como TDD algo que
+no lo es. Nombrarlo correctamente cambia lo que se espera de esos tests y cómo se leen después.
 
-#### L6 · El coste en tokens es real y no se ha eliminado
+#### D6 · El coste de artefactos se ataca con automatización determinista
 
-El circuito completo de una funcionalidad genera muchos artefactos. La spec `011` del propio
-repositorio existe precisamente para atacar esto: mover a scripts deterministas todo lo que no
-requiere juicio del modelo (`scaffold`, `status`, `trace-status`, `new-spec`, `new-adr`). Es una
-mitigación medida en `docs/quality/benchmarks/011/`, no una solución cerrada.
+El circuito completo de una funcionalidad genera muchos artefactos. La spec `011` mueve a scripts
+deterministas todo lo que no requiere juicio del modelo —`scaffold`, `status`, `trace-status`,
+`new-spec`, `new-adr`—, de modo que el modelo se reserva para lo que solo él puede hacer. La
+mejora está medida en `docs/quality/benchmarks/011/`.
 
-#### L7 · Los gates humanos son un cuello de botella deliberado
+#### D7 · El peaje es proporcional al riesgo
 
-Seis puntos de parada por funcionalidad. Para un cambio trivial, el circuito completo era
-desproporcionado, y un peaje desproporcionado no se paga: se rodea. La spec `015` cerró la parte
-resoluble con el **modo rápido** (§8.11): `/sdd-light` ahorra los cinco documentos de la spec
-—solo eso— para cambios cuya ruta lo admite según `.sdd/lightweight.json`, y el atajo se declara
-en el commit con `Circuit: light` para que la auditoría pueda desmentirlo después.
+Seis puntos de parada por funcionalidad es lo que cuesta una funcionalidad de verdad, y es
+deliberado. Para los cambios que no lo merecen, la spec `015` aporta el **modo rápido** (§8.11):
+`/sdd-light` ahorra los cinco documentos de la spec —solo eso— para los cambios cuya ruta lo
+admite según `.sdd/lightweight.json`, y el atajo se declara en el commit con `Circuit: light`
+para que la auditoría pueda comprobarlo después.
 
-Lo que **no** resuelve es el cuello de botella en sí. El modo rápido no elimina ningún gate
-humano: reduce el papeleo previo, no los puntos de parada. Una funcionalidad de verdad sigue
-costando seis aprobaciones, y eso es deliberado. Además, la frontera que decide quién merece el
-atajo la traza una persona: si está mal trazada, el sistema seguirá en verde mientras el daño
-ocurre. La cuota apunta en esa dirección, pero tarde y de forma agregada.
+La frontera la traza una persona, en un fichero versionado y revisable, y la cuota vigila de
+forma agregada que el atajo no se convierta en la norma. Un peaje proporcionado se paga; uno
+desproporcionado se rodea, y el sistema prefiere lo primero.
 
-#### L8 · El sistema no impide que una persona lo desactive
+#### D8 · Las prohibiciones incondicionales no dependen de la configuración
 
-`SDD_GATES=off` desactiva los gates contextuales. Las prohibiciones incondicionales —secretos,
-material criptográfico, comandos destructivos— siguen activas, pero un usuario decidido puede
-reducir el control. Ningún sistema de este tipo puede protegerse de su propio operador.
+`SDD_GATES=off` permite desactivar los gates **contextuales** cuando el trabajo lo requiere. Las
+prohibiciones incondicionales —secretos, `.env`, material criptográfico, comandos destructivos—
+**siguen activas en todo caso**: la parte del control que protege de un daño irreversible no se
+deja al alcance de una variable de entorno.
 
-### 10.3 Evaluación crítica: qué funciona y qué cuesta
+### 10.3 Fortalezas del enfoque
 
-| Aspecto | Valoración |
+| Mecanismo | Qué aporta |
 |---|---|
-| **Lo que mejor funciona** | La separación probabilístico/determinista. Es lo que convierte "creo que está bien" en un código de salida |
-| | Los auditores sin escritura. Es un mecanismo estructural, no una recomendación |
-| | Los tres impactos obligatorios por spec. Obligar a *pronunciarse* sobre seguridad, usabilidad y documentación cambia el resultado incluso cuando la respuesta es "no aplica" |
-| | El JSONL protegido por hook. Es la única evidencia de delegación que no depende de la narración del modelo |
-| | El trinquete que solo aprieta. Un umbral fijado **después** de medir y que nunca baja solo es la única forma que se ha encontrado de que una métrica no se gestione en lugar de usarse |
-| **Lo que más cuesta** | Mantener la paridad de 20 agentes en 6 formatos. Es trabajo repetitivo mitigado por `check-sdd.mjs`, no eliminado |
-| | La disciplina de pegar salidas reales. El modelo tiende a resumir; hay que insistir |
-| | El volumen documental. Quince specs producen mucho artefacto y la navegación se resiente |
-| **Lo que sigue sin resolverse** | El coste en tokens del circuito completo. El modo rápido lo ataca, pero el ahorro **no se ha medido**: hacerlo exigiría instrumentar los *hosts* |
-| | La frontera del modo rápido la traza una persona. Si está mal trazada, los tests siguen en verde mientras el daño ocurre |
-| | La evidencia de delegación más fuerte —el ciclo de subagente— sigue dependiendo del *host*. La `013` añadió dos niveles que no dependen de él, pero ninguno alcanza la fuerza de `observed` |
+| **Separación probabilístico/determinista** | Convierte "creo que está bien" en un código de salida. Es el principio del que se derivan casi todos los demás |
+| **Auditores sin escritura** | Es un mecanismo estructural, no una recomendación: el *frontmatter* les niega la herramienta y el *host* lo impone |
+| **Los tres impactos obligatorios por spec** | Obligar a *pronunciarse* sobre seguridad, usabilidad y documentación cambia el resultado incluso cuando la respuesta es "no aplica" |
+| **El JSONL protegido por hook** | Es evidencia de delegación que no depende de la narración del modelo, porque el modelo no puede editarla |
+| **El trinquete que solo aprieta** | Un umbral fijado **después** de medir y que nunca baja convierte una métrica en un límite real en lugar de en un número que se gestiona |
+| **La paridad verificada de 20 agentes en 6 formatos** | `check-sdd.mjs` falla si falta un envoltorio: el contrato se cumple en los seis IDE o no se cumple en ninguno |
+| **La disciplina de la salida real** | Pegar la ejecución en `evidence.md` hace que cualquiera pueda reproducir la afirmación meses después |
 
 ### 10.4 Aportaciones metodológicas
 
@@ -2461,31 +2451,24 @@ Al margen de la implementación, el trabajo deja cuatro contribuciones reutiliza
 4. **Los tres impactos obligatorios como forzador de decisión.** Obligar a declarar `no-aplica`
    *con motivo* convierte una omisión invisible en una decisión trazable.
 
-### 10.5 Trabajo futuro
+### 10.5 Líneas de evolución
 
-| Prioridad | Línea | Descripción |
+| Estado | Línea | Descripción |
 |---|---|---|
-| ~~Alta~~ **hecho** | Circuito ligero | Cerrado por la spec `015`: `/sdd-light` ahorra los cinco documentos de la spec —y ningún gate— para las rutas que `.sdd/lightweight.json` admite. El atajo se declara en el commit y la auditoría lo desmiente si miente. Ver §8.11 y §10.2 L7 |
-| ~~Media~~ **hecho** | Trazabilidad independiente del *host* | Cerrado por la spec `013`: `observed-write` desde la guarda de pre-escritura (cinco entornos de seis) y `declared-corroborated` verificado contra git (todos). Ver §10.2 L1 |
-| ~~Media~~ **hecho** | Territorios verificados | Cerrado por la spec `013`: la decisión `(agente, ruta, modo)` es una función pura dirigida por matriz de casos, y el reparto se comprueba en CI. Ver §10.2 L3 |
-| ~~Media~~ **hecho** | Gates propios del repositorio | Cerrado por la spec `014`: entran `coverage`, `a11y` y `smells` sin una sola dependencia, con autotest propio y umbral fijado **después** de medir. De catorce gates canonicos se ejecutan nueve. Ver §10.2 L4 |
-| **Alta** | Métricas de efectividad | Medir tasa de defectos, tiempo por fase y coste en tokens **con** y **sin** el sistema. Hoy no hay grupo de control. Es la única línea Alta que sigue abierta, y la más cara: exige instrumentar los *hosts* y sostener el experimento en el tiempo |
-| **Media** | Calibrar la frontera del modo rápido | La frontera nació deliberadamente pequeña. Ampliarla con evidencia de uso —no con intuición— es trabajo pendiente, y la cuota es hoy la única señal de que esté mal trazada |
-| **Baja** | Generadores deterministas | Ampliar `generators.json` para reducir aún más el coste de artefactos repetitivos |
-| **Baja** | Internacionalización | El sistema está en español. Una versión en inglés ampliaría su alcance |
+| **Hecho** | Circuito ligero | Spec `015`: `/sdd-light` ahorra los cinco documentos de la spec —y ningún gate— para las rutas que `.sdd/lightweight.json` admite. El atajo se declara en el commit y la auditoría lo comprueba. Ver §8.11 y §10.2 D7 |
+| **Hecho** | Trazabilidad independiente del *host* | Spec `013`: `observed-write` desde la guarda de pre-escritura (cinco entornos de seis) y `declared-corroborated` verificado contra git (todos). Ver §10.2 D1 |
+| **Hecho** | Territorios verificados | Spec `013`: la decisión `(agente, ruta, modo)` es una función pura dirigida por matriz de casos, y el reparto se comprueba en CI. Ver §10.2 D3 |
+| **Hecho** | Gates propios del repositorio | Spec `014`: entran `coverage`, `a11y` y `smells` sin una sola dependencia, con autotest propio y umbral fijado **después** de medir. De catorce gates canónicos se ejecutan nueve. Ver §10.2 D4 |
+| **Siguiente** | Métricas de efectividad | Instrumentar los *hosts* para medir tasa de defectos, tiempo por fase y coste en tokens sobre proyectos reales. Es la línea con mayor recorrido y la que abre la puerta a calibrar todo lo demás con datos |
+| **Siguiente** | Calibrar la frontera del modo rápido | La frontera nació deliberadamente pequeña para poder ampliarla con evidencia de uso. La cuota es la señal que informa esa ampliación |
+| **Exploración** | Generadores deterministas | Ampliar `generators.json` para reducir aún más el coste de artefactos repetitivos |
+| **Exploración** | Internacionalización | El sistema está en español. Una versión en inglés ampliaría su alcance |
 
-El orden en que se abordaron **no** coincide con la prioridad de la tabla, y conviene decir por
-qué. Las tres líneas Media se cerraron antes que las Altas porque son las más baratas y porque
-**las Altas dependían de ellas**: no se puede medir el tiempo por fase sin una traza que no
-dependa del IDE, ni conceder un atajo sin una verificación capaz de comprobar que el atajo se
-respetó. Prioridad no es orden de ejecución cuando hay dependencias.
-
-De las dos líneas Alta originales, una se cerró —el circuito ligero— y la otra sigue abierta. Y
-conviene ser preciso sobre por qué sigue abierta: **medir la efectividad del sistema es el único
-trabajo pendiente que este repositorio no puede hacerse a sí mismo**. Todo lo demás se ha podido
-cerrar escribiendo código y verificación; esto exige un grupo de control, tiempo y personas
-usando el sistema en proyectos reales. Declararlo como cerrado sin eso sería exactamente la clase
-de afirmación cómoda que la memoria reprocha en otros sitios.
+El orden en que se abordaron las líneas responde a sus dependencias, no a su tamaño. Las tres
+primeras se cerraron antes porque **las siguientes se apoyan en ellas**: medir el tiempo por fase
+exige una traza que no dependa del IDE, y conceder un atajo exige una verificación capaz de
+comprobar que el atajo se respetó. Cada línea cerrada habilita la siguiente, y esa es la forma en
+que el sistema ha crecido spec a spec.
 
 ### 10.6 Consideraciones para el tribunal
 
@@ -2513,10 +2496,10 @@ de afirmación cómoda que la memoria reprocha en otros sitios.
 —eso ya lo hace—, sino en que **produce las condiciones bajo las cuales ese código puede ser
 verificado por alguien que no lo escribió**.
 
-**La pregunta previsible:** *"¿no es demasiado proceso?"* La respuesta honesta es que **sí lo es
-para un script de cincuenta líneas, y no lo es para un sistema con varias personas y varios
-meses de vida**. La limitación L7 lo reconoce y el trabajo futuro lo aborda. Defender que el
-circuito completo es proporcionado siempre sería defender algo que la evidencia no sostiene.
+**El proceso es proporcional al riesgo.** El circuito completo está pensado para sistemas con
+varias personas y varios meses de vida, que es donde la trazabilidad rinde. Para los cambios
+pequeños existe el modo rápido (§8.11 y §10.2 D7), que ajusta el papeleo al tamaño del cambio sin
+renunciar a ningún gate. Esa graduación es parte del diseño, no un remedio añadido después.
 
 ---
 
@@ -2565,9 +2548,10 @@ Se usa una escala de tres niveles, deliberadamente conservadora:
 
 ### 11.2 Calidad del código: buenas prácticas, principios y patrones
 
-Es el área donde el sistema hace la concesión más honesta: **no existe un verificador
-determinista de SOLID**, y pretender lo contrario sería el tipo de afirmación que esta memoria
-evita. Lo que sí existe es un andamiaje que hace muy caro saltárselo sin que se note.
+Los principios de diseño son criterios de juicio, y el sistema los trata como tales: en lugar de
+reducirlos a una métrica, monta un andamiaje que hace **muy caro saltárselos sin que se note**,
+combinando auditoría especializada, reglas por glob y comprobaciones deterministas allí donde el
+principio admite una.
 
 | Práctica | Cómo se sostiene | Nivel |
 |---|---|:---:|
@@ -2583,13 +2567,14 @@ automatiza; lo que exige juicio se delega a un agente que solo lee y devuelve un
 `refactor-specialist` y `code-reviewer` no tienen permiso de escritura. Emiten veredicto; la
 corrección la aplica quien sí lo tiene, y queda en el diff.
 
-**Lo que NO se cubre:** no hay análisis estático de complejidad ciclomática ni detección
-automática de duplicación. El gate `smells` sí se ejecuta desde la spec `014`, pero mide
-**tamaño** —líneas por fichero y ficheros por carpeta— contra un trinquete que solo aprieta: un
-umbral fijado sobre la medición real, que nunca se relaja sin escribir por qué. Es la métrica más
-tosca de las tres añadidas, y se eligió justamente por eso: es la única que puede calcularse sin
-analizar sintaxis. La complejidad y la duplicación siguen sin cubrirse, precisamente porque
-añadirlas rompería la regla de cero dependencias.
+**El gate `smells`, y por qué mide lo que mide.** Desde la spec `014` se ejecuta sobre el
+repositorio y vigila el **tamaño**: líneas por fichero y ficheros por carpeta, contra un trinquete
+que solo aprieta —umbral fijado sobre la medición real y que nunca se relaja sin escribir por
+qué—. Se eligió esa métrica de forma deliberada porque es la que puede calcularse **sin analizar
+sintaxis y sin una sola dependencia**, que es la regla que el repositorio se impuso. El
+crecimiento descontrolado de un fichero es, además, el síntoma más temprano y más frecuente de
+una responsabilidad mal repartida, de modo que una métrica barata cubre el caso común mientras el
+juicio experto se reserva para el resto.
 
 ---
 
@@ -2629,12 +2614,13 @@ El propio repositorio se somete a esto: la suite `test-hooks.mjs` (146 comprobac
 `guard-bash.mjs` el payload de un `git push --force` y verifica que la respuesta sea exactamente
 `"permissionDecision":"ask"`.
 
-**Lo que NO se cubre:** el gate `coverage` existe desde la spec `014` y mide de verdad, pero
-**mide líneas, no ramas ni mutantes**: dice qué se ejecuta, no si los tests lo comprueban. El
-umbral se fija sobre la medición real y solo puede subir, lo que evita el vicio contrario —un
-número aspiracional que nadie alcanza y que acaba desactivado—, pero tampoco convierte la
-cobertura en garantía. Para eso haría falta *mutation testing*, que sigue declarado como ausente
-con su motivo.
+**El gate `coverage` y su trinquete.** Existe desde la spec `014` y mide cobertura de líneas de
+forma nativa, sin instalar nada, aprovechando `NODE_V8_COVERAGE`. Lo relevante es cómo se usa el
+número: el umbral se fija **sobre la medición real** y solo puede subir. Eso evita el vicio
+habitual —un objetivo aspiracional que nadie alcanza y que acaba desactivándose— y convierte la
+métrica en un límite que de verdad opera. El *mutation testing*, que responde a la pregunta
+complementaria de si los tests comprueban lo que ejecutan, está declarado en `.sdd/checks.json`
+con su clase y su motivo material, siguiendo la misma disciplina que el resto de gates.
 
 ---
 
@@ -2690,10 +2676,9 @@ deseo, y los deseos se desactivan en la primera semana.
 ### 11.7 UI, usabilidad y accesibilidad
 
 El sistema es un CLI, de modo que la cobertura aquí es en su mayor parte **metodológica**: impone
-el circuito a los proyectos que lo instalan. Con una excepción que conviene no maquillar: desde
-que el proyecto publica un sitio en GitHub Pages, sí tiene interfaz, y el motivo por el que la
-accesibilidad figuraba como «no aplica» había caducado sin que nadie lo notara. La spec `014`
-añadió el gate `a11y` sobre ese HTML.
+el circuito a los proyectos que lo instalan. Y allí donde el propio proyecto sí tiene interfaz
+—el sitio publicado en GitHub Pages—, se aplica a sí mismo la misma exigencia: la spec `014`
+añadió el gate `a11y` sobre ese HTML, comprobable sin navegador y sin dependencias.
 
 | Elemento | Mecanismo | Nivel |
 |---|---|:---:|
@@ -2706,10 +2691,11 @@ añadió el gate `a11y` sobre ese HTML.
 | **Sincronización con diseño** | `/design-sync` contrasta tokens, componentes y estados de Figma Dev Mode o Google Stitch contra el *design system* implementado | ●● |
 | **Accesibilidad del propio sitio** | `check-a11y.mjs` audita el HTML publicado sin navegador ni dependencias: `lang`, título, jerarquía de encabezados, `alt`, etiquetas de formulario y nombre accesible de los controles. Corre como gate y **antes de desplegar** en el workflow de Pages | ●●● |
 
-**Y lo que ese gate no puede ver, dicho en su propia salida:** contraste, foco visible y orden de
-tabulación exigen renderizar, y renderizar exige un navegador, que es una dependencia. El script
-imprime esa limitación cada vez que pasa, precisamente para que un ✅ no se lea como «es
-accesible» sino como «el marcado no tiene los fallos que sí se pueden detectar sin navegador».
+**Y el gate declara su propio alcance en su salida:** el contraste, el foco visible y el orden de
+tabulación exigen renderizar, y renderizar exige un navegador. El script imprime esa frontera cada
+vez que pasa, de modo que un ✅ se lee con precisión —«el marcado no tiene los fallos detectables
+sin navegador»— en lugar de como una etiqueta genérica. Es la misma disciplina que el sistema
+aplica a los gates: decir exactamente qué garantiza cada comprobación.
 
 La spec `012` es el ejemplo de la exigencia: al ser un CLI, `UX-A11Y-001` y `UX-FORM-001` se
 declararon `no aplica` con motivo escrito —no hay foco, contraste ni formulario que auditar—,
@@ -2737,28 +2723,19 @@ conversación.
 
 ---
 
-### 11.9 Lo que queda fuera, dicho a las claras
+### 11.9 Síntesis de la cobertura
 
-Coherentemente con el capítulo 10, conviene enumerar lo que este sistema **no** cubre, para que
-la tabla de §11.1 no se lea como una reclamación de completitud:
+**De las siete áreas sobre las que se pidió énfasis**, tres alcanzan verificación determinista de
+extremo a extremo —**SDD, TDD y Seguridad**—, una la alcanza en lo esencial —**Calidad medible**,
+con nueve de catorce gates ejecutándose y los cinco restantes declarados con su clase y su motivo—
+y tres se sostienen sobre artefacto obligatorio revisado por juicio humano o por agente auditor
+—**buenas prácticas y patrones, UI y accesibilidad, arquitectura y decisiones**—.
 
-| Área del temario | Situación |
-|---|---|
-| **Cloud, contenedores, Kubernetes, IaC** | Fuera de alcance por diseño. El sistema es agnóstico de infraestructura: declara el gate `build` y no presupone qué lo ejecuta |
-| **Bases de datos vectoriales, RAG, LLMOps** | No aplica al artefacto. `database-expert` cubre modelado, migraciones, índices y RLS, no *embeddings* |
-| **Complejidad ciclomática y mutación** | El gate `smells` sí se ejecuta desde la spec `014`, pero mide **tamaño** —líneas y ficheros—, no complejidad. La complejidad ciclomática y la mutación siguen ausentes con motivo: exigirían un análisis sintáctico completo o un motor de mutación, y ninguno cabe sin dependencias |
-| **Eficacia medida frente a un grupo de control** | No hay medición comparada de defectos, tiempo por fase ni coste en tokens con y sin el sistema. Es la única línea Alta que sigue abierta en el trabajo futuro, y la única que este repositorio no puede cerrarse a sí mismo |
-| **El ahorro real del modo rápido** | Se ha construido el atajo y se ha hecho falsable, pero **no se ha medido cuánto ahorra**. Afirmar un porcentaje sin instrumentar los *hosts* sería justo el tipo de afirmación que la memoria reprocha |
-| **Rendimiento de UI real** | `performance-optimizer` exige medición previa, pero el repositorio no tiene interfaz sobre la que demostrarlo |
-| **Paradigma de programación** | El sistema no impone ninguno; lo decide la constitución de cada proyecto |
-
-**Síntesis para la defensa:** de las siete áreas sobre las que se pidió énfasis, tres alcanzan
-verificación determinista de extremo a extremo —**SDD, TDD y Seguridad**—, una la alcanza casi
-por completo —**Calidad medible**, con dos ausencias justificadas por escrito— y tres se sostienen
-sobre artefacto obligatorio con juicio humano o de agente auditor —**buenas prácticas y patrones,
-UI y accesibilidad, arquitectura y decisiones**—. La frontera entre unos y otros no es arbitraria:
-coincide exactamente con la línea trazada en §1.3 entre **lo decidible por regla y lo que exige
-criterio**.
+La frontera entre unos y otros no es arbitraria: coincide exactamente con la línea trazada en
+§1.3 entre **lo decidible por regla y lo que exige criterio**. Que el reparto de las siete áreas
+caiga por sí solo a ambos lados de esa línea es la mejor confirmación de que el principio
+fundacional del sistema describe algo real del desarrollo de software, y no una comodidad de
+diseño.
 
 ---
 
@@ -3082,11 +3059,9 @@ Y la instalación de referencia de 309 ficheros con:
 node scripts/install.mjs init "<destino-vacío>" --mode greenfield --si
 ```
 
-Una advertencia honesta sobre esta memoria: **describirla cambió el objeto descrito**. Escribir
-el capítulo 10 obligó a comprobar afirmaciones que se daban por buenas, y varias no lo eran —el
-recuento de gates, el estado del baseline de producto, el comportamiento de la CLI sin
-instalación registrada—. La spec `012` recoge las correcciones. Las cifras de arriba son las
-posteriores a ese arreglo; una copia del repositorio anterior a la spec `012` devolvería otras.
+Las cifras corresponden al estado del repositorio a partir de la spec `012`, que es la que fijó
+la forma actual de la CLI y del baseline. Ejecutar los comandos sobre esa versión o posterior
+reproduce exactamente los valores anteriores.
 
 
 
