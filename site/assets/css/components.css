@@ -344,7 +344,11 @@
   transition: grid-template-rows var(--dur-3) var(--curva);
 }
 
-.acordeon__disparador[aria-expanded='true'] + .acordeon__caja { grid-template-rows: 1fr; }
+/* El disparador vive dentro del encabezado, así que la caja no es su hermana directa: se sube
+   al item y desde ahí se alcanza. */
+.acordeon__item:has(.acordeon__disparador[aria-expanded='true']) .acordeon__caja {
+  grid-template-rows: 1fr;
+}
 
 .acordeon__contenido { overflow: hidden; }
 .acordeon__contenido > * { padding-bottom: var(--e-5); color: var(--texto-suave); max-width: var(--ancho-texto); }
