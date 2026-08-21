@@ -64,8 +64,6 @@ Estos **obligan**, no son sugerencias:
 | [`architecture/PATTERNS.md`](./architecture/PATTERNS.md) | Elegir patrón cuando aparece el problema |
 | [`guides/INSTALACION.md`](./guides/INSTALACION.md) | **Empieza aquí si tienes un proyecto ya montado**: cómo instalar la estructura sin pisar lo que ya tienes, y cómo actualizarla |
 | [`guides/COMO-TRABAJAR-CON-LOS-AGENTES.md`](./guides/COMO-TRABAJAR-CON-LOS-AGENTES.md) | **Empieza aquí si vas a usar el sistema**: comunicación entre agentes, por dónde empezar, TDD, calidad y seguridad |
-| [`TFM/MEMORIA-TECNICA-TFM.md`](./TFM/MEMORIA-TECNICA-TFM.md) | Memoria técnica resumida para TFM: instalación, arquitectura documental, agentes, skills, workflows y prompts |
-| [`TFM/ESTRUCTURA-INSTALADA.excalidraw`](./TFM/ESTRUCTURA-INSTALADA.excalidraw) | Diagrama editable complementario de los agentes, su delegación y su protocolo de handoff |
 | [`guides/DOCUMENTACION.md`](./guides/DOCUMENTACION.md) | Qué se versiona, circuitos docs-only/SDD, `/docs-sync`, propietarios y gates |
 | [`agents/CATALOG.md`](./agents/CATALOG.md) | Qué agente hace qué y a quién llama |
 | [`agents/ORIGEN-Y-EVOLUCION.md`](./agents/ORIGEN-Y-EVOLUCION.md) | La idea original de 10 agentes y por qué cambió cada pieza |
