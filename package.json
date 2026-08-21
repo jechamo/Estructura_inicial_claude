@@ -1,6 +1,6 @@
 {
   "name": "sdd-agents",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Ecosistema portable de agentes SDD con intake universal, TDD y documentación viva para Claude, VS Code, Cursor, Codex, Gemini CLI y Antigravity.",
   "bin": {
     "sdd": "scripts/install.mjs"

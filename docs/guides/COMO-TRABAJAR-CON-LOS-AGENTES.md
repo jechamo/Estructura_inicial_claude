@@ -375,6 +375,21 @@ Y no es una fase final: la seguridad está activa todo el rato — hooks que blo
 comandos destructivos, validación en la frontera, autorización en cada caso de uso del lado
 servidor, consultas parametrizadas, RLS probado con dos tenants, secretos fuera del repo.
 
+#### Peticiones salientes y SSRF
+
+`/security-scan` aplica este corte a **toda petición saliente** dentro del alcance. La auditoría
+identifica el destino y el protocolo solicitados, evalúa el **destino efectivo** tras resolverlo y
+revalida cada una de las **redirecciones** antes de continuar. Rechaza siempre los destinos de
+metadata de infraestructura. Cualquier otro destino local, privado o link-local se rechaza o
+requiere una excepción documentada con responsable, alcance, motivo material y evidencia.
+
+La revisión también exige límites materiales de espera, cancelación, reintentos, respuesta y
+procesamiento. Cada control aplicable conserva estado, decisión y evidencia minimizada; si no pudo
+ejecutarse, queda como `no ejecutado`, nunca como verde implícito. El contrato normativo está en
+[`.agents/skills/security-scan/SKILL.md`](../../.agents/skills/security-scan/SKILL.md) y la lista
+de comprobación en
+[`docs/security/SECURITY-CHECKLIST.md`](../security/SECURITY-CHECKLIST.md).
+
 ### Definition of Done
 
 Una tarea no está hecha hasta que:

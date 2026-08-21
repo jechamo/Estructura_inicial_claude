@@ -242,9 +242,14 @@ function adquirirBloqueoTraceCorrect() {
       }
     } catch (error) {
       if (error?.code !== 'EEXIST') throw error;
-      validarRutaSinEnlaces(lockPath);
       if (Date.now() >= deadline)
         throw new Error(`trace-correct no pudo obtener el lock exclusivo en ${timeout} ms; no se escribió nada. Revisa manualmente ${lockPath} y no lo borres si otro proceso sigue activo.`);
+      try {
+        validarRutaSinEnlaces(lockPath);
+      } catch (validationError) {
+        if (validationError?.code === 'ENOENT') continue;
+        throw validationError;
+      }
       Atomics.wait(TRACE_LOCK_WAIT, 0, 0, 25);
     }
   }

@@ -75,3 +75,22 @@
 | **Razón** | implementación y controles en curso |
 | **Aprobado por** | |
 | **Fecha** | |
+
+## 6. Apéndice de regresión · carrera al rotar el lock
+
+| Fecha | Agente | Verificación | Tarea | Comando ejecutado | Resultado | Artefacto |
+|---|---|---|---|---|---|---|
+| 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/sdd-project.mjs run --slow --json` | 🔴 `532/533`: `debe_serializar_rectificaciones_concurrentes_sin_duplicar_ningun_append` falló con `ENOENT` al desaparecer `trace-correct.lock` entre `lstat` y `realpath` | salida real del gate lento |
+| 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/test-install.mjs` | 🟢 `533 correctas · 0 fallos`; concurrencia verde y locks reemplazados/ajenos continúan fallando cerrados | `scripts/sdd-project.mjs` |
+
+La corrección reintenta exclusivamente cuando la validación del lock que ya existía devuelve
+`ENOENT`, estado benigno porque otro proceso terminó de liberar ese lock. Cualquier error distinto,
+incluidos symlink, hardlink o reemplazo de identidad, conserva el rechazo fail-closed.
+
+### 6.1 · Revisión independiente y cierre del timeout
+
+| Fecha | Agente | Verificación | Tarea | Comando ejecutado | Resultado | Artefacto |
+|---|---|---|---|---|---|---|
+| 2026-08-21 | `code-reviewer` | `observed` | T-010-03 | revisión read-only de `/sdd-verify` | 🟠 detectó que `continue` podía eludir el deadline y que faltaba una ventana de carrera determinista | HANDOFF de revisión 016 |
+| 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/test-install.mjs` · `debe_respetar_el_timeout_si_el_lock_desaparece_durante_la_validacion` | 🔴 el runner terminó el proceso a 2019 ms con `ETIMEDOUT`; el límite interno de 100 ms no se respetó | preload que fuerza `EEXIST → lstat → ENOENT` |
+| 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/test-install.mjs` | 🟢 `536 correctas · 0 fallos`; timeout determinista, concurrencia, lock reemplazado y lock ajeno verdes | `scripts/sdd-project.mjs`, `scripts/test-install.mjs` |

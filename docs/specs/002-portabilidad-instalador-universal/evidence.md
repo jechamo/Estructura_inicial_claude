@@ -11,6 +11,7 @@
 | 2026-08-02 | Codex | `declared-direct` | T-002-05 | `node scripts/check-sdd.mjs` | gate normal verde; CI universal sin comandos de stack no configurados |
 | 2026-08-02 | Codex | `declared-direct` | T-002-06 | `node scripts/test-install.mjs` | `detect`, `inventory`, `new-spec`, `new-adr` y `verify` verdes en destino temporal |
 | 2026-08-02 | Codex | `declared-direct` | T-002-07 | `node scripts/check-sdd.mjs --strict --spec 002`; `npm run verify` | 7 tareas de la spec y 11 totales verificadas; 40 hooks y 87 escenarios de instalación verdes |
+| 2026-08-21 | implementer | `declared-direct` | T-002-01, T-002-04 | `node scripts/test-install.mjs` | RED: `CURRENT-STATE.md` y el backlog propio de `TECH-DEBT.md` se filtraban al destino; GREEN: semilla neutra de deuda + exclusión de estado observado, 517 correctas y 0 fallos |
 
 No existe `execution-log.jsonl`: no hubo una delegación observada por hooks. El agente activo hizo
 el trabajo directamente y por eso cada fila usa `declared-direct`.

@@ -5,7 +5,7 @@
  * `VERSION` la reescribe `scripts/site-prep.mjs` a partir de package.json.
  */
 
-export const VERSION = '0.7.0';
+export const VERSION = '0.8.0';
 export const REPO = 'jechamo/Estructura_inicial_claude';
 export const URL_REPO = `https://github.com/${REPO}`;
 

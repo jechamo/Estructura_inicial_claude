@@ -28,7 +28,7 @@ npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mod
 Para CI, automatizaciones o una instalación reproducible, fija el tag estable e inmutable:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores

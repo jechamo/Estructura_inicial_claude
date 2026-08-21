@@ -89,3 +89,27 @@ El negocio no decide sobre complejidad ciclomática. Decide sobre tiempo y riesg
 
 Traducir no es maquillar: la cifra sigue estando en `evidence.md`. Es elegir la unidad que permite
 a quien decide, decidir.
+
+---
+
+## Backlog brownfield · 2026-08-21
+
+Prioridad cualitativa por **impacto × frecuencia de cambio observada**. Esta sección documenta;
+no cierra tareas históricas ni corrige el baseline.
+
+| ID | Prioridad | Deuda / evidencia | Tratamiento o disparador | Estado |
+|---|---|---|---|---|
+| TD-ARCH-001 | Alta | Constitución heredada materializada, pero ADR-0001 pendiente de aprobación humana | aprobar/rechazar ADR antes de tratarla como vinculante | propuesta |
+| TD-SDD-002 | Alta | `web/README.md` declara la GUI fuera del circuito SDD/TDD | antes del próximo cambio de `web/`, crear spec y cobertura; no retroespecificar en bloque | abierta |
+| TD-OWN-003 | Alta | `.sdd/territories.json` no gobierna `scripts/`, `web/`, `site/`, tests ni hooks | aprobar mapa sin solapamientos y verificar guardas antes de activarlo | abierta |
+| TD-TRACE-004 | Alta | `T-010-05` permanece `en curso` y puede contaminar atribución | resolver mediante el circuito de la spec 010; onboarding no la cierra | abierta |
+| TD-TEST-005 | Alta | sin pruebas directas observadas para servidor, runner, validación y endpoints de la GUI | obligatorio antes de modificar red, TLS, procesos o API local | abierta |
+| TD-MOD-006 | Media | módulos grandes y calientes; `test-install.mjs` alcanzó el tercer aumento del trinquete | partir arnés/bloques antes de volver a elevar `.sdd/smells.json` | abierta |
+| TD-SUPPLY-007 | Media | Pages usa tags móviles de Actions, a diferencia del workflow principal fijado por SHA | fijar SHA en una spec de hardening/release | abierta |
+| TD-REL-008 | Media | `package.json`/tag estable 0.7.0 por detrás de `main` y de la documentación de `sdd-light` | resolver en `/sdd-ship` de la siguiente release | abierta |
+| TD-PROD-009 | Media | hashes de producto aprobados con encabezados `pending` en tres fuentes | normalizar mediante intake/decisión de producto, sin reescritura silenciosa | abierta |
+| TD-DOC-010 | Media | TFM presenta `skills-sync.mjs` como sincronizador/generador; el script solo audita y orienta | corregir documentación o cambiar comportamiento mediante su circuito correspondiente | abierta |
+| TD-GEN-011 | Media | `site-prep.mjs` materializa Pages sin entrada en `.sdd/generators.json` | aprobar contrato `site-publication` antes de activarlo | propuesta |
+| TD-DEPS-012 | Baja | sin lockfile ni `deps-audit`; hoy no hay dependencias de paquete | revisar al añadir la primera dependencia o ampliar supply chain | condicional |
+
+Detalle arquitectónico y propuesta de territorios: [`CURRENT-STATE.md`](../architecture/CURRENT-STATE.md).

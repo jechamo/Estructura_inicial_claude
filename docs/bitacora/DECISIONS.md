@@ -9,6 +9,53 @@
 
 ---
 
+## 2026-08-21 · Aprobación humana de la arquitectura heredada
+
+- **Tipo**: decisión
+- **Contexto**: la entrada «Regularización de la arquitectura heredada» dejó la constitución y
+  ADR-0001 como propuesta para un gate humano explícito.
+- **Decisión / hecho**: Jesus Chamorro respondió literalmente «aprobado continua». Se acepta
+  ADR-0001 y `docs/architecture/constitution.md` pasa a ser vinculante con el alcance exacto
+  presentado: arquitectura heredada formalizada, sin refactor ni cambio de comportamiento.
+- **Alternativas descartadas**: extender la aprobación a `.sdd/territories.json` o al generador
+  `site-publication`; ambos siguen como propuestas no aprobadas y no activadas.
+- **Impacto**: `/sdd-plan` ya puede contrastar la spec 016 contra una constitución aprobada. No se
+  modifica código, producto, specs, territorios ni generadores.
+- **Deuda aceptada**: permanece la registrada en la entrada de regularización y en
+  `docs/quality/TECH-DEBT.md`.
+- **Referencias**: `docs/architecture/constitution.md` ·
+  `docs/architecture/adr/ADR-0001-arquitectura-heredada.md` · entrada «Regularización de la
+  arquitectura heredada» de 2026-08-21
+- **Quién**: Jesus Chamorro (usuario) · evidencia literal «aprobado continua»
+
+---
+
+## 2026-08-21 · Regularización de la arquitectura heredada
+
+- **Tipo**: decisión propuesta y deuda
+- **Contexto**: el producto brownfield ya distribuía CLI, hooks, validadores, GUI local y Pages,
+  pero `docs/architecture/constitution.md` seguía siendo una plantilla `bootstrap`. La lectura
+  del código confirmó una distribución Node.js procedural por superficies, no la arquitectura
+  clean/hexagonal que sugería la plantilla.
+- **Decisión / hecho**: `/onboard` documenta el estado real en `CURRENT-STATE.md`, sustituye los
+  marcadores por una constitución brownfield y propone ADR-0001. No refactoriza, no cambia
+  comportamiento y no activa territorios ni generadores; esas dos propuestas requieren una
+  aprobación posterior.
+- **Alternativas descartadas**: declarar una arquitectura ideal inexistente —haría falsa la
+  fuente vinculante—; refactorizar durante onboarding —violaría el alcance—; conservar
+  `bootstrap` —mantendría bloqueada la planificación y ocultaría la deuda.
+- **Impacto**: quedan explícitos los cuatro entrypoints, filesystem/Git como persistencia, cero
+  dependencias runtime, las fronteras reales y los disparadores de revisión. Se conserva íntegro
+  el producto, las specs, el TFM, el changelog y la historia previa.
+- **Deuda aceptada**: GUI fuera del circuito y sin pruebas directas, código sin territorios,
+  módulos concentrados, `T-010-05` activa, baseline con encabezados `pending`, deriva de release y
+  generación documental no gobernada; revisión según `docs/quality/TECH-DEBT.md`.
+- **Referencias**: `docs/architecture/CURRENT-STATE.md` ·
+  `docs/architecture/constitution.md` · `ADR-0001` · `docs/quality/TECH-DEBT.md`
+- **Quién**: agente `architect` · aprobación humana del ADR pendiente
+
+---
+
 ## 2026-08-19 · El acordeón nunca abría, y la memoria se cuenta en positivo
 
 - **Tipo**: corrección de defecto y decisión editorial
@@ -242,6 +289,25 @@
   TFM deja de describir un sistema mejor que el que existe.
 - **Spec**: [`012-autocumplimiento-cli-y-gates`](../specs/012-autocumplimiento-cli-y-gates/spec.md)
 - **Quién**: usuario + implementer
+
+---
+
+## 2026-08-16 · Memoria TFM fuera del paquete instalable
+
+- **Tipo**: decisión
+- **Contexto**: se crea `docs/TFM/` con la memoria académica del ecosistema SDD y un
+  diagrama Excalidraw del catálogo de agentes. Ese material describe *esta* plantilla como
+  trabajo de fin de máster; no es contrato operativo de un proyecto destino.
+- **Decisión / hecho**: `docs/TFM/` se excluye de `debeCopiar` en el instalador y no entra en
+  la allowlist de `package.json` → `files`. Un test de instalación comprueba que la ruta no
+  viaja al destino.
+- **Alternativas descartadas**: publicar la memoria como guía instalada —contaminaría proyectos
+  ajenos con narrativa académica—; dejar que se copie por omisión —el manifiesto copia por
+  defecto todo lo que no excluye—.
+- **Impacto**: los proyectos que instalen el kit no reciben `docs/TFM/`; la memoria permanece
+  solo en el repositorio de la plantilla.
+- **Referencias**: `scripts/lib/manifiesto.mjs` · `scripts/test-install.mjs` · `docs/TFM/`
+- **Quién**: usuario + docs-writer / implementer
 
 ---
 
@@ -895,3 +961,24 @@
 ---
 
 <!-- Añade las entradas nuevas justo debajo de esta línea, empujando esta hacia abajo -->
+
+## 2026-08-21 · El contrato portable de seguridad incorpora SSRF/egress
+
+- **Tipo**: cambio de seguridad
+- **Contexto**: la revisión de la documentación académica de seguridad confirmó que el perfil del
+  auditor mencionaba SSRF, pero la skill canónica y la checklist instalable no imponían destino y
+  protocolo permitidos, resolución A/AAAA efectiva, redirects, metadata, límites ni evidencia.
+- **Decisión**: ampliar la skill `security-scan` y `SECURITY-CHECKLIST.md` existentes, sin crear un
+  agente ni una skill adicional. La fuente canónica mantiene once controles `SEC-SSRF-001..011`,
+  pruebas negativas portables y una guía que enlaza el contrato sin duplicarlo.
+- **Impacto**: una instalación nueva o brownfield recibe el mismo mínimo autosuficiente; falta de
+  acceso nunca equivale a PASS; los límites ausentes producen hallazgo; secretos y cuerpos
+  completos quedan fuera de la evidencia.
+- **Verificación**: suite 536/536, strict 016 sin problemas ni avisos, gates fast/slow PASS,
+  revisión de código sin hallazgos e informe de seguridad PASS con 11/11 controles.
+- **Pendiente de release**: CI Windows/Linux × Node 18/20/22 y smokes vivos de los seis hosts; no
+  se presentan como ejecutados y el tag `v0.8.0` no se crea antes de esos gates y del GO humano.
+- **Referencias**: spec 016, `docs/security/reports/2026-08-21-016-cobertura-ssrf-egress.md`,
+  `docs/quality/reports/2026-08-21-016-cobertura-ssrf-egress.md`.
+- **Quién**: implementación `declared-direct`; auditorías independientes `code-reviewer` y
+  `security-auditor`; aprobación humana de spec y plan registrada el 2026-08-21.

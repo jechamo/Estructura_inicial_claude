@@ -7,6 +7,8 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+## [0.8.0] — 2026-08-21
+
 ### Added
 - **Modo rápido: un peaje proporcional al riesgo.** La skill `/sdd-light` permite cerrar cambios de
   bajo riesgo sin escribir los cinco documentos de una spec. No dispensa de ningún gate, ni del
@@ -78,6 +80,11 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   el reparto, es la mejor forma de que acabe desactivando el sistema entero.
 
 ### Fixed
+- **Las rutas temporales de otra unidad ya no rompen el lint en Windows.** El autotest de sintaxis
+  acepta rutas absolutas válidas aunque el directorio temporal viva fuera de la unidad del repo.
+- **`trace-correct` respeta siempre el timeout del lock.** La desaparición del lock entre `lstat`
+  y `realpath` se trata como rotación normal, pero no puede eludir el deadline; una regresión
+  determinista fuerza esa carrera y conserva el fallo cerrado ante enlaces o reemplazos.
 - **La integración continua fallaba en todos los workflows.** Un caso de prueba de
   `--circuit-status` interrogaba al repositorio real y exigía que nombrase al menos una ruta fuera
   de la frontera. Eso solo se cumple con cambios sin registrar, así que en cualquier checkout
@@ -97,6 +104,12 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
   concreta, no un artefacto reutilizable.
 - **El comando de instalación de las pruebas se deriva de `package.json`.** Antes llevaba la versión
   escrita a mano y cada release rompía la comprobación.
+
+### Security
+- **Contrato portable SSRF/egress.** `security-scan` y la checklist instalada exigen destino y
+  protocolo permitidos, revalidación A/AAAA y de cada redirect, bloqueo absoluto de metadata,
+  excepciones internas completas, timeout/cancelación/reintentos, límites de respuesta y evidencia
+  minimizada. Once controles trazables y mutaciones negativas evitan falsos verdes.
 
 ## [0.7.0] — 2026-08-16
 

@@ -16,6 +16,10 @@ import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { auditarCommit, parsearTrailers } from './lib/trace-audit.mjs';
+import {
+  contrato_auditor_solo_lectura, contrato_jwt, csrf_no_samesite_solo, matriz_seguridad,
+  portabilidad_seguridad, registrarContratosSsrf, seguridad_versionada,
+} from './test/install-security-contracts.mjs';
 
 const ORIGEN = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const INSTALADOR = join(ORIGEN, 'scripts', 'install.mjs');
@@ -104,45 +108,6 @@ function ficherosTexto(raiz, relativa = '') {
   });
 }
 
-function seguridad_versionada(destino) {
-  const checklist = leer(join(destino, 'docs/security/SECURITY-CHECKLIST.md')) || '';
-  return /OWASP Top 10:2025/.test(checklist) && /ASVS 5\.0\.0/.test(checklist) &&
-    Array.from({ length: 10 }, (_, i) => `A${String(i + 1).padStart(2, '0')}:2025`)
-      .every((categoria) => checklist.includes(categoria));
-}
-
-function contrato_jwt(destino) {
-  const tokens = leer(join(destino, 'docs/security/AUTH-TOKENS.md')) || '';
-  return /alg\s*:\s*none/i.test(tokens) &&
-    ['iss', 'aud', 'sub', 'iat', 'exp', 'nbf', 'jti'].every((claim) => new RegExp(`\\b${claim}\\b`).test(tokens)) &&
-    /firma|signature/i.test(tokens) && /rotaci[oó]n de claves|key rotation/i.test(tokens) &&
-    /refresh token rotation/i.test(tokens) && /reuse detection/i.test(tokens) &&
-    /revocaci[oó]n|revocation/i.test(tokens) && /logout/i.test(tokens) &&
-    /roles|scopes/i.test(tokens) && /401/.test(tokens) && /403/.test(tokens) && /IDOR/.test(tokens) &&
-    /URL|query/i.test(tokens) && /logs?/i.test(tokens) &&
-    /no (?:se )?(?:impone|presupone|activa).*JWT/i.test(tokens);
-}
-
-function csrf_no_samesite_solo(destino) {
-  const tokens = leer(join(destino, 'docs/security/AUTH-TOKENS.md')) || '';
-  return /SameSite[\s\S]{0,220}(?:no sustituye|no reemplaza|defensa en profundidad)/i.test(tokens) &&
-    /HttpOnly/i.test(tokens) && /Secure/i.test(tokens) && /CSRF/i.test(tokens) &&
-    /GET[\s\S]{0,100}(?:no muta|no debe mutar|sin mutaci[oó]n|no cambia(?:n)? estado)/i.test(tokens) &&
-    /Bearer[\s\S]{0,220}(?:cookie|CSRF)/i.test(tokens);
-}
-
-function matriz_seguridad(destino) {
-  const spec = leer(join(destino, 'docs/specs/_TEMPLATE/spec.md')) || '';
-  const plan = leer(join(destino, 'docs/specs/_TEMPLATE/plan.md')) || '';
-  const tasks = leer(join(destino, 'docs/specs/_TEMPLATE/tasks.md')) || '';
-  const tests = leer(join(destino, 'docs/specs/_TEMPLATE/test-plan.md')) || '';
-  const evidence = leer(join(destino, 'docs/specs/_TEMPLATE/evidence.md')) || '';
-  return /Impacto de seguridad/.test(spec) &&
-    /Control\s*\|\s*ASVS\s*\|\s*OWASP\s*\|\s*Aplica\s*\|\s*Decisión \/ justificación\s*\|\s*Tarea\s*\|\s*Test\s*\|\s*Evidencia/.test(plan) &&
-    /Controles de seguridad/.test(tasks) && /abuso|negativ/i.test(tests) &&
-    /Informe de seguridad/.test(evidence) && /Controles de seguridad ejecutados/.test(evidence);
-}
-
 /** La cadena de usabilidad debe existir entera en las plantillas, igual que la de seguridad. */
 function usabilidad_versionada(destino) {
   const spec = leer(join(destino, 'docs/specs/_TEMPLATE/spec.md')) || '';
@@ -229,30 +194,6 @@ function workflow_supply_chain(destino) {
     !/test-install\.mjs|\b(?:npm|pnpm|yarn)\s+(?:ci|run|audit)\b|upload-artifact@v\d/.test(ci);
 }
 
-function portabilidad_seguridad(destino) {
-  const indice = leer(join(destino, 'docs/README.md')) || '';
-  return /security\/AUTH-TOKENS\.md/.test(indice) &&
-    /security\/SECURITY-CHECKLIST\.md/.test(indice) &&
-    existsSync(join(destino, '.codex/agents/security-auditor.toml')) &&
-    existsSync(join(destino, '.cursor/agents/security-auditor.md')) &&
-    existsSync(join(destino, '.github/agents/security-auditor.agent.md'));
-}
-
-function contrato_auditor_solo_lectura(destino) {
-  const perfil = leer(join(destino, '.claude/agents/security-auditor.md')) || '';
-  const cabecera = perfil.match(/^---\s*\n([\s\S]*?)\n---/)?.[1] || '';
-  const tools = cabecera.match(/^tools:\s*(.+)$/m)?.[1] || '';
-  const camposHandoff = [
-    'Agente origen', 'Fase completada', 'Fuentes consultadas', 'Estándares', 'Alcance',
-    'Controles evaluados', 'Evidencias y comandos', 'Hallazgos', 'Riesgos aceptados',
-    'Controles no ejecutados', 'Veredicto', 'Informe a materializar', 'Siguiente agente sugerido',
-    'Comando / contexto durable',
-  ];
-  return /\bRead\b/.test(tools) && !/\b(?:Write|Edit|Agent)\b/.test(tools) &&
-    /auditor de seguridad de solo lectura/i.test(perfil) && /### HANDOFF/.test(perfil) &&
-    camposHandoff.every((campo) => perfil.includes(`- ${campo}:`));
-}
-
 function ejecutaTraceCorrect(destino, ...argumentos) {
   return spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'trace-correct', ...argumentos, '--json'], {
     cwd: destino,
@@ -265,6 +206,15 @@ function ejecutaTraceCorrectConEntorno(destino, entorno, ...argumentos) {
     cwd: destino,
     encoding: 'utf8',
     env: { ...process.env, ...entorno },
+  });
+}
+
+function ejecutaTraceCorrectConEntornoYLimite(destino, entorno, limiteMs, ...argumentos) {
+  return spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'trace-correct', ...argumentos, '--json'], {
+    cwd: destino,
+    encoding: 'utf8',
+    env: { ...process.env, ...entorno },
+    timeout: limiteMs,
   });
 }
 
@@ -836,6 +786,50 @@ console.log('\ntrace-correct · idempotencia entre procesos concurrentes');
     eventosDestino.filter((evento) => evento.evento === 'trace-attribution' && evento.session === sesion).length === 1 &&
     (leer(bitacora) || '').split(/\r?\n/).filter((linea) => linea.includes(sesion)).length === 1,
     JSON.stringify({ resultados, salidas, eventosOrigen, eventosDestino, bitacora: leer(bitacora) }));
+}
+
+console.log('\ntrace-correct · timeout durante la rotación del lock');
+{
+  const d = nuevoDestino();
+  sdd(d, 'init');
+  const preload = join(d, 'rotate-trace-lock.cjs');
+  writeFileSync(preload, [
+    "const fs = require('node:fs');",
+    'const openOriginal = fs.openSync;',
+    'const lstatOriginal = fs.lstatSync;',
+    'const realpathOriginal = fs.realpathSync;',
+    "const isLock = (file) => String(file).replace(/\\\\/g, '/').endsWith('/.sdd/state/trace-correct.lock');",
+    'fs.openSync = function (file, flags, ...args) {',
+    "  if (isLock(file) && flags === 'wx') { const error = new Error('lock ocupado'); error.code = 'EEXIST'; throw error; }",
+    '  return openOriginal.call(this, file, flags, ...args);',
+    '};',
+    'fs.lstatSync = function (file, ...args) {',
+    '  if (isLock(file)) return lstatOriginal.call(this, __filename);',
+    '  return lstatOriginal.call(this, file, ...args);',
+    '};',
+    'fs.realpathSync = function (file, ...args) {',
+    "  if (isLock(file)) { const error = new Error('lock rotado'); error.code = 'ENOENT'; throw error; }",
+    '  return realpathOriginal.call(this, file, ...args);',
+    '};',
+    "require('node:module').syncBuiltinESMExports();",
+  ].join('\n'), 'utf8');
+  const sesion = 'rotacion1';
+  preparaSpecDeTraza(d, '010-origen', [
+    { ts: '2026-08-13T10:00:00.000Z', evento: 'subagent-start', agente: 'test-engineer', sesion },
+  ]);
+  preparaSpecDeTraza(d, '011-destino');
+  const inicio = Date.now();
+  const resultado = ejecutaTraceCorrectConEntornoYLimite(d, {
+    NODE_OPTIONS: `--require=${preload}`,
+    SDD_TRACE_LOCK_TIMEOUT_MS: '100',
+  }, 2_000, '--from-spec', '010', '--to-spec', '011', '--session', sesion,
+  '--reason', 'rotación continua del lock');
+  const duracion = Date.now() - inicio;
+  comprueba('debe_respetar_el_timeout_si_el_lock_desaparece_durante_la_validacion',
+    resultado.status !== 0 && resultado.error?.code !== 'ETIMEDOUT' && duracion < 2_000 &&
+    /no pudo obtener el lock exclusivo en 100 ms/.test(`${resultado.stdout || ''}${resultado.stderr || ''}`),
+    JSON.stringify({ status: resultado.status, error: resultado.error?.code, duracion,
+      salida: `${resultado.stdout || ''}${resultado.stderr || ''}`.slice(-300) }));
 }
 
 // trace_correct_reanuda_fallo_parcial
@@ -1464,6 +1458,7 @@ console.log('\n1 · init sobre un directorio vacío');
     !/T-01|Suplantación|POST \/\.\.\./.test(leer(join(d, 'docs/security/THREAT-MODEL.md')) || ''));
   comprueba('instala doctrina versionada OWASP y ASVS sin decidir el stack', seguridad_versionada(d));
   comprueba('instala contrato completo JWT, refresh y autorización', contrato_jwt(d));
+  registrarContratosSsrf({ comprueba, origen: ORIGEN, destinoInstalado: d });
   comprueba('CSRF no descansa únicamente en SameSite', csrf_no_samesite_solo(d));
   comprueba('las plantillas propagan impacto, controles y abuso hasta la evidencia', matriz_seguridad(d));
   comprueba('las plantillas propagan DOC-ID desde impacto hasta evidencia', (() => {
@@ -1532,7 +1527,6 @@ console.log('\n1 · init sobre un directorio vacío');
     /versionar|subir|commit/i.test(r.stdout || '') &&
     /local|no versionar|excluid/i.test(r.stdout || '') &&
     /git status/i.test(r.stdout || ''));
-
   // Lo que NO debe viajar: el historial de la plantilla
   comprueba('NO copia el contenido del README de la plantilla',
     !/npx github:jechamo\/Estructura_inicial_claude global/.test(leer(join(d, 'README.md')) || ''));
@@ -1547,6 +1541,7 @@ console.log('\n1 · init sobre un directorio vacío');
     readdirSync(join(d, 'docs/quality/reports')).filter((x) => x !== '.gitkeep').length === 0 &&
     readdirSync(join(d, 'docs/security/reports')).filter((x) => x !== '.gitkeep').length === 0);
   comprueba('NO copia el instalador', !existsSync(join(d, 'scripts/install.mjs')));
+  comprueba('NO copia la memoria TFM de la plantilla', !existsSync(join(d, 'docs/TFM')));
   const contaminados = ficherosTexto(d).filter((ruta) => {
     const normalizada = ruta.replaceAll('\\', '/');
     if (['.sdd/installed.json', 'scripts/check-sdd.mjs'].includes(normalizada)) return false;

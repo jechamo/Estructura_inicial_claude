@@ -1,7 +1,7 @@
 # Sistema de agentes SDD — Memoria técnica
 
 > Documento de entrega de Trabajo Fin de Máster.
-> Versión del sistema descrito: **0.7.0** · Manifiesto de instalación: **v7**
+> Versión del sistema descrito: **0.8.0** · Manifiesto de instalación: **v7**
 > Ámbito: plantilla portable de ecosistema de agentes para desarrollo dirigido por especificación.
 
 ---
@@ -564,7 +564,7 @@ workspace, para que se aplique una única superficie de agentes y skills.
 | Forma | Comando | Uso |
 |---|---|---|
 | **Móvil** — última `main` | `npx --yes github:jechamo/Estructura_inicial_claude init …` | Desarrollo, evaluación, obtener lo último |
-| **Reproducible** — tag inmutable | `npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init …` | CI, producción, instalación auditable |
+| **Reproducible** — tag inmutable | `npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init …` | CI, producción, instalación auditable |
 
 En un TFM y en cualquier entorno de CI debe usarse **siempre la forma con tag**: una instalación
 que no se puede reproducir no se puede verificar.
@@ -601,7 +601,7 @@ una decisión de seguridad: un servidor MCP es código de terceros con acceso al
 agente. Se activa solo lo que se ha decidido activar:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "C:\ruta\proyecto" `
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "C:\ruta\proyecto" `
   --mode auto --with-mcp context7,playwright
 ```
 
@@ -611,8 +611,8 @@ escriben nunca**: cada *host* las solicita o las lee del entorno.
 ### 3.7 Actualización de una instalación existente
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 check  "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 check  "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 update "C:\ruta\proyecto"
 ```
 
 `check` informa sin escribir. `update` actualiza los ficheros gestionados **sin cambios locales**,
@@ -623,7 +623,7 @@ reinician**.
 ### 3.8 Capa global opcional
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 global --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 global --dry-run
 ```
 
 Instala perfiles y skills a nivel de usuario para poder descubrirlos fuera de proyectos
@@ -1506,7 +1506,7 @@ flowchart LR
 
 | Paso | Comando o agente | Artefacto resultante |
 |---|---|---|
-| 1 | `npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "." --mode auto --dry-run`, luego sin `--dry-run` | Estructura instalada, contexto preservado |
+| 1 | `npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "." --mode auto --dry-run`, luego sin `--dry-run` | Estructura instalada, contexto preservado |
 | 2 | `/onboard` con `@research-analyst` | Mapa real del repositorio: capas, fronteras, dependencias |
 | 3 | `@architect` | `docs/architecture/constitution.md` + `ADR-0001` que documenta la arquitectura *ya existente* |
 | 4 | `/docs-sync bootstrap` con `@docs-writer` | Baseline verificable de `docs/`, `README` corregido |
@@ -3062,6 +3062,5 @@ node scripts/install.mjs init "<destino-vacío>" --mode greenfield --si
 Las cifras corresponden al estado del repositorio a partir de la spec `012`, que es la que fijó
 la forma actual de la CLI y del baseline. Ejecutar los comandos sobre esa versión o posterior
 reproduce exactamente los valores anteriores.
-
 
 

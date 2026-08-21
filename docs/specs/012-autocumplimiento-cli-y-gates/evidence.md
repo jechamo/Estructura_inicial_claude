@@ -70,3 +70,21 @@
   "findings": []
 }
 -->
+
+## Corrección append-only · 2026-08-21 · T-012-05
+
+Se conserva T-012-05 como tarea histórica cerrada y se registra esta regresión sin reescribir
+su estado ni la evidencia original. En Windows, `tmpdir()` puede pertenecer a una unidad distinta
+de la raíz del repositorio; recomponer una ruta absoluta con `join(ROOT, ruta)` hacía que el
+autotest rechazase un módulo sintácticamente válido.
+
+| Fase | Comando | Resultado real |
+|---|---|---|
+| RED | `node scripts/check-syntax.mjs --selftest` | FAIL · `✗ ruta absoluta con sintaxis válida aceptada` · `1 comprobación(es) fallida(s)` |
+| GREEN | `node scripts/check-syntax.mjs --selftest` | PASS · siete comprobaciones, incluida `✓ ruta absoluta con sintaxis válida aceptada` |
+| Suite pertinente | `npm test` | PASS · `181 correcta(s) · 0 fallo(s)` y autotest completo en verde |
+| Gate rápido | `node scripts/sdd-project.mjs run --fast` | FAIL ajeno a esta corrección · `sdd`, `lint`, `test` y `build` verdes; `smells` rechaza el cambio staged preexistente en `scripts/test-install.mjs` (3832 líneas, máximo 3831) |
+
+**SEC-CLI-003:** verificado para esta corrección: el linter sigue invocando `node --check`
+mediante `argv` sin shell y no amplía los comandos configurables. El gate global queda pendiente
+de que el propietario de la reconciliación staged resuelva el trinquete de tamaño citado.

@@ -16,7 +16,7 @@ npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mod
 Para CI, producción o una instalación reproducible, usa el tag estable e inmutable:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 El destino puede no existir y puede contener espacios. `--dry-run` no crea el directorio ni
@@ -79,7 +79,7 @@ La instalación normal no crea `.mcp.json`, `.vscode/mcp.json` ni entradas MCP d
 solo los servidores que hayas elegido:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 init "C:\ruta\proyecto" `
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "C:\ruta\proyecto" `
   --mode auto --with-mcp context7,playwright
 ```
 
@@ -161,8 +161,8 @@ comparar código y documentación.
 ## Actualizar
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 check "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 update "C:\ruta\proyecto"
 ```
 
 Un fichero gestionado sin cambios se actualiza. Uno modificado se preserva y recibe una propuesta
@@ -181,7 +181,7 @@ declaradas, pero el programa que una persona aprueba sigue ejecutándose con sus
 necesario para que un repositorio instalado funcione y no instala hooks globales:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.7.0 global --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 global --dry-run
 ```
 
 Codex y Antigravity se mantienen por proyecto para no alterar configuración personal.
