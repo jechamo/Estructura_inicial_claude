@@ -65,7 +65,9 @@ separa la demostración RED del GREEN mínimo. No se presentó esa suite roja co
 | SEC-SSRF-010 | T-016-01/02 | `contrato_ssrf_minimiza_evidencia` | RED correcto → GREEN 528/528 | skill/checklist | verificado |
 | SEC-SSRF-011 | T-016-01/02 | `instala_contrato_ssrf_portable_sin_duplicados` | RED correcto → GREEN 528/528 | instalación limpia + preservación brownfield existente | verificado |
 
-**Informe de seguridad**: pendiente de `/security-scan verify` en T-016-06.
+**Informe de seguridad**: `docs/security/reports/2026-08-21-016-cobertura-ssrf-egress.md`
+(`/security-scan verify`, `verdict: PASS`, CRÍTICO 0 · ALTO 0 · MEDIO 0 · BAJO 0, once controles
+`SEC-SSRF-001..011` superados, ningún control no ejecutado dentro de la matriz).
 
 ### 3.2 · Controles de usabilidad ejecutados
 
@@ -128,7 +130,16 @@ T-016-06 sigue pendiente de la fase de verificación independiente.
 - 🟢 RF-01 a RF-12 y CA-01 a CA-12 cubiertos por pruebas ejecutadas.
 - 🟢 DOC-SKILLS sincronizado mediante `docs-writer` y validado por el implementador.
 - 🟢 Suite completa 533/533 y cinco gates fast en PASS.
-- ⏸️ T-016-06, `run --slow`, CI y auditoría independiente siguen pendientes; no se declara GO.
+- 🟢 2026-08-22: `run --fast` PASS (5/5) y `run --slow` PASS (4/4) reejecutados sobre `9d3e69c`;
+  `trace-status --spec 016 --json` devuelve `complete: true`, `missing: 0`; la auditoría
+  independiente está materializada con `verdict: PASS`.
+- ⏸️ **T-016-06 sigue `pendiente` y es correcto que lo siga.** Su definición de hecho exige CI
+  Windows/Linux × Node 18/20/22, que no se ha ejecutado: no hay forma de correr GitHub Actions
+  desde esta sesión. Control no ejecutado, no control superado.
+  · Riesgo: una regresión específica de plataforma o de versión de Node quedaría sin detectar.
+  · Dueño: quien empuje la rama; CI se dispara al hacerlo.
+  · Siguiente paso: empujar y leer el resultado de `quality-gates.yml` y `sdd-gates.yml`.
+- ⏸️ El `GO` de entrega y el tag conservan sus aprobaciones humanas: ningún informe local las sustituye.
 
 ## 7. Apéndice de convergencia · referencias ejecutables exactas
 

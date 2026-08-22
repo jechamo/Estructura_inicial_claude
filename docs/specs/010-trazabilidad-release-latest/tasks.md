@@ -85,7 +85,7 @@
 - **Paralelizable**: no
 
 ### T-010-05 · Rectificar historia, cerrar 009 y publicar v0.6.0
-- **Estado**: en curso
+- **Estado**: hecho
 - **Terreno**: release
 - **Skill**: `/sdd-ship`
 - **Capa**: entrega

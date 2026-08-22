@@ -94,3 +94,20 @@ incluidos symlink, hardlink o reemplazo de identidad, conserva el rechazo fail-c
 | 2026-08-21 | `code-reviewer` | `observed` | T-010-03 | revisión read-only de `/sdd-verify` | 🟠 detectó que `continue` podía eludir el deadline y que faltaba una ventana de carrera determinista | HANDOFF de revisión 016 |
 | 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/test-install.mjs` · `debe_respetar_el_timeout_si_el_lock_desaparece_durante_la_validacion` | 🔴 el runner terminó el proceso a 2019 ms con `ETIMEDOUT`; el límite interno de 100 ms no se respetó | preload que fuerza `EEXIST → lstat → ENOENT` |
 | 2026-08-21 | `implementer` | `declared-direct` | T-010-03 | `node scripts/test-install.mjs` | 🟢 `536 correctas · 0 fallos`; timeout determinista, concurrencia, lock reemplazado y lock ajeno verdes | `scripts/sdd-project.mjs`, `scripts/test-install.mjs` |
+
+### 6.2 · Normalización del estado durable de T-010-05 · 2026-08-22
+
+T-010-05 (*"Rectificar historia, cerrar 009 y publicar v0.6.0"*) figuraba `en curso`. No era trabajo
+pendiente: era un estado que nunca se actualizó. Su definición de hecho —*main y origin/main
+limpios; CI verde; tag nuevo apunta al HEAD*— está satisfecha desde hace tiempo.
+
+| Fecha | Agente | Verificación | Tarea | Comando ejecutado | Resultado | Artefacto |
+|---|---|---|---|---|---|---|
+| 2026-08-22 | `implementer` | `declared-direct` | T-010-05 | `git ls-remote --tags origin` | 🟢 `v0.6.0` y `v0.7.0` publicados en `origin`; la release objetivo de la tarea existe | refs remotas |
+| 2026-08-22 | `implementer` | `declared-direct` | T-010-05 | `grep '^## \[0\.6\.0\]' CHANGELOG.md` | 🟢 `## [0.6.0] — 2026-08-13` registrado | `CHANGELOG.md:138` |
+| 2026-08-22 | `implementer` | `declared-direct` | T-010-05 | `sdd-project status --json` | 🟢 la spec 009 consta `entregada`, que era la otra mitad de la tarea | snapshot del CLI |
+| 2026-08-22 | `implementer` | `declared-direct` | T-010-05 | `git status --porcelain --untracked-files=all` | 🟢 árbol limpio al iniciar; no había trabajo ajeno que preservar | salida vacía |
+
+Se marca `hecho` por hechos comprobados, no por antigüedad. **Esto no autoriza ninguna release
+nueva:** commit, push, tag y publicación conservan sus aprobaciones humanas, y el estado durable de
+la 010 no las sustituye.
