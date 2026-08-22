@@ -44,7 +44,15 @@ function cubre(patron, ruta) {
   const p = normalizar(String(patron || '').replace(/\/+$/, '/'));
   if (!p) return false;
   const esCarpeta = String(patron).replace(/\\/g, '/').trim().endsWith('/');
-  return esCarpeta ? ruta === p || ruta.startsWith(`${p}/`) : ruta === p;
+  // La comparación pliega la caja. En Windows y en macOS por defecto el sistema de ficheros no
+  // distingue mayúsculas: `Src/domain/pagos.ts` y `src/domain/pagos.ts` son el MISMO fichero. Sin
+  // plegar, una frontera que declara `permitido: ["Src/"]` —lo natural si la carpeta se llama así
+  // en el disco— y `prohibido: ["src/domain/"]` —lo que trae la semilla— deja pasar como ligero un
+  // fichero de dominio: el permiso casa y la negación no. Comparar cadenas sin plegar convierte la
+  // ortografía de quien escribió la frontera en un permiso.
+  const a = p.toLowerCase();
+  const b = String(ruta).toLowerCase();
+  return esCarpeta ? b === a || b.startsWith(`${a}/`) : b === a;
 }
 
 /** ¿Cabe este fichero en el circuito ligero según la frontera declarada? */

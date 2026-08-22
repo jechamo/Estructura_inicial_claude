@@ -69,9 +69,14 @@ Cuatro causas medidas, no supuestas:
    los hosts piden el documento completo para cualquier fase o decisión. Ocho fases con agente frío
    releen la misma política ocho veces.
 
-A esto se suma un defecto vivo: la comparación de rutas de la frontera no pliega la caja, de modo que
-en sistemas de ficheros que no distinguen mayúsculas —Windows y macOS por defecto— una ruta prohibida
-se esquiva cambiando una letra a mayúscula.
+A esto se suma un defecto vivo: la comparación de rutas de la frontera no pliega la caja. Cambiar
+la caja de una ruta por sí solo cae del lado seguro —no casa con el permiso y el resultado es
+circuito completo—, pero hay una combinación que sí abre la puerta: cuando el permiso se declara
+con la caja real del disco (`Src/`, lo natural si la carpeta se llama así en Windows) y la
+prohibición viene en minúsculas desde la semilla (`src/domain/`), el permiso casa, la negación no
+alcanza, y un fichero de dominio se clasifica como ligero. En sistemas de ficheros que no
+distinguen mayúsculas —Windows y macOS por defecto— ambas rutas son el mismo fichero, así que la
+ortografía de quien escribió la frontera se convierte en un permiso.
 
 ## 2. Objetivo y métrica de éxito
 

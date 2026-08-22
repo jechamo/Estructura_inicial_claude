@@ -17,6 +17,7 @@ import {
 import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { recortar as recortarContexto, MAPA_FASES } from './lib/contexto.mjs';
+import { resumir, nuevoRunId, guardarSalida } from './lib/resumen-gates.mjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { validateDocsConfig, matchesDocPattern } from './lib/docs-contract.mjs';
 import { PATRONES_SECRETO } from '../.sdd/hooks/_lib.mjs';
@@ -99,6 +100,7 @@ Trabajo sobre specs
 
 Ejecución y configuración
   run [--ci] [--fast|--slow]          ejecuta los gates declarados en .sdd/checks.json
+  run --summary-json                  resume cada gate y deja la salida completa en un log
   verify [--json]                     verificación completa antes de entregar
   configure --accept-detected [--dry-run]
   generate <id> [--dry-run] [--json]  ejecuta un generador declarado
@@ -1433,21 +1435,42 @@ function ejecutarChecks() {
   // existen para partir el coste entre el commit y el push.
   const filtro = argv.includes('--fast') ? 'fast' : argv.includes('--slow') ? 'slow' : null;
   const resultados = [];
+  const resumenes = [];
   const omitidos = [];
   let fallo = false;
+  const RESUMEN = argv.includes('--summary-json');
+  const RUN_ID = nuevoRunId();
   for (const [id, check] of Object.entries(config.checks || {})) {
     if (!check?.command || check.enabled === false) continue;
     const velocidad = velocidadDe(check, id);
     if (filtro && velocidad !== filtro) { omitidos.push(id); continue; }
     const inicio = Date.now();
-    const resultado = spawnSync(check.command, { cwd: ROOT, shell: true, encoding: 'utf8', stdio: 'inherit' });
-    resultados.push({ id, command: check.command, speed: velocidad, status: resultado.status, durationMs: Date.now() - inicio });
+    // Con `--summary-json` se captura en vez de heredar: la suite completa deja de viajar al
+    // contexto en cada GREEN. Sin la bandera, el comportamiento anterior no cambia.
+    const resultado = RESUMEN
+      ? spawnSync(check.command, { cwd: ROOT, shell: true, encoding: 'utf8' })
+      : spawnSync(check.command, { cwd: ROOT, shell: true, encoding: 'utf8', stdio: 'inherit' });
+    const durationMs = Date.now() - inicio;
+    if (RESUMEN) {
+      const salida = `${resultado.stdout || ''}${resultado.stderr || ''}`;
+      // La salida completa se conserva fuera del contexto y sigue recuperable por su runId.
+      const log = guardarSalida(join(ROOT, '.sdd/state/gate-runs'), RUN_ID, id, salida);
+      resumenes.push({ ...resumir({ id, command: check.command, speed: velocidad, status: resultado.status, durationMs, salida, runId: RUN_ID }), log: relative(ROOT, log).replace(/\\/g, '/') });
+    }
+    resultados.push({ id, command: check.command, speed: velocidad, status: resultado.status, durationMs });
     if (resultado.status !== 0 && check.required !== false) fallo = true;
   }
   const noConfigurados = (config.unconfigured || []).filter((id) =>
     !filtro || (GATES[gateBase(id)] || 'fast') === filtro);
   const estado = fallo ? 'fail' : resultados.length ? 'pass' : 'unconfigured';
-  if (!JSON_OUT) {
+  if (RESUMEN) {
+    // El código de salida real no cambia: este bloque describe, no decide.
+    console.log(JSON.stringify({
+      schemaVersion: 1, runId: RUN_ID, ok: !fallo, status: estado, speed: filtro,
+      results: resumenes, skipped: omitidos, unconfigured: noConfigurados,
+      note: 'La salida completa de cada gate está en su `log`; no se imprime aquí a propósito.',
+    }, null, 2));
+  } else if (!JSON_OUT) {
     const alcance = filtro ? ` (${filtro})` : '';
     const veredicto = estado === 'fail' ? 'FAIL' : estado === 'pass' ? 'PASS' : 'NO EJECUTADO';
     console.log(`\n${resultados.length} check(s) ejecutado(s)${alcance}: ${veredicto}`);

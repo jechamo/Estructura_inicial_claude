@@ -18,6 +18,8 @@ import { tmpdir } from 'node:os';
 import { findActiveSpec } from '../.sdd/hooks/_lib.mjs';
 import { decidirTerritorio, cargarTerritorios } from '../.sdd/hooks/territorios.mjs';
 import { pruebas as pruebasDeContexto } from './test/contexto-recorte.mjs';
+import { pruebas as pruebasDeResumen } from './test/resumen-gates.mjs';
+import { pruebas as pruebasDeFrontera } from './test/circuito-frontera.mjs';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -446,6 +448,8 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       readFileSync(join(process.cwd(), 'scripts/lib/docs-contract.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/contexto.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/contexto.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/resumen-gates.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/resumen-gates.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {
@@ -896,6 +900,12 @@ comprueba('si ya se invoca la skill, el router no estorba',
 // ─── recorte de contexto por fase (spec 017) ─────────────────────────────────
 console.log('\ncontexto · recorta la política a lo que la fase necesita');
 await pruebasDeContexto(comprueba);
+
+console.log('\nresumen-gates · informa sin volcar la suite');
+await pruebasDeResumen(comprueba);
+
+console.log('\ncircuito · la frontera no se esquiva escribiéndola distinto');
+await pruebasDeFrontera(comprueba);
 
 // ─── limpieza ────────────────────────────────────────────────────────────────
 try {

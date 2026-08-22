@@ -15,14 +15,31 @@
 | 2026-08-22 | `implementer` | `declared-direct` | T-017-03 | `node scripts/test-hooks.mjs` | 🔴 `ENOENT … last-gate-run.json`: el `import` estático de `contexto.mjs` impedía cargar `sdd-project.mjs` donde ese fichero no estaba | traza de Node |
 | 2026-08-22 | `implementer` | `declared-direct` | T-017-03 | `node scripts/test-hooks.mjs` tras añadir `contexto.mjs` a la allowlist del instalador y al fixture | 🟢 `186 correcta(s) · 0 fallo(s)` | `scripts/lib/manifiesto.mjs`, `scripts/test-hooks.mjs` |
 | 2026-08-22 | `implementer` | `declared-direct` | T-017-03 | `node scripts/sdd-project.mjs run --fast` | 🟢 PASS 5/5 · sdd, lint, test, build, smells | salida real |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-04 | tests de `scripts/test/resumen-gates.mjs` | 🔴 `0 ok · 2 fallo(s)` con `sin-modulo` → 🟢 `2 ok · 0 fallo(s)` | `scripts/lib/resumen-gates.mjs` |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-04 | `node scripts/sdd-project.mjs run --fast --summary-json` | 🟢 PASS; salida real 12.654 B → resumen 1.721 B, ahorro 86 % | salida JSON real |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-04 | `node scripts/sdd-project.mjs run --slow --summary-json` | 🟢 PASS; e2e 536/536; salida real 31.473 B → resumen 1.521 B, ahorro 95 % | salida JSON real |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-05 | comprobación empírica del defecto antes de escribir el test | 🔴 `esLigero('Src/domain/pagos.ts', {permitido:['Src/'], prohibido:['src/domain/']})` devolvía `true`: un fichero de dominio como ligero | salida real |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-05 | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | 🔴 `fail-la-negacion-se-esquiva-con-la-caja` → 🟢 tras plegar la caja en `cubre()` | `scripts/lib/circuito.mjs` |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-05 | `node scripts/sdd-project.mjs run --slow` | 🟢 PASS 4/4; `test-install` 536/536: plegar la caja no rompió la frontera existente | salida real |
 
-### Defecto encontrado por el propio ciclo
+### Defectos encontrados por el propio ciclo
+
+**1 · Un módulo nuevo no se instalaba.**
 
 El rojo de `test-hooks` no era un fallo del test: `scripts/lib/` es una **allowlist** explícita en
 `debeCopiar()` (`scripts/lib/manifiesto.mjs`), de modo que un módulo nuevo no se instala salvo que
 se declare. Sin ese arreglo, `context --phase` habría fallado en **todos** los proyectos instalados
 mientras funcionaba en la plantilla. Lo detectó el fixture que copia el conjunto mínimo de ficheros,
 no una revisión visual.
+
+**2 · La frontera se podía esquivar con la caja, pero no como se había descrito.** La
+descripción inicial —«cambiar una mayúscula esquiva la prohibición»— era imprecisa, y se
+comprobó antes de escribir el test. Cambiar la caja de la ruta por sí solo cae del lado
+seguro: no casa con el permiso y el resultado es circuito completo. Lo explotable es la
+combinación `permitido: ["Src/"]` (la caja real del disco en Windows) con
+`prohibido: ["src/domain/"]` (la que trae la semilla): el permiso casa, la negación no
+alcanza, y un fichero de dominio sale ligero. Se corrigió la redacción de `spec.md` §1 antes
+de implementar.
 
 ## 2. Trazabilidad requisito → test
 
@@ -32,9 +49,9 @@ no una revisión visual.
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-02 | CA-02 | T-017-02 | `scripts/lib/contexto.mjs` `indexar()` | `scripts/test/contexto-recorte.mjs::falla_cerrado_y_conserva_invariantes` | 🟢 |
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-03 | CA-01 | T-017-02 | `scripts/lib/contexto.mjs` opciones `sensible`/`usabilidad` | `scripts/test/contexto-recorte.mjs::la_trazabilidad_de_seguridad_solo_llega_si_la_spec_es_sensible` | 🟢 |
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-04 | CA-03 | T-017-03 | `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.agents/rules/00-core.md`, `.cursor/rules/00-core.mdc`, `scripts/lib/manifiesto.mjs` | `scripts/test/contexto-recorte.mjs::ninguna_superficie_exige_el_documento_completo` | 🟢 |
-| OBJ-004 | PRD-RF-007 | UC-005 | RF-05 | CA-04 | T-017-04 | pendiente | `scripts/test/resumen-gates.mjs::resume_comando_codigo_conteos_y_ejecucion` | ⏸️ |
-| OBJ-004 | PRD-RF-007 | UC-005 | RF-06 | CA-04 | T-017-04 | pendiente | `scripts/test/resumen-gates.mjs::la_salida_completa_sigue_recuperable_por_identificador` | ⏸️ |
-| OBJ-001 | PRD-RF-001 | UC-003 | RF-10 | CA-08 | T-017-05 | pendiente | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | ⏸️ |
+| OBJ-004 | PRD-RF-007 | UC-005 | RF-05 | CA-04 | T-017-04 | `scripts/lib/resumen-gates.mjs` | `scripts/test/resumen-gates.mjs::resume_comando_codigo_conteos_y_ejecucion` | 🟢 |
+| OBJ-004 | PRD-RF-007 | UC-005 | RF-06 | CA-04 | T-017-04 | `scripts/lib/resumen-gates.mjs` | `scripts/test/resumen-gates.mjs::la_salida_completa_sigue_recuperable_por_identificador` | 🟢 |
+| OBJ-001 | PRD-RF-001 | UC-003 | RF-10 | CA-08 | T-017-05 | `scripts/lib/circuito.mjs` `cubre()` | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | 🟢 |
 | OBJ-002 | PRD-RF-003 | UC-002 | RF-07 | CA-05 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::clasifica_en_tres_niveles_con_full_por_defecto` | ⏸️ |
 | OBJ-002 | PRD-RF-003 | UC-002 | RF-08 | CA-06 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::clasifica_rutas_previstas_con_arbol_limpio` | ⏸️ |
 | OBJ-002 | PRD-RF-004 | UC-004 | RF-09 | CA-07 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::un_ejecutable_nunca_es_ligero` | ⏸️ |
@@ -74,7 +91,7 @@ no una revisión visual.
 | Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |
 |---|---|---|---|---|---|
 | SEC-CONTEXT-001 | T-017-02 | `scripts/test/contexto-recorte.mjs::falla_cerrado_y_conserva_invariantes` | 🔴 correcto → 🟢; las invariantes §0, §7 y §13 están en las once fases declaradas; sección ausente, duplicada o fase desconocida lanzan error nombrando la causa | `scripts/lib/contexto.mjs` | verificado |
-| SEC-CIRCUIT-001 | T-017-05 | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | ⏸️ no ejecutado | — | no ejecutado (tarea no alcanzada) |
+| SEC-CIRCUIT-001 | T-017-05 | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | 🔴 la negación se esquivaba con la caja → 🟢 tras plegarla; negación prevalente, traversal y ruta absoluta siguen rechazados, y plegar no convierte un permiso legítimo en prohibición | `scripts/lib/circuito.mjs` | verificado (parcial: gramática sin comodines y suelo por ejecutable llegan en T-017-06) |
 | SEC-CIRCUIT-002 | T-017-07 | `scripts/test/circuito-frontera.mjs::sin_aprobacion_no_hay_atajo` | ⏸️ no ejecutado | — | no ejecutado (tarea no alcanzada) |
 
 **Informe de seguridad**: pendiente de `/security-scan verify` en T-017-09.

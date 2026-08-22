@@ -603,6 +603,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('scripts/lib/') && ![
     'scripts/lib/circuito.mjs',
     'scripts/lib/contexto.mjs',
+    'scripts/lib/resumen-gates.mjs',
     'scripts/lib/coverage-v8.mjs',
     'scripts/lib/docs-contract.mjs',
     'scripts/lib/jsonc.mjs',
