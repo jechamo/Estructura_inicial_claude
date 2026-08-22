@@ -185,6 +185,22 @@
       "generated": false,
       "gate": null,
       "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-CONTEXTO",
+      "kind": "architecture",
+      "sources": [
+        "scripts/sdd-project.mjs",
+        "docs/sdd/OPERATING-MODEL.md"
+      ],
+      "artifacts": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "docs/sdd/OPERATING-MODEL.md"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
     }
   ]
 }
