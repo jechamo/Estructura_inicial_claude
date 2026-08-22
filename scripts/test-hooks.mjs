@@ -17,6 +17,7 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { findActiveSpec } from '../.sdd/hooks/_lib.mjs';
 import { decidirTerritorio, cargarTerritorios } from '../.sdd/hooks/territorios.mjs';
+import { pruebas as pruebasDeContexto } from './test/contexto-recorte.mjs';
 
 const ROOT = process.cwd();
 const SESION = 'test-hooks';
@@ -443,6 +444,8 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       readFileSync(join(process.cwd(), '.sdd/hooks/_lib.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/docs-contract.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/docs-contract.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/contexto.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/contexto.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {
@@ -889,6 +892,10 @@ comprueba('tocar un hook no se sugiere como ligero', (() => {
 })(), 'ok');
 comprueba('si ya se invoca la skill, el router no estorba',
   salidaDe('sdd-router.mjs', preguntar('/sdd-light corrige la errata')).trim(), '');
+
+// ─── recorte de contexto por fase (spec 017) ─────────────────────────────────
+console.log('\ncontexto · recorta la política a lo que la fase necesita');
+await pruebasDeContexto(comprueba);
 
 // ─── limpieza ────────────────────────────────────────────────────────────────
 try {

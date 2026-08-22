@@ -1,6 +1,6 @@
 # Instrucciones para GitHub Copilot
 
-Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)** y por el modelo completo en
+Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)** y por la política vinculante de
 [`docs/sdd/OPERATING-MODEL.md`](../docs/sdd/OPERATING-MODEL.md). Léelos antes de responder:
 contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y handoff.
 

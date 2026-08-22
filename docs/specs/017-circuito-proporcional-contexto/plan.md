@@ -167,8 +167,8 @@ repositorio con miles de ficheros. El recorte trabaja sobre un documento de 42 K
 
 | DOC-ID | Superficie | Aplica / motivo | Fuente de verdad | Artefacto | Generado / manual | Propietario | Tarea | Gate / comprobación | Evidencia |
 |---|---|---|---|---|---|---|---|---|---|
-| DOC-CIRCUITO | architecture | sí · el circuito pasa de uno a tres niveles | `.sdd/circuit.json`, `.agents/skills/sdd-compact/SKILL.md` | `docs/sdd/OPERATING-MODEL.md` §2.6 | manual | `docs-writer` | T-017-08 | `check-sdd --docs-diff` en CI | `evidence.md#DOC-CIRCUITO` |
-| DOC-CONTEXTO | architecture | sí · las siete superficies dejan de exigir el documento completo | `scripts/sdd-project.mjs`, `docs/sdd/OPERATING-MODEL.md` | `AGENTS.md`, `CLAUDE.md`, mapa de lectura por fase | manual | `docs-writer` | T-017-03 | `check-sdd --docs-diff` en CI | `evidence.md#DOC-CONTEXTO` |
+| DOC-CIRCUITO | architecture | sí · el circuito pasa de uno a tres niveles | `.sdd/circuit.json`, `.agents/skills/sdd-light/SKILL.md` | `docs/sdd/OPERATING-MODEL.md` §2.6 | manual | `docs-writer` | T-017-08 | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | `evidence.md#DOC-CIRCUITO` |
+| DOC-CONTEXTO | architecture | sí · las siete superficies dejan de exigir el documento completo | `scripts/sdd-project.mjs`, `docs/sdd/OPERATING-MODEL.md` | `AGENTS.md`, `CLAUDE.md`, mapa de lectura por fase | manual | `docs-writer` | T-017-03 | `scripts/test/contexto-recorte.mjs::ninguna_superficie_exige_el_documento_completo` | `evidence.md#DOC-CONTEXTO` |
 
 ## 11. Observabilidad
 

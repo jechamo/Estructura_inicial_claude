@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) · **Plan**: [`plan.md`](./plan.md) |
 | **Total** | 9 tareas · S: 1 · M: 7 · L: 1 |
-| **Progreso** | 0/9 |
+| **Progreso** | 3/9 |
 | **Orden** | por amortización: detenerse en cualquier punto deja beneficio consolidado |
 | **Paralelizables** | 0 · todas comparten `scripts/lib/` o el contrato del CLI |
 
@@ -44,7 +44,7 @@
 > propio circuito. Cada tarea ahorra por sí sola, así que detenerse deja beneficio consolidado.
 
 ### T-017-01 · Escribe en rojo el contrato del recorte de contexto
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: test
 - **Skill**: `/tdd`
 - **Capa**: test
@@ -61,7 +61,7 @@
 - **Paralelizable**: no
 
 ### T-017-02 · Implementa el recortador y el subcomando `context`
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/tdd`
 - **Capa**: infrastructure
@@ -78,7 +78,7 @@
 - **Paralelizable**: no
 
 ### T-017-03 · Deja de exigir el tratado completo en las siete superficies
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: docs
 - **Skill**: `/docs-sync update`
 - **Capa**: interfaces

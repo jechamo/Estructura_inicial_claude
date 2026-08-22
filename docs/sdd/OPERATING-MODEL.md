@@ -8,6 +8,41 @@
 
 ---
 
+## Mapa de lectura por fase
+
+Este documento **no se lee entero**. Son 41 KB, y releerlos en cada fase y con cada agente frío es
+el mayor coste evitable del circuito: una fase típica necesita menos de la quinta parte.
+
+Pide tu sección:
+
+```bash
+node scripts/sdd-project.mjs context --phase <fase> [--sensible] [--usabilidad]
+```
+
+| Fase | Además de las invariantes |
+|---|---|
+| `specify` · `clarify` | §1, §2.5, §8, §8 bis |
+| `design` | §8 bis |
+| `plan` · `tasks` | §3, §4, §5 |
+| `implement` | §4, §5, §6, §11 |
+| `verify` · `ship` | §8, §8 bis, §9 |
+| `light` · `compact` | §2.6, §6 |
+| `orchestrate` | §1, §2, §10 |
+
+**Invariantes, en todas las fases sin excepción**: §0 (regla cero), §7 (gates) y §13 (qué no
+hacer). Juntas no llegan a 2 KB; discutir su coste no merece la pena.
+
+**§8.1 y §8 bis.1 solo cuando su impacto aplica.** Son las tablas de trazabilidad por fase y pesan
+el 84 % de su sección. Arrastrarlas siempre convertiría este presupuesto en un gesto: se piden con
+`--sensible` y `--usabilidad`, igual que el circuito ya carga los controles `SEC-*` solo cuando la
+spec los declara.
+
+El recorte **falla cerrado**: si una sección falta, está duplicada o ha sido renombrada, el comando
+da error en vez de devolver un contexto incompleto. Si renombras un encabezado numerado, actualiza
+`scripts/lib/contexto.mjs` en el mismo cambio.
+
+---
+
 ## 0. Regla cero
 
 **Ninguna línea de código se escribe sin una especificación aprobada.**

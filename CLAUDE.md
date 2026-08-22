@@ -3,8 +3,9 @@
 @AGENTS.md
 
 <!-- sdd:start -->
-Lee y aplica primero `AGENTS.md` y, para cualquier fase o decisión, el modelo completo en
-[`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
+Lee y aplica primero `AGENTS.md`. La política vinculante vive en
+[`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md), y **no se lee entera**:
+Para cada fase pide solo su sección con `node scripts/sdd-project.mjs context --phase <fase>`; el mapa de lectura vive al principio de ese documento. Leerlo entero cuesta 41 KB en cada fase y una fase típica necesita menos de la quinta parte.
 
 - Perfiles de subagente: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` conserva el descubrimiento nativo.

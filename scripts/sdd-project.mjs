@@ -16,6 +16,7 @@ import {
 } from 'node:fs';
 import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { recortar as recortarContexto, MAPA_FASES } from './lib/contexto.mjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { validateDocsConfig, matchesDocPattern } from './lib/docs-contract.mjs';
 import { PATRONES_SECRETO } from '../.sdd/hooks/_lib.mjs';
@@ -79,6 +80,8 @@ Estado y diagnóstico
   status [--json] [--spec NNN]        panorama del circuito; es el comando por defecto
   detect [--json]                     detecta stacks y herramientas sin escribir nada
   inventory [--json]                  inventario de agentes, skills y artefactos
+  context --phase <fase> [--sensible] [--usabilidad]
+                                      recorta el modelo operativo a esa fase
   trace-status --spec NNN [--json]    trazabilidad de una spec
   debt [--json]                       conteo de marcadores de deuda
 
@@ -103,6 +106,39 @@ Ejecución y configuración
 
   --help, -h, help                    muestra esta ayuda
   --json                              salida legible por máquina, también en los errores`;
+
+/**
+ * Devuelve solo las secciones del modelo operativo que esa fase necesita.
+ *
+ * El corte lo hace la herramienta y no el modelo a ojo: si dependiera de lo que un agente cree
+ * que le hace falta, no sería un presupuesto sino una opinión. Falla cerrado; nunca devuelve un
+ * recorte vacío en silencio.
+ */
+function contexto() {
+  const fase = (opcion('--phase') || '').trim();
+  if (!fase)
+    throw new Error(
+      `context requiere --phase <fase>. Declaradas: ${Object.keys(MAPA_FASES).join(', ')}.`,
+    );
+  const ruta = join(ROOT, 'docs/sdd/OPERATING-MODEL.md');
+  const texto = leer(ruta);
+  if (texto === null)
+    throw new Error('No hay docs/sdd/OPERATING-MODEL.md; sin política que recortar no se inventa una.');
+
+  const recorte = recortarContexto(texto, fase, {
+    sensible: argv.includes('--sensible'),
+    usabilidad: argv.includes('--usabilidad'),
+  });
+  return {
+    schemaVersion: 1,
+    phase: fase,
+    source: 'docs/sdd/OPERATING-MODEL.md',
+    sourceBytes: texto.length,
+    bytes: recorte.length,
+    savedRatio: Number((1 - recorte.length / texto.length).toFixed(3)),
+    content: recorte,
+  };
+}
 
 function opcion(nombre) {
   const indice = argv.indexOf(nombre);
@@ -1547,7 +1583,8 @@ if (argv.includes('--help') || argv.includes('-h') || comando === 'help') {
 }
 
 try {
-  if (comando === 'detect') imprimir(detectar());
+  if (comando === 'context') imprimir(contexto());
+  else if (comando === 'detect') imprimir(detectar());
   else if (comando === 'inventory') imprimir(inventario());
   else if (comando === 'product-status') imprimir(estadoProducto());
   else if (comando === 'approve-product') aprobarProducto();

@@ -1,7 +1,7 @@
 # AGENTS.md — Router operativo
 
 Este fichero es la entrada compartida para Claude Code, Copilot, VS Code, Cursor,
-Antigravity y Codex. La política completa y vinculante está en
+Antigravity y Codex. La política vinculante está en
 [`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
 
 ## Identidad

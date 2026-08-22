@@ -91,8 +91,14 @@ precisamente la interacción con el árbol de ficheros.
 
 ## 6 bis. Verificación documental
 
-`DOC-CONTEXTO` y `DOC-CIRCUITO` se comprueban con aserciones semánticas restringidas a su sección, y
-con `check-sdd --docs-diff` en CI. Ninguna de las dos se declara verificada por inspección visual.
+| DOC-ID | Tarea | Fuente | Artefacto | Comprobación o revisión | Resultado esperado |
+|---|---|---|---|---|---|
+| DOC-CONTEXTO | T-017-03 | `scripts/sdd-project.mjs` + `docs/sdd/OPERATING-MODEL.md` | `CLAUDE.md`, `AGENTS.md`, mapa de lectura por fase | `scripts/test/contexto-recorte.mjs::ninguna_superficie_exige_el_documento_completo` | ninguna superficie exige el documento completo |
+| DOC-CIRCUITO | T-017-08 | `.sdd/circuit.json` + `.agents/skills/sdd-light/SKILL.md` | `docs/sdd/OPERATING-MODEL.md` §2.6 | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | los tres niveles y sus límites quedan escritos |
+
+Ninguna de las dos se declara verificada por inspección visual: la aserción se restringe a su
+sección para que un texto equivalente en otro sitio no produzca un falso verde, y `--docs-diff`
+vuelve a comprobarlo en CI.
 
 ## 7. Criterio de suficiencia
 

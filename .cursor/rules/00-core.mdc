@@ -6,7 +6,9 @@ alwaysApply: true
 # Núcleo del proyecto
 
 La entrada es [AGENTS.md](mdc:AGENTS.md) y la política completa está en
-[OPERATING-MODEL.md](mdc:docs/sdd/OPERATING-MODEL.md). Léelas.
+[OPERATING-MODEL.md](mdc:docs/sdd/OPERATING-MODEL.md). Del modelo operativo pide solo la sección
+de tu fase con `node scripts/sdd-project.mjs context --phase <fase>`; leerlo entero es tirar
+contexto.
 Arquitectura vigente: [constitution.md](mdc:docs/architecture/constitution.md).
 
 ## Reglas duras

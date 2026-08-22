@@ -55,7 +55,8 @@ export const JSON_FUSIONABLES = [
 export const BLOQUES_GESTIONADOS = {
   'AGENTS.md': `## Flujo SDD gestionado
 
-La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
+La política operativa vinculante está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
+No se lee entera: pide la sección de tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`.
 
 - Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
 - Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
@@ -190,7 +191,8 @@ Todos los cambios relevantes de este proyecto se documentarán aquí siguiendo
 <!-- sdd:start -->
 ${''}## Flujo SDD gestionado
 
-La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
+La política operativa vinculante está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
+No se lee entera: pide la sección de tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`.
 
 - Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
 - Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
@@ -600,6 +602,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
   if (r.startsWith('.git/') || r.startsWith('node_modules/')) return false;
   if (r.startsWith('scripts/lib/') && ![
     'scripts/lib/circuito.mjs',
+    'scripts/lib/contexto.mjs',
     'scripts/lib/coverage-v8.mjs',
     'scripts/lib/docs-contract.mjs',
     'scripts/lib/jsonc.mjs',
