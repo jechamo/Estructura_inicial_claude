@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) · **Plan**: [`plan.md`](./plan.md) |
 | **Total** | 9 tareas · S: 1 · M: 7 · L: 1 |
-| **Progreso** | 5/9 |
+| **Progreso** | 6/9 |
 | **Orden** | por amortización: detenerse en cualquier punto deja beneficio consolidado |
 | **Paralelizables** | 0 · todas comparten `scripts/lib/` o el contrato del CLI |
 
@@ -129,7 +129,7 @@
 - **Paralelizable**: no
 
 ### T-017-06 · Clasifica en tres niveles con suelo por ejecutable y consulta previa
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: tooling
 - **Skill**: `/tdd`
 - **Capa**: domain

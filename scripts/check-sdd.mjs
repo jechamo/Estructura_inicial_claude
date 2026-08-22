@@ -31,6 +31,15 @@ import { globARegExp } from '../.sdd/hooks/_lib.mjs';
  * el control entero en silencio.
  */
 function leerFrontera(raiz) {
+  // El contrato de tres niveles manda si existe. La frontera heredada se sigue leyendo para no
+  // romper los proyectos instalados antes de la spec 017, pero solo habilita el nivel ligero.
+  const nueva = join(raiz, '.sdd/circuit.json');
+  if (existsSync(nueva)) {
+    try {
+      const j = JSON.parse(readFileSync(nueva, 'utf8'));
+      if (j && typeof j === 'object') return j;
+    } catch { /* un contrato ilegible no concede nada; se cae a la heredada */ }
+  }
   const ruta = join(raiz, '.sdd/lightweight.json');
   if (!existsSync(ruta)) return null;
   try {
@@ -75,7 +84,13 @@ if (args.includes('--circuit-status')) {
   // `--untracked-files=all` es obligatorio: sin él, un directorio recién creado y sin
   // trackear se colapsa a una sola línea («?? docs/») en lugar de listar cada fichero, y la
   // frontera deja de poder clasificarlos uno a uno.
-  const salida = git('status', '--porcelain', '--untracked-files=all');
+  // `--planned` permite preguntar el peaje ANTES de pagarlo. Sin él solo se puede clasificar lo
+  // ya editado, que es tanto como conocer el precio después de la compra.
+  const iPlanned = args.indexOf('--planned');
+  const previstas = iPlanned >= 0
+    ? args.slice(iPlanned + 1).filter((a) => !a.startsWith('--'))
+    : null;
+  const salida = previstas ? { stdout: previstas.map((r) => `?? ${r}`).join('\n') } : git('status', '--porcelain', '--untracked-files=all');
   const rutas = (salida.stdout || '')
     .split('\n')
     .map((l) => l.slice(3).trim())
@@ -88,9 +103,16 @@ if (args.includes('--circuit-status')) {
     console.log(JSON.stringify({ ...veredicto, frontera: Boolean(frontera) }, null, 2));
   } else if (!frontera) {
     console.log('circuito: full · no hay .sdd/lightweight.json, así que no hay circuito ligero.');
-  } else if (veredicto.circuito === 'light') {
-    console.log(`circuito: light · ${veredicto.total} fichero(s), todos dentro de la frontera declarada.`);
-    console.log('Siguen siendo obligatorios los gates, la bitácora y los trailers `Circuit: light` y `Circuit-reason:`.');
+  } else if (veredicto.circuito === 'light' || veredicto.circuito === 'compact') {
+    console.log(`circuito: ${veredicto.circuito} · ${veredicto.total} fichero(s) dentro de la frontera declarada.`);
+    if (veredicto.circuito === 'compact')
+      console.log('Sustituye los cinco documentos por un `change.md`; el ciclo TDD completo sigue siendo obligatorio.');
+    console.log(`Siguen siendo obligatorios los gates, la bitácora y los trailers \`Circuit: ${veredicto.circuito}\` y \`Circuit-reason:\`.`);
+    if (veredicto.legacy)
+      console.log('Aviso: frontera heredada `.sdd/lightweight.json`. Declara `.sdd/circuit.json` para habilitar el nivel compacto.');
+  } else if (veredicto.motivo === 'la frontera no está aprobada') {
+    console.log(`circuito: full · la frontera existe pero no está aprobada, así que no concede ningún atajo.`);
+    console.log('Apruébala con `node scripts/sdd-project.mjs approve-circuit --hash <hash> --by "<persona>"` tras revisar `detect-circuit`.');
   } else if (veredicto.total === 0) {
     // La ausencia de cambio no merece atajo, pero tampoco merece un reproche. Sin este caso el
     // mensaje anunciaba «0 de 0 fichero(s) quedan fuera de la frontera:» y no nombraba ninguno.
