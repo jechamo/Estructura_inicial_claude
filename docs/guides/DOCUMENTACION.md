@@ -58,6 +58,25 @@ configuran en cada equipo.
 
 ## Elegir el circuito correcto
 
+**Pregúntalo antes de tocar nada.** No lo decides tú ni lo decide el modelo: lo decide la frontera
+declarada en `.sdd/circuit.json`, comparando rutas.
+
+```bash
+node scripts/sdd-project.mjs detect-circuit --json          # propone la frontera; no escribe
+node scripts/sdd-project.mjs approve-circuit --hash <h> --by "<persona>"
+node scripts/check-sdd.mjs --circuit-status --planned <ruta>... --json
+```
+
+| Nivel | Cuándo | Qué dispensa |
+|---|---|---|
+| `light` | Documentación, copy, estilos o activos, en ficheros exactos y sin código ejecutable | Los cinco documentos de la spec |
+| `compact` | Comportamiento acotado a **un** módulo declarado; máx. 3 criterios, 3 tareas, 12 KB | Los cinco, sustituidos por un `change.md` (`new-change <slug> --mode compact`) |
+| `full` | Todo lo demás, y el valor por defecto ante cualquier duda | Nada |
+
+Dispensan **expediente, nunca verificación**: gates, ciclo TDD, bitácora, trailers y revisión
+independiente siguen siendo obligatorios. Un fichero que ejecuta nunca es `light`, aunque se le
+declare permitido. Y **sin frontera aprobada no hay atajo**: recién instalada, todo paga completo.
+
 Una tarea editorial no necesita una spec funcional ni TDD de aplicación:
 
 ```text
@@ -117,6 +136,24 @@ adaptador mínimo; no se crean comandos paralelos con el mismo nombre.
 su propietario. No existe un segundo agente documental.
 
 ## Gates y momento de ejecución
+
+**Pide solo el contexto de tu fase.** El modelo operativo son 41 KB y releerlo entero en cada fase
+es el mayor coste evitable del circuito:
+
+```bash
+node scripts/sdd-project.mjs context --phase <fase> [--sensible] [--usabilidad] --json
+```
+
+Devuelve entre el 6 % y el 18 % del documento según la fase, con las invariantes —regla cero, gates
+y prohibiciones— siempre incluidas. Falla cerrado: si una sección falta, está duplicada o fue
+renombrada, da error en vez de devolver un contexto incompleto.
+
+**Y no vuelques la suite entera.** `--summary-json` resume cada gate y deja la salida completa en
+`.sdd/state/gate-runs/<runId>/`, recuperable pero fuera del contexto:
+
+```bash
+node scripts/sdd-project.mjs run --fast --summary-json
+```
 
 | Momento | Gate | Qué comprueba |
 |---|---|---|
