@@ -197,3 +197,107 @@ export function cuota({ ligeros = 0, total = 0, maximo = 1 } = {}) {
   const proporcion = total > 0 ? Number((ligeros / total).toFixed(3)) : 0;
   return { ligeros, total, proporcion, maximo, superada: total > 0 && proporcion > maximo };
 }
+
+// ─── Propuesta y aprobación de la frontera ───────────────────────────────────
+// Separadas a propósito. Proponer es barato y reversible; aprobar es el acto que concede el
+// atajo, y por eso lleva nombre, fecha y la huella de exactamente lo que se mostró. Un agente
+// presenta el comando y se detiene: no aprueba en nombre de nadie.
+
+/** Prefijos que la detección automática no propone jamás, se llame como se llame la carpeta. */
+const NUNCA_LIGERO = [
+  'src/', 'app/', 'lib/', 'components/', 'public/', 'api/', 'server/',
+  'migrations/', 'prisma/', 'supabase/', 'contracts/', 'scripts/',
+  '.sdd/', '.claude/', '.agents/', '.github/', '.cursor/', '.codex/', '.gemini/',
+  'docs/specs/', 'docs/architecture/', 'docs/product/', 'docs/security/', 'docs/quality/', 'docs/sdd/',
+];
+
+/**
+ * Ficheros que gobiernan el propio circuito. Acaban en `.md` o en `.json`, pero cambiarlos cambia
+ * las reglas del sistema, no su documentación. La semilla heredada ya los prohibía y esa decisión
+ * se conserva: proponerlos como ligeros sería dejar que el circuito se modificase a sí mismo sin
+ * expediente.
+ */
+const GOBIERNO = new Set([
+  'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'package.json', 'package-lock.json',
+  'pnpm-lock.yaml', 'yarn.lock', '.gitignore', '.npmignore', '.mcp.json',
+]);
+
+/** Documentos y activos que sí pueden ser ligeros, siempre como fichero exacto. */
+const EXTENSIONES_LIGERAS = new Set(['.md', '.mdx', '.txt', '.css', '.scss', '.svg', '.png', '.jpg', '.webp', '.ico']);
+
+/**
+ * Propone una frontera a partir de rutas que existen de verdad. Nace `pending`: proponer no es
+ * aprobar. Solo ofrece ficheros exactos no ejecutables, nunca raíces: abrir `src/` al nivel
+ * ligero sería regalar el expediente de todo lo que pase por allí.
+ */
+export function proponerFrontera(rutas) {
+  const candidatas = (rutas || [])
+    .map((r) => normalizar(r))
+    .filter(Boolean)
+    .filter((r) => !NUNCA_LIGERO.some((prefijo) => cubre(prefijo, r)))
+    .filter((r) => !GOBIERNO.has(r))
+    .filter((r) => !esEjecutable(r))
+    .filter((r) => {
+      const m = r.toLowerCase().match(/(\.[a-z0-9]+)$/);
+      return m ? EXTENSIONES_LIGERAS.has(m[1]) : false;
+    });
+  return {
+    schemaVersion: 1,
+    status: 'pending',
+    approvedAt: null,
+    approvedBy: null,
+    proposalHash: null,
+    cuota: 0.4,
+    light: { allowed: [...new Set(candidatas)].sort() },
+    compact: { modules: [] },
+    denied: [...NUNCA_LIGERO, ...GOBIERNO],
+    limits: { criterios: 3, tareas: 3, kb: 12 },
+  };
+}
+
+/**
+ * Huella de lo que una propuesta concede. Cubre exactamente los campos que deciden el atajo: si
+ * cambia cualquiera de ellos después de mostrarse, la aprobación deja de valer.
+ */
+export function huellaPropuesta(contrato) {
+  const material = JSON.stringify({
+    light: contrato?.light?.allowed ?? [],
+    compact: contrato?.compact?.modules ?? [],
+    denied: contrato?.denied ?? [],
+    limits: contrato?.limits ?? null,
+  });
+  // FNV-1a: basta para detectar una alteración, y evita depender de `node:crypto` en un módulo
+  // que se declara puro. No es una firma: no demuestra identidad, solo que el texto es el mismo.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < material.length; i++) {
+    h ^= material.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, '0');
+}
+
+/**
+ * Aprueba una propuesta concreta. Exige la huella de la que se mostró y el nombre de quien
+ * aprueba. La identidad es **declarada, no demostrada**: esto no es una firma criptográfica y no
+ * debe presentarse como tal.
+ */
+export function aprobarFrontera(contrato, { hash, by, at } = {}) {
+  const actor = String(by || '').trim();
+  if (!actor) return { ok: false, motivo: 'aprobar sin decir quién aprueba no es aprobar' };
+  const real = huellaPropuesta(contrato);
+  if (hash !== real)
+    return {
+      ok: false,
+      motivo: `la propuesta ha cambiado desde que se mostró (huella ${real}, se aprobó ${hash})`,
+    };
+  return {
+    ok: true,
+    contrato: {
+      ...contrato,
+      status: 'approved',
+      approvedBy: actor,
+      approvedAt: at || new Date().toISOString(),
+      proposalHash: real,
+    },
+  };
+}

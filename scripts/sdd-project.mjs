@@ -18,6 +18,7 @@ import { join, dirname, resolve, relative, isAbsolute, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { recortar as recortarContexto, MAPA_FASES } from './lib/contexto.mjs';
 import { resumir, nuevoRunId, guardarSalida } from './lib/resumen-gates.mjs';
+import { proponerFrontera, huellaPropuesta, aprobarFrontera } from './lib/circuito.mjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { validateDocsConfig, matchesDocPattern } from './lib/docs-contract.mjs';
 import { PATRONES_SECRETO } from '../.sdd/hooks/_lib.mjs';
@@ -80,6 +81,9 @@ const USO = `Operaciones deterministas del proyecto instalado.
 Estado y diagnóstico
   status [--json] [--spec NNN]        panorama del circuito; es el comando por defecto
   detect [--json]                     detecta stacks y herramientas sin escribir nada
+  detect-circuit [--json]             propone la frontera del circuito sin escribir nada
+  approve-circuit --hash <h> --by <persona>
+                                      aprueba esa propuesta concreta y escribe .sdd/circuit.json
   inventory [--json]                  inventario de agentes, skills y artefactos
   context --phase <fase> [--sensible] [--usabilidad]
                                       recorta el modelo operativo a esa fase
@@ -140,6 +144,46 @@ function contexto() {
     savedRatio: Number((1 - recorte.length / texto.length).toFixed(3)),
     content: recorte,
   };
+}
+
+/**
+ * Propone una frontera a partir de los ficheros versionados. No escribe nada: proponer y aprobar
+ * son actos distintos a propósito, y el segundo lo hace una persona.
+ */
+function detectarCircuito() {
+  const listado = spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (listado.status !== 0)
+    throw new Error('Sin git no se puede proponer una frontera: recorrer el disco acabaría proponiendo dependencias.');
+  const propuesta = proponerFrontera((listado.stdout || '').split('\n').filter(Boolean));
+  const hash = huellaPropuesta(propuesta);
+  return {
+    schemaVersion: 1,
+    status: propuesta.status,
+    proposalHash: hash,
+    candidates: propuesta.light.allowed,
+    denied: propuesta.denied,
+    limits: propuesta.limits,
+    proposal: propuesta,
+    approveCommand: `node scripts/sdd-project.mjs approve-circuit --hash ${hash} --by "<persona>"`,
+    note: 'Proponer no es aprobar. Un agente presenta este comando y se detiene; lo ejecuta una persona. '
+      + 'La identidad queda declarada, no demostrada criptográficamente.',
+  };
+}
+
+/** Aprueba la propuesta concreta cuya huella se pasa. Escribe `.sdd/circuit.json`. */
+function aprobarCircuito() {
+  const hash = opcion('--hash');
+  const by = opcion('--by');
+  if (!hash) throw new Error('approve-circuit requiere --hash <huella>, la que devolvió detect-circuit.');
+  const listado = spawnSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (listado.status !== 0) throw new Error('Sin git no se puede recalcular la propuesta que se aprueba.');
+  const propuesta = proponerFrontera((listado.stdout || '').split('\n').filter(Boolean));
+  const r = aprobarFrontera(propuesta, { hash, by });
+  if (!r.ok) throw new Error(`No se aprueba: ${r.motivo}.`);
+  const ruta = join(ROOT, '.sdd/circuit.json');
+  mkdirSync(dirname(ruta), { recursive: true });
+  writeFileSync(ruta, `${JSON.stringify(r.contrato, null, 2)}\n`, 'utf8');
+  return { schemaVersion: 1, ok: true, path: '.sdd/circuit.json', approvedBy: r.contrato.approvedBy, approvedAt: r.contrato.approvedAt, proposalHash: r.contrato.proposalHash };
 }
 
 function opcion(nombre) {
@@ -1607,6 +1651,8 @@ if (argv.includes('--help') || argv.includes('-h') || comando === 'help') {
 
 try {
   if (comando === 'context') imprimir(contexto());
+  else if (comando === 'detect-circuit') imprimir(detectarCircuito());
+  else if (comando === 'approve-circuit') imprimir(aprobarCircuito());
   else if (comando === 'detect') imprimir(detectar());
   else if (comando === 'inventory') imprimir(inventario());
   else if (comando === 'product-status') imprimir(estadoProducto());

@@ -731,6 +731,12 @@ function activarGitHooks(destino) {
   const esGit = existsSync(join(destino, '.git'));
   console.log(`\nGates locales: hooks compartidos instalados${esGit ? '' : '; inicializa Git primero'}.`);
   console.log('Activación manual recomendada:');
+  console.log('');
+  console.log('La frontera del circuito nace SIN APROBAR: hasta que una persona la apruebe, todo');
+  console.log('cambio paga el circuito completo. Revísala y apruébala con:');
+  console.log('  node scripts/sdd-project.mjs detect-circuit --json   # propone, no escribe');
+  console.log('  node scripts/sdd-project.mjs approve-circuit --hash <huella> --by "<persona>"');
+  console.log('');
   console.log('  git config core.hooksPath .sdd/githooks');
   console.log('  git update-index --chmod=+x .sdd/githooks/pre-commit .sdd/githooks/pre-push');
   console.log('El instalador no ejecuta esos comandos, no crea Husky y no modifica permisos.');

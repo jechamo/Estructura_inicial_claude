@@ -450,6 +450,8 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       readFileSync(join(process.cwd(), 'scripts/lib/contexto.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/resumen-gates.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/resumen-gates.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/circuito.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/circuito.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {

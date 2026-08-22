@@ -108,4 +108,65 @@ export async function pruebas(comprueba) {
       return 'fail-heredada-concede-compact';
     return 'ok';
   })(), 'ok');
+
+  // NOTA: la parte de `clasificar` de este caso no nació de un rojo — la construyó T-017-06 al
+  // implementar el clasificador. Se conserva como **regresión**, no como ciclo TDD, y así consta
+  // en la evidencia. El rojo real de T-017-07 es el de los comandos de propuesta y aprobación,
+  // que se comprueban en `aprobacion_separada_y_ligada_a_la_propuesta`.
+  comprueba('sin_aprobacion_no_hay_atajo', (() => {
+    if (!clasificar) return 'fail-sin-clasificador';
+    // Recién instalada: la frontera existe, propone candidatos, y no concede nada.
+    const reciente = { ...CONTRATO, status: 'pending' };
+    const r = clasificar(['README.md'], reciente);
+    if (r.circuito !== 'full') return 'fail-pending-concede';
+    if (!/no está aprobada/.test(String(r.motivo || ''))) return 'fail-no-dice-por-que';
+    // Un estado inventado tampoco vale: solo `approved` aprueba.
+    for (const estado of ['approve', 'ok', 'true', '', undefined]) {
+      if (clasificar(['README.md'], { ...CONTRATO, status: estado }).circuito !== 'full')
+        return `fail-estado-colado:${estado}`;
+    }
+    // Y con la aprobación puesta, vuelve a funcionar.
+    if (clasificar(['README.md'], CONTRATO).circuito !== 'light') return 'fail-aprobada-no-funciona';
+    return 'ok';
+  })(), 'ok');
+
+  comprueba('aprobacion_separada_y_ligada_a_la_propuesta', (() => {
+    const { proponerFrontera, aprobarFrontera, huellaPropuesta } = mod;
+    if (!proponerFrontera || !aprobarFrontera || !huellaPropuesta) return 'fail-sin-comandos';
+
+    // La propuesta se calcula sobre rutas que existen, y nunca abre raíces ejecutables.
+    const propuesta = proponerFrontera(['README.md', 'docs/guides/x.md', 'src/app.tsx', 'src/domain/p.ts']);
+    if (propuesta.status !== 'pending') return 'fail-propuesta-nace-aprobada';
+    if (propuesta.light.allowed.some((p) => /^(src|app|components|public)\/$/.test(p)))
+      return 'fail-propone-raiz-ejecutable';
+    if (propuesta.light.allowed.some((p) => /\.(t|j)sx?$/.test(p)))
+      return 'fail-propone-ejecutable-como-ligero';
+    // Los ficheros que gobiernan el propio circuito no son documentación cualquiera: cambiarlos
+    // cambia las reglas. Que acaben en `.md` no los vuelve inocuos.
+    const gobierno = proponerFrontera(['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'package.json', 'README.md']);
+    for (const prohibido of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'package.json']) {
+      if (gobierno.light.allowed.includes(prohibido)) return `fail-propone-gobierno:${prohibido}`;
+    }
+    if (!gobierno.light.allowed.includes('README.md')) return 'fail-excluye-de-mas';
+
+    // Aprobar exige la huella de la propuesta que se mostró.
+    const hash = huellaPropuesta(propuesta);
+    const mal = aprobarFrontera(propuesta, { hash: 'otro', by: 'Persona' });
+    if (mal.ok !== false) return 'fail-acepta-hash-que-no-corresponde';
+
+    const bien = aprobarFrontera(propuesta, { hash, by: 'Persona' });
+    if (bien.ok !== true) return 'fail-no-aprueba-con-el-hash-correcto';
+    if (bien.contrato.status !== 'approved') return 'fail-no-queda-aprobada';
+    if (bien.contrato.approvedBy !== 'Persona') return 'fail-no-registra-quien';
+    if (!bien.contrato.approvedAt) return 'fail-no-registra-cuando';
+
+    // Y una propuesta alterada después de mostrarse deja de casar con su huella.
+    const alterada = { ...propuesta, light: { allowed: [...propuesta.light.allowed, 'src/domain/'] } };
+    if (aprobarFrontera(alterada, { hash, by: 'Persona' }).ok !== false)
+      return 'fail-acepta-propuesta-alterada';
+
+    // Aprobar sin decir quién no es aprobar.
+    if (aprobarFrontera(propuesta, { hash, by: '' }).ok !== false) return 'fail-aprueba-sin-actor';
+    return 'ok';
+  })(), 'ok');
 }
