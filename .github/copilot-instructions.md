@@ -1,7 +1,7 @@
 # Instrucciones para GitHub Copilot
 
-Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)** y por el modelo completo en
-[`docs/sdd/OPERATING-MODEL.md`](../docs/sdd/OPERATING-MODEL.md). Léelos antes de responder:
+Este repositorio se rige por **[`AGENTS.md`](../AGENTS.md)**. Carga el modelo aplicable con
+`node scripts/sdd-project.mjs context --phase <fase>` antes de responder:
 contienen el circuito SDD, principios, TDD, gates, seguridad, delegación y handoff.
 
 ## Resumen operativo

@@ -38,7 +38,7 @@ const copiar = (origen, destino, etiqueta) => {
 };
 
 copiar(
-  join(RAIZ, 'docs', 'TFM', 'MEMORIA-SISTEMA-AGENTES.md'),
+  join(RAIZ, 'docs', 'TFM', 'MEMORIA-TECNICA-TFM.md'),
   join(SITIO, 'assets', 'memoria.md'),
   'memoria técnica',
 );

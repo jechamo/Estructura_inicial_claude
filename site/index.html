@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ecosistema de agentes SDD — instala el circuito completo en tu proyecto</title>
-<meta name="description" content="Veinte agentes, veintiséis skills y un circuito de desarrollo dirigido por especificación que se instala en cualquier proyecto con un comando. Sin dependencias de runtime.">
+<meta name="description" content="Veinte agentes, veintisiete skills y un circuito de desarrollo dirigido por especificación que se instala en cualquier proyecto con un comando. Sin dependencias de runtime.">
 <meta name="color-scheme" content="dark">
 
 <meta property="og:type" content="website">
 <meta property="og:title" content="Ecosistema de agentes SDD">
-<meta property="og:description" content="Veinte agentes, veintiséis skills y un circuito SDD completo. Un comando, cero dependencias.">
+<meta property="og:description" content="Veinte agentes, veintisiete skills y un circuito SDD proporcional. Un comando, cero dependencias.">
 <meta property="og:image" content="assets/img/og.png">
 <meta name="twitter:card" content="summary_large_image">
 
@@ -30,7 +30,7 @@
     <a class="marca" href="#inicio">
       <img src="assets/img/logo.png" alt="" width="34" height="34">
       <span>Agentes SDD</span>
-      <span class="marca__version" data-version>v0.8.0</span>
+      <span class="marca__version" data-version>v0.9.0</span>
     </a>
     <nav class="nav__enlaces" aria-label="Secciones">
       <a class="nav__enlace" href="#instalar">Instalar</a>
@@ -467,27 +467,44 @@
     </div>
 
     <div class="bloque" style="margin-top: 3rem" data-revelar>
-      <h3 class="titulo-3">Dos circuitos, un mismo rastro</h3>
+      <h3 class="titulo-3">Tres niveles, un mismo rastro</h3>
       <p class="parrafo">
-        Un peaje que no distingue entre corregir una errata y cambiar un contrato acaba
-        rodeándose. Por eso hay un segundo camino: el <strong>modo rápido</strong>, la skill
-        <code>/sdd-light</code>. Ahorra los cinco documentos de la spec —y solo eso—. No dispensa
-        de ningún gate, ni del ciclo TDD, ni de la bitácora.
+        El circuito ahora cobra según riesgo: <strong>light</strong> para un fichero exacto no
+        ejecutable, <strong>compact</strong> para conducta acotada en un módulo existente y
+        <strong>full</strong> para seguridad, contratos, datos, infraestructura o varios módulos.
+        Ninguno dispensa gates, trazabilidad ni TDD cuando cambia comportamiento.
       </p>
       <p class="parrafo">
-        Quién puede usarlo no lo decide quien escribe el cambio, sino un fichero:
-        <code>.sdd/lightweight.json</code> declara qué rutas admiten el atajo y cuáles nunca. La
-        respuesta se consulta, no se opina:
+        La frontera nace pendiente en <code>.sdd/circuit.json</code>. Una persona revisa y aprueba
+        su hash en un commit full dedicado; un change compacto también se aprueba y commitea
+        antes del código. Después se clasifican las rutas previstas:
       </p>
-      <pre class="terminal__cuerpo" aria-label="Consulta del circuito aplicable"><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> <span class="l-ruta">scripts/check-sdd.mjs</span> <span class="l-bandera">--circuit-status</span></div><div class="l-tenue">circuito: full — obligan al circuito completo:</div><div class="l-tenue">  scripts/check-sdd.mjs</div></pre>
+      <pre class="terminal__cuerpo" aria-label="Consulta del circuito aplicable"><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> <span class="l-ruta">scripts/check-sdd.mjs</span> <span class="l-bandera">--circuit-status --planned</span> src/components/Carousel.tsx <span class="l-bandera">--json</span></div><div class="l-tenue">{"circuito":"compact","approvedChange":"017-carrusel","total":1}</div></pre>
       <p class="parrafo">
-        El atajo se declara en el commit con los <em>trailers</em> <code>Circuit: light</code> y
-        <code>Circuit-reason:</code>, y ahí es donde deja de ser una promesa: la auditoría de
-        trazas recalcula la frontera sobre los ficheros que el commit tocó de verdad. Un commit
-        que se declara ligero y toca lo que no debe falla en integración continua. Además hay
-        una cuota: si demasiados cambios pasan por el atajo, la queja no señala a nadie, señala
-        a la frontera por dejar pasar más de lo previsto.
+        <code>context --phase</code> evita releer el tratado completo y <code>run --summary-json</code>
+        conserva evidencia sanitizada, no logs crudos. La auditoría obligatoria contrasta diff,
+        configuración del padre, territorio, sello y límites agregados por módulo. El benchmark
+        regenerado midió 76,00 % menos contexto en compact y 71,30 % en full; es un proxy de bytes,
+        no la cuota real del proveedor.
       </p>
+      <div class="bento" style="margin-top: 2rem">
+        <article class="tarjeta tarjeta--foco" data-revelar>
+          <span class="pastilla">light</span>
+          <h4 class="tarjeta__titulo">Texto o activo exacto</h4>
+          <p class="tarjeta__texto">Úsalo para documentación, copy, estilos o activos aprobados sin código ejecutable ni conducta nueva. Conserva gates, trailers y bitácora.</p>
+        </article>
+        <article class="tarjeta tarjeta--foco" data-revelar>
+          <span class="pastilla">compact</span>
+          <h4 class="tarjeta__titulo">Conducta en un módulo</h4>
+          <p class="tarjeta__texto">Para carruseles, acordeones o bugs localizados: un módulo existente, hasta tres criterios y tareas, <code>change.md</code> sellado y TDD completo.</p>
+        </article>
+        <article class="tarjeta tarjeta--foco" data-revelar>
+          <span class="pastilla">full</span>
+          <h4 class="tarjeta__titulo">Riesgo o alcance amplio</h4>
+          <p class="tarjeta__texto">Es el valor por defecto para auth, seguridad, API, datos, dependencias, infraestructura, varios módulos y cambios del propio circuito.</p>
+        </article>
+      </div>
+      <pre class="terminal__cuerpo" aria-label="Comandos del circuito proporcional" style="margin-top: 2rem"><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> scripts/sdd-project.mjs detect-circuit <span class="l-bandera">--json</span></div><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> scripts/check-sdd.mjs <span class="l-bandera">--circuit-status --planned</span> README.md <span class="l-bandera">--json</span></div><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> scripts/sdd-project.mjs new-change carrusel <span class="l-bandera">--mode compact --json</span></div></pre>
     </div>
 
     <figure class="figura" data-figura style="--proporcion: 21 / 9; margin-top: 3rem" data-revelar>
@@ -637,16 +654,15 @@
         <div class="acordeon__caja">
           <div class="acordeon__contenido">
             <p>
-              No, porque no perdona ningún gate. <code>/sdd-light</code> ahorra exclusivamente los
-              cinco documentos de la spec para cambios que no los merecen; los tests, la
-              cobertura, el análisis de seguridad y la revisión siguen ejecutándose igual.
+              No. <code>light</code> y <code>compact</code> reducen expediente y contexto, no gates.
+              Compact conserva el RED–GREEN–REFACTOR completo, revisión y bitácora.
             </p>
             <p>
               Y sobre todo: el atajo es falsable. Quién puede usarlo lo decide
-              <code>.sdd/lightweight.json</code> por rutas, no el criterio del momento, y la
-              auditoría de trazas recalcula esa frontera contra los ficheros que el commit tocó
-              de verdad. Un commit que se declara ligero y no lo es, falla. Un atajo que nadie
-              puede comprobar después no es un atajo, es un agujero.
+              <code>.sdd/circuit.json</code> aprobado por hash y una gramática portable de rutas,
+              no el criterio del momento. La auditoría obligatoria recalcula la clasificación
+              contra el diff real y la configuración histórica. Un commit que abarata su nivel
+              sin cumplir el contrato falla.
             </p>
           </div>
         </div>
@@ -756,7 +772,7 @@
 
 <footer class="pie">
   <div class="contenedor pie__interior">
-    <span>Ecosistema de agentes SDD · <span data-version>v0.8.0</span></span>
+    <span>Ecosistema de agentes SDD · <span data-version>v0.9.0</span></span>
     <nav class="pie__enlaces" aria-label="Enlaces del pie">
       <a href="https://github.com/jechamo/Estructura_inicial_claude" target="_blank" rel="noopener noreferrer">Repositorio</a>
       <a href="documentacion.html">Memoria técnica</a>

@@ -9,9 +9,9 @@ Eres **planificador técnico**. Traduces el QUÉ de la spec al CÓMO, sin escrib
 
 ## Entrada obligatoria
 
-- `docs/specs/NNN-slug/spec.md` sin marcadores `[NEEDS CLARIFICATION]`
-- `docs/architecture/constitution.md`
-- ADRs vigentes relacionados
+- `node scripts/sdd-project.mjs context --phase plan --spec NNN --json`.
+- La constitución y ADRs completos solo si el cambio afecta arquitectura; en otro caso usa las
+  decisiones enlazadas por el contexto.
 
 Si la spec tiene marcadores → **devuelve a `spec-analyst`**. No planifiques sobre arena.
 

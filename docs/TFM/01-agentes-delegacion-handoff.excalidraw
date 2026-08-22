@@ -6477,11 +6477,11 @@
       "fillStyle": "solid",
       "fontSize": 13,
       "fontFamily": 2,
-      "text": "Lo que aquí se dibuja se comprueba: check-sdd --trace-audit contrasta los trailers Agent: del commit con lo que los hooks observaron de verdad.",
+      "text": "La topología no cambia con light/compact/full: --trace-audit contrasta Agent, territorio y Circuit-config con los hooks y el padre del commit.",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Lo que aquí se dibuja se comprueba: check-sdd --trace-audit contrasta los trailers Agent: del commit con lo que los hooks observaron de verdad.",
+      "originalText": "La topología no cambia con light/compact/full: --trace-audit contrasta Agent, territorio y Circuit-config con los hooks y el padre del commit.",
       "lineHeight": 1.25,
       "autoResize": true
     }

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-22T19:29:24.570Z",
+  "methodology": "bytes de contexto realmente activado (host, agente, skill, artefactos, salida y context CLI); proxy auditable, no cuota real del proveedor",
+  "limitations": [
+    "bytes/4 solo aproxima tokens y no observa caché, razonamiento ni facturación de Copilot/Cursor",
+    "las tres intervenciones son el máximo contractual de agentes, no telemetría expuesta por el host"
+  ],
+  "cases": [
+    {
+      "id": "documentacion-exacta",
+      "paths": [
+        "README.md"
+      ],
+      "expected": "light",
+      "actual": "light",
+      "pass": true
+    },
+    {
+      "id": "carrusel-existente",
+      "paths": [
+        "src/components/Carousel.tsx"
+      ],
+      "expected": "compact",
+      "actual": "compact",
+      "pass": true
+    },
+    {
+      "id": "acordeon-existente",
+      "paths": [
+        "src/components/Accordion.tsx"
+      ],
+      "expected": "compact",
+      "actual": "compact",
+      "pass": true
+    },
+    {
+      "id": "dominio",
+      "paths": [
+        "src/domain/payment.ts"
+      ],
+      "expected": "full",
+      "actual": "full",
+      "pass": true
+    },
+    {
+      "id": "propio-sdd",
+      "paths": [
+        "scripts/check-sdd.mjs"
+      ],
+      "expected": "full",
+      "actual": "full",
+      "pass": true
+    }
+  ],
+  "samples": [
+    {
+      "host": "claude",
+      "activated": {
+        "host": true,
+        "agent": true,
+        "skill": true,
+        "artifacts": true,
+        "output": true,
+        "contextCommand": true
+      },
+      "baselineBytes": 101441,
+      "compactBytes": 23440,
+      "compactReductionPct": 76.89,
+      "fullBytes": 29085,
+      "fullReductionPct": 71.33
+    },
+    {
+      "host": "copilot",
+      "activated": {
+        "host": true,
+        "agent": true,
+        "skill": true,
+        "artifacts": true,
+        "output": true,
+        "contextCommand": true
+      },
+      "baselineBytes": 103511,
+      "compactBytes": 25510,
+      "compactReductionPct": 75.36,
+      "fullBytes": 29912,
+      "fullReductionPct": 71.1
+    },
+    {
+      "host": "cursor",
+      "activated": {
+        "host": true,
+        "agent": true,
+        "skill": true,
+        "artifacts": true,
+        "output": true,
+        "contextCommand": true
+      },
+      "baselineBytes": 102609,
+      "compactBytes": 24608,
+      "compactReductionPct": 76.02,
+      "fullBytes": 24517,
+      "fullReductionPct": 76.11
+    }
+  ],
+  "summary": {
+    "classificationAccuracy": 1,
+    "compact": {
+      "medianReductionPct": 76.02,
+      "interventions": 3,
+      "interventionProtocol": [
+        "planner",
+        "implementer",
+        "code-reviewer"
+      ],
+      "thresholdPct": 70
+    },
+    "full": {
+      "medianReductionPct": 71.33,
+      "thresholdPct": 20
+    }
+  },
+  "pass": true
+}

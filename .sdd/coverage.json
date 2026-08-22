@@ -22,6 +22,15 @@
       "--strict"
     ],
     [
+      "scripts/test-circuit.mjs"
+    ],
+    [
+      "scripts/test-trace-audit.mjs"
+    ],
+    [
+      "scripts/test-gate-summary.mjs"
+    ],
+    [
       "scripts/skills-sync.mjs",
       "--check"
     ]

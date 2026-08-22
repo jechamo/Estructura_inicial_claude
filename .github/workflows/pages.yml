@@ -9,7 +9,7 @@ on:
     branches: [main]
     paths:
       - 'site/**'
-      - 'docs/TFM/MEMORIA-SISTEMA-AGENTES.md'
+      - 'docs/TFM/MEMORIA-TECNICA-TFM.md'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -30,11 +30,18 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # El sitio es la séptima superficie del contrato: publica recuentos de agentes y skills.
       # Si el catálogo publicado se desvía del real, esto falla antes de desplegar la mentira.
       - name: Verificar el contrato antes de publicar
         run: node scripts/check-sdd.mjs
+
+      - name: Corroborar trazabilidad antes de publicar
+        env:
+          SDD_TRACE_BASE: ${{ (github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD~1' }}
+        run: node scripts/check-sdd.mjs --trace-audit --strict --base "$SDD_TRACE_BASE"
 
       - name: Verificar accesibilidad del HTML publicado
         run: node scripts/check-a11y.mjs

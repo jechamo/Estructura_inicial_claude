@@ -35,7 +35,7 @@
       "id": "DOC-CIRCUITO",
       "kind": "architecture",
       "sources": [
-        ".sdd/lightweight.json",
+        ".sdd/circuit.json",
         ".agents/skills/sdd-light/SKILL.md",
         "scripts/check-sdd.mjs"
       ],
@@ -181,6 +181,47 @@
       "artifacts": [
         "docs/quality/TEST-STRATEGY.md",
         "README.md"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-TFM",
+      "kind": "architecture",
+      "sources": [
+        "scripts/lib/circuito.mjs",
+        "scripts/sdd-project.mjs",
+        "scripts/lib/trace-audit.mjs",
+        "docs/quality/benchmarks/017/benchmark.json"
+      ],
+      "artifacts": [
+        "docs/TFM/MEMORIA-TECNICA-TFM.md",
+        "docs/TFM/01-agentes-delegacion-handoff.excalidraw",
+        "docs/TFM/02-skills-por-agente.excalidraw",
+        "docs/TFM/03-circuito-sdd-hooks-gates.excalidraw",
+        "docs/TFM/catalogo-agentes.excalidraw",
+        "docs/TFM/ESTRUCTURA-INSTALADA.excalidraw"
+      ],
+      "generated": false,
+      "gate": null,
+      "owner": "docs-writer"
+    },
+    {
+      "id": "DOC-PAGES",
+      "kind": "user-guide",
+      "sources": [
+        "scripts/lib/circuito.mjs",
+        "scripts/sdd-project.mjs",
+        "scripts/site-prep.mjs",
+        "docs/TFM/MEMORIA-TECNICA-TFM.md",
+        "docs/quality/benchmarks/017/benchmark.json",
+        "package.json"
+      ],
+      "artifacts": [
+        "site/index.html",
+        "site/documentacion.html",
+        "site/assets/js/datos.mjs"
       ],
       "generated": false,
       "gate": null,

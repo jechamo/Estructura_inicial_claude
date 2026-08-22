@@ -5,6 +5,10 @@ description: "Prepara la entrega: verificación final de gates, PR con trazabili
 
 # /sdd-ship — Entregar
 
+## Contexto — lee exactamente esto
+
+Ejecuta `context --phase ship --spec NNN --json`. Usa resúmenes de gates; abre la salida completa solo ante fallo y nunca desde logs crudos persistidos.
+
 Agente responsable: `@release-manager`.
 
 ## Regla absoluta
@@ -24,6 +28,7 @@ documentación oficial de la aplicación.
 ```bash
 node scripts/sdd-project.mjs run --fast     # lint · test · typecheck · build · smells
 node scripts/sdd-project.mjs run --slow     # coverage · e2e · deps-audit · docs
+node scripts/check-sdd.mjs --trace-audit --strict --base <base exacta>
 node scripts/check-sdd.mjs --strict
 ```
 

@@ -55,7 +55,8 @@ export const JSON_FUSIONABLES = [
 export const BLOQUES_GESTIONADOS = {
   'AGENTS.md': `## Flujo SDD gestionado
 
-La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
+Lee únicamente el recorte de tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`.
+La fuente completa sigue en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
 
 - Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
 - Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
@@ -81,9 +82,9 @@ La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/
 - Bloqueos:
 - Siguiente agente sugerido:
 - Comando / contexto durable:`,
-  'CLAUDE.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo. Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.`,
-  'GEMINI.md': `Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo; si no hay delegación, reanuda desde los documentos. Los workflows de Antigravity están en \`.agents/workflows/\`.`,
-  '.github/copilot-instructions.md': `Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; un PRD o proyecto nuevo entra por \`/sdd-intake\`. No implementes sin spec aprobada ni test rojo previo.`,
+  'CLAUDE.md': `Lee [\`AGENTS.md\`](AGENTS.md) y carga solo tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`. Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo. Los perfiles están en \`.claude/agents/\` y las skills canónicas en \`.agents/skills/\`.`,
+  'GEMINI.md': `Lee [\`AGENTS.md\`](AGENTS.md) y carga solo tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`. Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo; si no hay delegación, reanuda desde los documentos.`,
+  '.github/copilot-instructions.md': `Lee [\`../AGENTS.md\`](../AGENTS.md) y carga solo tu fase con \`node scripts/sdd-project.mjs context --phase <fase>\`. Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`. No implementes sin spec aprobada ni test rojo previo.`,
 };
 
 export const PRODUCT_SEEDS = {
@@ -188,52 +189,25 @@ Todos los cambios relevantes de este proyecto se documentarán aquí siguiendo
 | Stack | pendiente |
 
 <!-- sdd:start -->
-${''}## Flujo SDD gestionado
-
-La política operativa completa está en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING-MODEL.md).
-
-- Ningún código se implementa sin una spec aprobada en \`docs/specs/NNN-slug/\`.
-- Producto se aprueba con \`/sdd-intake\` antes de arquitectura greenfield o de specs derivadas de un PRD global.
-- Circuito: intake → init/onboard → specify → clarify → design cuando haya UI → plan → tasks → implement → verify → ship.
-- La implementación sigue TDD: RED demostrado → GREEN mínimo → REFACTOR con la suite verde.
-- Toda spec nueva declara \`Impacto de seguridad\`; si es sensible, cada \`SEC-*\` enlaza decisión, tarea, test y evidencia.
-- \`security-auditor\` es de solo lectura. Un \`GO\` exige informe parseable sin CRÍTICO/ALTO ni controles no ejecutados.
-- Toda spec nueva declara \`Impacto de usabilidad\`; si es aplicable, cada \`UX-*\` enlaza decisión, tarea, test y evidencia.
-- \`ux-designer\` diseña y escribe; quien audita usabilidad en \`/sdd-verify\` es \`code-reviewer\`, en solo lectura. Nadie audita su propio diseño.
-- \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
-- La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
-- Las decisiones viven en la bitácora o en un ADR, nunca únicamente en el chat.
-
-### HANDOFF
-- Agente origen:
-- Fase completada:
-- Fuentes consultadas:
-- Artefactos:
-- Requisitos / casos cubiertos:
-- Discrepancias:
-- Decisiones tomadas:
-- Supuestos:
-- Bloqueos:
-- Siguiente agente sugerido:
-- Comando / contexto durable:
+${BLOQUES_GESTIONADOS['AGENTS.md']}
 <!-- sdd:end -->
 `,
   'CLAUDE.md': `# CLAUDE.md
 
 <!-- sdd:start -->
-Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo. Los perfiles están en \`.claude/agents/\`, las skills canónicas en \`.agents/skills/\` y sus adaptadores Claude en \`.claude/skills/\`.
+${BLOQUES_GESTIONADOS['CLAUDE.md']}
 <!-- sdd:end -->
 `,
   'GEMINI.md': `# GEMINI.md
 
 <!-- sdd:start -->
-Lee y aplica primero [\`AGENTS.md\`](AGENTS.md). Empieza por \`/sdd-intake\` cuando haya PRD o un proyecto nuevo; si no hay delegación, reanuda desde los documentos. Los workflows de Antigravity están en \`.agents/workflows/\`.
+${BLOQUES_GESTIONADOS['GEMINI.md']}
 <!-- sdd:end -->
 `,
   '.github/copilot-instructions.md': `# Instrucciones de Copilot
 
 <!-- sdd:start -->
-Lee y aplica [\`../AGENTS.md\`](../AGENTS.md). Usa los perfiles de \`.github/agents/\` y las skills canónicas de \`.agents/skills/\`; un PRD o proyecto nuevo entra por \`/sdd-intake\`. No implementes sin spec aprobada ni test rojo previo.
+${BLOQUES_GESTIONADOS['.github/copilot-instructions.md']}
 <!-- sdd:end -->
 `,
   'docs/README.md': `# Documentación
@@ -514,30 +488,21 @@ a quien decide, decidir.
   "actualizado": null
 }
 `,
-  '.sdd/lightweight.json': `{
-  "version": 1,
-  "cuota": 0.4,
-  "permitido": [],
-  "prohibido": [
-    "scripts/",
-    ".sdd/",
-    ".claude/",
-    ".github/",
-    ".codex/",
-    ".cursor/",
-    ".gemini/",
-    ".agents/",
-    "docs/specs/",
-    "docs/architecture/",
-    "docs/product/",
-    "docs/security/",
-    "docs/quality/",
-    "docs/sdd/",
-    "package.json",
-    "AGENTS.md",
-    "CLAUDE.md",
-    "GEMINI.md"
-  ]
+  '.sdd/circuit.json': `{
+  "schemaVersion": 1,
+  "grammar": "portable-path-v1",
+  "detectorVersion": 1,
+  "proposal": {
+    "light": { "allowedFiles": [] },
+    "compact": { "allowedPrefixes": [] },
+    "deniedPrefixes": ["src/domain/", "src/auth/", "src/security/", "app/api/", "api/", "contracts/", "migrations/", "prisma/", "supabase/", "database/", "infra/", "scripts/", ".sdd/", ".agents/", ".claude/", ".codex/", ".cursor/", ".gemini/", ".github/", "docs/specs/", "docs/product/", "docs/architecture/", "docs/security/", "docs/sdd/"],
+    "executableExtensions": [".cjs", ".js", ".jsx", ".mjs", ".ts", ".tsx"],
+    "sensitiveSegments": [".agents", ".github", ".sdd", "api", "auth", "contracts", "database", "domain", "infra", "migrations", "prisma", "routes", "scripts", "security", "supabase"],
+    "limits": { "modules": 1, "criteria": 3, "tasks": 3, "intentBytes": 12288, "auditWindow": 20 },
+    "quota": 0.4
+  },
+  "status": "pending",
+  "proposalHash": "f8490f12c16aed7efab3aefd6059a7fa5adb447f3831414b65172afc090595ca"
 }
 `,
   '.env.example': `# Variables de aplicación
@@ -584,13 +549,15 @@ const EXCLUSIONES_EXACTAS = new Set([
   'docs/security/THREAT-MODEL.md', 'docs/bitacora/DECISIONS.md',
   '.sdd/agent-audit.jsonl', '.sdd/external-skills.json', '.sdd/territories.json',
   '.sdd/checks.json', '.sdd/docs.json', '.sdd/generators.json', '.sdd/installed.json', '.env.example',
-  '.sdd/coverage.json', '.sdd/smells.json', '.sdd/lightweight.json',
+  '.sdd/coverage.json', '.sdd/smells.json', '.sdd/circuit.json', '.sdd/lightweight.json',
   '.github/copilot-instructions.md', '.github/dependabot.yml',
   '.gitignore', '.npmignore',
   '.mcp.json', '.vscode/mcp.json', '.agents/mcp_config.json',
   'LICENSE',
   'package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock',
   'scripts/install.mjs', 'scripts/test-install.mjs',
+  'scripts/test-circuit.mjs', 'scripts/test-trace-audit.mjs',
+  'scripts/test-context.mjs', 'scripts/test-gate-summary.mjs',
   '.github/workflows/quality-gates.yml',
 ]);
 
@@ -602,9 +569,11 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
     'scripts/lib/circuito.mjs',
     'scripts/lib/coverage-v8.mjs',
     'scripts/lib/docs-contract.mjs',
+    'scripts/lib/gate-summary.mjs',
     'scripts/lib/jsonc.mjs',
     'scripts/lib/trace-audit.mjs',
   ].includes(r)) return false;
+  if (r.startsWith('scripts/test/')) return false;
   if (r.startsWith('docs/quality/benchmarks/')) return false;
   // La memoria del TFM documenta esta plantilla concreta: es historia, no artefacto reutilizable.
   if (r.startsWith('docs/TFM/')) return false;

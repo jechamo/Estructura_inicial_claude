@@ -15,14 +15,17 @@
  *
  * Node >= 18, sin dependencias.
  */
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, resolve, dirname } from 'node:path';
+import { readFileSync, existsSync, readdirSync, statSync, lstatSync, realpathSync } from 'node:fs';
+import { join, relative, resolve, dirname, isAbsolute } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { validateDocsConfig, normalizeDocPath, matchesDocPattern } from './lib/docs-contract.mjs';
 import { parseJsonc } from './lib/jsonc.mjs';
-import { auditarCommits } from './lib/trace-audit.mjs';
-import { clasificar, motivoMaterial, cuota } from './lib/circuito.mjs';
+import { auditarCommits, parsearTrailers } from './lib/trace-audit.mjs';
+import {
+  clasificar, clasificarCircuito, validarAprobacionCambio, validarCambioCompacto, validarCircuito,
+  canonicalizarRuta, intencionCambio, motivoMaterial, cuota,
+} from './lib/circuito.mjs';
 import { globARegExp } from '../.sdd/hooks/_lib.mjs';
 
 /**
@@ -39,6 +42,49 @@ function leerFrontera(raiz) {
   } catch {
     return null;
   }
+}
+
+function referenciasDecisionLocales(raiz) {
+  const refs = new Set();
+  const bitacora = join(raiz, 'docs', 'bitacora', 'DECISIONS.md');
+  if (existsSync(bitacora))
+    for (const ref of readFileSync(bitacora, 'utf8').match(/\b(?:DEC|ADR)-[A-Za-z0-9._-]+\b/g) || []) refs.add(ref);
+  const adrs = join(raiz, 'docs', 'architecture', 'adr');
+  if (existsSync(adrs)) for (const entry of readdirSync(adrs)) {
+    const ref = entry.match(/^(ADR-[A-Za-z0-9._-]+)/)?.[1];
+    if (ref) refs.add(ref);
+  }
+  return refs;
+}
+
+function leerCircuito(raiz) {
+  const ruta = join(raiz, '.sdd/circuit.json');
+  if (!existsSync(ruta)) return { config: null, validation: { ok: false, active: false, reason: 'ausente' } };
+  try {
+    const config = JSON.parse(readFileSync(ruta, 'utf8'));
+    return { config, validation: validarCircuito(config, { decisionRefs: referenciasDecisionLocales(raiz) }) };
+  } catch (error) {
+    return { config: null, validation: { ok: false, active: false, reason: `JSON inválido: ${error.message}` } };
+  }
+}
+
+function tipoRutaConfinada(raiz, ruta, { planned = false } = {}) {
+  const canonical = canonicalizarRuta(ruta);
+  if (!canonical) return 'invalid';
+  const rootReal = realpathSync(raiz);
+  let current = raiz;
+  for (const segment of String(ruta).replace(/\\/g, '/').split('/').filter((part) => part && part !== '.')) {
+    current = join(current, segment);
+    if (!existsSync(current)) return planned ? 'file' : 'missing';
+    const stat = lstatSync(current);
+    if (stat.isSymbolicLink()) return 'symlink';
+    const real = realpathSync(current);
+    const rel = relative(rootReal, real);
+    if (rel === '..' || rel.startsWith('../') || rel.startsWith('..\\') || isAbsolute(rel))
+      return 'outside';
+  }
+  const stat = lstatSync(current);
+  return stat.isFile() ? 'file' : stat.isDirectory() ? 'directory' : 'other';
 }
 
 const ROOT = process.cwd();
@@ -70,33 +116,82 @@ if (!DOCS_DIFF && !TRACE_AUDIT && indiceBaseDocs >= 0)
 // realmente modificadas, y la skill se limita a consultarla. `--circuit-status` sale antes de
 // cualquier otra comprobación: es una pregunta, no una auditoría.
 if (args.includes('--circuit-status')) {
-  const frontera = leerFrontera(ROOT);
+  const { config, validation } = leerCircuito(ROOT);
+  const decisionRefs = referenciasDecisionLocales(ROOT);
   const git = (...argv) => spawnSync('git', argv, { cwd: ROOT, encoding: 'utf8' });
   // `--untracked-files=all` es obligatorio: sin él, un directorio recién creado y sin
   // trackear se colapsa a una sola línea («?? docs/») en lugar de listar cada fichero, y la
   // frontera deja de poder clasificarlos uno a uno.
-  const salida = git('status', '--porcelain', '--untracked-files=all');
-  const rutas = (salida.stdout || '')
-    .split('\n')
-    .map((l) => l.slice(3).trim())
-    .filter(Boolean)
-    // Un renombrado se declara «viejo -> nuevo»: nos importa el destino.
-    .map((l) => (l.includes(' -> ') ? l.split(' -> ')[1] : l))
-    .map((l) => l.replace(/^"|"$/g, ''));
-  const veredicto = clasificar(rutas, frontera);
+  const plannedIndex = args.indexOf('--planned');
+  const previstas = [];
+  if (plannedIndex >= 0) {
+    for (let i = plannedIndex + 1; i < args.length && !args[i].startsWith('--'); i++) previstas.push(args[i]);
+  }
+  const salida = plannedIndex >= 0 ? null : git('status', '--porcelain', '--untracked-files=all');
+  const rutas = plannedIndex >= 0 ? previstas : (salida.stdout || '')
+    .split('\n').map((l) => l.slice(3).trim()).filter(Boolean)
+    .map((l) => (l.includes(' -> ') ? l.split(' -> ')[1] : l)).map((l) => l.replace(/^"|"$/g, ''));
+  const fileTypes = {};
+  for (const ruta of rutas) {
+    const canonical = canonicalizarRuta(ruta);
+    if (!canonical) continue;
+    try { fileTypes[canonical] = tipoRutaConfinada(ROOT, ruta, { planned: plannedIndex >= 0 }); }
+    catch { fileTypes[canonical] = 'other'; }
+  }
+  const trackedPaths = (git('ls-files', '-z').stdout || '').split('\0').filter(Boolean);
+  const structural = clasificarCircuito(rutas, config, {
+    behaviorChanged: args.includes('--behavior') && args[args.indexOf('--behavior') + 1] === 'changed',
+    securityImpact: 'no-sensible', fileTypes, trackedPaths, decisionRefs,
+  });
+  let compactApproval = null;
+  if (validation.active && structural.circuito === 'compact') {
+    const plannedCanonical = new Set(rutas.map(canonicalizarRuta).filter(Boolean));
+    const specsRoot = join(ROOT, 'docs', 'specs');
+    for (const entry of existsSync(specsRoot) ? readdirSync(specsRoot, { withFileTypes: true }) : []) {
+      if (!entry.isDirectory() || !/^\d{3}-/.test(entry.name)) continue;
+      const changePath = join(specsRoot, entry.name, 'change.md');
+      if (!existsSync(changePath)) continue;
+      const text = readFileSync(changePath, 'utf8');
+      const contract = validarCambioCompacto(text, config, { decisionRefs });
+      const approval = validarAprobacionCambio(text, { decisionRefs });
+      const approvedRoutes = new Set((contract.routes || []).map(canonicalizarRuta));
+      if (contract.ok && approval.ok && [...plannedCanonical].every((path) => approvedRoutes.has(path))) {
+        compactApproval = entry.name;
+        break;
+      }
+    }
+  }
+  const securityImpact = compactApproval ? 'no-sensible' : null;
+  const veredicto = clasificarCircuito(rutas, config, {
+    behaviorChanged: args.includes('--behavior') && args[args.indexOf('--behavior') + 1] === 'changed',
+    securityImpact,
+    fileTypes, trackedPaths, decisionRefs,
+  });
+  const legacy = existsSync(join(ROOT, '.sdd/lightweight.json'));
+  const payload = { ...veredicto, configStatus: config?.status || 'absent', configValid: validation.ok,
+    configActive: validation.active, frontera: validation.active, legacy,
+    ...(structural.circuito === 'compact' && !compactApproval ? { candidateCircuit: 'compact', requiresApprovedChange: true } : {}),
+    ...(compactApproval ? { approvedChange: compactApproval } : {}) };
   if (JSON_OUT) {
-    console.log(JSON.stringify({ ...veredicto, frontera: Boolean(frontera) }, null, 2));
-  } else if (!frontera) {
-    console.log('circuito: full · no hay .sdd/lightweight.json, así que no hay circuito ligero.');
+    console.log(JSON.stringify(payload, null, 2));
+  } else if (!validation.active) {
+    console.log(`circuito: full · .sdd/circuit.json está ${config?.status || 'ausente'} (${validation.reason}); sin aprobación no hay atajo.`);
+    console.log('Ejecuta `node scripts/sdd-project.mjs detect-circuit` y presenta `approve-circuit` a una persona.');
   } else if (veredicto.circuito === 'light') {
-    console.log(`circuito: light · ${veredicto.total} fichero(s), todos dentro de la frontera declarada.`);
+    console.log(`circuito: light · ${veredicto.total} fichero(s) exacto(s) no ejecutable(s).`);
     console.log('Siguen siendo obligatorios los gates, la bitácora y los trailers `Circuit: light` y `Circuit-reason:`.');
+  } else if (veredicto.circuito === 'compact') {
+    console.log(`circuito: compact · ${veredicto.total} fichero(s) en un módulo aprobado.`);
+    console.log('Exige change.md, TDD, revisión, gates, bitácora y trailers completos.');
+  } else if (structural.circuito === 'compact' && !compactApproval) {
+    console.log('circuito: full · candidato compact pendiente de change.md humano aprobado y sellado.');
+    console.log('Completa `new-change <slug> --mode compact`, presenta `approve-change` y repite la consulta.');
   } else if (veredicto.total === 0) {
     // La ausencia de cambio no merece atajo, pero tampoco merece un reproche. Sin este caso el
     // mensaje anunciaba «0 de 0 fichero(s) quedan fuera de la frontera:» y no nombraba ninguno.
     console.log('circuito: full · no hay cambios sin registrar, así que todavía no hay nada que clasificar.');
   } else {
-    console.log(`circuito: full · ${veredicto.obligan.length} de ${veredicto.total} fichero(s) quedan fuera de la frontera:`);
+    console.log(`circuito: full · ${veredicto.obligan.length} de ${veredicto.total} fichero(s) obligan al expediente completo:`);
     for (const r of veredicto.obligan.slice(0, 10)) console.log(`  · ${r}`);
     if (veredicto.obligan.length > 10) console.log(`  · … y ${veredicto.obligan.length - 10} más`);
   }
@@ -975,8 +1070,39 @@ let tareasHechas = 0;
 for (const s of specs) {
   const dir = join(SPECS, s);
   const spec = leer(join(dir, 'spec.md'));
+  const compactChange = leer(join(dir, 'change.md'));
   if (!spec) {
-    err('spec/estructura', `${s}: falta spec.md`);
+    if (compactChange !== null) {
+      const bytes = Buffer.byteLength(compactChange, 'utf8');
+      const criteria = new Set(compactChange.match(/\bCA-\d+\b/g) || []);
+      const compactTasks = new Set(compactChange.match(/\bT-\d{3}-\d+\b/g) || []);
+      const approval = validarAprobacionCambio(compactChange, { decisionRefs: referenciasDecisionLocales(ROOT) });
+      const approved = approval.ok;
+      const intent = intencionCambio(compactChange) || '';
+      const declaredSeal = compactChange.match(/^\|\s*Sello de intenci[oó]n\s*\|\s*`?([0-9a-f]{64})`?\s*\|/im)?.[1];
+      const actualSeal = createHash('sha256').update(intent).digest('hex');
+      const compactContract = validarCambioCompacto(compactChange, leerCircuito(ROOT).config,
+        { decisionRefs: referenciasDecisionLocales(ROOT) });
+      if (!compactContract.ok) err('compact/contrato', `${s}: ${compactContract.reason}`);
+      if (bytes > 12 * 1024 || criteria.size < 1 || compactTasks.size < 1 || criteria.size > 3 || compactTasks.size > 3)
+        err('compact/limites', `${s}: change.md debe conservar 1–3 criterios, 1–3 tareas y como máximo 12 KiB; escala a full`);
+      if (!/^- Seguridad:\s*`no-sensible`\s*$/im.test(compactChange))
+        err('compact/impacto', `${s}: Seguridad debe ser exactamente no-sensible`);
+      if (!/^\|\s*Revisor independiente\s*\|\s*code-reviewer\s*\|/im.test(compactChange))
+        err('compact/revision', `${s}: falta code-reviewer independiente`);
+      if (!/^\|\s*Veredicto de revisión\s*\|\s*(?:approved|apto)\s*\|/im.test(compactChange)) {
+        const message = `${s}: falta veredicto final de code-reviewer`;
+        STRICT ? err('compact/revision', message) : warn('compact/revision', message);
+      }
+      if (!approved) {
+        const message = `${s}: change.md sigue pendiente; una persona debe ejecutar approve-change`;
+        STRICT ? err('compact/aprobacion', message) : warn('compact/aprobacion', message);
+      } else if (declaredSeal !== actualSeal) err('compact/sello', `${s}: la intención cambió después de aprobarse`);
+      if (/^\|\s*Estado\s*\|\s*approved\s*\|/im.test(compactChange) && !approval.ok)
+        err('compact/aprobacion', `${s}: aprobación durable inválida: ${approval.reason}`);
+      continue;
+    }
+    err('spec/estructura', `${s}: falta spec.md o change.md`);
     continue;
   }
 
@@ -1685,7 +1811,11 @@ if (VIRGIN) {
 if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
   const git = (...argv) => spawnSync('git', argv, { cwd: ROOT, encoding: 'utf8' });
   const rango = `${BASE_DOCS}..HEAD`;
-  const historial = git('log', '--format=%H%x1f%B%x1e', rango);
+  const formatoHistorial = '--format=%H%x1f%an <%ae>%x1f%B%x1e';
+  const historial = git('log', '--reverse', formatoHistorial, rango);
+  // Cada política admite como máximo 100 commits auditables. No se recorre toda la historia:
+  // además de ser innecesario, multiplicaría las consultas Git por cada ancestro del repositorio.
+  const previo = git('log', '--max-count=100', '--reverse', formatoHistorial, BASE_DOCS);
   if (historial.status !== 0) {
     err('traza/base', `no se puede leer el rango \`${rango}\`: ${(historial.stderr || '').trim().split('\n')[0]}`);
   } else {
@@ -1694,7 +1824,9 @@ if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
     for (const nombre of dirs(join(ROOT, 'docs', 'specs'))) {
       const m = nombre.match(/^(\d{3})-/);
       if (m) specsIds.add(m[1]);
-      for (const id of (leer(join(ROOT, 'docs', 'specs', nombre, 'tasks.md')) || '').match(/T-\d{3}-\d+/g) || [])
+      const taskSource = (leer(join(ROOT, 'docs', 'specs', nombre, 'tasks.md')) ||
+        leer(join(ROOT, 'docs', 'specs', nombre, 'change.md')) || '');
+      for (const id of taskSource.match(/T-\d{3}-\d+/g) || [])
         tareas.add(id);
     }
     const agentes = new Set(
@@ -1706,17 +1838,126 @@ if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
     let reparto = null;
     try { reparto = JSON.parse(leer(join(ROOT, '.sdd', 'territories.json')) || 'null'); } catch { reparto = null; }
 
-    const commits = historial.stdout.split('\u001e').map((bloque) => bloque.trim()).filter(Boolean)
+    const jsonEn = (ref, path) => {
+      const shown = git('show', `${ref}:${path}`);
+      if (shown.status !== 0) return null;
+      try { return JSON.parse(shown.stdout); } catch { return null; }
+    };
+    const decisionesEn = (ref) => {
+      const refs = new Set();
+      const diary = git('show', `${ref}:docs/bitacora/DECISIONS.md`);
+      if (diary.status === 0)
+        for (const value of diary.stdout.match(/\b(?:DEC|ADR)-[A-Za-z0-9._-]+\b/g) || []) refs.add(value);
+      const adrs = git('ls-tree', '-r', '--name-only', ref, 'docs/architecture/adr');
+      if (adrs.status === 0) for (const path of adrs.stdout.split('\n')) {
+        const value = path.split('/').at(-1)?.match(/^(ADR-[A-Za-z0-9._-]+)/)?.[1];
+        if (value) refs.add(value);
+      }
+      return refs;
+    };
+    const cambiosEn = (ref) => {
+      const listed = git('ls-tree', '-r', '--name-only', ref, 'docs/specs');
+      const seals = new Map();
+      const scopes = new Map();
+      const paths = new Map();
+      const approvals = new Map();
+      if (listed.status !== 0) return { seals, scopes, paths, approvals };
+      for (const path of listed.stdout.split('\n').filter((x) => /\/change\.md$/.test(x))) {
+        const shown = git('show', `${ref}:${path}`);
+        if (shown.status !== 0) continue;
+        const text = shown.stdout.replace(/\r\n/g, '\n');
+        const group = text.match(/^\|\s*\*{0,2}Change-Group\*{0,2}\s*\|\s*`?([^|`\n]+)`?\s*\|/im)?.[1]?.trim();
+        const approval = validarAprobacionCambio(text, { decisionRefs: decisionesEn(ref) });
+        if (!group || !approval.ok) continue;
+        const intent = intencionCambio(text) || '';
+        seals.set(group, approval.seal);
+        paths.set(group, path);
+        approvals.set(group, [approval.approvedBy, approval.approvedAt, approval.decisionRef, approval.seal].join('\u0000'));
+        const module = text.match(/^\|\s*\*{0,2}M[oó]dulo\*{0,2}\s*\|\s*`?([^|`\n]+)`?\s*\|/im)?.[1]?.trim();
+        const routesBlock = text.match(/### Rutas previstas\s*\n([\s\S]*?)(?=\n###|\n##|$)/i)?.[1] || '';
+        const routes = [...routesBlock.matchAll(/^-\s*`([^`]+)`\s*$/gm)].map((match) => match[1]);
+        scopes.set(group, {
+          module, routes,
+          criteria: new Set(intent.match(/CA-\d+/g) || []).size,
+          tasks: new Set(text.match(/T-\d{3}-\d+/g) || []).size,
+          intentBytes: Buffer.byteLength(intent, 'utf8'),
+        });
+      }
+      return { seals, scopes, paths, approvals };
+    };
+
+    const nuevos = new Set(historial.stdout.split('\u001e').map((block) => block.trim().split('\u001f')[0]).filter(Boolean));
+    const historialCompleto = `${previo.status === 0 ? previo.stdout : ''}${historial.stdout}`;
+    const commits = historialCompleto.split('\u001e').map((bloque) => bloque.trim()).filter(Boolean)
       .map((bloque) => {
-        const [sha, mensaje = ''] = bloque.split('\u001f');
-        const ficheros = git('show', '--pretty=format:', '--name-only', sha.trim())
+        const [sha, author = '', mensaje = ''] = bloque.split('\u001f');
+        const commitSha = sha.trim();
+        const ficheros = git('show', '--pretty=format:', '--name-only', commitSha)
           .stdout.split('\n').map((l) => l.trim()).filter(Boolean);
-        return { sha: sha.trim(), mensaje, ficheros };
+        const parent = (git('rev-parse', `${commitSha}^`).stdout || '').trim();
+        const trackedPaths = parent
+          ? (git('ls-tree', '-r', '--name-only', parent).stdout || '').split('\n').filter(Boolean)
+          : [];
+        const fileTypes = {};
+        for (const file of ficheros) {
+          const mode = (git('ls-tree', commitSha, '--', file).stdout || '').trim().split(/\s+/)[0] || '';
+          fileTypes[canonicalizarRuta(file)] = /^100\d{3}$/.test(mode) ? 'file' : mode === '120000' ? 'symlink' : 'other';
+        }
+        const parentCircuit = parent ? jsonEn(parent, '.sdd/circuit.json') : null;
+        const parentValidation = validarCircuito(parentCircuit, { decisionRefs: parent ? decisionesEn(parent) : new Set() });
+        const committedCircuit = jsonEn(commitSha, '.sdd/circuit.json');
+        const committedValidation = validarCircuito(committedCircuit, { decisionRefs: decisionesEn(commitSha) });
+        const activationTransition = !parentValidation.active && committedValidation.active;
+        const circuitApprovalTransition = committedValidation.active &&
+          (!parentValidation.active || JSON.stringify(parentCircuit) !== JSON.stringify(committedCircuit));
+        const activationCommitValid = !circuitApprovalTransition || committedCircuit.activationCommit === parent;
+        const circuitConfig = circuitApprovalTransition ? committedCircuit : parentCircuit;
+        const configRef = circuitApprovalTransition ? commitSha : parent;
+        const circuitValidation = validarCircuito(circuitConfig, { decisionRefs: configRef ? decisionesEn(configRef) : new Set() });
+        const historicalTerritories = parent ? jsonEn(parent, '.sdd/territories.json') : null;
+        const changes = parent ? cambiosEn(parent) : { seals: new Map(), scopes: new Map(), paths: new Map(), approvals: new Map() };
+        const committedChanges = cambiosEn(commitSha);
+        const approvedNow = [...committedChanges.seals.keys()].filter((group) =>
+          committedChanges.approvals.get(group) !== changes.approvals.get(group));
+        const trailers = parsearTrailers(mensaje);
+        return {
+          sha: commitSha,
+          author,
+          mensaje,
+          ficheros,
+          reportable: nuevos.has(commitSha),
+          scope: changes.scopes.get(trailers['Change-Group']),
+          context: {
+            reparto: historicalTerritories || reparto,
+            enforceTrailers: circuitValidation.active,
+            activationTransition,
+            circuitApprovalTransition,
+            activationCommitValid,
+            changeApprovalTransition: approvedNow.length > 0,
+            changeApprovalPaths: approvedNow.map((group) => committedChanges.paths.get(group)).filter(Boolean),
+            circuitConfigHash: circuitConfig?.proposalHash || null,
+            frontera: circuitValidation.active ? circuitConfig : null,
+            lightFiles: circuitValidation.active ? new Set(circuitConfig.proposal.light.allowedFiles.map(canonicalizarRuta)) : null,
+            changeSeals: changes.seals,
+            limits: circuitConfig?.proposal?.limits,
+            quota: circuitConfig?.proposal?.quota,
+            fileTypes,
+            trackedPaths,
+            decisionRefs: configRef ? decisionesEn(configRef) : new Set(),
+            requireGitAuthor: circuitValidation.active,
+          },
+        };
       });
 
-    const resumen = auditarCommits(commits, { tareas, agentes, specs: specsIds, reparto, frontera: leerFrontera(ROOT) });
+    const currentCircuit = leerCircuito(ROOT).config;
+    const resumen = auditarCommits(commits, {
+      tareas, agentes, specs: specsIds, reparto, frontera: null,
+      limits: currentCircuit?.proposal?.limits,
+      quota: currentCircuit?.proposal?.quota,
+    });
     for (const infractor of resumen.infractores)
       for (const hallazgo of infractor.hallazgos) err('traza/corroboracion', hallazgo);
+    for (const aviso of resumen.avisos || []) warn('traza/fragmentacion', aviso);
     // Un commit sin trailers no es una infracción: es un commit que esta auditoría no alcanza.
     // Decirlo en voz alta evita que el silencio se lea como conformidad.
     if (resumen.noAuditables)
@@ -1730,10 +1971,10 @@ if (TRACE_AUDIT && BASE_DOCS && !BASE_DOCS.startsWith('--')) {
       const mensaje =
         `${Math.round(c.proporcion * 100)} % de los commits en \`${rango}\` usan el circuito ligero, ` +
         `por encima de la cuota declarada (${Math.round(c.maximo * 100)} %). ` +
-        'Eso no señala a nadie: indica que la frontera de `.sdd/lightweight.json` deja pasar más de lo previsto y hay que revisarla.';
+        'Eso no señala a nadie: indica que la frontera de `.sdd/circuit.json` deja pasar más de lo previsto y hay que revisarla.';
       STRICT ? err('traza/cuota', mensaje) : warn('traza/cuota', mensaje);
     }
-    console.log(`traza · ${rango} · ${resumen.conformes} corroborado(s) · ${resumen.noAuditables} no auditable(s) · ${resumen.infractores.length} con hallazgos · ${c.ligeros} ligero(s) (${Math.round(c.proporcion * 100)} %)`);
+    console.log(`traza · ${rango} · ${resumen.conformes} corroborado(s) · ${resumen.noAuditables} no auditable(s) · ${resumen.infractores.length} con hallazgos · ${c.ligeros} reducido(s) (${Math.round(c.proporcion * 100)} %)`);
   }
 }
 

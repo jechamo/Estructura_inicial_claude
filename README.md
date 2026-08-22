@@ -28,7 +28,7 @@ npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mod
 Para CI, automatizaciones o una instalación reproducible, fija el tag estable e inmutable:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.8.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -89,6 +89,20 @@ del sistema operativo: solo se registran ejecutables confiables y aprobados por 
 ---
 
 ## El circuito SDD
+
+Antes de editar, el circuito proporcional puede clasificarse con:
+
+```bash
+node scripts/sdd-project.mjs detect-circuit --json
+node scripts/check-sdd.mjs --circuit-status --planned src/components/Carousel.tsx --json
+node scripts/sdd-project.mjs context --phase implement --spec 017 --task T-017-03 --json
+node scripts/sdd-project.mjs run --fast --summary-json
+```
+
+La frontera `.sdd/circuit.json` nace `pending`; solo una aprobación humana ligada al hash activa
+`light` o `compact`, y la activación se materializa en un commit `full` dedicado. Un `change.md`
+compacto también se aprueba y commitea solo antes de tocar código. `full` es el valor seguro por
+defecto. La auditoría histórica se ejecuta en los gates lentos, ship y CI.
 
 ```mermaid
 flowchart LR

@@ -9,6 +9,58 @@
 
 ---
 
+## 2026-08-22 · Aceptar el límite agregado por módulo del circuito compacto
+
+- **Tipo**: decisión
+- **Contexto**: la revisión de seguridad de la spec 017 demostró que rotar `Change-Group`
+  permitía repartir una misma ampliación entre varios cambios compactos y eludir sus límites.
+- **Decisión / hecho**: el usuario acepta explícitamente que grupos distintos del mismo módulo
+  avisen y que su unión exija `full` cuando supera criterios, tareas o bytes permitidos.
+- **Alternativas descartadas**: conservar solo el aviso, porque dejaba el bypass abierto; bloquear
+  cualquier segundo grupo, porque penalizaba mantenimiento independiente dentro del límite.
+- **Impacto**: cierra el escape sin convertir automáticamente todo cambio repetido en `full`.
+- **Deuda aceptada**: ninguna.
+- **Referencias**: spec 017-circuito-proporcional-contexto · SEC-CIRCUIT-006
+- **Quién**: usuario
+
+---
+
+## 2026-08-22 · Cerrar la fragmentación compacta por módulo
+
+- **Tipo**: decisión de seguridad
+- **Contexto**: el `security-scan plan` de la spec 017 detectó que avisar ante grupos distintos
+  permitía rotar `Change-Group` para esquivar los límites compactos.
+- **Decisión / hecho**: la auditoría agrega también por módulo canónico los últimos 20 commits
+  auditables y exige `full` cuando la unión excede cualquier límite, con independencia del grupo.
+- **Alternativas descartadas**: conservar solo un aviso, porque no preserva el control; bloquear
+  cualquier segundo cambio, por falsos positivos desproporcionados.
+- **Impacto**: elimina el bypass sin convertir todo mantenimiento repetido en circuito completo.
+- **Deuda aceptada**: ninguna.
+- **Referencias**: spec 017 · `SEC-CIRCUIT-006`
+- **Quién**: planner, por hallazgo ALTO del security-auditor
+
+---
+
+## 2026-08-22 · Priorizar una entrega atómica para reducir el coste del circuito
+
+- **Tipo**: decisión
+- **Contexto**: una modificación pequeña en RRSS agotó las cuotas de Copilot y Cursor porque el
+  circuito aplica el mismo expediente y contexto a cualquier riesgo. El estado muestra las specs
+  010 y 016 activas, y requiere prioridad humana explícita.
+- **Decisión / hecho**: el usuario prioriza la spec 017 en `feature/mejoras_codex` y aprueba una
+  única entrega atómica: clasificación proporcional, contexto por fase, evidencia resumida y
+  auditoría obligatoria se publican juntas. Las specs 010 y 016 no se modifican.
+- **Alternativas descartadas**: dos specs y dos releases, por duplicar gates e interacciones;
+  activar niveles antes de endurecer la auditoría, por abrir una ventana sin control completo.
+- **Impacto**: reduce documentación e intervenciones sin permitir `light` o `compact` antes de
+  que todos los controles sean verificables. Memoria TFM y Pages se actualizan en la misma spec.
+- **Deuda aceptada**: la cuota real de los proveedores no está expuesta; se usa un proxy auditable
+  y se revisan los umbrales con el benchmark de la spec 017.
+- **Referencias**: spec `017-circuito-proporcional-contexto` · FEAT-004
+- **Quién**: usuario · aprobación explícita «PLEASE IMPLEMENT THIS PLAN»
+
+---
+
 ## 2026-08-21 · Aprobación humana de la arquitectura heredada
 
 - **Tipo**: decisión
@@ -982,3 +1034,17 @@
   `docs/quality/reports/2026-08-21-016-cobertura-ssrf-egress.md`.
 - **Quién**: implementación `declared-direct`; auditorías independientes `code-reviewer` y
   `security-auditor`; aprobación humana de spec y plan registrada el 2026-08-21.
+
+---
+
+## DEC-017 · 2026-08-22 · Circuito proporcional con activación atómica
+
+- **Tipo**: decisión de arquitectura y seguridad.
+- **Decisión**: introducir `light`, `compact` y `full` en una sola entrega; solo una frontera
+  aprobada por una persona y activada en un commit `full` dedicado concede atajos. `compact`
+  exige también aprobar y commitear `change.md` antes del código.
+- **Motivo**: reducir contexto y documentos sin desactivar TDD, gates, trazabilidad ni auditoría.
+- **Alternativas descartadas**: activar niveles antes de la auditoría; mantener tarifa plana;
+  aceptar `.sdd/lightweight.json` heredado como permiso.
+- **Alcance**: spec 017 en `feature/mejoras_codex`; no modifica RRSS ni autoriza publicación.
+- **Quién**: decisión humana expresada en la aprobación de implementación de la spec 017.

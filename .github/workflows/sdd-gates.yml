@@ -31,7 +31,7 @@ jobs:
         run: node scripts/sdd-project.mjs run --fast
       - name: Validate documentation against exact PR base
         env:
-          SDD_DOCS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          SDD_DOCS_BASE: ${{ github.event.pull_request.base.sha || ((github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD~1') }}
         run: node scripts/check-sdd.mjs --docs-diff --base "$SDD_DOCS_BASE"
       - name: Validate hook contracts
         run: node scripts/test-hooks.mjs
@@ -50,6 +50,11 @@ jobs:
           node-version: 22
       - name: Run slow project gates
         run: node scripts/sdd-project.mjs run --slow
+      # run --slow incluye trace-audit; este paso lo hace además visible como control CI propio.
+      - name: Audit commit trace against the exact base
+        env:
+          SDD_TRACE_BASE: ${{ github.event.pull_request.base.sha || ((github.event.before != '0000000000000000000000000000000000000000' && github.event.before) || 'HEAD~1') }}
+        run: node scripts/check-sdd.mjs --trace-audit --strict --base "$SDD_TRACE_BASE"
       # `deps-audit` y `security` solo se ejecutan si el proyecto declaró un comando real en
       # `.sdd/checks.json`. Un gate sin configurar queda visible como tal; nunca se imprime como
       # auditoría superada ni se presupone npm, pnpm, yarn, Python u otro stack.

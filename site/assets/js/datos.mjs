@@ -5,12 +5,18 @@
  * `VERSION` la reescribe `scripts/site-prep.mjs` a partir de package.json.
  */
 
-export const VERSION = '0.8.0';
+export const VERSION = '0.9.0';
 export const REPO = 'jechamo/Estructura_inicial_claude';
 export const URL_REPO = `https://github.com/${REPO}`;
 
 /** Referencia que se usa en los comandos: la etiqueta fija es lo que hace la instalación repetible. */
 export const REF_FIJA = `v${VERSION}`;
+
+export const NIVELES_CIRCUITO = [
+  { id: 'light', limite: 'fichero exacto no ejecutable', cuando: 'documentación, copy, estilos o activos sin conducta nueva', expediente: 'sin cinco documentos; conserva gates y bitácora' },
+  { id: 'compact', limite: 'un módulo, ≤3 criterios/tareas, change.md ≤12 KiB', cuando: 'conducta acotada en un módulo existente', expediente: 'change.md sellado + TDD + revisión' },
+  { id: 'full', limite: 'valor por defecto y superficies sensibles', cuando: 'auth, API, datos, dependencias, infraestructura, varios módulos o SDD', expediente: 'SDD completo' },
+];
 
 export const FAMILIAS_AGENTES = [
   {

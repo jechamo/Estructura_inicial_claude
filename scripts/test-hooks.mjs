@@ -415,8 +415,9 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
   writeFileSync(sello, JSON.stringify({ fast: { ok: true, tree: '0'.repeat(16), at: new Date().toISOString() } }), 'utf8');
   const enRepositorio = spawnSync('git', ['rev-parse', '--is-inside-work-tree'], { encoding: 'utf8' }).status === 0;
   if (enRepositorio) {
+    const avisoOtroArbol = avisoDe('git commit -m x');
     comprueba('con sello de otro árbol, el commit lo señala',
-      /pasaron sobre otro estado del árbol/.test(avisoDe('git commit -m x')), true);
+      /⚠ Gates:/.test(avisoOtroArbol) && !/Gates: pasados sobre este mismo estado/.test(avisoOtroArbol), true);
   } else {
     comprueba('fuera de un repositorio git, el sello no inventa un aviso',
       /pasaron sobre otro estado del árbol/.test(avisoDe('git commit -m x')), false);
@@ -443,6 +444,11 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       readFileSync(join(process.cwd(), '.sdd/hooks/_lib.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/docs-contract.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/docs-contract.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/circuito.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/circuito.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/gate-summary.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/gate-summary.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/check-sdd.mjs'), 'process.exit(0);\n', 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {
@@ -450,6 +456,13 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       },
       unconfigured: [],
     }), 'utf8');
+    spawnSync('git', ['config', 'user.email', 'test@example.invalid'], { cwd: proyecto, encoding: 'utf8' });
+    spawnSync('git', ['config', 'user.name', 'Test'], { cwd: proyecto, encoding: 'utf8' });
+    spawnSync('git', ['add', '.'], { cwd: proyecto, encoding: 'utf8' });
+    spawnSync('git', ['commit', '-qm', 'baseline'], { cwd: proyecto, encoding: 'utf8' });
+    writeFileSync(join(proyecto, 'baseline-2.txt'), 'base\n', 'utf8');
+    spawnSync('git', ['add', 'baseline-2.txt'], { cwd: proyecto, encoding: 'utf8' });
+    spawnSync('git', ['commit', '-qm', 'segundo baseline'], { cwd: proyecto, encoding: 'utf8' });
     const payload = (command) => ({ session_id: SESION, cwd: proyecto, tool_name: 'Bash', tool_input: { command } });
     spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
     const selloReal = JSON.parse(readFileSync(join(proyecto, '.sdd/state/last-gate-run.json'), 'utf8'));

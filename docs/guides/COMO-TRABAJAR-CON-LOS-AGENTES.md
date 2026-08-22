@@ -177,11 +177,13 @@ formato del host obliga —los agentes—, y siempre como envoltorio fino que re
 | Revalidar formatos y estándares | `/sdd-refresh` | `research-analyst` |
 
 > **Sobre el modo rápido.** `/sdd-light` no lo decides tú ni lo decide el agente: lo decide la
-> ruta. La skill empieza ejecutando `node scripts/check-sdd.mjs --circuit-status` y, si responde
+> ruta. La skill empieza ejecutando `node scripts/check-sdd.mjs --circuit-status --planned <ruta>...` y, si responde
 > `full`, se detiene y te manda a `/sdd-specify`. Ahorra los cinco documentos de la spec y
 > **ningún gate**: los tests, el lint, la cobertura y el escaneo de secretos siguen corriendo
 > igual. El commit resultante lleva `Circuit: light` y un motivo, para que la auditoría de CI
 > pueda desmentirlo si el atajo no correspondía.
+> La aprobación de la frontera y la de un `change.md` compacto viven en commits `full` dedicados
+> anteriores al código; no se agrupan con la implementación.
 
 ### Qué automatiza el CLI y qué sigue razonando el agente
 

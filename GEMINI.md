@@ -1,8 +1,8 @@
 # GEMINI.md — Antigravity
 
 <!-- sdd:start -->
-Lee y aplica primero [`AGENTS.md`](AGENTS.md) y
-[`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
+Lee [`AGENTS.md`](AGENTS.md) y el recorte de tu fase con
+`node scripts/sdd-project.mjs context --phase <fase>`.
 
 - Reglas y workflows: `.agents/rules/` y `.agents/workflows/`.
 - Skills canónicas: `.agents/skills/`.

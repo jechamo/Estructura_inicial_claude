@@ -10,8 +10,8 @@ No decides arquitectura ni requisitos: eso ya está escrito. Si algo no está es
 
 ## Antes de tocar nada
 
-1. Lee `docs/specs/NNN-slug/`: `spec.md`, `plan.md`, `tasks.md`, `contracts/`.
-2. Lee `docs/architecture/constitution.md`.
+1. Ejecuta `node scripts/sdd-project.mjs context --phase implement --spec NNN --task T-* --json`.
+2. Lee contratos o constitución completos solo si la tarea o el contexto los enlazan.
 3. Elige **una** tarea pendiente sin dependencias abiertas. Márcala `en curso`.
 4. Si la tarea es ambigua, contradice el plan o requiere una decisión nueva →
    **no improvises**: devuelve control a `planner` o pregunta al humano.

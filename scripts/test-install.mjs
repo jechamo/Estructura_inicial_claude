@@ -16,6 +16,7 @@ import { tmpdir, homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { auditarCommit, parsearTrailers } from './lib/trace-audit.mjs';
+import { approvedCircuitConfig } from './test/circuit-fixtures.mjs';
 import {
   contrato_auditor_solo_lectura, contrato_jwt, csrf_no_samesite_solo, matriz_seguridad,
   portabilidad_seguridad, registrarContratosSsrf, seguridad_versionada,
@@ -1649,13 +1650,14 @@ console.log('\n1 · init sobre un directorio vacío');
   let salidaLentos = null;
   try { salidaRapidos = JSON.parse((rapidos.stdout || '').trim().split('\n').pop() || 'null'); } catch { /* lo informa la aserción */ }
   try { salidaLentos = JSON.parse((lentos.stdout || '').trim().split('\n').pop() || 'null'); } catch { /* lo informa la aserción */ }
-  comprueba('run --fast y --slow reparten los gates por velocidad',
+  comprueba('run --fast reparte gates y --slow falla cerrado sin base auditable',
     salidaRapidos?.results?.some((r) => r.id === 'sdd') === true &&
-    salidaLentos?.results?.length === 0 && salidaLentos?.skipped?.includes('sdd') &&
-    salidaLentos?.status === 'unconfigured' && salidaLentos?.unconfigured?.includes('security'));
+    salidaLentos?.results?.some((r) => r.id === 'trace-audit' && r.status !== 0) === true &&
+    salidaLentos?.skipped?.includes('sdd') && salidaLentos?.status === 'fail' &&
+    salidaLentos?.unconfigured?.includes('security'));
   const lentosHumanos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: d, encoding: 'utf8' });
-  comprueba('cero gates lentos se declara NO EJECUTADO, nunca PASS',
-    lentosHumanos.status === 0 && /NO EJECUTADO/.test(lentosHumanos.stdout || '') &&
+  comprueba('sin base auditable el circuito lento declara FAIL, nunca PASS',
+    lentosHumanos.status === 1 && /FAIL/.test(lentosHumanos.stdout || '') &&
     !/: PASS/.test(lentosHumanos.stdout || ''));
 
   const deuda = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'debt', '--json'], { cwd: d, encoding: 'utf8' });
@@ -3633,14 +3635,14 @@ function circuit_status_se_comporta_igual_en_un_repositorio_fabricado() {
 
   // 1 · sin frontera declarada no hay atajo posible.
   const sinFrontera = pregunta();
-  comprueba('sin .sdd/lightweight.json el veredicto es full',
+  comprueba('sin .sdd/circuit.json aprobado el veredicto es full',
     sinFrontera && sinFrontera.circuito === 'full' && sinFrontera.frontera === false);
 
-  mkdirSync(join(repo, '.sdd'), { recursive: true });
-  writeFileSync(join(repo, '.sdd', 'lightweight.json'), JSON.stringify({
-    version: 1, cuota: 0.4, permitido: ['docs/guides/'], prohibido: ['scripts/'],
-  }));
-
+  mkdirSync(join(repo, '.sdd'), { recursive: true }); mkdirSync(join(repo, 'docs', 'bitacora'), { recursive: true });
+  writeFileSync(join(repo, 'docs', 'bitacora', 'DECISIONS.md'), '# DEC-TEST\n');
+  writeFileSync(join(repo, '.sdd', 'circuit.json'), JSON.stringify(approvedCircuitConfig({
+    lightFiles: ['docs/guides/INSTALACION.md'], deniedPrefixes: ['scripts/'],
+  })));
   // 2 · un árbol limpio no obliga a nada porque no hay nada que clasificar. Este es el caso que
   // ve CI en cada checkout, y el que antes hacía fallar la suite.
   git('add', '-A');
@@ -3671,48 +3673,50 @@ function circuit_status_se_comporta_igual_en_un_repositorio_fabricado() {
 function un_commit_ligero_que_miente_falla() {
   console.log('\n  · un atajo declarado se comprueba contra los ficheros reales');
   const reparto = JSON.parse(leer(join(ORIGEN, '.sdd', 'territories.json')));
-  const frontera = { version: 1, cuota: 0.4, permitido: ['docs/guides/', 'README.md'], prohibido: ['docs/guides/seguridad/'] };
-  const base = { tareas: new Set(), agentes: new Set(), specs: new Set(), reparto };
+  const frontera = approvedCircuitConfig({ lightFiles: ['docs/guides/INSTALACION.md', 'README.md'],
+    deniedPrefixes: ['docs/guides/seguridad/', 'scripts/'] });
+  const base = { tareas: new Set(), agentes: new Set(['docs-writer']), specs: new Set(), reparto,
+    decisionRefs: new Set(['DEC-TEST']) };
   const commit = (mensaje, ficheros, f = frontera) =>
     auditarCommit({ sha: 'lig12345', mensaje, ficheros }, { ...base, frontera: f });
 
   const motivo = 'Corrige el nombre del comando en la guía de instalación: estaba desfasado desde la 0.6 y confunde a quien instala.';
 
-  const honesto = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+  const honesto = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}\nAgent: docs-writer`,
     ['docs/guides/INSTALACION.md']);
   comprueba('un commit ligero dentro de la frontera es conforme', honesto.estado === 'conforme',
     honesto.hallazgos.join(' · '));
 
-  const mentiroso = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+  const mentiroso = commit(`docs: corrige el comando\n\nCircuit: light\nCircuit-reason: ${motivo}\nAgent: docs-writer`,
     ['docs/guides/INSTALACION.md', 'scripts/check-sdd.mjs']);
   comprueba('un commit ligero que toca lo prohibido se rechaza', mentiroso.estado === 'infractor');
   comprueba('el rechazo nombra la ruta que rompe el atajo',
     mentiroso.hallazgos.some((h) => h.includes('scripts/check-sdd.mjs')));
 
-  const negado = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+  const negado = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}\nAgent: docs-writer`,
     ['docs/guides/seguridad/AUTH.md']);
   comprueba('la negación prevalece aunque la carpeta padre esté permitida', negado.estado === 'infractor');
 
-  const sinFrontera = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+  const sinFrontera = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}\nAgent: docs-writer`,
     ['docs/guides/INSTALACION.md'], null);
   comprueba('sin frontera declarada no hay circuito ligero', sinFrontera.estado === 'infractor');
   comprueba('la ausencia de frontera se explica, no se insinúa',
-    sinFrontera.hallazgos.some((h) => h.includes('.sdd/lightweight.json')));
+    sinFrontera.hallazgos.some((h) => h.includes('.sdd/circuit.json')));
 
   for (const [etiqueta, texto] of [
     ['vacío', ''],
     ['de relleno', 'cambio menor'],
     ['que aplaza', 'pendiente de revisar'],
   ]) {
-    const r = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${texto}`, ['README.md']);
+    const r = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${texto}\nAgent: docs-writer`, ['README.md']);
     comprueba(`un motivo ${etiqueta} invalida el atajo`, r.estado === 'infractor');
   }
 
-  const inventado = commit(`docs: x\n\nCircuit: express\nCircuit-reason: ${motivo}`, ['README.md']);
+  const inventado = commit(`docs: x\n\nCircuit: express\nCircuit-reason: ${motivo}\nAgent: docs-writer`, ['README.md']);
   comprueba('un circuito inventado no se acepta por parecerse', inventado.estado === 'infractor');
 
   // Evasión por travesía: `docs/guides/../scripts/x.mjs` no debe colarse como permitido.
-  const travesia = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}`,
+  const travesia = commit(`docs: x\n\nCircuit: light\nCircuit-reason: ${motivo}\nAgent: docs-writer`,
     ['docs/guides/../scripts/check-sdd.mjs']);
   comprueba('una ruta con travesía se normaliza antes de decidir', travesia.estado === 'infractor');
 }
@@ -3723,18 +3727,19 @@ function la_cuota_senala_la_frontera() {
   const check = leer(join(ORIGEN, 'scripts', 'check-sdd.mjs')) || '';
   const mensaje = (check.match(/cuota declarada[\s\S]{0,300}/) || [''])[0];
   comprueba('el aviso de cuota nombra el fichero de la frontera',
-    mensaje.includes('.sdd/lightweight.json'), mensaje.slice(0, 200));
+    mensaje.includes('.sdd/circuit.json'), mensaje.slice(0, 200));
   comprueba('el aviso de cuota no acusa a nadie',
     !/culpa|abusa|abuso|infractor|has usado|demasiado laxo por tu/i.test(mensaje));
   comprueba('la cuota avisa siempre y solo falla en estricto',
     /STRICT \? err\('traza\/cuota'/.test(check.replace(/\s+/g, ' ')) || check.includes("STRICT ? err('traza/cuota'"));
   comprueba('la skill explica qué significa superar la cuota', /cuota/i.test(skill));
 
-  const frontera = JSON.parse(leer(join(ORIGEN, '.sdd', 'lightweight.json')));
+  const frontera = JSON.parse(leer(join(ORIGEN, '.sdd', 'circuit.json')));
   comprueba('la frontera de este repositorio declara una cuota',
-    typeof frontera.cuota === 'number' && frontera.cuota > 0 && frontera.cuota <= 1, `cuota=${frontera.cuota}`);
+    typeof frontera.proposal?.quota === 'number' && frontera.proposal.quota > 0 && frontera.proposal.quota <= 1,
+    `quota=${frontera.proposal?.quota}`);
   comprueba('la frontera prohíbe explícitamente lo que ejecuta el sistema',
-    frontera.prohibido.includes('scripts/') && frontera.prohibido.includes('.sdd/'));
+    frontera.proposal.deniedPrefixes.includes('scripts/') && frontera.proposal.deniedPrefixes.includes('.sdd/'));
 }
 
 function el_circuito_ligero_no_perdona_ningun_gate() {
@@ -3755,7 +3760,7 @@ function el_circuito_ligero_no_perdona_ningun_gate() {
 function el_modelo_operativo_describe_el_circuito_ligero() {
   console.log('\n  · DOC-CIRCUITO: el modelo operativo lo cuenta');
   const modelo = leer(join(ORIGEN, 'docs', 'sdd', 'OPERATING-MODEL.md')) || '';
-  for (const pieza of ['.sdd/lightweight.json', 'Circuit: light', 'Circuit-reason', '--circuit-status', '/sdd-light'])
+  for (const pieza of ['.sdd/circuit.json', '.sdd/lightweight.json', 'Circuit: light', 'Circuit-reason', '--circuit-status', '/sdd-light'])
     comprueba(`el modelo operativo nombra ${pieza}`, modelo.includes(pieza));
   comprueba('el modelo operativo dice qué NO dispensa', /No dispensa|NO dispensa/.test(modelo));
 

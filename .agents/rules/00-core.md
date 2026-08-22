@@ -2,8 +2,8 @@
 
 Activación: **Always On**.
 
-La entrada es @AGENTS.md y la política completa está en @docs/sdd/OPERATING-MODEL.md. La arquitectura vigente está en
-@docs/architecture/constitution.md. Léelas antes de actuar.
+La entrada es @AGENTS.md. Carga tu fase con `node scripts/sdd-project.mjs context --phase <fase>`.
+La arquitectura vigente está en @docs/architecture/constitution.md.
 
 ## Reglas duras
 

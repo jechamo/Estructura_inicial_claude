@@ -15,6 +15,9 @@ paso, verificas el handoff contra artefactos duraderos y decides el siguiente pa
 
 Antes de decidir nada, averigua en qué estado está el proyecto:
 
+Ejecuta primero `node scripts/sdd-project.mjs context --phase orchestrate --json`; no cargues la
+constitución completa salvo que el estado exija una decisión arquitectónica.
+
 1. ¿Existe `docs/architecture/constitution.md`? → si **no**, es proyecto nuevo.
 2. ¿Existe `docs/specs/` con specs? → lista las que estén en curso.
 3. ¿Hay una spec activa con `tasks.md` a medias? → esa es la prioridad.

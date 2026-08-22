@@ -84,6 +84,8 @@ voluntad, se olvida.
 | Scaffolds sin overwrite ni salto de gate | `sdd-project.mjs scaffold` + suite de instalación | Sí |
 | Generadores registrados sin shell, con timeout y drift | `sdd-project.mjs generate` + controles SEC-AUTO | Sí cuando el proyecto los activa |
 | Contrato, enlaces, placeholders y co-cambio documental contra SHA base | `check-sdd --docs-diff --base <SHA>` + gates `docs:*` configurados | Sí |
+| Circuito declarado, configuración histórica, territorio y sello compacto | `check-sdd --trace-audit --strict --base <SHA>` en slow, ship y CI | Sí |
+| Evidencia de gates sin secretos ni cuerpos crudos | `run --fast|--slow --summary-json` · resumen ≤8 KiB | Sí |
 | Skills de terceros fijadas y con licencia verificada | `scripts/skills-sync.mjs --check` | Sí |
 
 En este repositorio de plantilla, el workflow de calidad ejecuta además `--strict` sobre las specs

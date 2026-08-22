@@ -764,6 +764,7 @@ function informar(modo) {
     console.log('\nCompartido/versionable: código, tests, agentes, skills, reglas, hooks, specs, evidencias y documentación oficial.');
     console.log('Local/excluido: secretos `.env*`, configuración personal, cachés, `.sdd/state/` y `.sdd/conflicts/`.');
     console.log('Revisa deliberadamente antes de versionar: git status --short');
+    console.log('Circuito proporcional: queda pending y por tanto full. Revisa `detect-circuit`; una persona activa la propuesta con `approve-circuit --hash ...`.');
     if (modo === 'greenfield') console.log('Siguiente paso: /sdd-intake; tras aprobar producto, /sdd-init.');
     else console.log('Siguiente paso: /sdd-intake para cerrar legacy-pending o /onboard para documentar la arquitectura existente.');
   }

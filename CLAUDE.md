@@ -3,8 +3,8 @@
 @AGENTS.md
 
 <!-- sdd:start -->
-Lee y aplica primero `AGENTS.md` y, para cualquier fase o decisión, el modelo completo en
-[`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
+Lee `AGENTS.md` y carga solo tu fase con `node scripts/sdd-project.mjs context --phase <fase>`.
+La fuente completa sigue en [`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
 
 - Perfiles de subagente: `.claude/agents/`.
 - Skills canónicas: `.agents/skills/`; `.claude/skills/` conserva el descubrimiento nativo.

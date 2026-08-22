@@ -1,7 +1,8 @@
 # AGENTS.md — Router operativo
 
 Este fichero es la entrada compartida para Claude Code, Copilot, VS Code, Cursor,
-Antigravity y Codex. La política completa y vinculante está en
+Antigravity y Codex. Carga la política vinculante de tu fase con `node
+scripts/sdd-project.mjs context --phase <fase>`; la fuente completa está en
 [`docs/sdd/OPERATING-MODEL.md`](docs/sdd/OPERATING-MODEL.md).
 
 ## Identidad
@@ -58,12 +59,12 @@ Antigravity y Codex. La política completa y vinculante está en
 | Documentación sin cambio de comportamiento | `/docs-sync update` o `/docs-sync audit` |
 | Duda sobre la fase | `orchestrator` o `/sdd-status` |
 
-**Circuito ligero.** `.sdd/lightweight.json` declara qué rutas admiten el modo rápido y cuáles lo
-prohíben; la negación prevalece sobre el permiso y, sin fichero, no hay atajo. `check-sdd.mjs
---circuit-status` responde `light` o `full` **antes** de tocar nada, y el commit resultante lleva
-`Circuit: light` con un motivo material para que `--trace-audit` pueda desmentirlo. El modo rápido
-ahorra los cinco documentos de la spec; **no dispensa de ningún gate, ni del ciclo TDD, ni de la
-bitácora**.
+**Circuito proporcional.** `.sdd/circuit.json` aprobado clasifica `light`, `compact` o `full`.
+Consulta rutas previstas con `check-sdd.mjs --circuit-status --planned <ruta>...`; pendiente,
+inválido o legado siempre devuelve `full`. `light` solo admite ficheros exactos no ejecutables;
+`compact` usa un `change.md` sellado y conserva TDD. Ningún nivel dispensa gates, trailers,
+bitácora o auditoría histórica. La frontera y cada `change.md` se activan en commits `full`
+dedicados anteriores al código; aprobar y programar en el mismo commit falla cerrado.
 
 ## Agentes, delegación y aislamiento
 

@@ -52,6 +52,11 @@ flowchart TD
 conocen su sucesor natural y hacen handoff explícito. Los especialistas **nunca encadenan**
 por su cuenta: hacen su trabajo y devuelven el control.
 
+Los perfiles que arrancan fríos consumen el recorte de `context --phase` correspondiente a su
+fase. `orchestrator`, `planner` e `implementer` amplían ese contexto solo cuando el impacto lo
+exige; la topología, los territorios y los límites de delegación siguen siendo los mismos en los
+modos `light`, `compact` y `full`.
+
 **Profundidad máxima de delegación: 2 niveles**, contando saltos entre agentes —tú no cuentas—:
 `orchestrator` → agente de fase → especialista. Ahí se acaba.
 
