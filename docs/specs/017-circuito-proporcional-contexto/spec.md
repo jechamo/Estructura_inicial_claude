@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **ID** | `017-circuito-proporcional-contexto` |
-| **Estado** | borrador |
+| **Estado** | aprobada |
 | **Autor** | usuario + `implementer` (`declared-direct`) |
 | **Fecha** | 2026-08-22 |
 | **Rama** | `claude/token-consumption-sdd-tdd-tbfcei` |
@@ -282,4 +282,8 @@ resolvieron antes de redactar esta spec y constan en `clarifications.md`.
 
 ## 14. Gate humano de especificación
 
-- [ ] Aprobada por: ______________ · fecha: __________
+- [x] Aprobada por: Jorge Enrique Chamorro Rodriguez · fecha: 2026-08-22
+
+Aprobación registrada en la conversación de planificación: se aprobó la spec completa,
+incluido RF-13, y se decidió posponer `approve-docs` a la entrega para no aprobar dos
+veces el mismo contrato documental.
