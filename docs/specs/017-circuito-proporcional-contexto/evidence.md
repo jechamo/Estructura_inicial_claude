@@ -75,7 +75,7 @@ de implementar.
 
 | Control | Por qué | Riesgo | Dueño | Siguiente paso |
 |---|---|---|---|---|
-| CI multi-OS y multiversión de Node | No hay forma de ejecutar GitHub Actions desde esta sesión | Una regresión específica de plataforma o de versión quedaría sin detectar | quien empuje la rama | Empujar y leer `quality-gates.yml` y `sdd-gates.yml` |
+| CI multi-OS y multiversión de Node | **Sigue sin ejecutarse.** La rama se empujó y CI pasó en verde, pero un push a rama de trabajo solo dispara `sdd-gates.yml` (ubuntu × Node 22). La matriz Windows/Linux × Node 18/20/22 está en `quality-gates.yml`, que solo se dispara con `pull_request` o `push` a `main` | Una regresión específica de plataforma o de versión de Node quedaría sin detectar | quien abra el PR | Abrir un PR contra `main`, que es lo que dispara la matriz |
 | ~~Benchmark 017~~ | **Ejecutado.** `docs/quality/benchmarks/017/run-benchmark.mjs` | — | — | Veredicto INTEGRAR: compacto 95 % con 3 intervenciones, completo 28 % |
 | Auditoría independiente de seguridad | **Sigue sin ejecutarse.** El informe lo firma el mismo agente que implementó los controles; `AGENTS.md` exige que lo haga `security-auditor` en solo lectura | Un control mal elegido o ausente no se detecta: quien lo diseñó tiene el mismo punto ciego al revisarlo | `security-auditor` | Delegar `/security-scan verify` antes del `GO` de entrega |
 
@@ -154,6 +154,33 @@ de Cursor**: sus API no lo exponen, igual que registró la spec 011 con
 `executor_model: not-exposed-by-collaboration-api`. `tokensProxy` es bytes÷4, un orden de magnitud,
 nunca una cuota. La línea base se recalcula con `git show`, así que cualquiera puede rehacerla.
 
+### 6.3 bis · CI, y un cuarto defecto que encontró el gate
+
+Primer push (`27d63f9`): **CI en rojo**. Los gates rápidos pasaron; falló el paso «Validate
+documentation against exact PR base» con dos problemas.
+
+| # | Problema | ¿Previsto? |
+|---|---|---|
+| 1 | `DOC-GATES`: cambió `scripts/sdd-project.mjs` y ningún artefacto documental del conjunto cambió | **No.** Añadí cinco subcomandos —`context`, `new-change`, `detect-circuit`, `approve-circuit`, `run --summary-json`— sin documentar ninguno en `docs/guides/DOCUMENTACION.md`, que el contrato declara como su artefacto |
+| 2 | `docs/drift`: el contrato aprobado desfasado respecto de `.sdd/docs.json` | Sí. Consecuencia de declarar `DOC-CONTEXTO` y aplazar `approve-docs` a la entrega |
+
+Segundo push (`52bf346`): **CI en verde**
+([run 55](https://github.com/jechamo/Estructura_inicial_claude/actions/runs/32575509398)).
+
+| Fecha | Agente | Verificación | Tarea | Comando ejecutado | Resultado | Artefacto |
+|---|---|---|---|---|---|---|
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-09 | `node scripts/check-sdd.mjs --docs-diff --base <origin/main>` | 🔴 2 problemas: `DOC-GATES` sin artefacto y `docs/drift` | reproducción local del fallo de CI |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-09 | mismo comando, tras documentar los subcomandos y aprobar el contrato | 🟢 sin problemas | `docs/guides/DOCUMENTACION.md` |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-09 | `approve-docs --approved-by "Jorge Enrique Chamorro Rodriguez"` | 🟢 `configHash: 8afacf05bd6429dc` | `.sdd/docs.json` |
+| 2026-08-22 | CI GitHub Actions | `observed` | T-017-09 | workflow `SDD gates` sobre `52bf346` | 🟢 `success` · ubuntu-latest × Node 22 | run 32575509398 |
+| 2026-08-22 | `implementer` | `declared-direct` | T-017-09 | `run --slow --summary-json` | 🟢 PASS 4/4; e2e 536/536 · runId `2026-08-22-7806b996` | salida real |
+
+**Lo que este CI verde NO cubre.** El push a una rama de trabajo dispara únicamente
+`sdd-gates.yml`, que corre en **ubuntu-latest con Node 22**. La matriz
+`os: [ubuntu-latest, windows-latest]` × Node 18/20/22 vive en `quality-gates.yml`, cuyos
+disparadores son `pull_request` y `push` a `main`. Por tanto **la definición de hecho de T-016-06
+sigue sin cumplirse**, y el verde de arriba no debe leerse como si la cubriera.
+
 ### 6.4 · Estado al cerrar 017
 
 - 🟢 Las nueve tareas hechas. RF-01 a RF-13 y CA-01 a CA-11 con test ejecutado.
@@ -164,8 +191,10 @@ nunca una cuota. La línea base se recalcula con `git show`, así que cualquiera
 - 🟢 Benchmark por encima de ambos umbrales.
 - ⏸️ **Auditoría independiente de seguridad: no ejecutada.** Es el motivo por el que no se declara
   `GO` aquí.
-- ⏸️ **CI multi-OS y multiversión de Node: no ejecutada** desde esta sesión.
-- ⏸️ `approve-docs` pendiente: es un acto humano y lleva nombre.
+- 🟢 CI `SDD gates` en verde sobre `52bf346` (ubuntu × Node 22), tras corregir dos fallos reales.
+- ⏸️ **CI multi-OS y multiversión de Node: sigue sin ejecutarse.** Requiere un PR contra `main`;
+  empujar la rama no la dispara.
+- 🟢 `approve-docs` ejecutado en el momento acordado, con `configHash: 8afacf05bd6429dc`.
 
 ## 5. Decisión de entrega
 
