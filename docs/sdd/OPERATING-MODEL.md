@@ -183,42 +183,72 @@ docs/specs/042-checkout-invitado/
 
 ### 2.6 El circuito ligero (modo rápido)
 
-Un peaje idéntico para corregir una errata y para cambiar un contrato no protege nada: se
-rodea. El circuito ligero existe para que el papeleo sea proporcional al riesgo **sin reducir la
+Un peaje idéntico para corregir una errata y para cambiar un contrato no protege nada: se rodea. El
+circuito proporcional existe para que el papeleo sea acorde al riesgo **sin reducir la
 verificación**.
 
-**Qué dispensa.** Únicamente los cinco documentos de la spec (`spec.md`, `plan.md`, `tasks.md`,
-`test-plan.md`, `evidence.md`).
+**Tres niveles.**
 
-**Qué NO dispensa.** Ningún gate. Ni el ciclo TDD. Ni la entrada en la bitácora. Ni las guardas
-de los hooks ni los territorios. Un cambio ligero se verifica exactamente igual que uno normal.
+| Nivel | Cuándo | Qué dispensa |
+|---|---|---|
+| `light` | Documentación, copy, estilos o activos, en **ficheros exactos** y sin código ejecutable | Los cinco documentos de la spec |
+| `compact` | Cambio de comportamiento acotado a **un** módulo declarado; máximo 3 criterios, 3 tareas y 12 KB | Los cinco documentos, sustituidos por un único `change.md` |
+| `full` | Todo lo demás, y el valor por defecto ante cualquier duda | Nada |
 
-**Quién decide.** No la persona ni el modelo: el fichero `.sdd/lightweight.json`, que declara
-`permitido` y `prohibido` por rutas. La negación prevalece siempre sobre el permiso, y **sin
-fichero no hay circuito ligero** — la ausencia se trata como prohibición, no como permiso total.
-La respuesta se consulta:
+**Qué NO dispensa ninguno de los dos primeros.** Ningún gate. Ni el ciclo TDD. Ni la entrada en la
+bitácora. Ni las guardas de los hooks ni los territorios. Ni la revisión independiente en `compact`.
+Un cambio con atajo se verifica exactamente igual que uno normal; lo que se ahorra es el expediente.
+
+En `light` el ciclo TDD no aparece porque, por definición, no hay conducta nueva que fijar — **no
+porque esté dispensado**. Si te encuentras escribiendo comportamiento en un cambio clasificado
+`light`, la clasificación estaba mal: se para y se reclasifica.
+
+**Quién decide.** No la persona ni el modelo: el fichero `.sdd/circuit.json`, que declara `light`,
+`compact` y `denied` por rutas. La negación prevalece siempre sobre el permiso, y **sin frontera
+aprobada no hay atajo** — la ausencia se trata como prohibición, no como permiso total.
+
+Dos candados que no dependen de cómo esté escrita la frontera:
+
+- **Un fichero que ejecuta nunca es `light`**, aunque se le declare permitido.
+- **La comparación pliega la caja.** En sistemas de ficheros que no distinguen mayúsculas —Windows
+  y macOS por defecto— `Src/domain/x.ts` y `src/domain/x.ts` son el mismo fichero, y la frontera
+  tiene que verlos igual. Si no, la ortografía de quien la escribió se convierte en un permiso.
+
+**Cómo se consulta.**
 
 ```bash
-node scripts/check-sdd.mjs --circuit-status        # responde light | full
+node scripts/check-sdd.mjs --circuit-status --json                      # sobre lo ya editado
+node scripts/check-sdd.mjs --circuit-status --planned <ruta>... --json  # antes de tocar nada
 ```
 
-Si responde `full`, nombra las rutas que obligan al circuito completo y no hay atajo. Si responde
-`light`, se sigue la skill `/sdd-light`.
+Preguntar antes de editar importa: conocer el peaje después de pagarlo no sirve para decidir.
 
-**Cómo se declara y cómo se comprueba.** El commit lleva dos *trailers*:
+**Compatibilidad con la frontera heredada.** Un proyecto instalado antes de esta versión solo tiene
+`.sdd/lightweight.json`. Se sigue leyendo y sigue habilitando **solo** el nivel ligero: no se rompe
+nada, pero tampoco se gana el nivel compacto por la puerta de atrás. Para eso hay que declarar y
+aprobar `.sdd/circuit.json`. El fichero heredado nunca se reescribe automáticamente.
 
-```
-Circuit: light
-Circuit-reason: <qué cambia y por qué no necesita spec>
-```
+**La skill.** Los niveles `light` y `compact` los ejecuta `/sdd-light`, que cubre los tres y avisa
+cuando la respuesta es `full`. El nombre se quedó corto al añadir el nivel intermedio y se conserva
+a propósito: renombrarla obligaría a tocar las once superficies que declaran el contrato de agentes
+y skills.
 
-Esa declaración es **falsable**: `check-sdd.mjs --trace-audit` recalcula la frontera contra los
-ficheros que el commit tocó de verdad y falla si el atajo miente, si no hay frontera, o si el
-motivo es relleno. Un atajo que nadie puede comprobar después no es un atajo.
+**Cómo se declara y cómo se comprueba.** El commit lleva los *trailers* `Circuit:`,
+`Circuit-reason:` con un motivo material, y `Change-Group:` en los compactos. Los valores son
+`Circuit: light`, `Circuit: compact` o `Circuit: full`. Esa declaración es
+**falsable**: `check-sdd.mjs --trace-audit` recalcula el nivel contra los ficheros que el commit
+tocó de verdad y falla si el atajo miente, si no hay frontera, o si el motivo es relleno. Un atajo
+que nadie puede comprobar después no es un atajo.
 
-**La cuota.** `.sdd/lightweight.json` declara una `cuota` (proporción máxima de commits ligeros).
-Superarla no acusa a nadie: indica que la frontera deja pasar más de lo previsto y hay que
-revisarla. Avisa siempre; falla solo en modo estricto.
+**La frontera se propone y se aprueba por separado.** `detect-circuit` propone sobre ficheros que
+existen y no escribe nada; `approve-circuit` exige la huella de esa propuesta concreta y el nombre
+de quien aprueba. Un agente presenta el comando y se detiene. La identidad queda **declarada, no
+demostrada**: no es una firma criptográfica y no debe presentarse como tal.
+
+**La cuota y la fragmentación.** `.sdd/circuit.json` declara una `cuota` (proporción máxima de
+commits con atajo). Superarla no acusa a nadie: indica que la frontera deja pasar más de lo previsto
+y hay que revisarla. Además, los límites de `compact` se acumulan por `Change-Group`: trocear una
+feature en tres cambios compactos no es una forma de caber.
 
 ---
 

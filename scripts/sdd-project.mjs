@@ -98,6 +98,7 @@ Gates de producto y documentación
 
 Trabajo sobre specs
   new-spec <nombre> [--json]          crea la siguiente spec numerada
+  new-change <nombre> --mode compact  crea el documento único de un cambio compacto
   new-adr <titulo> [--json]           crea el siguiente ADR numerado
   scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
   trace-correct --from-spec NNN --to-spec NNN --session <id> --reason <texto> [--json]
@@ -892,6 +893,40 @@ function siguienteNumero(nombresExistentes, patron) {
   return String((numeros.length ? Math.max(...numeros) : 0) + 1).padStart(3, '0');
 }
 
+/**
+ * Crea el documento único de un cambio compacto. Instancia la plantilla canónica y **no aprueba
+ * nada**: la sección 8 la firma una persona. Mismo contrato conservador que `scaffold`.
+ */
+function nuevoCambio() {
+  const modo = opcion('--mode');
+  if (modo !== 'compact')
+    throw new Error('new-change requiere --mode compact. Es el único nivel que sustituye el expediente por un documento.');
+  const slug = slugSeguro(operando);
+  const base = nombres('docs/specs', (x) => x.isDirectory());
+  const numero = siguienteNumero(base, /^(\d{3})-/);
+  const nombre = `${numero}-${slug}`;
+  const origen = join(ROOT, 'docs/specs/_TEMPLATE/change.md');
+  const destino = join(ROOT, 'docs/specs', nombre);
+  if (!existsSync(origen)) throw new Error('No existe docs/specs/_TEMPLATE/change.md');
+  if (existsSync(destino)) throw new Error(`Ya existe: docs/specs/${nombre}`);
+  if (!DRY) {
+    mkdirSync(destino, { recursive: false });
+    cpSync(origen, join(destino, 'change.md'), { errorOnExist: true });
+  }
+  return {
+    schemaVersion: 1,
+    created: !DRY,
+    dryRun: DRY,
+    change: nombre,
+    path: `docs/specs/${nombre}/change.md`,
+    mode: 'compact',
+    limits: { criterios: 3, tareas: 3, kb: 12, modulos: 1 },
+    note: 'Sustituye el expediente, no la verificación: el ciclo TDD, los gates, la bitácora, los '
+      + 'trailers y la revisión independiente siguen siendo obligatorios. Nada queda aprobado hasta '
+      + 'que una persona firme la sección 8.',
+  };
+}
+
 function nuevaSpec() {
   const product = estadoProducto();
   if (product.status === 'bootstrap')
@@ -1651,6 +1686,7 @@ if (argv.includes('--help') || argv.includes('-h') || comando === 'help') {
 
 try {
   if (comando === 'context') imprimir(contexto());
+  else if (comando === 'new-change') imprimir(nuevoCambio());
   else if (comando === 'detect-circuit') imprimir(detectarCircuito());
   else if (comando === 'approve-circuit') imprimir(aprobarCircuito());
   else if (comando === 'detect') imprimir(detectar());

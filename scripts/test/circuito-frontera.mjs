@@ -5,6 +5,11 @@
  * papeleo sobrante —eso sería el fallo ruidoso y barato—, produce código sin spec. Por eso estas
  * pruebas atacan la frontera en vez de comprobar que funciona el camino feliz.
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const leerSi = (r) => (existsSync(r) ? readFileSync(r, 'utf8') : null);
+
 async function cargar() {
   try { return await import('../lib/circuito.mjs'); } catch { return null; }
 }
@@ -167,6 +172,35 @@ export async function pruebas(comprueba) {
 
     // Aprobar sin decir quién no es aprobar.
     if (aprobarFrontera(propuesta, { hash, by: '' }).ok !== false) return 'fail-aprueba-sin-actor';
+    return 'ok';
+  })(), 'ok');
+
+  comprueba('el_documento_compacto_declara_limites_verificables', (() => {
+    const plantilla = leerSi(join(process.cwd(), 'docs/specs/_TEMPLATE/change.md'));
+    if (plantilla === null) return 'fail-sin-plantilla';
+    // La mini-spec no vale si no declara qué la acota: sin límites escritos, «compacto» acaba
+    // significando «lo que quepa».
+    for (const pieza of ['Criterios de aceptación', 'Rutas previstas', 'Límites', 'Aprobación',
+      'Circuit: compact', 'Circuit-reason']) {
+      if (!plantilla.includes(pieza)) return `fail-plantilla-sin:${pieza}`;
+    }
+    // Y tiene que decir en voz alta lo que NO dispensa, o se leerá como un permiso.
+    if (!/TDD|rojo/i.test(plantilla)) return 'fail-plantilla-no-dice-que-el-tdd-sigue';
+    if (!/gates?/i.test(plantilla)) return 'fail-plantilla-no-dice-que-los-gates-siguen';
+
+    // La skill del circuito ligero pasa a cubrir los tres niveles, sin crear una skill nueva.
+    const skill = leerSi(join(process.cwd(), '.agents/skills/sdd-light/SKILL.md'));
+    if (skill === null) return 'fail-sin-skill';
+    for (const nivel of ['light', 'compact', 'full']) {
+      if (!skill.includes(nivel)) return `fail-skill-no-cubre:${nivel}`;
+    }
+    if (!/change\.md/.test(skill)) return 'fail-skill-no-nombra-el-documento-compacto';
+
+    // El modelo operativo lo documenta en su sección del circuito.
+    const modelo = leerSi(join(process.cwd(), 'docs/sdd/OPERATING-MODEL.md'));
+    if (modelo === null) return 'fail-sin-modelo';
+    const seccion = modelo.slice(modelo.indexOf('### 2.6'), modelo.indexOf('## 3.'));
+    if (!seccion.includes('compact')) return 'fail-modelo-no-documenta-compact';
     return 'ok';
   })(), 'ok');
 }
