@@ -7,16 +7,18 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
-### Preparado para 0.9.0
+## [0.9.0] — 2026-08-22
+
+### Added
 
 - Circuito atómico `light | compact | full` con frontera pendiente por defecto, aprobación humana
   ligada a hash y clasificación de rutas previstas antes de editar.
 - Auditoría histórica obligatoria en gates lentos, ship, CI y Pages; valida trailers, configuración
   del padre, territorio, sello de `change.md` y límites agregados por módulo.
 - Contexto por fase y resúmenes sanitizados de gates: menos relectura y ninguna salida cruda
-  persistida. Benchmark regenerado: compact 75,54 %, full 51,27 %, clasificación 100 %.
+  persistida.
 - Memoria TFM y Pages sincronizadas. Benchmark regenerado: `compact` 76,00 %, `full` 71,30 % y
-  clasificación 100 %. La release queda preparada, no publicada.
+  clasificación 100 %. Bytes/4 se publica como proxy auditable, no como cuota real del proveedor.
 
 ## [0.8.0] — 2026-08-21
 

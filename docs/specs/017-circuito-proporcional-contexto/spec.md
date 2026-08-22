@@ -3,10 +3,10 @@
 | Campo | Valor |
 |---|---|
 | **ID** | `017-circuito-proporcional-contexto` |
-| **Estado** | aprobada |
+| **Estado** | entregada |
 | **Autor** | Usuario y Codex |
 | **Fecha** | 2026-08-22 |
-| **Rama** | `feature/mejoras_codex` |
+| **Rama** | `main` · commit `4080df0` |
 | **Depende de** | `011-automatizacion-determinista-tokens`, `015-circuito-ligero-verificable` |
 | **Baseline de producto** | `approved` |
 | **Corte de producto** | `FEAT-004` |

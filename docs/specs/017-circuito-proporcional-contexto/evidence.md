@@ -11,8 +11,11 @@
 | T-017-04 · `declared-direct` | `node scripts/test-hooks.mjs` | 🟢 181 correctas, 0 fallos |
 | T-017-04 · `declared-direct` | `node scripts/test-install.mjs` | 🟢 537 correctas, 0 fallos |
 | T-017-04 · `declared-direct` | `node docs/quality/benchmarks/017/run-benchmark.mjs` | 🟢 compact 76,00 %/3 intervenciones; full 71,30 %; clasificación 100 % |
-| T-017-05 · `declared-direct` | `node scripts/sdd-project.mjs run --fast --summary-json` | 🟢 PASS · `2026-08-22T19-39-41-607Z-d722f3cc` |
-| T-017-05 · `declared-direct` | `node scripts/sdd-project.mjs run --slow --summary-json` | 🟢 PASS · `2026-08-22T19-41-48-589Z-75472537` · trace/security/coverage/a11y/E2E |
+| T-017-05 · `declared-direct` | `node scripts/sdd-project.mjs run --fast --summary-json` | 🟢 PASS · `2026-08-22T20-54-31-720Z-9f08fc39` |
+| T-017-05 · `declared-direct` | `node scripts/sdd-project.mjs run --slow --summary-json` | 🟢 PASS · `2026-08-22T20-55-18-481Z-20bd556e` · trace/security/coverage/a11y/E2E |
+| T-017-05 · `declared-corroborated` | GitHub Actions · Template quality gates | 🟢 PASS · Node/OS, instalación, contratos, docs y strict 017 · run `32598560957` |
+| T-017-05 · `declared-corroborated` | GitHub Actions · SDD gates | 🟢 PASS · fast, slow y trace exacto · run `32598560941` |
+| T-017-05 · `declared-corroborated` | GitHub Actions · Pages | 🟢 PASS · publicación · run `32598560946` |
 
 ## Cadena de producto
 
@@ -42,7 +45,7 @@
 
 Informe PLAN: `docs/security/reports/2026-08-22-017-circuito-proporcional-contexto.md` — PASS, 0 CRÍTICO/ALTO/MEDIO.
 
-Informe VERIFY: `docs/security/reports/2026-08-22-017-circuito-proporcional-contexto-verify.md` — 0/0/0/0; entrega bloqueada solo por commits/CI no autorizados.
+Informe VERIFY: `docs/security/reports/2026-08-22-017-circuito-proporcional-contexto-verify.md` — PASS, 9/9 controles, 0/0/0/0 y ninguno sin ejecutar.
 
 ## Documentación
 
@@ -55,14 +58,12 @@ Informe VERIFY: `docs/security/reports/2026-08-22-017-circuito-proporcional-cont
 
 ## Controles no ejecutados
 
-| Control | Motivo | Riesgo / siguiente paso |
-|---|---|---|
-| Matriz CI remota | requiere push, no autorizado | ejecutar antes de tag/release |
-| Trace sobre commits reales | no hay commits autorizados en la rama | crear commits trazables y repetir `trace-audit` tras aprobación humana |
-| Despliegue Pages | fuera de alcance y no autorizado | aprobación humana posterior |
+| Control | Resultado |
+|---|---|
+| Ninguno | Todos los controles aplicables fueron ejecutados y corroborados |
 
 ## Decisión
 
-Estado provisional: `NO-GO DE ENTREGA`; implementación y slow local verdes, pendiente de
-aceptación humana del endurecimiento, commits trazables y CI remota.
+Estado: `GO DE ENTREGA`; el usuario aceptó el endurecimiento y autorizó explícitamente publicar
+tag y release. Commit real, trace exacto, CI portátil y Pages están corroborados sobre `4080df0`.
 Informe de calidad: `docs/quality/reports/2026-08-22-017-circuito-proporcional-contexto.md`.

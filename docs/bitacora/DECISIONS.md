@@ -9,6 +9,23 @@
 
 ---
 
+## 2026-08-22 · Autorizar la publicación de v0.9.0
+
+- **Tipo**: entrega
+- **Contexto**: la spec 017 llegó a `main` con fast/slow, trace exacto, matriz portátil, SDD gates
+  y Pages en verde sobre `4080df0`; seguridad revalidó 9/9 controles con 0/0/0/0 hallazgos.
+- **Decisión / hecho**: el usuario autoriza explícitamente crear el tag inmutable `v0.9.0` y
+  publicar su GitHub Release.
+- **Alternativas descartadas**: mantener la versión solo en `main`, porque el comando de
+  instalación reproducible documentado requiere el tag estable.
+- **Impacto**: `github:jechamo/Estructura_inicial_claude#v0.9.0` pasa a ser una fuente de
+  instalación fija y auditable.
+- **Deuda aceptada**: ninguna.
+- **Referencias**: spec 017 · commits `4080df0` y cierre documental de release.
+- **Quién**: usuario
+
+---
+
 ## 2026-08-22 · Aceptar el límite agregado por módulo del circuito compacto
 
 - **Tipo**: decisión

@@ -79,7 +79,7 @@
 - **Depende de**: T-017-03 · **Estimación**: M · **Paralelizable**: no
 
 ### T-017-05 · Verifica la entrega sensible
-- **Estado**: en curso
+- **Estado**: hecho
 - **Terreno**: test/docs
 - **Skill**: `/sdd-verify`, `/security-scan verify`
 - **Capa**: transversal
