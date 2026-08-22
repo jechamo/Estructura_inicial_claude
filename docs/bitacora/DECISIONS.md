@@ -9,6 +9,59 @@
 
 ---
 
+## 2026-08-22 · El peaje del circuito pasa a ser proporcional al riesgo
+
+- **Tipo**: decisión
+- **Contexto**: instalada la plantilla en un proyecto real, el circuito agotó la cuota de un
+  proveedor en la fase SDD y la de otro en la fase TDD para un cambio menor de interfaz: cambiar la
+  selección de un carrusel y plegar y desplegar unas secciones. Cuatro causas medidas: el circuito
+  ligero nacía desactivado en toda instalación (`permitido: []`), solo se podía clasificar lo ya
+  editado, no existía un nivel intermedio, y las siete superficies exigían releer los 41 KB del
+  modelo operativo en cada fase.
+- **Decisión / hecho**: se implementa la spec 017 con tres niveles —`light`, `compact`, `full`—, un
+  recortador de política por fase, un resumen de gates que deja la salida completa fuera del
+  contexto, y la corrección de un defecto vivo por el que la frontera se podía esquivar con la caja
+  de las letras. **Ningún gate se apaga, ni el ciclo TDD, ni la bitácora, ni los trailers**: lo que
+  se dispensa es el expediente, nunca la verificación. Medido: el caso del carrusel pasa de 921.943
+  a 45.331 bytes de contexto (95 %) y de ocho intervenciones a tres; el circuito completo baja un
+  28 %. Ambos umbrales de la spec quedan superados.
+- **Alternativas descartadas**:
+  1. *Ampliar la frontera ligera a los directorios de componentes.* Fue la primera propuesta y era
+     peor de lo que parecía: el nivel ligero dispensa el expediente **entero**, así que abrir
+     `src/components/` habría dejado sin spec cualquier regla de negocio escondida en un `.tsx`.
+     De ahí nace el nivel intermedio.
+  2. *Dejar que quien pide el cambio declare si hay cambio de comportamiento.* Habría convertido la
+     frontera en la elocuencia de quien redacta la petición, justo lo que `circuito.mjs` fue escrito
+     para evitar. La clasificación se queda en las rutas, con un suelo por tipo de fichero.
+  3. *Crear `/sdd-compact` como skill 28.* El contrato «20 agentes · 27 skills» está grabado en once
+     superficies y el gate de paridad lo verifica en varias; se amplía `/sdd-light` y se acepta que
+     su nombre se quedó corto, cosa que el propio documento declara.
+  4. *Una sola spec 017 con todo el alcance.* Se parte en 017a y 017b porque el coste seguía
+     corriendo mientras se construía.
+  5. *Exigir ≥30 % de ahorro en circuito completo.* Se fija en el ≥20 % que la spec 011 ya
+     estableció y midió: una vara sin precedente habría descartado una mejora real.
+- **Impacto**: cambia el enrutado, la semilla de instalación y las instrucciones de los siete
+  hosts. Las instalaciones anteriores no se rompen: `.sdd/lightweight.json` se sigue leyendo, sigue
+  habilitando solo el nivel ligero y nunca se reescribe. La frontera nueva **nace sin aprobar**, así
+  que hasta que una persona la apruebe todo cambio paga el circuito completo.
+- **Deuda aceptada**: (1) la auditoría independiente de seguridad no se ejecutó —el informe lo firma
+  quien implementó los controles—, y por eso no se declara `GO`; (2) CI multi-OS y multiversión de
+  Node no se ejecutó desde la sesión; (3) queda pendiente la spec 017b con el sellado por hash, la
+  frontera del commit padre y `--trace-audit` obligatorio, que hoy no se ejecuta en ningún sitio.
+- **Aprendizaje**: tres defectos los encontró el propio ciclo, no una revisión. El más instructivo:
+  `scripts/lib/` es una allowlist explícita en `debeCopiar()`, de modo que los módulos nuevos no se
+  instalaban y `context --phase` habría funcionado en la plantilla y fallado en **todos** los
+  proyectos. Lo detectó un fixture que copia el conjunto mínimo de ficheros. Un fallo así no se ve
+  leyendo el diff.
+- **Referencias**: `docs/specs/017-circuito-proporcional-contexto/` ·
+  `docs/quality/benchmarks/017/benchmark-017.json` ·
+  `docs/security/reports/2026-08-22-017-circuito-proporcional-contexto.md` ·
+  `docs/sdd/OPERATING-MODEL.md` §2.6 y «Mapa de lectura por fase»
+- **Quién**: Jorge Enrique Chamorro Rodriguez (gates de especificación y plan) · `implementer`
+  (`declared-direct`)
+
+---
+
 ## 2026-08-21 · Aprobación humana de la arquitectura heredada
 
 - **Tipo**: decisión

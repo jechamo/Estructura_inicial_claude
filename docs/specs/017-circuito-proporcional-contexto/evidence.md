@@ -52,12 +52,12 @@ de implementar.
 | OBJ-004 | PRD-RF-007 | UC-005 | RF-05 | CA-04 | T-017-04 | `scripts/lib/resumen-gates.mjs` | `scripts/test/resumen-gates.mjs::resume_comando_codigo_conteos_y_ejecucion` | 🟢 |
 | OBJ-004 | PRD-RF-007 | UC-005 | RF-06 | CA-04 | T-017-04 | `scripts/lib/resumen-gates.mjs` | `scripts/test/resumen-gates.mjs::la_salida_completa_sigue_recuperable_por_identificador` | 🟢 |
 | OBJ-001 | PRD-RF-001 | UC-003 | RF-10 | CA-08 | T-017-05 | `scripts/lib/circuito.mjs` `cubre()` | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | 🟢 |
-| OBJ-002 | PRD-RF-003 | UC-002 | RF-07 | CA-05 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::clasifica_en_tres_niveles_con_full_por_defecto` | ⏸️ |
-| OBJ-002 | PRD-RF-003 | UC-002 | RF-08 | CA-06 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::clasifica_rutas_previstas_con_arbol_limpio` | ⏸️ |
-| OBJ-002 | PRD-RF-004 | UC-004 | RF-09 | CA-07 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::un_ejecutable_nunca_es_ligero` | ⏸️ |
-| OBJ-001 | PRD-RF-001 | UC-003 | RF-12 | CA-10 | T-017-06 | pendiente | `scripts/test/circuito-frontera.mjs::la_frontera_heredada_sigue_habilitando_solo_light` | ⏸️ |
-| OBJ-001 | PRD-RF-001 | UC-003 | RF-11 | CA-09 | T-017-07 | pendiente | `scripts/test/circuito-frontera.mjs::sin_aprobacion_no_hay_atajo` | ⏸️ |
-| OBJ-002 | PRD-RF-003 | UC-002 | RF-13 | CA-11 | T-017-08 | pendiente | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | ⏸️ |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-07 | CA-05 | T-017-06 | `scripts/lib/circuito.mjs` `clasificar()` | `scripts/test/circuito-frontera.mjs::clasifica_en_tres_niveles_con_full_por_defecto` | 🟢 |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-08 | CA-06 | T-017-06 | `scripts/check-sdd.mjs` `--planned` | `scripts/test/circuito-frontera.mjs::clasifica_rutas_previstas_con_arbol_limpio` | 🟢 |
+| OBJ-002 | PRD-RF-004 | UC-004 | RF-09 | CA-07 | T-017-06 | `scripts/lib/circuito.mjs` `esEjecutable()` | `scripts/test/circuito-frontera.mjs::un_ejecutable_nunca_es_ligero` | 🟢 |
+| OBJ-001 | PRD-RF-001 | UC-003 | RF-12 | CA-10 | T-017-06 | `scripts/lib/circuito.mjs` rama `legacy` | `scripts/test/circuito-frontera.mjs::la_frontera_heredada_sigue_habilitando_solo_light` | 🟢 |
+| OBJ-001 | PRD-RF-001 | UC-003 | RF-11 | CA-09 | T-017-07 | `scripts/lib/circuito.mjs` `aprobarFrontera()` | `scripts/test/circuito-frontera.mjs::sin_aprobacion_no_hay_atajo` | 🟢 |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-13 | CA-11 | T-017-08 | `docs/specs/_TEMPLATE/change.md` + `new-change` | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | 🟢 |
 
 - [x] Todo `CA` de la spec aparece en esta tabla
 - [x] Cada test citado como 🟢 se ha ejecutado y su salida está arriba
@@ -76,25 +76,27 @@ de implementar.
 | Control | Por qué | Riesgo | Dueño | Siguiente paso |
 |---|---|---|---|---|
 | CI multi-OS y multiversión de Node | No hay forma de ejecutar GitHub Actions desde esta sesión | Una regresión específica de plataforma o de versión quedaría sin detectar | quien empuje la rama | Empujar y leer `quality-gates.yml` y `sdd-gates.yml` |
-| Benchmark 017 | Corresponde a T-017-09, todavía no alcanzada | Los umbrales de `spec.md` §2 aún no están demostrados | `implementer` | Ejecutar el harness ampliado en T-017-09 |
-| Auditoría independiente de seguridad | Corresponde a T-017-09 | Los tres controles están ejercidos por test pero no auditados por un tercero | `security-auditor` | `/security-scan verify` en T-017-09 |
+| ~~Benchmark 017~~ | **Ejecutado.** `docs/quality/benchmarks/017/run-benchmark.mjs` | — | — | Veredicto INTEGRAR: compacto 95 % con 3 intervenciones, completo 28 % |
+| Auditoría independiente de seguridad | **Sigue sin ejecutarse.** El informe lo firma el mismo agente que implementó los controles; `AGENTS.md` exige que lo haga `security-auditor` en solo lectura | Un control mal elegido o ausente no se detecta: quien lo diseñó tiene el mismo punto ciego al revisarlo | `security-auditor` | Delegar `/security-scan verify` antes del `GO` de entrega |
 
 ### 3.0 · Evidencia documental
 
 | DOC-ID | Tarea | Artefacto | Comprobación | Resultado | Estado |
 |---|---|---|---|---|---|
 | DOC-CONTEXTO | T-017-03 | `docs/sdd/OPERATING-MODEL.md` (mapa de lectura), `CLAUDE.md`, `AGENTS.md` y las reglas de Copilot, Cursor y genéricas | `scripts/test/contexto-recorte.mjs::ninguna_superficie_exige_el_documento_completo` + `check-sdd --docs-diff` en CI | 🟢 test semántico ejecutado; 186/186 | implementado; comprobación de CI pendiente de T-017-09 |
-| DOC-CIRCUITO | T-017-08 | docs/sdd/OPERATING-MODEL.md §2.6 | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | ⏸️ no ejecutado | pendiente |
+| DOC-CIRCUITO | T-017-08 | docs/sdd/OPERATING-MODEL.md §2.6 | `scripts/test/circuito-frontera.mjs::el_documento_compacto_declara_limites_verificables` | 🟢 ejecutado; §2.6 documenta los tres niveles, los dos candados y la compatibilidad heredada | implementado; `--docs-diff` en CI pendiente |
 
 ### 3.1 · Controles de seguridad ejecutados
 
 | Control | Tarea | Test / comando ejecutado | Resultado | Evidencia | Estado |
 |---|---|---|---|---|---|
 | SEC-CONTEXT-001 | T-017-02 | `scripts/test/contexto-recorte.mjs::falla_cerrado_y_conserva_invariantes` | 🔴 correcto → 🟢; las invariantes §0, §7 y §13 están en las once fases declaradas; sección ausente, duplicada o fase desconocida lanzan error nombrando la causa | `scripts/lib/contexto.mjs` | verificado |
-| SEC-CIRCUIT-001 | T-017-05 | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` | 🔴 la negación se esquivaba con la caja → 🟢 tras plegarla; negación prevalente, traversal y ruta absoluta siguen rechazados, y plegar no convierte un permiso legítimo en prohibición | `scripts/lib/circuito.mjs` | verificado (parcial: gramática sin comodines y suelo por ejecutable llegan en T-017-06) |
-| SEC-CIRCUIT-002 | T-017-07 | `scripts/test/circuito-frontera.mjs::sin_aprobacion_no_hay_atajo` | ⏸️ no ejecutado | — | no ejecutado (tarea no alcanzada) |
+| SEC-CIRCUIT-001 | T-017-05 | `scripts/test/circuito-frontera.mjs::deniega_variacion_de_caja` y `::un_ejecutable_nunca_es_ligero` | 🔴 la negación se esquivaba con la caja → 🟢 tras plegarla; negación prevalente, traversal, ruta absoluta y comodín rechazados; el suelo por extensión impide que un ejecutable sea ligero aunque se declare permitido | `scripts/lib/circuito.mjs` | verificado |
+| SEC-CIRCUIT-002 | T-017-07 | `scripts/test/circuito-frontera.mjs::sin_aprobacion_no_hay_atajo` y `::aprobacion_separada_y_ligada_a_la_propuesta` | 🔴 `fail-sin-comandos` → 🟢; estado `pending`, estados inventados, huella que no corresponde y propuesta alterada tras mostrarse quedan rechazados | `scripts/lib/circuito.mjs` | verificado |
 
-**Informe de seguridad**: pendiente de `/security-scan verify` en T-017-09.
+**Informe de seguridad**: `docs/security/reports/2026-08-22-017-circuito-proporcional-contexto.md`.
+CRÍTICO 0 · ALTO 0 · MEDIO 1 corregido durante la implementación · BAJO 0. **No lo firma un auditor
+independiente**, y por eso no concede `GO`: ver la limitación declarada al principio del informe.
 
 ### 3.2 · Controles de usabilidad ejecutados
 
@@ -125,15 +127,55 @@ Estas cifras son bytes de documento, **no tokens ni cuota de proveedor**. La con
 la comparación con la línea base de la spec 011 corresponden al benchmark de T-017-09, y hasta
 entonces no se presentan como ahorro de consumo.
 
-### 6.3 · Estado al cerrar T-017-03
+### 6.3 · Benchmark 017 · medición del objetivo de §2
 
-- 🟢 T-017-01, T-017-02 y T-017-03 hechas: RF-01 a RF-04 y CA-01 a CA-03 cubiertos con test
-  ejecutado.
-- 🟢 `SEC-CONTEXT-001` verificado con caso adverso real.
-- ⏸️ T-017-04 a T-017-09 pendientes; sus RF y CA figuran arriba como no ejecutados.
-- ⏸️ No se declara `GO`: faltan seis tareas, el benchmark y la auditoría independiente.
+`node docs/quality/benchmarks/017/run-benchmark.mjs` · línea base `9d3e69c` · el informe completo en
+`docs/quality/benchmarks/017/benchmark-017.json`.
+
+| Escenario | Nivel | Contexto antes → después | Reducción | Intervenciones |
+|---|---|---:|---:|---:|
+| errata documental | `light` | 50.143 → 16.650 B | 67 % | 2 → 1 |
+| **carrusel y acordeón** | `compact` | **921.943 → 45.331 B** | **95 %** | **8 → 3** |
+| dependencia nueva | `full` | 921.943 → 665.749 B | 28 % | 8 → 8 |
+| cambio de autorización | `full` | 921.943 → 678.445 B | 26 % | 8 → 8 |
+| feature de dominio | `full` | 1.067.243 → 771.772 B | 28 % | 9 → 9 |
+
+| Umbral de `spec.md` §2 | Objetivo | Real | Veredicto |
+|---|---:|---:|---|
+| Compacto · reducción mediana | ≥70 % | 95 % | cumple |
+| Compacto · intervenciones | ≤3 | 3 | cumple |
+| Completo · reducción mediana | ≥20 % | 28 % | cumple |
+
+**Veredicto: INTEGRAR.** El escenario del carrusel es el caso real que motivó la spec.
+
+**Qué mide y qué no.** Mide bytes de contexto realmente activado —política, router, perfiles y
+artefactos que cada fase relee— e intervenciones de agente. **No mide el consumo real de Copilot ni
+de Cursor**: sus API no lo exponen, igual que registró la spec 011 con
+`executor_model: not-exposed-by-collaboration-api`. `tokensProxy` es bytes÷4, un orden de magnitud,
+nunca una cuota. La línea base se recalcula con `git show`, así que cualquiera puede rehacerla.
+
+### 6.4 · Estado al cerrar 017
+
+- 🟢 Las nueve tareas hechas. RF-01 a RF-13 y CA-01 a CA-11 con test ejecutado.
+- 🟢 `SEC-CIRCUIT-001`, `SEC-CIRCUIT-002` y `SEC-CONTEXT-001` con caso adverso real y salida
+  registrada.
+- 🟢 Gates: `run --fast` PASS 5/5, `run --slow` PASS 4/4, `test-hooks` 196/196, `test-install`
+  536/536, cobertura 53,8 % sobre umbral 48,3 %.
+- 🟢 Benchmark por encima de ambos umbrales.
+- ⏸️ **Auditoría independiente de seguridad: no ejecutada.** Es el motivo por el que no se declara
+  `GO` aquí.
+- ⏸️ **CI multi-OS y multiversión de Node: no ejecutada** desde esta sesión.
+- ⏸️ `approve-docs` pendiente: es un acto humano y lleva nombre.
 
 ## 5. Decisión de entrega
 
-Pendiente. No hay decisión de entrega mientras queden tareas sin ejecutar y el benchmark de §2 no
-esté medido.
+**No se declara `GO`.** Las nueve tareas están hechas, los gates en verde y el benchmark por encima
+de los dos umbrales, pero faltan dos controles que no dependen de escribir más código:
+
+1. La **auditoría independiente de seguridad**. El informe lo firma quien implementó los controles,
+   y `AGENTS.md` exige que lo haga `security-auditor` en solo lectura porque nadie audita su propio
+   diseño. Sin eso, «superado» significa «sus tests pasan», no «los controles son los correctos».
+2. **CI multi-OS y multiversión de Node**, que solo se dispara al empujar la rama.
+
+Declarar `GO` con esos dos pendientes sería exactamente el «pasa sin ejecución» que la regla 7
+prohíbe. Ambos quedan arriba con riesgo, dueño y siguiente paso.

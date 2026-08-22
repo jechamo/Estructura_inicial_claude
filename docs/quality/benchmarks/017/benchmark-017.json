@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "spec": "017-circuito-proporcional-contexto",
+  "baseline": "9d3e69c",
+  "medida": "bytes de contexto realmente activado e intervenciones de agente",
+  "aviso": "Proxy auditable. NO es el consumo real de Copilot ni de Cursor: sus API no lo exponen. tokensProxy es bytes/4, un orden de magnitud, no una cuota.",
+  "generado": "2026-08-22T11:21:23.856Z",
+  "escenarios": [
+    {
+      "id": "errata-documental",
+      "nivel": "light",
+      "fases": {
+        "antes": 1,
+        "despues": 1
+      },
+      "intervenciones": {
+        "antes": 2,
+        "despues": 1
+      },
+      "contexto": {
+        "antes": 50143,
+        "despues": 16650
+      },
+      "tokensProxy": {
+        "antes": 12536,
+        "despues": 4163
+      },
+      "reduccion": 0.668
+    },
+    {
+      "id": "carrusel-y-acordeon",
+      "nivel": "compact",
+      "fases": {
+        "antes": 7,
+        "despues": 3
+      },
+      "intervenciones": {
+        "antes": 8,
+        "despues": 3
+      },
+      "contexto": {
+        "antes": 921943,
+        "despues": 45331
+      },
+      "tokensProxy": {
+        "antes": 230486,
+        "despues": 11333
+      },
+      "reduccion": 0.951
+    },
+    {
+      "id": "dependencia-nueva",
+      "nivel": "full",
+      "fases": {
+        "antes": 7,
+        "despues": 7
+      },
+      "intervenciones": {
+        "antes": 8,
+        "despues": 8
+      },
+      "contexto": {
+        "antes": 921943,
+        "despues": 665749
+      },
+      "tokensProxy": {
+        "antes": 230486,
+        "despues": 166437
+      },
+      "reduccion": 0.278
+    },
+    {
+      "id": "cambio-de-autorizacion",
+      "nivel": "full",
+      "fases": {
+        "antes": 7,
+        "despues": 7
+      },
+      "intervenciones": {
+        "antes": 8,
+        "despues": 8
+      },
+      "contexto": {
+        "antes": 921943,
+        "despues": 678445
+      },
+      "tokensProxy": {
+        "antes": 230486,
+        "despues": 169611
+      },
+      "reduccion": 0.264
+    },
+    {
+      "id": "feature-de-dominio",
+      "nivel": "full",
+      "fases": {
+        "antes": 8,
+        "despues": 8
+      },
+      "intervenciones": {
+        "antes": 9,
+        "despues": 9
+      },
+      "contexto": {
+        "antes": 1067243,
+        "despues": 771772
+      },
+      "tokensProxy": {
+        "antes": 266811,
+        "despues": 192943
+      },
+      "reduccion": 0.277
+    }
+  ],
+  "umbrales": {
+    "compact": {
+      "objetivo": 0.7,
+      "real": 0.951,
+      "intervencionesMax": 3,
+      "intervencionesReal": 3,
+      "cumple": true
+    },
+    "full": {
+      "objetivo": 0.2,
+      "real": 0.277,
+      "cumple": true
+    }
+  },
+  "veredicto": "INTEGRAR"
+}

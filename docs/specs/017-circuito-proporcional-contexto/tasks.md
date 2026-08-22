@@ -4,7 +4,7 @@
 |---|---|
 | **Spec** | [`spec.md`](./spec.md) · **Plan**: [`plan.md`](./plan.md) |
 | **Total** | 9 tareas · S: 1 · M: 7 · L: 1 |
-| **Progreso** | 8/9 |
+| **Progreso** | 9/9 |
 | **Orden** | por amortización: detenerse en cualquier punto deja beneficio consolidado |
 | **Paralelizables** | 0 · todas comparten `scripts/lib/` o el contrato del CLI |
 
@@ -133,7 +133,7 @@
 - **Terreno**: tooling
 - **Skill**: `/tdd`
 - **Capa**: domain
-- **Cubre**: OBJ-002, PRD-RF-003, PRD-RF-004, UC-002, UC-004, RF-07, RF-08, RF-09, RF-12, CA-05, CA-06, CA-07, CA-10
+- **Cubre**: OBJ-002, PRD-RF-003, PRD-RF-004, UC-002, UC-004, RF-07, RF-08, RF-09, CA-05, CA-06, CA-07; y OBJ-001, PRD-RF-001, UC-003, RF-12, CA-10 para la compatibilidad con la frontera heredada
 - **Controles de seguridad**: `SEC-CIRCUIT-001` (el suelo por tipo de fichero es el candado que no depende de cómo esté escrita la frontera)
 - **Controles de usabilidad**: no aplica (clasificador puro y bandera de CLI)
 - **Documentación**: no aplica (el modelo operativo se actualiza en T-017-08, cuando el nivel compacto ya tiene procedimiento)
@@ -180,7 +180,7 @@
 - **Paralelizable**: no
 
 ### T-017-09 · Mide, verifica y cierra
-- **Estado**: pendiente
+- **Estado**: hecho
 - **Terreno**: test
 - **Skill**: `/sdd-verify` + `/security-scan verify`
 - **Capa**: transversal
