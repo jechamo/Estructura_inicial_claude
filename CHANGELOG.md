@@ -7,6 +7,14 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 
 ## [No publicado]
 
+### Added
+
+- `run --release` reutiliza coverage, E2E y a11y de un slow ancestral solo cuando checks,
+  runtime y entradas materiales siguen idénticos; trazas, secretos y documentación se ejecutan
+  de nuevo. El HMAC local detecta corrupción y mezcla entre clones, la salida distingue `executed`
+  de `reused` y falla cerrado ante deriva. Los tags exigen CI completa del workflow exacto sobre el
+  mismo SHA de `main`, sin repetir el slow.
+
 ## [0.9.0] — 2026-08-22
 
 ### Added

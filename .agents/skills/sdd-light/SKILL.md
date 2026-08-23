@@ -47,7 +47,9 @@ En `compact`, los sustituye un `change.md` de hasta tres criterios, tres tareas 
 ## Lo que NO dispensa
 
 - **Ningún gate.** `node scripts/sdd-project.mjs run --fast --summary-json` antes del commit; los lentos antes
-  de integrar. Un circuito que apagase gates sería un permiso para no comprobar, y esta ruta no
+  de integrar. Tras un cierre exclusivamente editorial puede usarse `run --release`, que no apaga
+  checks: reejecuta los de entrega y solo reutiliza evidencia materialmente idéntica. Un circuito
+  que apagase gates sería un permiso para no comprobar, y esta ruta no
   lo concede.
 - **TDD cuando cambia comportamiento.** Si algo se comporta distinto después del cambio, hay un
   test rojo primero. Que no haya spec no significa que no haya conducta que fijar.

@@ -67,3 +67,49 @@ Informe VERIFY: `docs/security/reports/2026-08-22-017-circuito-proporcional-cont
 Estado: `GO DE ENTREGA`; el usuario aceptó el endurecimiento y autorizó explícitamente publicar
 tag y release. Commit real, trace exacto, CI portátil y Pages están corroborados sobre `4080df0`.
 Informe de calidad: `docs/quality/reports/2026-08-22-017-circuito-proporcional-contexto.md`.
+
+## Enmienda T-017-06 · reutilización segura de gates para releases
+
+La enmienda no altera los resultados históricos de v0.9.0 anteriores. Añade un cierre local
+explícito para v0.9.1 y conserva el `slow` completo como fuente única de evidencia reutilizable.
+
+### Ejecuciones T-017-06
+
+| Tarea | Comando / caso | Resultado real |
+|---|---|---|
+| T-017-06 · `declared-direct` | RED · spec reescrita tratada como metadata | 🔴 `0 !== 1`; el runner aceptaba indebidamente el cambio de requisito |
+| T-017-06 · `declared-direct` | RED · sello release manipulado | 🔴 esperado `false`, obtenido `true` en la guarda de push |
+| T-017-06 · `declared-direct` | RED · evidencia de otra máquina | 🔴 esperado rechazo, obtenido `true` |
+| T-017-06 · `declared-direct` | RED · resumen extenso con resultados reutilizados | 🔴 procedencia obtenida `[]`; se esperaban a11y/coverage/e2e |
+| T-017-06 · `declared-direct` | `node scripts/test-release-gates.mjs` | 🟢 42 comprobaciones; ancestro, HMAC local anticorrupción, runtime/host, huellas, allowlist cerrada, tag por workflow exacto, hardlink/junction, cuotas y fail-closed |
+| T-017-06 · `declared-direct` | `node scripts/test-gate-summary.mjs` | 🟢 26 comprobaciones; conserva procedencia `reused` bajo la cota de 8 KiB |
+| T-017-06 · `declared-direct` | `node scripts/test-hooks.mjs` | 🟢 183 correctas, 0 fallos; sello íntegro aceptado y sello manipulado rechazado |
+| T-017-06 · `declared-direct` | `node scripts/test-install.mjs` | 🟢 539 correctas, 0 fallos |
+| T-017-06 · `declared-direct` | `npm test` | 🟢 hooks, circuit, trace, context, summary, release y sintaxis |
+| T-017-06 · `declared-direct` | `node scripts/check-coverage.mjs --json` | 🟢 50,5 % ≥ 48,3 % |
+
+### Cadena T-017-06
+
+| OBJ | PRD-RF | UC | RF | CA | Tarea | Test | Resultado |
+|---|---|---|---|---|---|---|---|
+| OBJ-002 | PRD-RF-003 | UC-004 | RF-06 | CA-06 | T-017-06 | `scripts/test-release-gates.mjs::reutiliza_solo_evidencia_materialmente_vigente` | 🟢 RED → GREEN |
+
+### SEC-EVIDENCE-003
+
+| Control | Tarea | Test ejecutado | Resultado |
+|---|---|---|---|
+| SEC-EVIDENCE-003 | T-017-06 | `scripts/test-release-gates.mjs::reutiliza_solo_evidencia_materialmente_vigente` | 🟢 PASS ancestral con HMAC local anticorrupción; checks/runtime/host/entradas idénticos; procedencia explícita; tag condicionado al workflow exacto en CI; rechazo fail-closed |
+
+### Documentación T-017-06
+
+| DOC-ID | Tarea | Artefacto | Comprobación | Resultado |
+|---|---|---|---|---|
+| DOC-GATES | T-017-06 | runner, guarda, pre-push, workflow, modelo y skills | hooks + instalación + skills-sync | 🟢 sincronizado |
+| DOC-TFM | T-017-06 | `docs/TFM/MEMORIA-TECNICA-TFM.md` | site-prep + revisión de comandos | 🟢 actualizado |
+| DOC-PAGES | T-017-06 | `site/index.html` y datos públicos | site-prep + a11y | 🟢 3 páginas |
+
+Informe VERIFY de la enmienda:
+`docs/security/reports/2026-08-23-017-circuito-proporcional-contexto-t01706.md` — APTO, 10/10
+controles, 0/0/0/0 y ninguno sin ejecutar. El fast/slow de cierre se ejecuta después de
+materializar este documento y sus `runId` se entregan en el HANDOFF, sin reescribir la evidencia y
+romper el sello del árbol. No se publica tag ni release como parte de T-017-06.

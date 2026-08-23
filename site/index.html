@@ -30,7 +30,7 @@
     <a class="marca" href="#inicio">
       <img src="assets/img/logo.png" alt="" width="34" height="34">
       <span>Agentes SDD</span>
-      <span class="marca__version" data-version>v0.9.0</span>
+      <span class="marca__version" data-version>v0.9.1</span>
     </a>
     <nav class="nav__enlaces" aria-label="Secciones">
       <a class="nav__enlace" href="#instalar">Instalar</a>
@@ -487,6 +487,17 @@
         regenerado midió 76,00 % menos contexto en compact y 71,30 % en full; es un proxy de bytes,
         no la cuota real del proveedor.
       </p>
+      <p class="parrafo">
+        Para cerrar una versión sin repetir una suite que acaba de pasar, <code>run --release</code>
+        reejecuta trazas, secretos y documentación. Solo reutiliza coverage, E2E y a11y si el slow
+        anterior es ancestral y no cambiaron runtime, checks ni entradas materiales; la salida
+        distingue <code>executed</code> de <code>reused</code>. Solo son editoriales CHANGELOG,
+        bitácora, evidencia, informes y los campos de estado/progreso: cambiar requisitos, plan o
+        pruebas exige slow. El HMAC local detecta corrupción, pero no autentica frente a procesos
+        del mismo usuario; la autoridad de publicación es la CI completa del workflow exacto
+        <code>sdd-gates.yml</code> sobre el mismo SHA de <code>main</code>. Crear el tag no repite slow.
+      </p>
+      <pre class="terminal__cuerpo" aria-label="Cierre verificable de una release"><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> scripts/sdd-project.mjs run <span class="l-bandera">--slow --summary-json</span></div><div><span class="l-prompt">$ </span><span class="l-cmd">node</span> scripts/sdd-project.mjs run <span class="l-bandera">--release --summary-json</span></div><div class="l-tenue">trace/security/docs: executed · coverage/e2e/a11y: reused &lt;sourceRunId&gt;</div></pre>
       <div class="bento" style="margin-top: 2rem">
         <article class="tarjeta tarjeta--foco" data-revelar>
           <span class="pastilla">light</span>
@@ -772,7 +783,7 @@
 
 <footer class="pie">
   <div class="contenedor pie__interior">
-    <span>Ecosistema de agentes SDD · <span data-version>v0.9.0</span></span>
+    <span>Ecosistema de agentes SDD · <span data-version>v0.9.1</span></span>
     <nav class="pie__enlaces" aria-label="Enlaces del pie">
       <a href="https://github.com/jechamo/Estructura_inicial_claude" target="_blank" rel="noopener noreferrer">Repositorio</a>
       <a href="documentacion.html">Memoria técnica</a>

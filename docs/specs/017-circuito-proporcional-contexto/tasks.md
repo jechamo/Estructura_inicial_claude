@@ -3,8 +3,8 @@
 | Campo | Valor |
 |---|---|
 | **Spec / plan** | [`spec.md`](./spec.md) · [`plan.md`](./plan.md) |
-| **Total** | 5 tareas · M: 4 · L: 1 |
-| **Progreso** | 4/5 |
+| **Total** | 6 tareas · M: 5 · L: 1 |
+| **Progreso** | 6/6 |
 
 ## Trazabilidad
 
@@ -15,6 +15,7 @@
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-02/03 | CA-03/04 | T-017-03 | context + summary tests |
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-05 | CA-05 | T-017-04 | install/docs/benchmark |
 | OBJ-002 | PRD-RF-003, PRD-RF-004 | UC-004 | RF-01–05 | CA-01–05 | T-017-05 | gates y auditorías |
+| OBJ-002 | PRD-RF-003 | UC-004 | RF-06 | CA-06 | T-017-06 | `scripts/test-release-gates.mjs` + hooks/install |
 
 ## Orden de ejecución
 
@@ -69,7 +70,7 @@
 - **Skill**: `/docs-sync update --spec 017`
 - **Capa**: transversal
 - **Cubre**: OBJ-002, OBJ-004, PRD-RF-004, PRD-RF-008, UC-004, UC-005, RF-05, CA-05
-- **Controles de seguridad**: los nueve SEC se documentan sin reinterpretarlos
+- **Controles de seguridad**: los diez SEC se documentan sin reinterpretarlos
 - **Usabilidad**: no aplica; Pages conserva su gate a11y existente
 - **Documentación**: DOC-CIRCUITO, DOC-GATES, DOC-TFM, DOC-PAGES
 - **Test**: instalación, skills-sync, site-prep, a11y y `docs/quality/benchmarks/017/run-benchmark.mjs`
@@ -92,10 +93,25 @@
 - **DoD**: cero CRÍTICO/ALTO, ningún control no ejecutado y veredicto APTO PARA ENTREGA
 - **Depende de**: T-017-04 · **Estimación**: M · **Paralelizable**: no
 
+### T-017-06 · Reutiliza evidencia slow vigente al cerrar una release
+- **Estado**: hecho
+- **Terreno**: tooling/docs
+- **Skill**: `/tdd`, `/docs-sync update --spec 017`
+- **Capa**: infraestructura de gates
+- **Cubre**: OBJ-002, PRD-RF-003, UC-004, RF-06, CA-06
+- **Controles de seguridad**: SEC-EVIDENCE-003
+- **Usabilidad**: no aplica; CLI y evidencia máquina
+- **Documentación**: DOC-GATES, DOC-TFM, DOC-PAGES
+- **Test**: `scripts/test-release-gates.mjs::reutiliza_solo_evidencia_materialmente_vigente`; regresión de hooks e instalación
+- **Test que la define**: `scripts/test-release-gates.mjs`
+- **Ficheros previstos**: runner, sello/guarda, manifiesto, skills, modelo operativo, TFM y Pages
+- **DoD**: `run --release` diferencia executed/reused, siempre reejecuta trazabilidad/secretos/docs y falla cerrado ante cualquier entrada distinta
+- **Depende de**: T-017-05 · **Estimación**: M · **Paralelizable**: no
+
 ### HANDOFF
 - Agente origen: planner
 - Fase completada: tasks
-- Tareas: 5 secuenciales · cobertura RF/CA 5/5
-- Seguridad: 9/9 controles asignados
+- Tareas: 6 secuenciales · cobertura RF/CA 6/6
+- Seguridad: 10/10 controles asignados
 - Primera tarea: T-017-01
 - Siguiente agente sugerido: implementer — `/sdd-implement`

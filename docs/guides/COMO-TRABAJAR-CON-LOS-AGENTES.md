@@ -192,6 +192,8 @@ node scripts/sdd-project.mjs status --json [--spec NNN]
 node scripts/sdd-project.mjs scaffold --spec NNN --phase design|plan|tasks|verify [--dry-run]
 node scripts/sdd-project.mjs trace-status --spec NNN --json
 node scripts/check-sdd.mjs --json [--strict] [--spec NNN]
+node scripts/sdd-project.mjs run --slow --summary-json
+node scripts/sdd-project.mjs run --release --summary-json
 ```
 
 Esto evita releer el árbol, copiar plantillas y contar IDs a mano. El agente sigue decidiendo
@@ -259,8 +261,10 @@ es fácil si las fronteras existen; crearlas después no lo es.
 | `/sdd-verify` | Informes | Todos los gates en verde |
 | `/sdd-ship` | PR, CHANGELOG | GO/NO-GO firmado por una persona |
 
-> **Aviso práctico**: son 9 fases. Para un cambio trivial cuesta más el proceso que el cambio.
-> No hay vía rápida declarada todavía: es una carencia conocida.
+> **Aviso práctico**: son 9 fases para `full`; `/sdd-light` aplica `light` o `compact` cuando la
+> frontera aprobada lo permite. En la entrega, `run --slow` verifica el contenido funcional y
+> `run --release` evita repetir coverage/E2E/a11y tras un cierre exclusivamente editorial. Este
+> último reejecuta trazas, secretos y documentación y falla si no puede demostrar la huella.
 
 ---
 

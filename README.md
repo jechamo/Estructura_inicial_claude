@@ -28,7 +28,7 @@ npx --yes github:jechamo/Estructura_inicial_claude init "C:\ruta\proyecto" --mod
 Para CI, automatizaciones o una instalación reproducible, fija el tag estable e inmutable:
 
 ```powershell
-npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.1 init "C:\ruta\proyecto" --mode auto
 ```
 
 **Nunca reinicia contexto existente.** Los documentos propios se conservan, los adaptadores
@@ -97,12 +97,22 @@ node scripts/sdd-project.mjs detect-circuit --json
 node scripts/check-sdd.mjs --circuit-status --planned src/components/Carousel.tsx --json
 node scripts/sdd-project.mjs context --phase implement --spec 017 --task T-017-03 --json
 node scripts/sdd-project.mjs run --fast --summary-json
+node scripts/sdd-project.mjs run --slow --summary-json
+node scripts/sdd-project.mjs run --release --summary-json
 ```
 
 La frontera `.sdd/circuit.json` nace `pending`; solo una aprobación humana ligada al hash activa
 `light` o `compact`, y la activación se materializa en un commit `full` dedicado. Un `change.md`
 compacto también se aprueba y commitea solo antes de tocar código. `full` es el valor seguro por
 defecto. La auditoría histórica se ejecuta en los gates lentos, ship y CI.
+
+`--release` se usa solo después de un slow verde cuando el cierre cambia exclusivamente
+CHANGELOG, bitácora, evidencia, campos de estado/progreso o informes. Reejecuta trazas, secretos y documentación; coverage,
+E2E y a11y aparecen como `reused` con su run de origen. Si cambió cualquier entrada material,
+incluidos requisitos, plan o pruebas de una spec, se detiene y propone el slow completo. Crear un
+tag sobre el mismo SHA no repite la suite: CI comprueba que ese SHA ya pasó el workflow exacto
+`sdd-gates.yml` en `main`. El HMAC local detecta corrupción y mezcla entre clones; la autoridad de
+publicación es esa CI completa porque un proceso del mismo usuario puede leer la clave del clon.
 
 ```mermaid
 flowchart LR

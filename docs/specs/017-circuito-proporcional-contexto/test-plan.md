@@ -9,6 +9,7 @@
 | RF-02 / CA-03 | T-017-03 | unitario/contrato | `scripts/test-context.mjs` |
 | RF-03 / CA-04 | T-017-03 | unitario/integración | `scripts/test-gate-summary.mjs` |
 | RF-05 / CA-05 | T-017-04 | contrato/E2E | install, skills-sync, site-prep, a11y y benchmark 017 |
+| RF-06 / CA-06 | T-017-06 | unitario/integración | `scripts/test-release-gates.mjs` + hooks/install |
 
 ## 2. Casos obligatorios
 
@@ -25,6 +26,9 @@
   >8 KiB, patrones de secreto, ausencia de raw, retención y symlink.
 - E2E: README exacto→light; componente ejecutable existente→compact; auth/API/migración/SDD→full.
 - Compatibilidad: instalación limpia, actualización, idempotencia y seis hosts.
+- Release: PASS ancestral, huella material estable, metadata cerrada, checks/runtime manipulados,
+  otra máquina, HMAC inválido, hardlink/junction, cuota, entrada ejecutable cambiada, procedencia
+  executed/reused y tag atestado por CI sin cambio de bytes.
 
 ## 3. Seguridad
 
@@ -39,6 +43,7 @@ Referencias ejecutables conservadas literalmente:
 - SEC-CONTEXT-001 · T-017-03 · `scripts/test-context.mjs::ignora_instrucciones_y_falla_ante_estructura_invalida`
 - SEC-EVIDENCE-001 · T-017-03 · `scripts/test-gate-summary.mjs::redacta_todos_los_canales_antes_de_persistir`
 - SEC-EVIDENCE-002 · T-017-03 · `scripts/test-gate-summary.mjs::acota_tiempo_y_salida`
+- SEC-EVIDENCE-003 · T-017-06 · `scripts/test-release-gates.mjs::reutiliza_solo_evidencia_materialmente_vigente`
 
 | Control | Caso adverso | Resultado seguro |
 |---|---|---|
@@ -51,6 +56,7 @@ Referencias ejecutables conservadas literalmente:
 | SEC-CONTEXT-001 | política estructuralmente distinta | error, no contexto incompleto |
 | SEC-EVIDENCE-001 | salida con secreto/cuerpo extenso | resumen redactado, sin raw |
 | SEC-EVIDENCE-002 | hijo bloqueado o salida ilimitada | cancelación y gate fallido |
+| SEC-EVIDENCE-003 | evidencia roja, ajena, autofirmada/manipulada, enlace, exceso de cuota o entradas distintas | fallo cerrado y comando slow exacto; tag exige atestación CI del mismo SHA |
 
 Sin PII ni secretos reales en fixtures. No aplican JWT, cookies, SQL, egress o autenticación.
 

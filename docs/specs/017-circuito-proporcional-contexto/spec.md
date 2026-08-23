@@ -24,6 +24,7 @@
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-03 | CA-04 |
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-05 | CA-05 |
 | OBJ-002 | PRD-RF-004 | UC-004 | RF-05 | CA-05 |
+| OBJ-002 | PRD-RF-003 | UC-004 | RF-06 | CA-06 |
 
 No hay discrepancias abiertas ni marcadores de clarificación.
 
@@ -62,15 +63,16 @@ trazabilidad, bitácora ni aprobación humana.
 | RF-03 | CUANDO se ejecuten gates, el sistema DEBE emitir una evidencia resumida y sanitizada sin persistir salida cruda. | S | 3 |
 | RF-04 | CUANDO se use un nivel reducido, el sistema DEBE auditar diff, configuración histórica, trailers, autoría, territorio y límites antes de permitir la entrega. | M | 3 |
 | RF-05 | El sistema DEBE mantener sincronizados la documentación operativa, la Memoria TFM y Pages, y medir el ahorro con un proxy declarado. | C | 3 |
+| RF-06 | CUANDO solo cambien metadatos cerrados de una entrega, el sistema DEBE poder reutilizar evidencia lenta materialmente vigente, identificar su procedencia y volver a ejecutar los controles de trazabilidad, secretos y documentación. | S | 3 |
 
 ### Reparto MoSCoW
 
 | Prioridad | Esfuerzo | Porcentaje |
 |---|---:|---:|
-| Must | 11 | 50 % |
-| Should | 8 | 36 % |
-| Could | 3 | 14 % |
-| Total | 22 | 100 % |
+| Must | 11 | 44 % |
+| Should | 11 | 44 % |
+| Could | 3 | 12 % |
+| Total | 25 | 100 % |
 
 **Won't have this time**: desplegar Pages, migrar RRSS, fusionar a `main`, publicar una release o
 medir la cuota real no expuesta por Copilot/Cursor.
@@ -134,6 +136,16 @@ Escenario: preparar la entrega
   Cuando se comprueba la documentación y el benchmark
   Entonces el modelo operativo, hosts, Memoria y Pages describen el mismo comportamiento
   Y los porcentajes se publican únicamente si alcanzan los umbrales
+```
+
+### CA-06 · Evidencia lenta reutilizable sin falsos verdes (RF-06)
+```gherkin
+Escenario: cerrar una release después de un cambio solo editorial
+  Dada una ejecución slow verde sobre las mismas entradas ejecutables
+  Cuando solo cambian metadatos cerrados de release y se ejecuta run --release
+  Entonces coverage, E2E y a11y pueden declararse reused con su run de origen
+  Y trace-audit, secretos y documentación se ejecutan de nuevo
+  Pero cualquier entrada material distinta falla cerrado y recomienda run --slow
 ```
 
 ## 7. Casos límite e invariantes

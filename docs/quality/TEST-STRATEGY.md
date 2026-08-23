@@ -300,6 +300,15 @@ configurado y declarado ausente;
 `scripts/test-install.mjs::cada_ausencia_declara_su_clase` exige que la clase sea una de las tres
 y que `se-ejecuta-en-otro-sitio` diga dónde.
 
+### Evidencia reutilizable en el cierre editorial
+
+`run --release` no reduce la suite funcional inicial: consume un `run --slow` verde y solo
+reutiliza coverage, E2E y a11y si coinciden ancestro, runtime, checks y huella material. Ejecuta
+otra vez trace-audit, secretos, strict y docs-diff. `scripts/test-release-gates.mjs` prueba PASS,
+evidencia ausente/roja/manipulada, cambios de código o configuración y tag sin cambio de bytes.
+La salida usa `execution: executed|reused` y conserva `sourceRunId`; un fallo muestra el slow
+completo sin lanzarlo automáticamente.
+
 ### Un motivo que caduca es peor que no haberlo escrito
 
 `a11y` estuvo declarado inaplicable durante nueve specs con el motivo «no hay superficie visual».
@@ -312,4 +321,3 @@ El problema no es equivocarse: es que una decisión caducada **aparenta ser una 
 y por eso nadie la revisa. `scripts/test-install.mjs::un_motivo_caducado_falla` convierte esa
 caducidad en un fallo: si un motivo niega la existencia de una superficie que el árbol versionado
 sí contiene, el gate se pone rojo y nombra los ficheros que lo desmienten.
-

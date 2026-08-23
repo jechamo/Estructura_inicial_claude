@@ -5,12 +5,21 @@
  * `VERSION` la reescribe `scripts/site-prep.mjs` a partir de package.json.
  */
 
-export const VERSION = '0.9.0';
+export const VERSION = '0.9.1';
 export const REPO = 'jechamo/Estructura_inicial_claude';
 export const URL_REPO = `https://github.com/${REPO}`;
 
 /** Referencia que se usa en los comandos: la etiqueta fija es lo que hace la instalación repetible. */
 export const REF_FIJA = `v${VERSION}`;
+
+export const CIERRE_RELEASE = Object.freeze({
+  command: 'node scripts/sdd-project.mjs run --release --summary-json',
+  alwaysExecuted: ['trace-audit', 'secret-scan', 'security', 'sdd-strict', 'docs-diff'],
+  reusable: ['coverage', 'e2e', 'a11y'],
+  editorialOnly: ['CHANGELOG', 'bitácora', 'evidence', 'informes', 'estado/progreso de spec'],
+  integrity: 'HMAC local anticorrupción + CI completa del workflow exacto y mismo SHA',
+  fallback: 'node scripts/sdd-project.mjs run --slow --summary-json',
+});
 
 export const NIVELES_CIRCUITO = [
   { id: 'light', limite: 'fichero exacto no ejecutable', cuando: 'documentación, copy, estilos o activos sin conducta nueva', expediente: 'sin cinco documentos; conserva gates y bitácora' },

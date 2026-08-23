@@ -25,6 +25,10 @@ import {
   validarSolicitudAprobacion,
 } from './lib/circuito.mjs';
 import { acotarResumen, ejecutarProcesoResumido, resumirEjecucion } from './lib/gate-summary.mjs';
+import {
+  contextoReutilizacionRelease, crearEntradaEvidenciaGates, evaluarReutilizacionRelease,
+  resultadoReutilizado,
+} from './lib/release-gates.mjs';
 
 const ROOT = process.cwd();
 const argv = process.argv.slice(2);
@@ -108,7 +112,7 @@ Trabajo sobre specs
 
 Ejecución y configuración
   context --phase <fase> [--spec NNN] [--task T-*] [--json]
-  run [--ci] [--fast|--slow] [--summary-json]
+  run [--ci] [--fast|--slow|--release] [--summary-json]
   verify [--json]                     verificación completa antes de entregar
   configure --accept-detected [--dry-run]
   generate <id> [--dry-run] [--json]  ejecuta un generador declarado
@@ -1675,33 +1679,43 @@ const SELLO_PATH = join(ROOT, '.sdd', 'state', 'last-gate-run.json');
  * distinción sobre la que se sostiene todo este sistema. Lo lee `guard-bash.mjs` antes de dejar
  * pasar un commit o un push.
  */
-function escribirSello(velocidad, ok, resultados) {
+function escribirSello(velocidad, ok, resultados, metadata = {}) {
   const huella = huellaArbol();
-  if (huella === null) return; // fuera de un repositorio git no hay nada que sellar
+  if (huella === null) return false; // fuera de un repositorio git no hay nada que sellar
+  try { validarRutaSinEnlaces(SELLO_PATH); } catch { return false; }
   const previo = (() => { try { return JSON.parse(leer(SELLO_PATH) || '{}'); } catch { return {}; } })();
+  const entrada = crearEntradaEvidenciaGates({ root: ROOT, kind: velocidad || 'all', ok,
+    tree: huella, at: new Date().toISOString(), results: resultados,
+    runId: metadata.runId || null, config: metadata.config });
+  if (['slow', 'release'].includes(velocidad) && !entrada.evidenceMac) return false;
   const registro = {
     ...previo,
-    [velocidad || 'all']: { ok, tree: huella, at: new Date().toISOString(), checks: resultados.map((r) => r.id) },
+    [velocidad || 'all']: entrada,
   };
   try {
     mkdirSync(dirname(SELLO_PATH), { recursive: true });
     writeFileSync(SELLO_PATH, `${JSON.stringify(registro, null, 2)}\n`, 'utf8');
-  } catch { /* el sello es una ayuda, no un requisito: si no se puede escribir, no se rompe el run */ }
+    return true;
+  } catch { return false; }
 }
 
 function ejecutarChecks() {
+  validarArgumentos({ banderas: ['--ci', '--fast', '--slow', '--release', '--summary-json', '--json'] });
   const config = cargarChecks();
-  // Sin bandera se ejecuta todo: el comportamiento anterior no cambia. `--fast` y `--slow`
-  // existen para partir el coste entre el commit y el push.
-  const filtro = argv.includes('--fast') ? 'fast' : argv.includes('--slow') ? 'slow' : null;
+  const modos = ['--fast', '--slow', '--release'].filter((flag) => argv.includes(flag));
+  if (modos.length > 1) throw new Error(`run admite un solo modo: ${modos.join(', ')}.`);
+  // Sin bandera se ejecuta todo. Release conserva la verificación fresca de trazas/secretos/docs
+  // y solo reutiliza los tres checks conductuales cuyo contenido material siga idéntico.
+  const filtro = argv.includes('--fast') ? 'fast' : argv.includes('--slow') ? 'slow' :
+    argv.includes('--release') ? 'release' : null;
   const resultados = [];
   const omitidos = [];
   let fallo = false;
   const startedAt = new Date().toISOString();
   const runId = `${startedAt.replace(/[:.]/g, '-')}-${randomBytes(4).toString('hex')}`;
   const ejecutar = (id, command, speed, args = null) => {
-    if (SUMMARY_OUT) return ejecutarProcesoResumido({ id, command, args, cwd: ROOT,
-      shell: !args, timeoutMs: 15 * 60_000, maxBuffer: 1024 * 1024 });
+    if (SUMMARY_OUT) return { ...ejecutarProcesoResumido({ id, command, args, cwd: ROOT,
+      shell: !args, timeoutMs: 15 * 60_000, maxBuffer: 1024 * 1024 }), execution: 'executed' };
     const inicio = Date.now();
     const options = {
       cwd: ROOT,
@@ -1714,19 +1728,41 @@ function ejecutarChecks() {
       ? spawnSync(command, args, { ...options, shell: false })
       : spawnSync(command, { ...options, shell: true });
     const timedOut = result.error?.code === 'ETIMEDOUT';
-    return resumirEjecucion({
+    return { ...resumirEjecucion({
       id, command: args ? [command, ...args].join(' ') : command,
       status: result.status, signal: result.signal, durationMs: Date.now() - inicio,
       stdout: result.stdout, stderr: result.stderr || result.error?.message, timedOut,
-    });
+    }), execution: 'executed' };
   };
-  if (filtro === 'slow') {
+  const slowChecks = Object.entries(config.checks || {})
+    .filter(([id, check]) => check?.command && check.enabled !== false && velocidadDe(check, id) === 'slow')
+    .map(([id]) => id);
+  let releaseDecision = null;
+  let previousSlow = null;
+  if (filtro === 'release') {
+    validarRutaSinEnlaces(SELLO_PATH);
+    const state = (() => { try { return JSON.parse(leer(SELLO_PATH) || '{}'); } catch { return {}; } })();
+    previousSlow = state.slow || null;
+    releaseDecision = evaluarReutilizacionRelease(previousSlow,
+      contextoReutilizacionRelease(ROOT, config, previousSlow, slowChecks));
+    if (!releaseDecision.ok) {
+      resultados.push({ ...resumirEjecucion({ id: 'release-reuse', command: 'validar evidencia slow reutilizable',
+        status: 1, signal: null, durationMs: 0, stdout: '',
+        stderr: `${releaseDecision.reason} Ejecuta: ${releaseDecision.fallbackCommand}` }), execution: 'executed' });
+      fallo = true;
+    }
+  }
+  let base = null;
+  if (['slow', 'release'].includes(filtro) && !fallo) {
     const candidates = [process.env.SDD_DIFF_BASE, 'origin/main', 'HEAD~1'].filter(Boolean);
-    const base = candidates.find((ref) => spawnSync('git', ['rev-parse', '--verify', ref], { cwd: ROOT, encoding: 'utf8' }).status === 0);
+    const baseRef = candidates.find((ref) => spawnSync('git', ['rev-parse', '--verify', `${ref}^{commit}`],
+      { cwd: ROOT, encoding: 'utf8' }).status === 0);
+    if (baseRef) base = (spawnSync('git', ['rev-parse', `${baseRef}^{commit}`],
+      { cwd: ROOT, encoding: 'utf8' }).stdout || '').trim();
     if (!base) {
       const audit = resumirEjecucion({ id: 'trace-audit', command: 'git base requerida', status: 1,
         signal: null, durationMs: 0, stdout: '', stderr: 'run --slow no pudo resolver una base material para trace-audit.' });
-      resultados.push(audit);
+      resultados.push({ ...audit, execution: 'executed' });
       fallo = true;
     } else {
       const audit = ejecutar('trace-audit', process.execPath, 'slow',
@@ -1735,16 +1771,44 @@ function ejecutarChecks() {
       if (audit.status !== 0) fallo = true;
     }
   }
+  if (filtro === 'release' && !fallo) {
+    for (const [id, args] of [
+      ['secret-scan', ['scripts/scan-secrets.mjs', '--json']],
+      ['sdd-strict', ['scripts/check-sdd.mjs', '--strict']],
+      ['docs-diff', ['scripts/check-sdd.mjs', '--docs-diff', '--base', base]],
+    ]) {
+      const result = ejecutar(id, process.execPath, 'release', args);
+      resultados.push(result);
+      if (result.status !== 0) fallo = true;
+    }
+  }
   for (const [id, check] of Object.entries(config.checks || {})) {
     if (!check?.command || check.enabled === false) continue;
     const velocidad = velocidadDe(check, id);
-    if (filtro && velocidad !== filtro) { omitidos.push(id); continue; }
+    if (filtro === 'release') {
+      if (velocidad !== 'slow') { omitidos.push(id); continue; }
+      if (releaseDecision?.reusedChecks.includes(id)) {
+        const source = previousSlow.results.find((result) => result.id === id);
+        resultados.push(resultadoReutilizado(source, previousSlow));
+        continue;
+      }
+    } else if (filtro && velocidad !== filtro) { omitidos.push(id); continue; }
+    if (fallo && filtro === 'release') { omitidos.push(id); continue; }
     const resultado = ejecutar(id, check.command, velocidad);
     resultados.push(resultado);
     if (resultado.status !== 0 && check.required !== false) fallo = true;
   }
   const noConfigurados = (config.unconfigured || []).filter((id) =>
-    !filtro || (GATES[gateBase(id)] || 'fast') === filtro);
+    !filtro || (filtro === 'release' ? (GATES[gateBase(id)] || 'fast') === 'slow' :
+      (GATES[gateBase(id)] || 'fast') === filtro));
+  if (resultados.length && !escribirSello(filtro, !fallo, resultados, { runId, config }) &&
+      ['slow', 'release'].includes(filtro)) {
+    resultados.push({ ...resumirEjecucion({ id: 'gate-evidence', command: 'persistir evidencia autenticada',
+      status: 1, signal: null, durationMs: 0, stdout: '',
+      stderr: 'No se pudo crear o persistir el sello HMAC local; la ejecución no es reutilizable.' }),
+    execution: 'executed' });
+    fallo = true;
+  }
   const estado = fallo ? 'fail' : resultados.length ? 'pass' : 'unconfigured';
   const resumen = acotarResumen({
     schemaVersion: 1, runId, ok: !fallo, status: estado, speed: filtro,
@@ -1778,7 +1842,6 @@ function ejecutarChecks() {
     if (omitidos.length) console.log(`  · omitidos por velocidad: ${omitidos.join(', ')}`);
     if (noConfigurados.length) console.log(`  · no configurados: ${noConfigurados.join(', ')}`);
   } else console.log(JSON.stringify(resumen));
-  if (resultados.length) escribirSello(filtro, !fallo, resultados);
   if (fallo) process.exitCode = 1;
 }
 

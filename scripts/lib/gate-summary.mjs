@@ -101,10 +101,16 @@ export function acotarResumen(resumen, maxBytes = MAX_SUMMARY_BYTES) {
     first.output = sanitizarSalida(original, Math.max(0, remaining)).text;
   }
   if (size(bounded) > maxBytes && first) first.output = '';
+  if (size(bounded) > maxBytes) bounded.results = (bounded.results || []).map((result) =>
+    result.execution === 'reused' ? {
+      id: result.id, status: result.status, outputHash: result.outputHash, execution: 'reused',
+      sourceRunId: result.sourceRunId, sourceAt: result.sourceAt, sourceHead: result.sourceHead,
+      reason: result.reason,
+    } : result);
   let omitted = 0;
-  while (size(bounded) > maxBytes && (bounded.results || []).length > (first ? 1 : 0)) {
+  while (size(bounded) > maxBytes) {
     let index = bounded.results.length - 1;
-    while (index >= 0 && bounded.results[index] === first) index -= 1;
+    while (index >= 0 && (bounded.results[index] === first || bounded.results[index].execution === 'reused')) index -= 1;
     if (index < 0) break;
     bounded.results.splice(index, 1);
     omitted += 1;
@@ -122,9 +128,11 @@ export function acotarResumen(resumen, maxBytes = MAX_SUMMARY_BYTES) {
   if (size(bounded) > maxBytes) {
     const minimalFailure = first ? { id: first.id, status: first.status, timedOut: first.timedOut,
       outputHash: first.outputHash, output: sanitizarSalida(first.output, 512).text } : null;
+    const reused = (bounded.results || []).filter((result) => result.execution === 'reused');
     const fallback = { schemaVersion: bounded.schemaVersion, runId: bounded.runId, ok: bounded.ok,
       status: bounded.status, speed: bounded.speed, summaryTruncated: true,
-      results: minimalFailure ? [minimalFailure] : [], resultsOmitted: originalCount - (minimalFailure ? 1 : 0) };
+      results: [...(minimalFailure ? [minimalFailure] : []), ...reused],
+      resultsOmitted: originalCount - reused.length - (minimalFailure ? 1 : 0) };
     if (size(fallback) <= maxBytes) return fallback;
     if (minimalFailure) minimalFailure.output = '';
     return fallback;

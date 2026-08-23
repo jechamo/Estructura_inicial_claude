@@ -28,7 +28,13 @@
       "scripts/test-trace-audit.mjs"
     ],
     [
+      "scripts/test-context.mjs"
+    ],
+    [
       "scripts/test-gate-summary.mjs"
+    ],
+    [
+      "scripts/test-release-gates.mjs"
     ],
     [
       "scripts/skills-sync.mjs",

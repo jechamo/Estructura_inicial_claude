@@ -25,6 +25,7 @@ la auditoría completa ya está integrada.
 | RF-02 / CA-03 | `scripts/sdd-project.mjs` | contexto por encabezados, spec y tarea | `scripts/test-context.mjs` |
 | RF-03 / CA-04 | runner de gates | resumen sanitizado acotado, sin salida cruda | `scripts/test-gate-summary.mjs` |
 | RF-05 / CA-05 | manifiesto, skills y documentación | paridad, TFM, Pages y benchmark | suites de instalación/docs/benchmark |
+| RF-06 / CA-06 | runner, sello local y guarda de push | `run --release`, huella material y procedencia executed/reused | `scripts/test-release-gates.mjs` + hooks/install |
 
 ## 2. Contrato del circuito
 
@@ -104,7 +105,7 @@ segmento con `lstat`/no-follow y nunca guarda salida cruda ni artefactos version
 | aprobación humana | propuesta/configuración editable | agente aprueba, hash obsoleto o edición posterior parece válida | SEC-CIRCUIT-002 |
 | historia y autoría | mensajes/diffs de Git | trailer falso, frontera ampliada o grupo rotado legitima el commit | SEC-CIRCUIT-003/004/006 |
 | política contextual | spec, tarea, documentos y salida Git | prompt injection se carga como instrucción o elimina controles | SEC-CONTEXT-001 |
-| evidencia local | comando/stdout/stderr de procesos | fuga de secreto, log injection o agotamiento de recursos | SEC-EVIDENCE-001/002 |
+| evidencia local | comando/stdout/stderr de procesos y sellos reutilizables | fuga de secreto, log injection, evidencia obsoleta o agotamiento de recursos | SEC-EVIDENCE-001/002/003 |
 
 Controles Agentic: toda salida de fichero, Git, herramienta o benchmark se delimita como dato;
 nunca modifica política ni gates. Los agentes no pueden ejecutar `approve-circuit`; permisos,
@@ -122,6 +123,7 @@ auditoría. La ausencia o manipulación de metadatos falla cerrada.
 | SEC-CONTEXT-001 | 5.0.0 V1.3.6, V16.5.3 · L2 | A05,A08,A10:2025 · Agentic | sí | datos delimitados, seguridad universal y recorte fail-closed | T-017-03 | `scripts/test-context.mjs::ignora_instrucciones_y_falla_ante_estructura_invalida` | `evidence.md#SEC-CONTEXT-001` |
 | SEC-EVIDENCE-001 | 5.0.0 V16.2.1, V16.2.5, V16.3.4 · L2 | A05,A09:2025 | sí | redacción de comando/canales antes de persistir y sin raw | T-017-03 | `scripts/test-gate-summary.mjs::redacta_todos_los_canales_antes_de_persistir` | `evidence.md#SEC-EVIDENCE-001` |
 | SEC-EVIDENCE-002 | 5.0.0 V15.1.3, V15.2.2 · L2 | A09,A10:2025 | sí | timeout/cancelación reales, maxBuffer y resumen total n-1/n/n+1 | T-017-03 | `scripts/test-gate-summary.mjs::acota_tiempo_y_salida` | `evidence.md#SEC-EVIDENCE-002` |
+| SEC-EVIDENCE-003 | 5.0.0 V16.2.1, V16.3.3, V16.5.3 · L2 | A08,A09:2025 | sí | PASS ancestral con HMAC local anticorrupción; checks/runtime/host/entradas idénticos; rutas regulares y acotadas; procedencia preservada; autoridad remota por workflow exacto, SHA y `main` | T-017-06 | `scripts/test-release-gates.mjs::reutiliza_solo_evidencia_materialmente_vigente` | `evidence.md#SEC-EVIDENCE-003` |
 
 No aplican AuthN/JWT/CSRF, datos personales, base de datos ni egress: no existen esas superficies
 en el cambio. No se crean logs de negocio ni alertas remotas; la observabilidad es el resumen local
@@ -131,9 +133,9 @@ configuración y, sin contrato aprobado válido, queda en `full`.
 | DOC-ID | Fuente | Artefacto | Tarea | Comprobación | Evidencia | Owner | Estado |
 |---|---|---|---|---|---|---|---|
 | DOC-CIRCUITO | clasificador/CLI | modelo operativo, AGENTS/hosts/skills | T-017-04 | check-sdd + skills-sync | `evidence.md#DOC-CIRCUITO` | docs-writer | verificado |
-| DOC-GATES | runner/auditor/workflows | guía y definición de hecho | T-017-04 | gates CI/hook | `evidence.md#DOC-GATES` | docs-writer | verificado |
-| DOC-TFM | contrato implementado | `docs/TFM/MEMORIA-TECNICA-TFM.md`; cinco diagramas `.excalidraw` de `docs/TFM/` | T-017-04 | JSON válido, conceptos y versión | `evidence.md#DOC-TFM` | docs-writer | verificado |
-| DOC-PAGES | contrato implementado | `site/index.html`, `site/documentacion.html`, datos | T-017-04 | site-prep + a11y | `evidence.md#DOC-PAGES` | docs-writer | verificado |
+| DOC-GATES | runner/auditor/workflows | guía y definición de hecho | T-017-04, T-017-06 | gates CI/hook | `evidence.md#DOC-GATES` | docs-writer | verificado |
+| DOC-TFM | contrato implementado | `docs/TFM/MEMORIA-TECNICA-TFM.md`; cinco diagramas `.excalidraw` de `docs/TFM/` | T-017-04, T-017-06 | JSON válido, conceptos y versión | `evidence.md#DOC-TFM` | docs-writer | verificado |
+| DOC-PAGES | contrato implementado | `site/index.html`, `site/documentacion.html`, datos | T-017-04, T-017-06 | site-prep + a11y | `evidence.md#DOC-PAGES` | docs-writer | verificado |
 
 ## 6. Riesgos, benchmark y entrega
 
@@ -153,13 +155,13 @@ configuración y, sin contrato aprobado válido, queda en `full`.
 | Persona | usuario |
 | Fecha | 2026-08-22 |
 | Alcance | plan solicitado completo, una entrega atómica en `feature/mejoras_codex` |
-| Riesgos aceptados | ninguno; los nueve controles son bloqueantes |
+| Riesgos aceptados | ninguno; los diez controles son bloqueantes |
 
 ### HANDOFF
 - Agente origen: planner
 - Fase completada: plan
 - Artefactos: `plan.md`, `test-plan.md`
-- Seguridad: nueve controles aplicables; auditoría plan/verify obligatoria
+- Seguridad: diez controles aplicables; auditoría plan/verify obligatoria
 - UX: sin-ui
 - Documentación: cuatro DOC-ID en la misma entrega
 - Conformidad: arquitectura vigente respetada; sin ADR ni dependencias

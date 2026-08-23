@@ -4,14 +4,17 @@ on:
   pull_request:
   push:
     branches: ['**']
+    tags: ['v*']
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   # Lo barato primero: si el lint falla, no tiene sentido gastar diez minutos en E2E.
   fast:
     name: Gates rápidos
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -38,6 +41,7 @@ jobs:
 
   slow:
     name: Gates lentos
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     needs: fast
     runs-on: ubuntu-latest
     steps:
@@ -58,3 +62,21 @@ jobs:
       # `deps-audit` y `security` solo se ejecutan si el proyecto declaró un comando real en
       # `.sdd/checks.json`. Un gate sin configurar queda visible como tal; nunca se imprime como
       # auditoría superada ni se presupone npm, pnpm, yarn, Python u otro stack.
+
+  tag-attestation:
+    name: Tag sobre SHA ya verificado
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Exigir que el tag apunte a main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: Reutilizar la atestación CI del mismo SHA, no repetir slow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          verified="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/sdd-gates.yml/runs?head_sha=${GITHUB_SHA}&status=success&event=push&branch=main&per_page=100" --jq '[.workflow_runs[] | select(.path == ".github/workflows/sdd-gates.yml" and .head_sha == env.GITHUB_SHA and .event == "push" and .head_branch == "main" and .conclusion == "success")] | length > 0')"
+          test "$verified" = "true"

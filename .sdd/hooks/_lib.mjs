@@ -226,7 +226,7 @@ export function listDirs(path) {
   }
 }
 
-function rutaConfinadaSinEnlaces(root, path) {
+export function rutaConfinadaSinEnlaces(root, path) {
   const rootAbs = resolve(root);
   const target = resolve(path);
   const rel = relative(rootAbs, target);

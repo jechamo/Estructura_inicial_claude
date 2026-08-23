@@ -190,7 +190,7 @@ function workflow_supply_chain(destino) {
   const ci = leer(join(destino, '.github/workflows/sdd-gates.yml')) || '';
   const referencias = [...ci.matchAll(/uses:\s*[^@\s]+@([^\s#]+)/g)].map((m) => m[1]);
   return !!ci && referencias.length > 0 && referencias.every((ref) => /^[0-9a-f]{40}$/.test(ref)) &&
-    (ci.match(/persist-credentials:\s*false/g) || []).length === 2 &&
+    (ci.match(/persist-credentials:\s*false/g) || []).length === (ci.match(/uses:\s*actions\/checkout@/g) || []).length &&
     /scan-secrets\.mjs/.test(ci) && /run --fast/.test(ci) && /run --slow/.test(ci) &&
     !/test-install\.mjs|\b(?:npm|pnpm|yarn)\s+(?:ci|run|audit)\b|upload-artifact@v\d/.test(ci);
 }
@@ -1173,14 +1173,14 @@ console.log('\ntrace-correct · contrato documental de main móvil y tag estable
 // release_rechaza_tag_existente_o_ci_rojo
 console.log('\nrelease · contrato inmutable y fail-closed');
 {
-  const ship = leer(join(ORIGEN, '.agents/skills/sdd-ship/SKILL.md')) || '';
+  const ship = leer(join(ORIGEN, '.agents/skills/sdd-ship/SKILL.md')) || ''; const sddWorkflow = leer(join(ORIGEN, '.github/workflows/sdd-gates.yml')) || '';
   comprueba('debe_prohibir_mover_o_forzar_un_tag_existente',
     /no se mueve|no mover|inmutable/i.test(`${ship}\n${leer(join(ORIGEN, 'docs/specs/010-trazabilidad-release-latest/spec.md')) || ''}`) &&
     /push --force|force/i.test(ship));
   comprueba('debe_condicionar_tag_a_gates_y_ci_verdes',
     /CI.*verde|gates.*verde/i.test(leer(join(ORIGEN, 'docs/specs/010-trazabilidad-release-latest/spec.md')) || ''));
+  comprueba('el tag reutiliza una atestación CI del mismo SHA sin repetir slow', /tags: \['v\*'\]/.test(sddWorkflow) && /head_sha=\$\{GITHUB_SHA\}/.test(sddWorkflow) && /actions\/workflows\/sdd-gates\.yml\/runs/.test(sddWorkflow) && /\.path == "\.github\/workflows\/sdd-gates\.yml"/.test(sddWorkflow) && /Tag sobre SHA ya verificado/.test(sddWorkflow));
 }
-
 // ─── 1 · Instalación limpia ──────────────────────────────────────────────────
 console.log('\n1 · init sobre un directorio vacío');
 {
@@ -1643,7 +1643,7 @@ console.log('\n1 · init sobre un directorio vacío');
   comprueba('checks.json nace sin comandos de stack y con el vocabulario ampliado',
     Object.keys(checksInstalados.checks).length === 1 && checksInstalados.checks.sdd &&
     ['coverage', 'e2e', 'smells', 'a11y', 'deps-audit', 'docs', 'security'].every((g) => checksInstalados.unconfigured.includes(g)));
-
+  const ayudaRun = spawnSync(process.execPath, ['scripts/sdd-project.mjs', '--help'], { cwd: d, encoding: 'utf8' }); comprueba('la instalación distribuye run --release y su validador', ayudaRun.status === 0 && /--fast\|--slow\|--release/.test(ayudaRun.stdout || '') && existsSync(join(d, 'scripts/lib/release-gates.mjs')));
   const rapidos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--fast', '--json'], { cwd: d, encoding: 'utf8' });
   const lentos = spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow', '--json'], { cwd: d, encoding: 'utf8' });
   let salidaRapidos = null;

@@ -3787,11 +3787,11 @@
       "fillStyle": "solid",
       "fontSize": 12,
       "fontFamily": 2,
-      "text": "check-sdd --strict\nrun --fast/--slow --summary-json",
+      "text": "check-sdd --strict\nrun --release --summary-json",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "n-2206",
-      "originalText": "check-sdd --strict\nrun --fast/--slow --summary-json",
+      "originalText": "check-sdd --strict\nrun --release --summary-json",
       "lineHeight": 1.25,
       "autoResize": false
     },
@@ -5455,11 +5455,11 @@
       "fillStyle": "solid",
       "fontSize": 14,
       "fontFamily": 2,
-      "text": "Circuit-config fija la frontera del padre; el diff real solo puede escalar. context --phase y run --summary-json reducen contexto, mientras --trace-audit conserva la falsabilidad.",
+      "text": "Circuit-config fija la frontera del padre; el diff real solo puede escalar. context --phase y run --summary-json reducen contexto. run --release reutiliza solo coverage/E2E/a11y; trace, secretos y docs se ejecutan.",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": null,
-      "originalText": "Circuit-config fija la frontera del padre; el diff real solo puede escalar. context --phase y run --summary-json reducen contexto, mientras --trace-audit conserva la falsabilidad.",
+      "originalText": "Circuit-config fija la frontera del padre; el diff real solo puede escalar. context --phase y run --summary-json reducen contexto. run --release reutiliza solo coverage/E2E/a11y; trace, secretos y docs se ejecutan.",
       "lineHeight": 1.25,
       "autoResize": true
     }

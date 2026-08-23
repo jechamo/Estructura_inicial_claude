@@ -448,7 +448,10 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
       readFileSync(join(process.cwd(), 'scripts/lib/circuito.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/lib/gate-summary.mjs'),
       readFileSync(join(process.cwd(), 'scripts/lib/gate-summary.mjs'), 'utf8'), 'utf8');
+    writeFileSync(join(proyecto, 'scripts/lib/release-gates.mjs'),
+      readFileSync(join(process.cwd(), 'scripts/lib/release-gates.mjs'), 'utf8'), 'utf8');
     writeFileSync(join(proyecto, 'scripts/check-sdd.mjs'), 'process.exit(0);\n', 'utf8');
+    writeFileSync(join(proyecto, 'scripts/scan-secrets.mjs'), 'process.exit(0);\n', 'utf8');
     writeFileSync(join(proyecto, '.sdd/checks.json'), JSON.stringify({
       version: 1,
       checks: {
@@ -474,6 +477,16 @@ comprueba('npm test se permite', decisionDe('guard-bash.mjs', ejecutar('npm test
     spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--slow'], { cwd: proyecto, encoding: 'utf8' });
     comprueba('un sello slow completo sobre el árbol actual no avisa de gates',
       /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+
+    spawnSync(process.execPath, ['scripts/sdd-project.mjs', 'run', '--release'], { cwd: proyecto, encoding: 'utf8' });
+    const selloRelease = JSON.parse(readFileSync(join(proyecto, '.sdd/state/last-gate-run.json'), 'utf8'));
+    comprueba('un sello release completo y vigente satisface la guarda de push',
+      /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), true);
+    selloRelease.release.evidenceHash = '0'.repeat(64);
+    delete selloRelease.slow;
+    writeFileSync(join(proyecto, '.sdd/state/last-gate-run.json'), JSON.stringify(selloRelease), 'utf8');
+    comprueba('un sello release manipulado no satisface la guarda de push',
+      /Gates: pasados sobre este mismo estado/.test(salidaDe('guard-bash.mjs', payload('git push origin main'))), false);
 
     writeFileSync(join(proyecto, 'contenido.txt'), 'base\n', 'utf8');
     spawnSync('git', ['add', 'contenido.txt'], { cwd: proyecto, encoding: 'utf8' });

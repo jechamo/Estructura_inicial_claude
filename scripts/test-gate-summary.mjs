@@ -58,6 +58,18 @@ assert.ok(Buffer.byteLength(JSON.stringify(many), 'utf8') <= 8192,
   'RED: 200 resultados verdes también deben caber en el límite total');
 assert.ok(many.resultsOmitted > 0, 'el resumen declara cuántos resultados omitió');
 
+const reuseHeavy = summary.acotarResumen({ schemaVersion: 1, runId: 'reuse-heavy', status: 'pass', ok: true,
+  results: [
+    ...Array.from({ length: 48 }, (_, index) => ({ ...result, id: `executed-${index}`, status: 0,
+      command: 'x'.repeat(500), output: '', execution: 'executed' })),
+    ...['coverage', 'e2e', 'a11y'].map((id) => ({ ...result, id, status: 0, output: '',
+      execution: 'reused', sourceRunId: 'slow-source-017', sourceAt: '2026-08-23T10:00:00.000Z',
+      sourceHead: 'a'.repeat(40), reason: 'huella idéntica' })),
+  ] });
+assert.deepEqual(reuseHeavy.results.filter((entry) => entry.execution === 'reused').map((entry) => entry.id).sort(),
+  ['a11y', 'coverage', 'e2e'], 'la cota nunca elimina la procedencia de resultados reused');
+assert.ok(Buffer.byteLength(`${JSON.stringify(reuseHeavy, null, 2)}\n`, 'utf8') <= 8192);
+
 const failureLast = summary.acotarResumen({ schemaVersion: 1, runId: 'fallo-final', status: 'fail', ok: false,
   results: [
     ...Array.from({ length: 200 }, (_, index) => ({ ...result, id: `verde-${index}`, status: 0, output: '' })),

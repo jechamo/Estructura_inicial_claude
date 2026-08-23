@@ -26,7 +26,7 @@ Fuentes de verdad: `AGENTS.md`, `docs/sdd/OPERATING-MODEL.md`, `docs/architectur
 - Un repositorio Git destino, nuevo o existente.
 - Un IDE/host compatible y un workspace marcado como confiable.
 
-La instalacion no instala dependencias de aplicacion, no hace `git add`, no crea commits y no escribe credenciales. Para una ejecucion reproducible debe usarse un tag inmutable publicado; la version preparada por este trabajo es `v0.9.0`. El tag no se publica hasta que lo apruebe el equipo.
+La instalacion no instala dependencias de aplicacion, no hace `git add`, no crea commits y no escribe credenciales. Para una ejecucion reproducible debe usarse un tag inmutable publicado; la version preparada por este trabajo es `v0.9.1`. El tag no se publica hasta que lo apruebe el equipo.
 
 ## Circuito proporcional y presupuesto de contexto (v0.9.0)
 
@@ -90,6 +90,46 @@ configuracion del padre, territorio, autor, sello de intencion y limites agregad
 `context --phase <fase> --spec NNN --task T-*` recorta la politica y el expediente. `run
 --fast|--slow --summary-json` devuelve evidencia sanitizada y acotada; nunca persiste salida cruda.
 
+### Cierre de release sin repetir el slow completo (enmienda preparada para v0.9.1)
+
+El slow completo sigue siendo obligatorio cuando cambia codigo, configuracion, dependencias,
+Pages, la propia Memoria TFM o el circuito. La optimizacion solo cubre el paso editorial que suele
+ocurrir despues: cerrar CHANGELOG, bitacora, evidence, campos de estado/progreso de la spec e informes.
+
+```powershell
+# 1. Contenido funcional definitivo: todos los gates lentos se ejecutan.
+node scripts/sdd-project.mjs run --slow --summary-json
+
+# 2. Tras el commit editorial de cierre: verificacion selectiva y auditable.
+node scripts/sdd-project.mjs run --release --summary-json
+```
+
+`--release` busca el ultimo slow local verde y comprueba que su commit sea ancestro, que coincidan
+Node/plataforma, `.sdd/checks.json` y la huella de todas las entradas no editoriales. Solo entonces
+coverage, E2E y a11y aparecen como `execution: "reused"`, con `sourceRunId`, fecha y SHA de origen.
+Trace-audit, escaneo de secretos, strict y diff documental se ejecutan siempre y aparecen como
+`execution: "executed"`. No se reutiliza evidencia entre maquinas.
+
+El sello no se autofirma con un hash simple: usa HMAC-SHA-256 y una clave aleatoria local guardada
+bajo el directorio Git, fuera del arbol versionado. Detecta corrupcion y mezcla entre clones, pero
+no autentica frente a otro proceso del mismo usuario, que puede leer esa clave. Por eso la autoridad
+de publicacion es la CI completa del workflow exacto `sdd-gates.yml` sobre el mismo SHA de `main`.
+Tambien se rechazan hardlinks, junctions y entradas que superan las cuotas de lectura.
+
+Si falta evidencia, esta en rojo o cambia cualquier fichero material, el comando falla sin lanzar
+automaticamente la suite costosa y muestra `run --slow --summary-json`. De este modo una persona
+puede decidir si lo ejecuta ella o el agente. Un tag o una GitHub Release sobre el mismo SHA no
+cambia bytes, por lo que no exige repetir el slow. CI conserva la ejecucion completa.
+
+Los campos de estado/progreso se normalizan antes de calcular la huella. El resto de `spec.md` y
+`tasks.md` sigue protegido: cambiar requisitos, criterios, plan o pruebas invalida la reutilizacion.
+La bitacora solo puede anteponer historia, evidence solo puede anexarla y un informe ya existente
+es inmutable; un informe nuevo si puede formar parte del cierre.
+
+El push exclusivo de un tag no ejecuta gates locales otra vez. Un workflow remoto comprueba que
+el tag apunta a un commit contenido en `main` y que `SDD gates` ya termino en verde sobre exactamente
+ese SHA. Por eso `--no-verify` no crea una via de publicacion sin control y el slow no se repite.
+
 El benchmark 017 regenera su linea base y exige una reduccion mediana minima del 70 % para
 `compact` y del 20 % para `full`, manteniendo 100 % de clasificacion y expectativas funcionales.
 La ejecución verificada de esta rama obtuvo 76,00 % en `compact`, 71,30 % en `full` y 100 % de
@@ -99,10 +139,10 @@ exponen de forma fiable tokens consumidos por intervencion.
 
 ```powershell
 # 1. Inspeccion sin escribir nada
-npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 init "C:\ruta\proyecto" --mode auto --dry-run
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.1 init "C:\ruta\proyecto" --mode auto --dry-run
 
 # 2. Instalacion materializada; auto preserva un proyecto con contenido
-npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 init "C:\ruta\proyecto" --mode auto
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.1 init "C:\ruta\proyecto" --mode auto
 
 # 3. Comprobaciones del motor instalado
 node scripts/check-sdd.mjs
@@ -115,8 +155,8 @@ node scripts/sdd-project.mjs status --json
 
 ```powershell
 # Actualizacion y comprobacion de una instalacion existente
-npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 check "C:\ruta\proyecto"
-npx --yes github:jechamo/Estructura_inicial_claude#v0.9.0 update "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.1 check "C:\ruta\proyecto"
+npx --yes github:jechamo/Estructura_inicial_claude#v0.9.1 update "C:\ruta\proyecto"
 
 # Hooks locales opcionales: requieren una decision explicita del equipo
 git config core.hooksPath .sdd/githooks

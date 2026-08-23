@@ -361,6 +361,30 @@ Una tarea **no está hecha** hasta que todo esto está en verde:
 - [ ] `tasks.md` actualizado
 - [ ] Observabilidad: logs estructurados, métricas y trazas en los caminos nuevos
 
+### 7.1 Cierre editorial sin repetir evidencia conductual
+
+`run --slow` conserva su significado: ejecuta todos los gates lentos. Después de ese PASS, un
+cierre que solo modifica CHANGELOG, bitácora, evidencia, el campo de estado/progreso de la spec o informes puede usar
+`node scripts/sdd-project.mjs run --release --summary-json`. No es un bypass:
+
+- trace-audit, secretos, strict y diff documental se ejecutan otra vez;
+- coverage, E2E y a11y solo se marcan `reused`, con `sourceRunId`, si el slow es ancestral y
+  coinciden configuración, runtime y huella de todas las entradas no editoriales;
+- Pages, TFM, workflows, dependencias, SDD, skills, scripts o código cambian la huella y fuerzan
+  el slow completo;
+- reescribir requisitos, plan o pruebas también cambia la huella aunque el fichero sea de la spec;
+- evidencia ausente, roja, manipulada o de otra máquina falla cerrado y muestra el comando slow;
+- la evidencia lleva HMAC con clave local de 256 bits bajo el directorio Git; detecta corrupción y
+  mezcla entre clones, pero no autentica frente a procesos del mismo usuario;
+- bitácora y evidence conservan la historia previa por prepend/append, y un informe ya existente
+  no puede reescribirse durante el cierre;
+- un tag o release sobre el mismo SHA no altera el árbol ni invalida el sello; el workflow de tag
+  exige una ejecución completa previa del workflow exacto `sdd-gates.yml` sobre ese SHA en `main`;
+  esa CI, no el sello local, es la autoridad de publicación.
+
+La salida distingue `executed` de `reused`. Reutilizar evidencia significa demostrar que sus
+entradas no cambiaron, nunca afirmar que el proceso volvió a ejecutarse.
+
 ---
 
 ## 8. Seguridad (siempre activa, no una fase final)

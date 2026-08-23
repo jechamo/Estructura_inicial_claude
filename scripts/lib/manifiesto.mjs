@@ -69,6 +69,7 @@ La fuente completa sigue en [\`docs/sdd/OPERATING-MODEL.md\`](docs/sdd/OPERATING
 - \`orchestrator\` es la entrada; solo \`orchestrator\`, \`planner\` e \`implementer\` delegan.
 - La profundidad máxima es de dos saltos; los especialistas siempre devuelven el control.
 - Las decisiones viven en la bitácora o en un ADR, nunca únicamente en el chat.
+- Antes del push funcional se ejecuta \`run --slow\`; un cierre solo editorial usa \`run --release\`, que reutiliza evidencia únicamente si checks, runtime y entradas materiales siguen idénticos.
 
 ### HANDOFF
 - Agente origen:
@@ -558,6 +559,7 @@ const EXCLUSIONES_EXACTAS = new Set([
   'scripts/install.mjs', 'scripts/test-install.mjs',
   'scripts/test-circuit.mjs', 'scripts/test-trace-audit.mjs',
   'scripts/test-context.mjs', 'scripts/test-gate-summary.mjs',
+  'scripts/test-release-gates.mjs',
   '.github/workflows/quality-gates.yml',
 ]);
 
@@ -571,6 +573,7 @@ export function debeCopiar(ruta, { conBaseline = false, conMcp = false } = {}) {
     'scripts/lib/docs-contract.mjs',
     'scripts/lib/gate-summary.mjs',
     'scripts/lib/jsonc.mjs',
+    'scripts/lib/release-gates.mjs',
     'scripts/lib/trace-audit.mjs',
   ].includes(r)) return false;
   if (r.startsWith('scripts/test/')) return false;

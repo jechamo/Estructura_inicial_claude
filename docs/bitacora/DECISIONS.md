@@ -9,6 +9,66 @@
 
 ---
 
+## 2026-08-23 · Delimitar la confianza de la evidencia local de release
+
+- **Tipo**: rectificación de seguridad de la decisión siguiente
+- **Contexto**: la auditoría independiente confirmó que cualquier proceso con la identidad del
+  usuario puede leer la clave local del clon; el HMAC no puede autenticar frente a ese mismo actor.
+- **Decisión / hecho**: el sello local detecta corrupción, mezcla entre clones y cambios
+  accidentales, pero no constituye autoridad de publicación. La autoridad para tag y release es la
+  ejecución completa del workflow exacto `.github/workflows/sdd-gates.yml`, sobre el mismo SHA de
+  `main`. El workflow se identifica por ruta, evento, rama, SHA y conclusión, nunca por nombre.
+- **Impacto**: la guarda local puede autorizar el push editorial dentro de la frontera de confianza
+  del usuario, pero no se presenta como atestación resistente a código local malicioso. CI vuelve a
+  ejecutar el slow completo y es la frontera independiente que habilita la publicación.
+- **Deuda aceptada**: una firma local resistente al mismo usuario requeriría otro principal o un
+  servicio externo. No se introduce esa dependencia porque CI ya ocupa esa frontera de autoridad.
+- **Referencias**: T-017-06 · SEC-EVIDENCE-003 · re-VERIFY de 2026-08-23
+- **Quién**: implementer por hallazgo del security-auditor
+
+---
+
+## 2026-08-23 · Endurecer la reutilización con autenticación local y atestación remota
+
+- **Tipo**: rectificación de seguridad de la decisión siguiente
+- **Contexto**: el VERIFY independiente demostró que un SHA sin clave podía recalcularse, que un
+  tag con `--no-verify` eludía el hook y que excluir informes completos permitía reescribir historia.
+- **Decisión / hecho**: el slow firma su evidencia con HMAC y una clave aleatoria de 256 bits bajo
+  el directorio Git local, fuera del árbol versionado. El release exige esa firma, host, runtime,
+  ancestro, checks y huellas. Bitácora/evidence conservan sus bytes previos por prepend/append y
+  los informes existentes son inmutables; solo pueden aparecer informes nuevos. Un workflow de
+  tag verifica remotamente que el SHA pertenece a `main` y ya tuvo `SDD gates` verde, sin repetir
+  el slow. Hardlinks, junctions y tamaños fuera de cuota fallan cerrado.
+- **Alternativas descartadas**: mantener el SHA autofirmado; confiar solo en hooks locales; volver
+  a ejecutar slow al crear el tag; aceptar reescritura completa de informes como metadata.
+- **Impacto**: sustituido por la rectificación inmediatamente anterior sobre la frontera de
+  confianza; la clave no se imprime, versiona ni comparte entre clones.
+- **Deuda aceptada**: sustituida por la rectificación inmediatamente anterior.
+- **Referencias**: T-017-06 · SEC-EVIDENCE-003 · informe VERIFY read-only de 2026-08-23
+- **Quién**: implementer por hallazgos bloqueantes del security-auditor
+
+---
+
+## 2026-08-23 · Reutilizar evidencia lenta materialmente vigente al cerrar releases
+
+- **Tipo**: decisión de operación y evidencia
+- **Contexto**: después de verificar el contenido funcional de v0.9.0 se repitió el slow completo
+  al cerrar estado, informes y CHANGELOG, aunque ninguna entrada ejecutable había cambiado.
+- **Decisión / hecho**: la enmienda T-017-06 añade `run --release`. Solo reutiliza coverage,
+  E2E y a11y de un slow ancestral cuando coinciden runtime, checks y huella material; trace-audit,
+  secretos, strict y docs-diff se ejecutan siempre y la procedencia queda marcada como `reused`.
+- **Alternativas descartadas**: hacer automático el reuse dentro de `--slow`, porque cambiaría su
+  significado; preguntar por cada gate, por multiplicar interacciones; saltar gates por tipo de
+  commit declarado, porque dependería de la palabra del agente.
+- **Impacto**: reduce tiempo, salida y cuota en el cierre editorial sin cambiar CI ni permitir
+  reutilización entre máquinas. Cualquier duda falla cerrado y propone el slow completo.
+- **Deuda aceptada**: la integridad local detecta manipulación accidental, no es firma
+  criptográfica frente a un actor con escritura total sobre el workspace.
+- **Referencias**: spec 017 · RF-06 · CA-06 · T-017-06 · SEC-EVIDENCE-003
+- **Quién**: usuario mediante aprobación explícita del plan de enmienda
+
+---
+
 ## 2026-08-22 · Autorizar la publicación de v0.9.0
 
 - **Tipo**: entrega
