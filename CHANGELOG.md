@@ -5,7 +5,7 @@ Formato [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) · versionad
 > Escrito para **usuarios**, no para desarrolladores. "Refactorizado el servicio X" no va aquí;
 > va en el historial de git. Lo mantiene `release-manager` en `/sdd-ship`.
 
-## [No publicado]
+## [0.9.1] — 2026-08-23
 
 ### Added
 
