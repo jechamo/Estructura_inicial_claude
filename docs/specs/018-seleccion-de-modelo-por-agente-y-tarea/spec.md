@@ -29,6 +29,7 @@
 | OBJ-004 | PRD-RF-008 | UC-005 | RF-01, RF-04 | SRC-001 |
 | OBJ-002 | PRD-RF-004 | UC-004 | RF-05, RF-07 | SRC-003 |
 | OBJ-003 | PRD-RF-006 | UC-001 | RF-08 | SRC-003 |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-09 | SRC-003 |
 
 **Discrepancias que afectan a esta spec**: ninguna abierta. Se abre **DISC-003** (§12 bis): la
 documentación de compatibilidad afirma soporte de modelo por agente en una superficie donde el
@@ -83,6 +84,7 @@ permiten —sin rebajar ningún gate, control de seguridad ni ciclo TDD.
 | Deriva entre fuente y superficies detectada por un gate | no se detecta | falla el gate en el primer valor divergente |
 | Resolución del nivel por tarea | inexistente | determinista y reproducible en el 100 % de las combinaciones del banco de pruebas |
 | Trazas de ejecución que registran el nivel solicitado | 0 % | 100 %, marcadas como declaradas |
+| Tareas del backlog con nivel base declarado | 0 % | 100 %, propuesto por el sistema y revisable por una persona |
 
 **Lo que deliberadamente NO se promete**: una cifra de ahorro en euros. Ningún host expone el
 coste por agente, así que afirmarlo sería el «pasa sin ejecución» que la regla 7 prohíbe. Se mide
@@ -104,25 +106,26 @@ la distribución de niveles, que es lo que sí se puede demostrar.
 | **RF-01** | El sistema DEBE declarar, en una configuración versionada y aprobada por una persona, el nivel de modelo de cada uno de los veinte agentes, expresado en **niveles independientes del proveedor** y no en nombres de producto. | M | 5 |
 | **RF-02** | CUANDO una superficie de host admita fijar el modelo, el sistema DEBE derivar su valor desde esa configuración única y DEBE fallar el gate si alguna superficie diverge de ella. | M | 5 |
 | **RF-03** | SI un valor no pertenece al vocabulario que el host acepta, ENTONCES el sistema DEBE rechazarlo antes de emitirlo, en lugar de escribirlo y confiar en el fallback silencioso del host. | M | 3 |
-| **RF-04** | CUANDO se solicite el nivel aplicable a una tarea, el sistema DEBE resolverlo de forma determinista y reproducible a partir del nivel del agente, el nivel de circuito y el impacto de seguridad declarado, sin que ningún modelo participe en la decisión. | S | 5 |
-| **RF-05** | El sistema DEBE impedir que la resolución por tarea rebaje el nivel de los agentes declarados como no rebajables, y DEBE elevar al nivel máximo cuando la tarea toque contratos, arquitectura, migraciones o esté clasificada como sensible. | M | 2 |
+| **RF-04** | CUANDO se solicite el nivel aplicable a una tarea, el sistema DEBE resolverlo de forma determinista y reproducible tomando como base **el nivel declarado por esa tarea** y elevándolo por el suelo del agente, el nivel de circuito y el impacto de seguridad, sin que ningún modelo participe en la decisión. | S | 5 |
+| **RF-05** | El sistema DEBE impedir que la resolución rebaje el nivel de los agentes declarados como no rebajables, y DEBE elevar al nivel máximo cuando la tarea toque contratos, arquitectura, migraciones, seguridad o esté clasificada como sensible. | M | 2 |
 | **RF-06** | MIENTRAS la configuración esté sin aprobar, caducada o sea inválida, el sistema DEBE avisar con el comando exacto de revisión y NO DEBE aplicar la resolución por tarea. | S | 3 |
 | **RF-07** | El sistema DEBE registrar el nivel solicitado en la traza de ejecución con verificación **declarada**, y DEBE poder agregar esa distribución; NUNCA DEBE afirmar qué modelo se ejecutó realmente. | S | 3 |
 | **RF-08** | El sistema DEBE mantener el catálogo de agentes y la matriz de compatibilidad coherentes con la configuración aprobada, incluida la corrección del soporte real de cada host. | C | 3 |
+| **RF-09** | CUANDO se genere el backlog de una spec, cada tarea DEBE declarar su nivel base; el sistema DEBE proponerlo de forma determinista a partir del tipo de trabajo y de las rutas previstas, y una persona DEBE poder corregirlo antes de implementar. | M | 2 |
 
 ### Reparto MoSCoW
 
 | Prioridad | Esfuerzo | % | Límite recomendado |
 |---|---:|---:|---|
-| Must | 15 | 52 % | ≤ 60 % ✅ |
-| Should | 11 | 38 % | ~20 % |
+| Must | 17 | 55 % | ≤ 60 % ✅ |
+| Should | 11 | 35 % | ~20 % |
 | Could | 3 | 10 % | ~20 % |
-| **Total** | 29 | 100 % | |
+| **Total** | 31 | 100 % | |
 
-Los *should* superan la referencia porque RF-04, RF-06 y RF-07 forman una sola pieza —la decisión
-por tarea— que puede aplazarse entera sin dejar el sistema a medias: RF-01 a RF-03 y RF-05 ya
-entregan el ahorro estático y la corrección del error de Cursor. Ese es precisamente el corte de
-contingencia que la prioridad debe permitir.
+Los *should* superan la referencia porque RF-04, RF-06 y RF-07 forman una sola pieza —la
+resolución por tarea— que puede aplazarse entera sin dejar el sistema a medias: RF-01 a RF-03,
+RF-05 y RF-09 ya entregan el ahorro estático, el nivel declarado por tarea y la corrección del
+error de Cursor. Ese es precisamente el corte de contingencia que la prioridad debe permitir.
 
 ### Won't have this time
 
@@ -224,20 +227,43 @@ Escenario: un valor que el host no reconoce
 ### CA-05 — Resolución determinista por tarea *(cubre RF-04)*
 ```gherkin
 Escenario: el mismo caso resuelve siempre igual
-  Dado un agente, un nivel de circuito y un impacto de seguridad declarados
+  Dado una tarea con nivel base declarado, un agente, un nivel de circuito y un impacto de seguridad
   Cuando se solicita el nivel aplicable a esa tarea dos veces, en hosts distintos
   Entonces ambas respuestas son idénticas
-  Y la respuesta incluye el motivo por el que se eligió ese nivel
+  Y la respuesta incluye el nivel base de la tarea y cada elevación que se aplicó, con su motivo
+```
+
+### CA-10 — Un cambio trivial no paga el nivel máximo *(cubre RF-04, RF-09)*
+```gherkin
+Escenario: cambiar el color de un botón
+  Dado una tarea cuyo único efecto es cambiar un valor de estilo de un componente existente
+  Y que no toca contratos, arquitectura, migraciones ni seguridad
+  Cuando se resuelve su nivel
+  Entonces el nivel resuelto es el mínimo
+  Y ninguna elevación se aplica
+  Y el ciclo TDD, los gates y la evidencia exigidos son exactamente los mismos que para cualquier otra tarea
 ```
 
 ### CA-06 — Ningún control se rebaja *(cubre RF-05)*
 ```gherkin
-Escenario: circuito ligero sobre una tarea sensible
+Escenario: una tarea barata declarada sobre un agente que no se rebaja
   Dado un cambio clasificado como light
-  Y una tarea con impacto de seguridad sensible
+  Y una tarea que declara el nivel mínimo
+  Y un impacto de seguridad sensible
   Cuando se resuelve el nivel para el auditor de seguridad
   Entonces el nivel resuelto es el máximo
   Y el motivo declara que la elevación es obligatoria y no rebajable
+  Y el nivel declarado por la tarea no lo rebaja
+```
+
+### CA-11 — Toda tarea nace con nivel base *(cubre RF-09)*
+```gherkin
+Escenario: generación del backlog
+  Dado una spec aprobada con su plan técnico
+  Cuando se genera el backlog de tareas
+  Entonces cada tarea declara exactamente un nivel base
+  Y ese nivel viene propuesto de forma determinista, no elegido por un modelo
+  Y una persona puede corregirlo antes de implementar
 ```
 
 ### CA-07 — Configuración sin aprobar o caducada *(cubre RF-06)*
@@ -282,6 +308,9 @@ Escenario: el catálogo contradice la configuración
 | OBJ-004 | PRD-RF-007 | UC-005 | RF-06 | CA-07 |
 | OBJ-002 | PRD-RF-004 | UC-004 | RF-07 | CA-08 |
 | OBJ-003 | PRD-RF-006 | UC-001 | RF-08 | CA-09 |
+| OBJ-004 | PRD-RF-008 | UC-005 | RF-04 | CA-10 |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-09 | CA-10 |
+| OBJ-002 | PRD-RF-003 | UC-002 | RF-09 | CA-11 |
 
 ## 7. Casos límite
 
@@ -295,16 +324,23 @@ Escenario: el catálogo contradice la configuración
 | El host ignora el valor y usa otro modelo | No es detectable desde el repositorio: se declara como límite conocido y se comprueba con una verificación manual registrada |
 | Dos superficies del mismo agente discrepan | Falla el gate y nombra ambas (CA-03) |
 | Derivación interrumpida a medias | La siguiente ejecución la completa; el gate detecta el estado intermedio |
-| La resolución se pide sin spec ni tarea | Devuelve el nivel del agente y declara que no hubo contexto de tarea |
+| La resolución se pide sin spec ni tarea | Devuelve el suelo del agente y declara que no hubo contexto de tarea |
+| La tarea no declara nivel base | Falla cerrado en el gate: no se supone el nivel mínimo ni el máximo |
+| La tarea declara un nivel por debajo de una elevación obligatoria | Gana la elevación; la respuesta lo dice, y el nivel declarado queda registrado como propuesta descartada |
 | El identificador de modelo declarado ya no existe en el proveedor | La caducidad avisa; el valor portable de herencia sigue siendo válido |
 | Circuito `light` sobre un agente no rebajable | Se mantiene el nivel del agente y se explica por qué (CA-06) |
 
 ## 8. Reglas de negocio
 
-- **RN-01** — El nivel es una propiedad del **trabajo**, no del proveedor. La configuración
-  declara niveles; los identificadores de modelo son un detalle datado y sustituible.
-- **RN-02** — La resolución por tarea **solo puede elevar** respecto al nivel del agente, salvo
-  las rebajas que un nivel de circuito ya aprobado autoriza expresamente.
+- **RN-01** — El nivel es una propiedad del **trabajo**, no del proveedor ni del agente. La
+  configuración declara niveles por peso del trabajo; los identificadores de modelo son un
+  detalle datado y sustituible.
+- **RN-02** — **La tarea manda sobre el agente.** El nivel base lo declara la tarea; el agente
+  aporta un **suelo** que solo se aplica a los perfiles no rebajables. Un mismo agente puede
+  ejecutar una tarea en el nivel mínimo y la siguiente en el máximo.
+- **RN-02 bis** — La resolución **solo eleva** sobre el nivel base de la tarea. Ninguna señal
+  puede rebajarlo por debajo de lo que la tarea declaró, y ninguna elevación obligatoria puede
+  desactivarse declarando un nivel bajo en la tarea.
 - **RN-03** — Ningún agente auditor puede quedar por debajo de su nivel declarado, cualquiera que
   sea el nivel de circuito.
 - **RN-04** — Ninguna elección de nivel dispensa un gate, un control de seguridad, el ciclo TDD,
@@ -336,6 +372,8 @@ Escenario: el catálogo contradice la configuración
 | Una quinta superficie que mantener a mano | media | medio | Derivación única y gate de deriva (RF-02); nada se edita a mano |
 | La sintaxis admitida por un host rompe otro del mismo proveedor | media | medio | Se emite siempre la forma más restrictiva compatible con ambos (RF-03) |
 | El mapa se aprueba una vez y nadie lo revisa | media | bajo | Caducidad explícita enganchada al procedimiento de revalidación existente |
+| Una tarea declara un nivel demasiado bajo para el trabajo real | **alta** | medio | El nivel base se **propone** de forma determinista, no se inventa (RF-09); las elevaciones obligatorias no se pueden desactivar (RN-02 bis); si el nivel resultó corto, se sube y queda en la traza |
+| Se confunde «tarea barata» con «tarea sin control» | media | **alto** | RN-04: el nivel toca el razonamiento, nunca el expediente. CA-10 exige explícitamente los mismos gates, TDD y evidencia |
 
 **Dependencias**: la clasificación proporcional de `017` (fuente del nivel de circuito) y la
 verificación independiente del host de `013` (fuente del contrato de traza).
@@ -358,13 +396,21 @@ verificación independiente del host de `013` (fuente del contrato de traza).
 - **SUP-05** — Se asume que las fuentes técnicas de §12 bis no se incorporan al baseline de
   producto: hacerlo obligaría a reaprobarlo y a recalcular su sello por un motivo que no es de
   producto.
+- **SUP-06** — Se asume que los tres niveles se nombran por **peso del trabajo** y no por rol ni
+  por producto, siguiendo la analogía que propuso el usuario —**`luna`**, **`terra`**, **`sol`**—.
+  Nombrarlos por rol («razonamiento», «ejecución») haría creer que el nivel pertenece al agente,
+  y RN-02 dice justo lo contrario: pertenece a la tarea. El gate humano puede renombrarlos; no
+  cambia ningún requisito.
+- **SUP-07** — Se asume que el nivel base de una tarea lo propone el plan técnico y lo revisa una
+  persona en el mismo gate en el que ya revisa el backlog, sin añadir un gate nuevo.
 
 ## 12. Glosario
 
 | Término | Definición |
 |---|---|
-| **Nivel** | Categoría de capacidad exigida a un trabajo, independiente del proveedor. Es el contrato |
-| **Suelo** | Nivel mínimo que un agente conserva siempre, aunque el circuito autorice rebajas |
+| **Nivel** | Categoría de capacidad exigida a un trabajo, independiente del proveedor. Es el contrato. Son tres, nombrados por **peso del trabajo**, no por rol ni por producto |
+| **Nivel base** | El que declara la propia tarea. Punto de partida de la resolución |
+| **Suelo** | Nivel mínimo que un agente no rebajable conserva siempre, aunque la tarea declare uno menor |
 | **Elevación** | Subida obligatoria de nivel por seguridad, contratos, arquitectura o migraciones |
 | **Superficie de host** | Conjunto de ficheros por los que un IDE reconoce a los agentes |
 | **Derivación** | Escritura mecánica del valor de modelo en cada superficie desde la fuente única |
@@ -403,14 +449,15 @@ DISC-003 en §12 bis, que el gate humano debe confirmar o corregir.
 | **Estado** | `pending` |
 | **Aprobado / rechazado por** | — |
 | **Fecha** | — |
-| **Alcance de la decisión** | RF-01 a RF-08, CA-01 a CA-09, SUP-01 a SUP-05 y DISC-003 |
+| **Alcance de la decisión** | RF-01 a RF-09, CA-01 a CA-11, SUP-01 a SUP-07 y DISC-003 |
 | **Condiciones** | — |
 
 **Lo que este gate decide y nadie más puede decidir:**
 
 1. Si el mapa fija identificadores de modelo concretos o se limita a herencia y esfuerzo (SUP-02).
 2. La lista de agentes no rebajables (SUP-03).
-3. Si se acepta la clasificación `sensible` de §5.1 y, con ella, la matriz de controles en el plan.
-4. La resolución de DISC-003.
+3. Los nombres de los tres niveles: `luna`, `terra`, `sol` (SUP-06).
+4. Si se acepta la clasificación `sensible` de §5.1 y, con ella, la matriz de controles en el plan.
+5. La resolución de DISC-003.
 
 > `/sdd-plan` no comienza mientras este gate no esté en `approved`.
