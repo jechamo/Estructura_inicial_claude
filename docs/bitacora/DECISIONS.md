@@ -9,6 +9,37 @@
 
 ---
 
+## 2026-09-04 · Una línea en blanco deja un commit sin traza auditable
+
+- **Tipo**: incidente detectado durante la fase specify de la spec 018
+- **Contexto**: los tres commits de la spec 018 declaraban `Circuit`, `Circuit-reason`,
+  `Circuit-config`, `Spec` y `Agent`, y aun así `check-sdd --trace-audit` los reportó como
+  **no auditables**. La causa es el parser de `scripts/lib/trace-audit.mjs`: recorre el mensaje
+  desde la última línea hacia arriba y **se detiene en la primera línea que no es un trailer**.
+  Una línea en blanco entre el bloque SDD y el bloque de atribución hace invisible todo lo que
+  queda por encima. El commit `d4a16d3` de la spec 017 —«corrige trailers de cierre»— indica que
+  este defecto ya había mordido antes.
+- **Decisión / hecho**: el bloque de trailers es **uno solo y contiguo**; la atribución va al
+  final del mismo bloque, sin línea en blanco intermedia. Los tres commits ya empujados
+  (`a89af49`, `66546b9` y el de la traza de sesión) conservan su defecto: la regla dura 9 prohíbe
+  `git push --force`, así que no se reescribe historia para taparlo. Quedan declarados aquí como
+  **no auditables**, que no es lo mismo que conformes ni que infractores.
+- **Alternativas descartadas**: reescribir los tres commits con `rebase` y force-push —prohibido
+  por la regla 9—; dejarlo sin registrar —convertiría un «no lo sé» en un «está bien», que es
+  justo lo que la sección 10.1 del modelo operativo advierte que destruye la credibilidad del
+  informe—.
+- **Impacto**: la corroboración `declared-corroborated` no alcanza a esos tres commits. La spec
+  018 no pierde trazabilidad —su cadena vive en `spec.md` y `clarifications.md`, que sí se
+  auditan—, pero el rastro de autoría por commit queda incompleto para ese tramo.
+- **Deuda aceptada**: hoy nada detecta este fallo salvo leer la salida del auditor, y llega como
+  **aviso**, no como error, de modo que pasa desapercibido. Un gate que rechace un mensaje cuyo
+  bloque de trailers está partido es implementación, y necesita su propia spec: se anota como
+  candidata, no se cuela aquí.
+- **Referencias**: `scripts/lib/trace-audit.mjs` `parsearTrailers` · `d4a16d3` · spec 018
+- **Quién**: bitacora-keeper, por hallazgo propio durante la fase specify
+
+---
+
 ## 2026-08-23 · Delimitar la confianza de la evidencia local de release
 
 - **Tipo**: rectificación de seguridad de la decisión siguiente
